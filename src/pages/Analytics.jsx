@@ -366,6 +366,7 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                                 </div>
                             ))}
                         </div>
+                        )}
                     </CardContent>
                 </Card>
 

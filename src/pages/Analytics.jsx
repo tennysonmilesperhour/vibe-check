@@ -255,6 +255,19 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                     </Card>
                 </div>
 
+                {/* Empty state */}
+                {!isLoading && checkIns.length === 0 && (
+                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm mb-8">
+                        <CardContent className="text-center py-16">
+                            <Calendar className="w-12 h-12 mx-auto mb-4" style={{color: 'var(--warm-gray-400)'}} />
+                            <h3 className="text-lg font-medium mb-2" style={{color: 'var(--warm-gray-600)'}}>No data yet</h3>
+                            <p className="text-sm" style={{color: 'var(--warm-gray-500)'}}>
+                                Start logging daily check-ins and your trends will appear here.
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* Charts */}
                 <div className="grid lg:grid-cols-2 gap-6 mb-8">
                     <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">

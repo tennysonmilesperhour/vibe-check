@@ -23,10 +23,8 @@ export default function Analytics() {
     }, []);
 
     useEffect(() => {
-        if (checkIns.length > 0) {
-            generateInsights();
-        }
-    }, [dateRange, selectedRelationship, checkIns]);
+        setInsights(null);
+    }, [dateRange, selectedRelationship]);
 
     const loadData = async () => {
         setIsLoading(true);

@@ -345,8 +345,8 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                                 </p>
                             </div>
                         ) : (
-                        <div className="space-y-4">
-                            {getRelationshipStats().slice(0, 6).map((stat) => (
+                        <div className="space-y-4">{
+                            getRelationshipStats().slice(0, 6).map((stat) => (
                                 <div key={stat.person} className="flex items-center justify-between p-4 rounded-lg border"
                                      style={{backgroundColor: 'var(--sage-50)', borderColor: 'var(--sage-200)'}}>
                                     <div className="flex-1">

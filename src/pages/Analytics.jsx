@@ -377,8 +377,8 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                                         </Badge>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                            ))
+                        }</div>
                         )}
                     </CardContent>
                 </Card>

@@ -324,6 +324,14 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                         </p>
                     </CardHeader>
                     <CardContent>
+                        {getRelationshipStats().length === 0 ? (
+                            <div className="text-center py-8">
+                                <Users className="w-10 h-10 mx-auto mb-3" style={{color: 'var(--warm-gray-400)'}} />
+                                <p className="text-sm" style={{color: 'var(--warm-gray-500)'}}>
+                                    Log check-ins with "who was involved" to see relationship impact here.
+                                </p>
+                            </div>
+                        ) : (
                         <div className="space-y-4">
                             {getRelationshipStats().slice(0, 6).map((stat) => (
                                 <div key={stat.person} className="flex items-center justify-between p-4 rounded-lg border"

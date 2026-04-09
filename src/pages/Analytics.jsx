@@ -212,15 +212,17 @@ Please provide supportive insights about patterns, relationships, and gentle sug
     }));
 
     return (
-        <div className="p-6 space-y-8" style={{background: 'linear-gradient(135deg, #f6f7f6 0%, #fafaf9 100%)', minHeight: '100vh'}}>
-            <div className="max-w-7xl mx-auto">
+        <div className="p-6 space-y-8 min-h-screen relative">
+            <div className="orb-purple" style={{ top: '-60px', left: '20%' }} />
+            <div className="max-w-7xl mx-auto relative z-10">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold" style={{color: 'var(--warm-gray-800)'}}>
+                        <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>✦ Your Data</p>
+                        <h1 className="text-4xl font-bold gradient-text mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                             Analytics & Insights
                         </h1>
-                        <p className="text-lg" style={{color: 'var(--warm-gray-600)'}}>
+                        <p className="text-base" style={{color: 'rgba(180,170,210,0.65)'}}>
                             Understanding your emotional patterns
                         </p>
                     </div>
@@ -252,68 +254,21 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 </div>
 
                 {/* Stats Overview */}
-                <div className="grid md:grid-cols-4 gap-6 mb-8">
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium" style={{color: 'var(--warm-gray-600)'}}>
-                                Average Mood
-                            </CardTitle>
-                            <Target className="h-4 w-4" style={{color: 'var(--sage-500)'}} />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold" style={{color: 'var(--warm-gray-800)'}}>
-                                {getFilteredData().length > 0 
-                                    ? (getFilteredData().reduce((sum, entry) => sum + entry.mood_score, 0) / getFilteredData().length).toFixed(1)
-                                    : '—'
-                                }/10
+                <div className="grid md:grid-cols-4 gap-4 mb-8">
+                    {[
+                        { label: 'Avg Mood', icon: Target, value: getFilteredData().length > 0 ? (getFilteredData().reduce((s,e)=>s+e.mood_score,0)/getFilteredData().length).toFixed(1)+'/10' : '—', color: '#c084fc' },
+                        { label: 'Entries', icon: Calendar, value: getFilteredData().length, color: '#38bdf8' },
+                        { label: 'Best Day', icon: TrendingUp, value: getFilteredData().length > 0 ? Math.max(...getFilteredData().map(e=>e.mood_score))+'/10' : '—', color: '#2dd4bf' },
+                        { label: 'People', icon: Users, value: getRelationshipStats().length, color: '#f472b6' },
+                    ].map(({ label, icon: Icon, value, color }) => (
+                        <div key={label} className="glass-card p-5">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: `${color}99` }}>{label}</span>
+                                <Icon className="w-4 h-4" style={{ color }} />
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium" style={{color: 'var(--warm-gray-600)'}}>
-                                Total Entries
-                            </CardTitle>
-                            <Calendar className="h-4 w-4" style={{color: 'var(--sage-500)'}} />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold" style={{color: 'var(--warm-gray-800)'}}>
-                                {getFilteredData().length}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium" style={{color: 'var(--warm-gray-600)'}}>
-                                Best Day
-                            </CardTitle>
-                            <TrendingUp className="h-4 w-4" style={{color: 'var(--sage-500)'}} />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold" style={{color: 'var(--warm-gray-800)'}}>
-                                {getFilteredData().length > 0 
-                                    ? Math.max(...getFilteredData().map(e => e.mood_score))
-                                    : '—'
-                                }/10
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium" style={{color: 'var(--warm-gray-600)'}}>
-                                Relationships
-                            </CardTitle>
-                            <Users className="h-4 w-4" style={{color: 'var(--sage-500)'}} />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold" style={{color: 'var(--warm-gray-800)'}}>
-                                {getRelationshipStats().length}
-                            </div>
-                        </CardContent>
-                    </Card>
+                            <div className="text-2xl font-bold" style={{ color: 'rgba(220,210,240,0.95)', fontFamily: 'Space Grotesk, sans-serif' }}>{value}</div>
+                        </div>
+                    ))}
                 </div>
 
                 {/* Cosmic Context */}
@@ -321,25 +276,20 @@ Please provide supportive insights about patterns, relationships, and gentle sug
 
                 {/* Empty state */}
                 {!isLoading && checkIns.length === 0 && (
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm mb-8">
-                        <CardContent className="text-center py-16">
-                            <Calendar className="w-12 h-12 mx-auto mb-4" style={{color: 'var(--warm-gray-400)'}} />
-                            <h3 className="text-lg font-medium mb-2" style={{color: 'var(--warm-gray-600)'}}>No data yet</h3>
-                            <p className="text-sm" style={{color: 'var(--warm-gray-500)'}}>
-                                Start logging daily check-ins and your trends will appear here.
-                            </p>
-                        </CardContent>
-                    </Card>
+                    <div className="glass-card p-16 text-center mb-8">
+                        <div className="text-5xl mb-4">✦</div>
+                        <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(200,190,230,0.8)' }}>No data yet</h3>
+                        <p className="text-sm" style={{ color: 'rgba(160,150,190,0.55)' }}>
+                            Start logging daily check-ins and your trends will appear here.
+                        </p>
+                    </div>
                 )}
 
                 {/* Charts */}
                 <div className="grid lg:grid-cols-2 gap-6 mb-8">
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle style={{color: 'var(--warm-gray-800)'}}>Mood Trend</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-64">
+                    <div className="glass-card p-6">
+                        <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Mood Trend</h3>
+                        <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={chartData}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="var(--sage-200)" />
@@ -352,25 +302,21 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                                                 borderRadius: '8px'
                                             }}
                                         />
-                                        <Line 
-                                            type="monotone" 
-                                            dataKey="mood" 
-                                            stroke="var(--sage-500)" 
+                                        <Line
+                                            type="monotone"
+                                            dataKey="mood"
+                                            stroke="#c084fc"
                                             strokeWidth={3}
-                                            dot={{fill: 'var(--sage-500)', strokeWidth: 2, r: 4}}
+                                            dot={{ fill: '#c084fc', strokeWidth: 2, r: 4 }}
                                         />
                                     </LineChart>
                                 </ResponsiveContainer>
                             </div>
-                        </CardContent>
-                    </Card>
+                    </div>
 
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle style={{color: 'var(--warm-gray-800)'}}>High vs Low Intensity</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-64">
+                    <div className="glass-card p-6">
+                        <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>High vs Low Intensity</h3>
+                        <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartData}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="var(--sage-200)" />
@@ -383,60 +329,44 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                                                 borderRadius: '8px'
                                             }}
                                         />
-                                        <Bar dataKey="high" fill="var(--sage-400)" name="High Moments" />
-                                        <Bar dataKey="low" fill="var(--warm-gray-400)" name="Low Moments" />
+                                        <Bar dataKey="high" fill="#c084fc" name="High Moments" />
+                                        <Bar dataKey="low" fill="#38bdf8" name="Low Moments" />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
-                        </CardContent>
-                    </Card>
+                    </div>
                 </div>
 
                 {/* Relationship Analysis */}
-                <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm mb-8">
-                    <CardHeader>
-                        <CardTitle style={{color: 'var(--warm-gray-800)'}}>Relationship Impact</CardTitle>
-                        <p className="text-sm" style={{color: 'var(--warm-gray-600)'}}>
-                            How different people appear in your highs and lows
-                        </p>
-                    </CardHeader>
-                    <CardContent>
+                <div className="glass-card p-6 mb-8">
+                    <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Relationship Impact</h3>
+                    <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>How different people appear in your highs and lows</p>
+                    <div>
                         {getRelationshipStats().length === 0 ? (
                             <div className="text-center py-8">
-                                <Users className="w-10 h-10 mx-auto mb-3" style={{color: 'var(--warm-gray-400)'}} />
-                                <p className="text-sm" style={{color: 'var(--warm-gray-500)'}}>
+                                <Users className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(180,170,210,0.3)' }} />
+                                <p className="text-sm" style={{ color: 'rgba(160,150,190,0.5)' }}>
                                     Log check-ins with "who was involved" to see relationship impact here.
                                 </p>
                             </div>
                         ) : (
-                        <div className="space-y-4">{
+                        <div className="space-y-3">{
                             getRelationshipStats().slice(0, 6).map((stat) => (
-                                <div key={stat.person} className="flex items-center justify-between p-4 rounded-lg border"
-                                     style={{backgroundColor: 'var(--sage-50)', borderColor: 'var(--sage-200)'}}>
+                                <div key={stat.person} className="flex items-center justify-between p-4 rounded-xl"
+                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                                     <div className="flex-1">
-                                        <h4 className="font-medium" style={{color: 'var(--warm-gray-800)'}}>{stat.person}</h4>
-                                        <p className="text-sm" style={{color: 'var(--warm-gray-600)'}}>
-                                            {stat.highs} highs, {stat.lows} lows ({stat.total} total mentions)
+                                        <h4 className="font-semibold text-sm" style={{ color: 'rgba(220,210,240,0.9)' }}>{stat.person}</h4>
+                                        <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>
+                                            {stat.highs} highs · {stat.lows} lows · {stat.total} mentions
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <div className="text-right">
-                                            <div className="text-lg font-bold" style={{color: 'var(--warm-gray-800)'}}>
-                                                {stat.ratio}%
-                                            </div>
-                                            <div className="text-xs" style={{color: 'var(--warm-gray-500)'}}>
-                                                positive ratio
-                                            </div>
-                                        </div>
-                                        <Badge 
-                                            className={`${
-                                                parseFloat(stat.ratio) >= 60 
-                                                    ? 'bg-emerald-100 text-emerald-700' 
-                                                    : parseFloat(stat.ratio) >= 40
-                                                    ? 'bg-yellow-100 text-yellow-700'
-                                                    : 'bg-red-100 text-red-700'
-                                            }`}
-                                        >
+                                        <span className="text-lg font-bold" style={{ color: 'rgba(220,210,240,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>{stat.ratio}%</span>
+                                        <Badge className="text-xs" style={{
+                                            background: parseFloat(stat.ratio) >= 60 ? 'rgba(45,212,191,0.15)' : parseFloat(stat.ratio) >= 40 ? 'rgba(251,191,36,0.15)' : 'rgba(244,114,182,0.15)',
+                                            color: parseFloat(stat.ratio) >= 60 ? '#2dd4bf' : parseFloat(stat.ratio) >= 40 ? '#fbbf24' : '#f472b6',
+                                            border: 'none'
+                                        }}>
                                             {parseFloat(stat.ratio) >= 60 ? 'Positive' : parseFloat(stat.ratio) >= 40 ? 'Balanced' : 'Challenging'}
                                         </Badge>
                                     </div>
@@ -444,102 +374,56 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                             ))
                         }</div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
                 {/* AI Insights */}
-                <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2" style={{color: 'var(--warm-gray-800)'}}>
-                            <Brain className="w-5 h-5" style={{color: 'var(--sage-500)'}} />
-                            AI Insights
-                        </CardTitle>
-                        <p className="text-sm" style={{color: 'var(--warm-gray-600)'}}>
-                            Supportive observations from your data (not medical advice)
-                        </p>
-                    </CardHeader>
-                    <CardContent>
+                <div className="glass-card-glow p-6">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Brain className="w-5 h-5" style={{ color: '#c084fc' }} />
+                        <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>AI Insights</h3>
+                    </div>
+                    <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>
+                        Supportive observations from your data (not medical advice)
+                    </p>
+                    <div>
                         {isLoadingInsights ? (
                             <div className="flex items-center gap-3 py-8">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-sage-500"></div>
-                                <span style={{color: 'var(--warm-gray-600)'}}>Generating insights...</span>
+                                <div className="animate-spin rounded-full h-6 w-6"
+                                    style={{ border: '2px solid rgba(192,132,252,0.2)', borderTopColor: '#c084fc' }} />
+                                <span style={{ color: 'rgba(180,170,210,0.7)' }}>Weaving your cosmic insights...</span>
                             </div>
                         ) : insights ? (
-                            <div className="space-y-6">
-                                {insights.key_patterns?.length > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold mb-3" style={{color: 'var(--warm-gray-800)'}}>
-                                            Key Patterns
-                                        </h4>
+                            <div className="space-y-5">
+                                {[
+                                    { key: 'key_patterns', label: 'Key Patterns', color: '#c084fc' },
+                                    { key: 'relationship_insights', label: 'Relationship Insights', color: '#38bdf8' },
+                                    { key: 'encouraging_notes', label: 'Encouraging Notes', color: '#2dd4bf' },
+                                    { key: 'gentle_suggestions', label: 'Gentle Suggestions', color: '#f472b6' },
+                                ].map(({ key, label, color }) => insights[key]?.length > 0 && (
+                                    <div key={key}>
+                                        <h4 className="text-sm font-semibold mb-2" style={{ color, fontFamily: 'Space Grotesk, sans-serif' }}>{label}</h4>
                                         <div className="space-y-2">
-                                            {insights.key_patterns.map((pattern, i) => (
-                                                <div key={i} className="p-3 rounded-lg" 
-                                                     style={{backgroundColor: 'var(--sage-50)'}}>
-                                                    <p className="text-sm" style={{color: 'var(--warm-gray-700)'}}>{pattern}</p>
+                                            {insights[key].map((item, i) => (
+                                                <div key={i} className="p-3 rounded-xl text-sm"
+                                                    style={{ background: `${color}0a`, border: `1px solid ${color}20`, color: 'rgba(210,200,235,0.8)' }}>
+                                                    {item}
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                )}
-
-                                {insights.relationship_insights?.length > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold mb-3" style={{color: 'var(--warm-gray-800)'}}>
-                                            Relationship Insights
-                                        </h4>
-                                        <div className="space-y-2">
-                                            {insights.relationship_insights.map((insight, i) => (
-                                                <div key={i} className="p-3 rounded-lg" 
-                                                     style={{backgroundColor: 'var(--warm-gray-50)'}}>
-                                                    <p className="text-sm" style={{color: 'var(--warm-gray-700)'}}>{insight}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {insights.encouraging_notes?.length > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold mb-3" style={{color: 'var(--warm-gray-800)'}}>
-                                            Encouraging Notes
-                                        </h4>
-                                        <div className="space-y-2">
-                                            {insights.encouraging_notes.map((note, i) => (
-                                                <div key={i} className="p-3 rounded-lg" 
-                                                     style={{backgroundColor: 'var(--warm-gray-50)'}}>
-                                                    <p className="text-sm" style={{color: 'var(--warm-gray-700)'}}>{note}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {insights.gentle_suggestions?.length > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold mb-3" style={{color: 'var(--warm-gray-800)'}}>
-                                            Gentle Suggestions for Reflection
-                                        </h4>
-                                        <div className="space-y-2">
-                                            {insights.gentle_suggestions.map((suggestion, i) => (
-                                                <div key={i} className="p-3 rounded-lg" 
-                                                     style={{backgroundColor: 'var(--warm-gray-50)'}}>
-                                                    <p className="text-sm" style={{color: 'var(--warm-gray-700)'}}>{suggestion}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                ))}
                             </div>
                         ) : (
                             <div className="text-center py-8">
-                                <Button onClick={generateInsights} variant="outline">
+                                <Button onClick={generateInsights} className="btn-cosmic rounded-xl">
                                     <Brain className="w-4 h-4 mr-2" />
                                     Generate Insights
                                 </Button>
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         </div>
     );

@@ -143,7 +143,7 @@ export default function HealingBoard() {
     };
 
     return (
-        <div className="p-6 space-y-8" style={{background: 'linear-gradient(135deg, #f6f7f6 0%, #fafaf9 100%)', minHeight: '100vh'}}>
+        <div className="p-6 space-y-8 min-h-screen relative">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="text-center mb-8">

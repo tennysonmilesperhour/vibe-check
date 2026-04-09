@@ -86,284 +86,146 @@ export default function DailyLog() {
     };
 
     return (
-        <div className="p-6 space-y-6" style={{background: 'linear-gradient(135deg, #f6f7f6 0%, #fafaf9 100%)', minHeight: '100vh'}}>
-            <div className="max-w-3xl mx-auto">
+        <div className="p-6 space-y-6 min-h-screen relative">
+            <div className="orb-purple" style={{ top: '-40px', right: '15%' }} />
+            <div className="max-w-3xl mx-auto relative z-10">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => navigate(createPageUrl("Dashboard"))}
-                        className="rounded-full"
-                    >
+                    <Button variant="outline" size="icon" onClick={() => navigate(createPageUrl("Dashboard"))}
+                        className="rounded-full" style={{ borderColor: 'rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.08)', color: '#c084fc' }}>
                         <ArrowLeft className="w-4 h-4" />
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold" style={{color: 'var(--warm-gray-800)'}}>
+                        <h1 className="text-3xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                             Daily Check-In
                         </h1>
-                        <p className="text-lg" style={{color: 'var(--warm-gray-600)'}}>
+                        <p className="text-sm" style={{ color: 'rgba(180,170,210,0.6)' }}>
                             {existingEntry ? "Update your entry" : "How was your day?"}
                         </p>
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    {/* Date Selection */}
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle style={{color: 'var(--warm-gray-800)'}}>Date</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Input
-                                type="date"
-                                value={formData.date}
-                                onChange={(e) => setFormData({...formData, date: e.target.value})}
-                                max={format(new Date(), 'yyyy-MM-dd')}
-                                className="max-w-xs"
-                            />
-                            {isToday(new Date(formData.date)) && (
-                                <Badge className="mt-2" style={{background: 'var(--sage-100)', color: 'var(--sage-700)'}}>
-                                    Today
-                                </Badge>
-                            )}
-                        </CardContent>
-                    </Card>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Date */}
+                    <div className="glass-card p-5">
+                        <h3 className="text-sm font-semibold mb-3" style={{ color: 'rgba(192,132,252,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Date</h3>
+                        <Input type="date" value={formData.date}
+                            onChange={(e) => setFormData({...formData, date: e.target.value})}
+                            max={format(new Date(), 'yyyy-MM-dd')} className="max-w-xs" />
+                        {isToday(new Date(formData.date)) && (
+                            <Badge className="mt-2 text-xs" style={{ background: 'rgba(139,92,246,0.15)', color: '#c084fc', border: '1px solid rgba(139,92,246,0.2)' }}>
+                                Today
+                            </Badge>
+                        )}
+                    </div>
 
                     {/* Overall Mood */}
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle style={{color: 'var(--warm-gray-800)'}}>Overall Mood</CardTitle>
-                            <p className="text-sm" style={{color: 'var(--warm-gray-600)'}}>
-                                How would you rate your overall mood today?
-                            </p>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="text-center space-y-4">
-                                <div className="text-6xl">{getMoodEmoji(formData.mood_score)}</div>
-                                <div>
-                                    <div className="text-2xl font-bold" style={{color: 'var(--warm-gray-800)'}}>
-                                        {formData.mood_score}/10
-                                    </div>
-                                    <div className="text-lg" style={{color: 'var(--warm-gray-600)'}}>
-                                        {getMoodLabel(formData.mood_score)}
-                                    </div>
+                    <div className="glass-card p-6">
+                        <h3 className="text-sm font-semibold mb-1" style={{ color: 'rgba(192,132,252,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Overall Mood</h3>
+                        <p className="text-xs mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>How would you rate your overall mood today?</p>
+                        <div className="text-center space-y-3 mb-6">
+                            <div className="text-6xl">{getMoodEmoji(formData.mood_score)}</div>
+                            <div>
+                                <div className="text-3xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                                    {formData.mood_score}<span className="text-xl">/10</span>
                                 </div>
+                                <div className="text-base" style={{ color: 'rgba(180,170,210,0.65)' }}>{getMoodLabel(formData.mood_score)}</div>
                             </div>
-                            <div className="px-4">
-                                <Slider
-                                    value={[formData.mood_score]}
-                                    onValueChange={([value]) => setFormData({...formData, mood_score: value})}
-                                    max={10}
-                                    min={1}
-                                    step={1}
-                                    className="w-full"
-                                />
-                                <div className="flex justify-between text-sm mt-2" style={{color: 'var(--warm-gray-500)'}}>
-                                    <span>1 - Terrible</span>
-                                    <span>10 - Amazing</span>
-                                </div>
+                        </div>
+                        <div className="px-4">
+                            <Slider value={[formData.mood_score]}
+                                onValueChange={([value]) => setFormData({...formData, mood_score: value})}
+                                max={10} min={1} step={1} className="w-full" />
+                            <div className="flex justify-between text-xs mt-2" style={{ color: 'rgba(160,150,190,0.45)' }}>
+                                <span>1 · Terrible</span><span>10 · Amazing</span>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
                     {/* High Moment */}
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2" style={{color: 'var(--warm-gray-800)'}}>
-                                <span className="text-2xl">✨</span>
-                                High Point of Your Day
-                            </CardTitle>
-                            <p className="text-sm" style={{color: 'var(--warm-gray-600)'}}>
-                                What was the best part of your day?
-                            </p>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <Label htmlFor="high-description">What happened?</Label>
-                                <Textarea
-                                    id="high-description"
-                                    placeholder="Describe the high point of your day..."
-                                    value={formData.high_moment.description}
-                                    onChange={(e) => setFormData({
-                                        ...formData,
-                                        high_moment: {...formData.high_moment, description: e.target.value}
-                                    })}
-                                    className="mt-1"
-                                />
+                    <div className="glass-card p-6" style={{ border: '1px solid rgba(45,212,191,0.15)' }}>
+                        <h3 className="text-sm font-semibold mb-1" style={{ color: 'rgba(45,212,191,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>✨ High Point</h3>
+                        <p className="text-xs mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>What was the best part of your day?</p>
+                        <div className="space-y-4">
+                            <div><Label htmlFor="high-description" style={{ color: 'rgba(200,190,230,0.7)' }}>What happened?</Label>
+                                <Textarea id="high-description" placeholder="Describe the high point..." value={formData.high_moment.description}
+                                    onChange={(e) => setFormData({...formData, high_moment: {...formData.high_moment, description: e.target.value}})} className="mt-1" />
                             </div>
                             <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="high-who">Who was involved?</Label>
-                                    <Input
-                                        id="high-who"
-                                        placeholder="People present..."
-                                        value={formData.high_moment.who_involved}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            high_moment: {...formData.high_moment, who_involved: e.target.value}
-                                        })}
-                                        className="mt-1"
-                                    />
+                                <div><Label htmlFor="high-who" style={{ color: 'rgba(200,190,230,0.7)' }}>Who was involved?</Label>
+                                    <Input id="high-who" placeholder="People present..." value={formData.high_moment.who_involved}
+                                        onChange={(e) => setFormData({...formData, high_moment: {...formData.high_moment, who_involved: e.target.value}})} className="mt-1" />
                                 </div>
-                                <div>
-                                    <Label htmlFor="high-context">Where/when?</Label>
-                                    <Input
-                                        id="high-context"
-                                        placeholder="Context or location..."
-                                        value={formData.high_moment.context}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            high_moment: {...formData.high_moment, context: e.target.value}
-                                        })}
-                                        className="mt-1"
-                                    />
+                                <div><Label htmlFor="high-context" style={{ color: 'rgba(200,190,230,0.7)' }}>Where/when?</Label>
+                                    <Input id="high-context" placeholder="Context..." value={formData.high_moment.context}
+                                        onChange={(e) => setFormData({...formData, high_moment: {...formData.high_moment, context: e.target.value}})} className="mt-1" />
                                 </div>
                             </div>
-                            <div>
-                                <Label>Intensity (1-10)</Label>
+                            <div><Label style={{ color: 'rgba(200,190,230,0.7)' }}>Intensity (1-10)</Label>
                                 <div className="mt-2">
-                                    <Slider
-                                        value={[formData.high_moment.intensity]}
-                                        onValueChange={([value]) => setFormData({
-                                            ...formData,
-                                            high_moment: {...formData.high_moment, intensity: value}
-                                        })}
-                                        max={10}
-                                        min={1}
-                                        step={1}
-                                        className="w-full"
-                                    />
-                                    <div className="text-center mt-1 text-sm font-medium" style={{color: 'var(--warm-gray-700)'}}>
-                                        {formData.high_moment.intensity}/10
-                                    </div>
+                                    <Slider value={[formData.high_moment.intensity]}
+                                        onValueChange={([value]) => setFormData({...formData, high_moment: {...formData.high_moment, intensity: value}})}
+                                        max={10} min={1} step={1} className="w-full" />
+                                    <div className="text-center mt-1 text-sm font-semibold" style={{ color: '#2dd4bf' }}>{formData.high_moment.intensity}/10</div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
                     {/* Low Moment */}
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2" style={{color: 'var(--warm-gray-800)'}}>
-                                <span className="text-2xl">🌧️</span>
-                                Challenging Moment
-                            </CardTitle>
-                            <p className="text-sm" style={{color: 'var(--warm-gray-600)'}}>
-                                What was difficult or challenging today?
-                            </p>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <Label htmlFor="low-description">What happened?</Label>
-                                <Textarea
-                                    id="low-description"
-                                    placeholder="Describe what was challenging..."
-                                    value={formData.low_moment.description}
-                                    onChange={(e) => setFormData({
-                                        ...formData,
-                                        low_moment: {...formData.low_moment, description: e.target.value}
-                                    })}
-                                    className="mt-1"
-                                />
+                    <div className="glass-card p-6" style={{ border: '1px solid rgba(244,114,182,0.15)' }}>
+                        <h3 className="text-sm font-semibold mb-1" style={{ color: 'rgba(244,114,182,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>🌧️ Challenging Moment</h3>
+                        <p className="text-xs mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>What was difficult or challenging today?</p>
+                        <div className="space-y-4">
+                            <div><Label htmlFor="low-description" style={{ color: 'rgba(200,190,230,0.7)' }}>What happened?</Label>
+                                <Textarea id="low-description" placeholder="Describe what was challenging..." value={formData.low_moment.description}
+                                    onChange={(e) => setFormData({...formData, low_moment: {...formData.low_moment, description: e.target.value}})} className="mt-1" />
                             </div>
                             <div className="grid md:grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="low-who">Who was involved?</Label>
-                                    <Input
-                                        id="low-who"
-                                        placeholder="People present..."
-                                        value={formData.low_moment.who_involved}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            low_moment: {...formData.low_moment, who_involved: e.target.value}
-                                        })}
-                                        className="mt-1"
-                                    />
+                                <div><Label htmlFor="low-who" style={{ color: 'rgba(200,190,230,0.7)' }}>Who was involved?</Label>
+                                    <Input id="low-who" placeholder="People present..." value={formData.low_moment.who_involved}
+                                        onChange={(e) => setFormData({...formData, low_moment: {...formData.low_moment, who_involved: e.target.value}})} className="mt-1" />
                                 </div>
-                                <div>
-                                    <Label htmlFor="low-context">Where/when?</Label>
-                                    <Input
-                                        id="low-context"
-                                        placeholder="Context or location..."
-                                        value={formData.low_moment.context}
-                                        onChange={(e) => setFormData({
-                                            ...formData,
-                                            low_moment: {...formData.low_moment, context: e.target.value}
-                                        })}
-                                        className="mt-1"
-                                    />
+                                <div><Label htmlFor="low-context" style={{ color: 'rgba(200,190,230,0.7)' }}>Where/when?</Label>
+                                    <Input id="low-context" placeholder="Context..." value={formData.low_moment.context}
+                                        onChange={(e) => setFormData({...formData, low_moment: {...formData.low_moment, context: e.target.value}})} className="mt-1" />
                                 </div>
                             </div>
-                            <div>
-                                <Label>Intensity (1-10)</Label>
+                            <div><Label style={{ color: 'rgba(200,190,230,0.7)' }}>Intensity (1-10)</Label>
                                 <div className="mt-2">
-                                    <Slider
-                                        value={[formData.low_moment.intensity]}
-                                        onValueChange={([value]) => setFormData({
-                                            ...formData,
-                                            low_moment: {...formData.low_moment, intensity: value}
-                                        })}
-                                        max={10}
-                                        min={1}
-                                        step={1}
-                                        className="w-full"
-                                    />
-                                    <div className="text-center mt-1 text-sm font-medium" style={{color: 'var(--warm-gray-700)'}}>
-                                        {formData.low_moment.intensity}/10
-                                    </div>
+                                    <Slider value={[formData.low_moment.intensity]}
+                                        onValueChange={([value]) => setFormData({...formData, low_moment: {...formData.low_moment, intensity: value}})}
+                                        max={10} min={1} step={1} className="w-full" />
+                                    <div className="text-center mt-1 text-sm font-semibold" style={{ color: '#f472b6' }}>{formData.low_moment.intensity}/10</div>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
-                    {/* Gratitude & Notes */}
-                    <Card className="border-0 shadow-sm bg-white/70 backdrop-blur-sm">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2" style={{color: 'var(--warm-gray-800)'}}>
-                                <Heart className="w-5 h-5" style={{color: 'var(--sage-500)'}} />
-                                Reflection
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <Label htmlFor="gratitude">What are you grateful for today?</Label>
-                                <Textarea
-                                    id="gratitude"
-                                    placeholder="I'm grateful for..."
-                                    value={formData.gratitude}
-                                    onChange={(e) => setFormData({...formData, gratitude: e.target.value})}
-                                    className="mt-1"
-                                />
+                    {/* Reflection */}
+                    <div className="glass-card p-6">
+                        <h3 className="text-sm font-semibold mb-5" style={{ color: 'rgba(192,132,252,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                            ♡ Reflection
+                        </h3>
+                        <div className="space-y-4">
+                            <div><Label htmlFor="gratitude" style={{ color: 'rgba(200,190,230,0.7)' }}>What are you grateful for today?</Label>
+                                <Textarea id="gratitude" placeholder="I'm grateful for..." value={formData.gratitude}
+                                    onChange={(e) => setFormData({...formData, gratitude: e.target.value})} className="mt-1" />
                             </div>
-                            <div>
-                                <Label htmlFor="notes">Additional notes</Label>
-                                <Textarea
-                                    id="notes"
-                                    placeholder="Any other thoughts or reflections..."
-                                    value={formData.notes}
-                                    onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                                    className="mt-1"
-                                />
+                            <div><Label htmlFor="notes" style={{ color: 'rgba(200,190,230,0.7)' }}>Additional notes</Label>
+                                <Textarea id="notes" placeholder="Any other thoughts..." value={formData.notes}
+                                    onChange={(e) => setFormData({...formData, notes: e.target.value})} className="mt-1" />
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
 
                     {/* Submit */}
-                    <div className="flex justify-end space-x-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => navigate(createPageUrl("Dashboard"))}
-                        >
+                    <div className="flex justify-end gap-3">
+                        <Button type="button" variant="outline" onClick={() => navigate(createPageUrl("Dashboard"))}
+                            style={{ borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(200,190,230,0.7)', background: 'transparent' }}>
                             Cancel
                         </Button>
-                        <Button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="transition-all duration-300"
-                            style={{background: 'linear-gradient(135deg, var(--sage-500) 0%, var(--sage-600) 100%)'}}
-                        >
+                        <Button type="submit" disabled={isSubmitting} className="btn-cosmic rounded-xl font-semibold">
                             <Save className="w-4 h-4 mr-2" />
                             {isSubmitting ? 'Saving...' : existingEntry ? 'Update Entry' : 'Save Entry'}
                         </Button>

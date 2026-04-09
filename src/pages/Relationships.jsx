@@ -102,7 +102,7 @@ export default function Relationships() {
     }[type] || 'bg-gray-100 text-gray-800');
 
     return (
-        <div className="p-6 space-y-8" style={{background: 'linear-gradient(135deg, #f6f7f6 0%, #fafaf9 100%)', minHeight: '100vh'}}>
+        <div className="p-6 space-y-8 min-h-screen relative">
             <div className="max-w-6xl mx-auto">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                     <div>

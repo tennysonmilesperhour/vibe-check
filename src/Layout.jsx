@@ -140,7 +140,7 @@ export default function Layout({ children }) {
             {mobileOpen && (
                 <div
                     className="fixed inset-0 z-30 md:hidden"
-                    style={{ background: 'rgba(4,2,16,0.6)', backdropFilter: 'blur(4px)' }}
+                    style={{ background: 'rgba(4,2,16,0.3)', backdropFilter: 'blur(2px)' }}
                     onClick={() => setMobileOpen(false)}
                 />
             )}
@@ -152,9 +152,9 @@ export default function Layout({ children }) {
                     width: '72vw',
                     maxWidth: '280px',
                     transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
-                    background: 'rgba(8,6,28,0.15)',
-                    backdropFilter: 'blur(32px)',
-                    WebkitBackdropFilter: 'blur(32px)',
+                    background: 'rgba(8,6,28,0.35)',
+                    backdropFilter: 'blur(40px)',
+                    WebkitBackdropFilter: 'blur(40px)',
                     borderRight: '1px solid rgba(139,92,246,0.2)',
                     boxShadow: mobileOpen ? '4px 0 40px rgba(124,58,237,0.2)' : 'none',
                 }}>

@@ -153,8 +153,8 @@ export default function Layout({ children }) {
                     maxWidth: '280px',
                     transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
                     background: 'rgba(8,6,28,0.05)',
-                    backdropFilter: 'blur(40px)',
-                    WebkitBackdropFilter: 'blur(40px)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
                     borderRight: '1px solid rgba(139,92,246,0.2)',
                     boxShadow: mobileOpen ? '4px 0 40px rgba(124,58,237,0.2)' : 'none',
                 }}>

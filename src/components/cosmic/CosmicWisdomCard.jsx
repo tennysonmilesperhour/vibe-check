@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { CosmicWisdom } from "@/entities/all";
 import { generateCosmicWisdom } from "@/functions/generateCosmicWisdom";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
-import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 
 const PERIOD_CONFIG = {
     daily:   { label: "Today",      emoji: "☀️",  color: "#fbbf24", glow: "rgba(251,191,36,0.35)" },
@@ -36,6 +33,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
     const [generating, setGenerating] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         checkAndLoad();
@@ -43,28 +41,35 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
 
     const checkAndLoad = async () => {
         setLoading(true);
+        setError(null);
         try {
             const user = await base44.auth.me();
             const enabled = user?.cosmic_profile?.enabled_systems || [];
             if (enabled.length === 0) { setLoading(false); return; }
             setHasProfile(true);
 
-            const periodKey = getPeriodKey(periodType);
-            const systemsKey = [...enabled].sort().join(',');
-            const existing = await CosmicWisdom.filter({ period_type: periodType, period_key: periodKey, systems_key: systemsKey });
-            if (existing.length > 0) {
-                setWisdom(existing[0]);
+            // Try to load existing via the function (it checks cache first)
+            const res = await generateCosmicWisdom({ period_type: periodType, force_regenerate: false });
+            if (res?.data?.wisdom) {
+                setWisdom(res.data.wisdom);
             }
-        } catch (e) {}
+        } catch (e) {
+            const msg = e?.response?.data?.error || e?.message || 'Something went wrong';
+            setError(msg);
+            console.error('CosmicWisdom error:', msg);
+        }
         setLoading(false);
     };
 
     const generate = async (force = false) => {
         setGenerating(true);
+        setError(null);
         try {
             const res = await generateCosmicWisdom({ period_type: periodType, force_regenerate: force });
-            setWisdom(res.data.wisdom);
+            if (res?.data?.wisdom) setWisdom(res.data.wisdom);
         } catch (e) {
+            const msg = e?.response?.data?.error || e?.message || 'Generation failed';
+            setError(msg);
             console.error(e);
         }
         setGenerating(false);
@@ -72,8 +77,10 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
 
     const markRead = async () => {
         if (wisdom && !wisdom.is_read) {
-            await CosmicWisdom.update(wisdom.id, { is_read: true });
-            setWisdom(prev => ({ ...prev, is_read: true }));
+            try {
+                await base44.entities.CosmicWisdom.update(wisdom.id, { is_read: true });
+                setWisdom(prev => ({ ...prev, is_read: true }));
+            } catch (e) {}
         }
         setExpanded(e => !e);
     };
@@ -130,26 +137,29 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
             </div>
 
             {/* Content */}
-            {loading ? (
-                <div className="h-8 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
+            {(loading || generating) ? (
+                <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 shrink-0"
+                        style={{ border: `2px solid ${cfg.color}30`, borderTopColor: cfg.color }} />
+                    <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>
+                        {generating ? "Channeling your cosmic wisdom..." : "Loading..."}
+                    </p>
+                </div>
+            ) : error ? (
+                <div className="flex items-center justify-between gap-3" onClick={e => e.stopPropagation()}>
+                    <p className="text-xs" style={{ color: 'rgba(244,114,182,0.7)' }}>{error}</p>
+                    <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg shrink-0"
+                        style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
+                        <RefreshCw className="w-3 h-3 mr-1" /> Retry
+                    </Button>
+                </div>
             ) : !hasProfile ? null : !wisdom ? (
                 <div className="flex items-center justify-between" onClick={e => e.stopPropagation()}>
-                    <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>
-                        {generating ? "Channeling your cosmic wisdom..." : `No ${periodType} wisdom yet`}
-                    </p>
-                    {!generating && (
-                        <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg"
-                            style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
-                            <Sparkles className="w-3 h-3 mr-1" />
-                            Generate
-                        </Button>
-                    )}
-                    {generating && (
-                        <div className="flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4"
-                                style={{ border: `2px solid ${cfg.color}30`, borderTopColor: cfg.color }} />
-                        </div>
-                    )}
+                    <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>No wisdom generated yet</p>
+                    <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg"
+                        style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
+                        <Sparkles className="w-3 h-3 mr-1" /> Generate
+                    </Button>
                 </div>
             ) : (
                 <div>

@@ -23,6 +23,14 @@ function buildCosmicContext(profile) {
     const enabled = profile.enabled_systems;
     const parts = [];
 
+    // Always include birth data if available
+    if (profile.birth_date) parts.push(`BIRTH DATE: ${profile.birth_date}`);
+    if (profile.birth_time) parts.push(`BIRTH TIME: ${profile.birth_time}`);
+    if (profile.birth_location) parts.push(`BIRTH LOCATION: ${profile.birth_location}`);
+
+    // List which systems are active even if no detail filled in yet
+    parts.push(`ACTIVE SYSTEMS: ${enabled.join(', ')}`);
+
     if (enabled.includes('astrology') && profile.astrology) {
         const a = profile.astrology;
         const items = [
@@ -78,7 +86,8 @@ function buildCosmicContext(profile) {
         if (c.focus_areas?.length) parts.push(`CHAKRA AREAS: ${c.focus_areas.join(', ')}`);
     }
 
-    return parts.length > 0 ? parts.join('\n') : null;
+    // Always return context as long as we have enabled systems
+    return parts.join('\n');
 }
 
 Deno.serve(async (req) => {
@@ -91,6 +100,13 @@ Deno.serve(async (req) => {
 
     const profile = user.cosmic_profile || {};
     const enabledSystems = profile.enabled_systems || [];
+
+    console.log('User:', user.email, '| Enabled systems:', JSON.stringify(enabledSystems), '| Profile keys:', Object.keys(profile));
+
+    if (enabledSystems.length === 0) {
+        return Response.json({ error: 'No cosmic systems configured. Please toggle on at least one system in Cosmic Add-ons and save.' }, { status: 400 });
+    }
+
     const systemsKey = [...enabledSystems].sort().join(',');
     const periodKey = getPeriodKey(period_type);
 
@@ -108,7 +124,7 @@ Deno.serve(async (req) => {
 
     const cosmicContext = buildCosmicContext(profile);
     if (!cosmicContext) {
-        return Response.json({ error: 'No cosmic systems configured. Please set up your Cosmic Add-ons first.' }, { status: 400 });
+        return Response.json({ error: 'No cosmic systems configured. Please toggle on at least one system in Cosmic Add-ons and save.' }, { status: 400 });
     }
 
     const name = user.full_name || 'dear soul';
@@ -132,6 +148,8 @@ The person's name is ${name}.${birthDate ? ` They were born on ${birthDate}.` : 
 
 Their active cosmic profile:
 ${cosmicContext}
+
+IMPORTANT: If the profile only has a birth date and active system names (but no specific chart details like sun sign, life path, etc.), CALCULATE or INFER the relevant values from the birth date yourself using your knowledge of these systems. For example, derive the sun sign from the birth date, calculate the life path number from the digits of the birth date, etc. Then use those inferred values as the basis of the reading. Do not mention that you calculated them — just use them naturally.
 
 Generate a ${period_type.toUpperCase()} wisdom reading for ${periodFocus}.
 

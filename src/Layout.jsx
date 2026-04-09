@@ -152,7 +152,7 @@ export default function Layout({ children }) {
                     width: '72vw',
                     maxWidth: '280px',
                     transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
-                    background: 'rgba(8,6,28,0.35)',
+                    background: 'rgba(8,6,28,0.05)',
                     backdropFilter: 'blur(40px)',
                     WebkitBackdropFilter: 'blur(40px)',
                     borderRight: '1px solid rgba(139,92,246,0.2)',

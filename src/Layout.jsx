@@ -42,13 +42,13 @@ function NavLinks({ location, onNavigate }) {
                                 : '1px solid transparent',
                             boxShadow: isActive ? '0 0 15px rgba(124,58,237,0.15)' : 'none',
                         }}>
-                        <item.icon className="w-4 h-4 shrink-0" style={{ color: isActive ? '#c084fc' : 'rgba(180,170,210,0.5)' }} />
+                        <item.icon className="w-4 h-4 shrink-0" style={{ color: isActive ? '#c084fc' : 'rgba(220,210,240,1)' }} />
                         <div className="flex-1 min-w-0">
                             <span className="text-sm font-medium block"
-                                style={{ color: isActive ? '#c084fc' : 'rgba(210,210,230,0.8)' }}>
+                                style={{ color: isActive ? '#c084fc' : 'rgba(240,235,255,1)' }}>
                                 {item.title}
                             </span>
-                            <span className="text-xs block" style={{ color: 'rgba(150,140,180,0.45)' }}>
+                            <span className="text-xs block" style={{ color: 'rgba(200,190,230,1)' }}>
                                 {item.description}
                             </span>
                         </div>
@@ -101,8 +101,8 @@ function SidebarFooterContent() {
                     <span className="text-xs font-bold text-white">✦</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium" style={{ color: 'rgba(200,190,230,0.9)' }}>Your Journey</p>
-                    <p className="text-xs" style={{ color: 'rgba(139,92,246,0.6)' }}>Aligned & expanding</p>
+                    <p className="text-xs font-medium" style={{ color: 'rgba(240,235,255,1)' }}>Your Journey</p>
+                    <p className="text-xs" style={{ color: 'rgba(192,132,252,1)' }}>Aligned & expanding</p>
                 </div>
             </div>
         </div>
@@ -152,7 +152,7 @@ export default function Layout({ children }) {
                     width: '72vw',
                     maxWidth: '280px',
                     transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
-                    background: 'rgba(8,6,28,0.45)',
+                    background: 'rgba(8,6,28,0.15)',
                     backdropFilter: 'blur(32px)',
                     WebkitBackdropFilter: 'blur(32px)',
                     borderRight: '1px solid rgba(139,92,246,0.2)',
@@ -175,13 +175,13 @@ export default function Layout({ children }) {
                                 }}>
                                 Vibe Check
                             </h2>
-                            <p className="text-xs tracking-widest uppercase" style={{ color: 'rgba(139,92,246,0.7)' }}>Cosmic Wellness</p>
+                            <p className="text-xs tracking-widest uppercase" style={{ color: 'rgba(192,132,252,1)' }}>Cosmic Wellness</p>
                         </div>
                     </div>
                     <button
                         onClick={() => setMobileOpen(false)}
                         className="p-1.5 rounded-lg transition-colors"
-                        style={{ color: 'rgba(200,190,230,0.6)', background: 'rgba(255,255,255,0.04)' }}>
+                        style={{ color: 'rgba(240,235,255,1)', background: 'rgba(255,255,255,0.08)' }}>
                         <X className="w-4 h-4" />
                     </button>
                 </div>

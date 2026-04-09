@@ -208,6 +208,12 @@ body::before {
   animation: shimmer 3s linear infinite;
 }
 
+/* ── Pulse border (unread wisdom glow) ── */
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 20px var(--pulse-glow, rgba(192,132,252,0.3)), 0 0 40px var(--pulse-glow, rgba(192,132,252,0.15)); }
+  50%       { box-shadow: 0 0 40px var(--pulse-glow, rgba(192,132,252,0.55)), 0 0 80px var(--pulse-glow, rgba(192,132,252,0.25)); }
+}
+
 /* ── Pulse glow ── */
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 15px rgba(139,92,246,0.3); }

@@ -20,6 +20,7 @@ const navigationItems = [
     { title: "Healing Board", url: createPageUrl("HealingBoard"), icon: Sparkles, description: "Track your growth" },
     { title: "Boundaries", url: createPageUrl("Boundaries"), icon: Shield, description: "Alerts & thresholds" },
     { title: "Cosmic Add-ons", url: createPageUrl("CosmicAddons"), icon: Sparkles, description: "Astrology, HD, Gene Keys" },
+    { title: "Cosmic Wisdom", url: "/CosmicWisdom", icon: Sparkles, description: "Daily · Weekly · Monthly · Yearly" },
 ];
 
 function NavLinks({ location, onNavigate }) {

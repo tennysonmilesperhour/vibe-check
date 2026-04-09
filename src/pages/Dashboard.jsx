@@ -8,6 +8,7 @@ import { createPageUrl } from "@/utils";
 import { Calendar, TrendingUp, TrendingDown, Heart, Plus, AlertTriangle, Sparkles, Star } from "lucide-react";
 import { format, isToday } from "date-fns";
 import CosmicContextBar from "@/components/cosmic/CosmicContextBar";
+import CosmicWisdomCard from "@/components/cosmic/CosmicWisdomCard";
 
 export default function Dashboard() {
     const [recentCheckIns, setRecentCheckIns] = useState([]);
@@ -246,6 +247,27 @@ export default function Dashboard() {
                             </Link>
                         </div>
                     )}
+                </div>
+
+                {/* Cosmic Wisdom */}
+                <div className="glass-card p-6 mb-6">
+                    <div className="flex items-center justify-between mb-5">
+                        <div>
+                            <h2 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.95)' }}>
+                                ✦ Cosmic Wisdom
+                            </h2>
+                            <p className="text-xs mt-0.5" style={{ color: 'rgba(180,170,210,0.5)' }}>
+                                Personalised insight from your blueprint — click to reveal
+                            </p>
+                        </div>
+                        <Link to="/CosmicWisdom">
+                            <Button variant="ghost" size="sm" style={{ color: '#c084fc' }}>View all</Button>
+                        </Link>
+                    </div>
+                    <div className="space-y-3">
+                        <CosmicWisdomCard periodType="daily" />
+                        <CosmicWisdomCard periodType="weekly" />
+                    </div>
                 </div>
 
                 {/* Alerts */}

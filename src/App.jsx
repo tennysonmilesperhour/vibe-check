@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import CosmicWisdomPage from './pages/CosmicWisdom';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      <Route path="/CosmicWisdom" element={<LayoutWrapper currentPageName="CosmicWisdom"><CosmicWisdomPage /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

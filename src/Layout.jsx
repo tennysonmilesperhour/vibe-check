@@ -60,6 +60,12 @@ const navigationItems = [
         url: createPageUrl("Boundaries"),
         icon: Shield,
         description: "Alerts & thresholds"
+    },
+    {
+        title: "Cosmic Add-ons",
+        url: createPageUrl("CosmicAddons"),
+        icon: Sparkles,
+        description: "Astrology, HD, Gene Keys & more"
     }
 ];
 

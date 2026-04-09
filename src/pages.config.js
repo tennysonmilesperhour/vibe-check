@@ -53,6 +53,7 @@ import Analytics from './pages/Analytics';
 import Relationships from './pages/Relationships';
 import HealingBoard from './pages/HealingBoard';
 import Boundaries from './pages/Boundaries';
+import CosmicAddons from './pages/CosmicAddons';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +64,7 @@ export const PAGES = {
     "Relationships": Relationships,
     "HealingBoard": HealingBoard,
     "Boundaries": Boundaries,
+    "CosmicAddons": CosmicAddons,
 }
 
 export const pagesConfig = {

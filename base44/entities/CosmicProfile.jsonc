@@ -1,0 +1,160 @@
+{
+  "name": "CosmicProfile",
+  "type": "object",
+  "properties": {
+    "birth_date": {
+      "type": "string",
+      "format": "date",
+      "description": "User's birth date"
+    },
+    "birth_time": {
+      "type": "string",
+      "description": "Birth time in HH:MM format (optional, for rising sign accuracy)"
+    },
+    "birth_location": {
+      "type": "string",
+      "description": "City or place of birth"
+    },
+    "enabled_systems": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Which systems are toggled on: astrology, gene_keys, human_design, numerology, tarot_archetype, chakras"
+    },
+    "astrology": {
+      "type": "object",
+      "properties": {
+        "sun_sign": {
+          "type": "string"
+        },
+        "moon_sign": {
+          "type": "string"
+        },
+        "rising_sign": {
+          "type": "string"
+        },
+        "north_node": {
+          "type": "string"
+        },
+        "custom_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "human_design": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Manifestor, Generator, Manifesting Generator, Projector, Reflector"
+        },
+        "authority": {
+          "type": "string",
+          "description": "Emotional, Sacral, Splenic, etc."
+        },
+        "profile": {
+          "type": "string",
+          "description": "e.g. 2/4, 6/2"
+        },
+        "strategy": {
+          "type": "string"
+        },
+        "definition": {
+          "type": "string",
+          "description": "Single, Split, Triple Split, Quadruple Split"
+        },
+        "incarnation_cross": {
+          "type": "string"
+        },
+        "custom_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "gene_keys": {
+      "type": "object",
+      "properties": {
+        "life_work": {
+          "type": "string",
+          "description": "Life's Work Gene Key number"
+        },
+        "evolution": {
+          "type": "string",
+          "description": "Evolution Gene Key number"
+        },
+        "radiance": {
+          "type": "string",
+          "description": "Radiance Gene Key number"
+        },
+        "purpose": {
+          "type": "string",
+          "description": "Purpose Gene Key number"
+        },
+        "attraction": {
+          "type": "string",
+          "description": "Attraction Gene Key number"
+        },
+        "iq": {
+          "type": "string",
+          "description": "IQ Gene Key number"
+        },
+        "custom_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "numerology": {
+      "type": "object",
+      "properties": {
+        "life_path": {
+          "type": "string"
+        },
+        "expression": {
+          "type": "string"
+        },
+        "soul_urge": {
+          "type": "string"
+        },
+        "personal_year": {
+          "type": "string"
+        },
+        "custom_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "tarot_archetype": {
+      "type": "object",
+      "properties": {
+        "birth_card": {
+          "type": "string"
+        },
+        "shadow_card": {
+          "type": "string"
+        },
+        "custom_notes": {
+          "type": "string"
+        }
+      }
+    },
+    "chakras": {
+      "type": "object",
+      "properties": {
+        "dominant_center": {
+          "type": "string"
+        },
+        "focus_areas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "custom_notes": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": []
+}

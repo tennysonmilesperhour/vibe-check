@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DailyCheckIn, Relationship } from "@/entities/all";
+import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,8 @@ import { InvokeLLM } from "@/integrations/Core";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { format, subDays, parseISO } from "date-fns";
 import { TrendingUp, Brain, Calendar, Users, Target } from "lucide-react";
+import CosmicContextBar from "@/components/cosmic/CosmicContextBar";
+import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
 
 export default function Analytics() {
     const [checkIns, setCheckIns] = useState([]);
@@ -17,9 +20,13 @@ export default function Analytics() {
     const [insights, setInsights] = useState(null);
     const [isLoadingInsights, setIsLoadingInsights] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [cosmicProfile, setCosmicProfile] = useState(null);
 
     useEffect(() => {
         loadData();
+        base44.auth.me().then(user => {
+            if (user?.cosmic_profile) setCosmicProfile(user.cosmic_profile);
+        }).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -63,6 +70,60 @@ export default function Analytics() {
         const filteredData = getFilteredData();
         
         try {
+            // Build cosmic context string
+            let cosmicContext = "";
+            if (cosmicProfile?.enabled_systems?.length > 0) {
+                const enabled = cosmicProfile.enabled_systems;
+                const parts = [];
+                if (enabled.includes("astrology") && cosmicProfile.astrology) {
+                    const a = cosmicProfile.astrology;
+                    const items = [a.sun_sign && `Sun in ${a.sun_sign}`, a.moon_sign && `Moon in ${a.moon_sign}`, a.rising_sign && `${a.rising_sign} Rising`, a.north_node && `North Node in ${a.north_node}`].filter(Boolean);
+                    if (items.length) parts.push(`ASTROLOGY: ${items.join(", ")}${a.custom_notes ? ". Notes: " + a.custom_notes : ""}`);
+                }
+                if (enabled.includes("human_design") && cosmicProfile.human_design) {
+                    const h = cosmicProfile.human_design;
+                    const items = [h.type, h.authority && `${h.authority} Authority`, h.profile && `Profile ${h.profile}`, h.incarnation_cross].filter(Boolean);
+                    if (items.length) parts.push(`HUMAN DESIGN: ${items.join(", ")}${h.custom_notes ? ". Notes: " + h.custom_notes : ""}`);
+                }
+                if (enabled.includes("gene_keys") && cosmicProfile.gene_keys) {
+                    const g = cosmicProfile.gene_keys;
+                    const items = [g.life_work && `Life's Work Key ${g.life_work}`, g.purpose && `Purpose Key ${g.purpose}`, g.evolution && `Evolution Key ${g.evolution}`].filter(Boolean);
+                    if (items.length) parts.push(`GENE KEYS: ${items.join(", ")}${g.custom_notes ? ". Notes: " + g.custom_notes : ""}`);
+                }
+                if (enabled.includes("numerology") && cosmicProfile.numerology) {
+                    const n = cosmicProfile.numerology;
+                    const items = [n.life_path && `Life Path ${n.life_path}`, n.personal_year && `Personal Year ${n.personal_year}`].filter(Boolean);
+                    if (items.length) parts.push(`NUMEROLOGY: ${items.join(", ")}`);
+                }
+                if (enabled.includes("tarot_archetype") && cosmicProfile.tarot_archetype) {
+                    const t = cosmicProfile.tarot_archetype;
+                    const items = [t.birth_card && `Birth Card ${t.birth_card}`, t.shadow_card && `Shadow Card ${t.shadow_card}`].filter(Boolean);
+                    if (items.length) parts.push(`TAROT: ${items.join(", ")}`);
+                }
+                if (enabled.includes("chakras") && cosmicProfile.chakras) {
+                    const c = cosmicProfile.chakras;
+                    if (c.dominant_center) parts.push(`CHAKRA FOCUS: ${c.dominant_center}`);
+                }
+
+                // Add active cross-system correspondences
+                const CORR_PAIRS = [
+                    { systems: ["astrology", "human_design"], key: "astrology_human_design" },
+                    { systems: ["astrology", "gene_keys"], key: "astrology_gene_keys" },
+                    { systems: ["human_design", "gene_keys"], key: "human_design_gene_keys" },
+                    { systems: ["human_design", "chakras"], key: "human_design_chakras" },
+                    { systems: ["numerology", "tarot_archetype"], key: "numerology_tarot" },
+                ];
+                const activeCorr = CORR_PAIRS.filter(p => p.systems.every(s => enabled.includes(s)))
+                    .map(p => SYSTEM_CORRESPONDENCES[p.key]);
+
+                if (parts.length > 0) {
+                    cosmicContext = `\n\nCOSMIC PROFILE CONTEXT (use these archetypal lenses to add depth, not predictions):\n${parts.join("\n")}`;
+                    if (activeCorr.length > 0) {
+                        cosmicContext += `\n\nCROSS-SYSTEM CORRESPONDENCES TO DRAW FROM:\n${activeCorr.join("\n")}`;
+                    }
+                }
+            }
+
             const prompt = `As a supportive AI assistant (not a medical professional), analyze this mood tracking data and provide gentle, encouraging insights. 
 
 Data summary:
@@ -80,9 +141,9 @@ Recent entries: ${JSON.stringify(filteredData.slice(-5).map(entry => ({
         high: entry.high_moment?.who_involved,
         low: entry.low_moment?.who_involved
     }
-})))}
+})))}${cosmicContext}
 
-Please provide supportive insights about patterns, relationships, and gentle suggestions for reflection. Keep it encouraging and remind me these are just observations for reflection, not medical advice.`;
+Please provide supportive insights about patterns, relationships, and gentle suggestions for reflection. ${cosmicContext ? "Where relevant, weave in the cosmic profile context as an additional lens — connecting emotional patterns to archetypes from the active systems. Keep it grounded and personal, not generic." : ""} Keep it encouraging and remind me these are just observations for reflection, not medical advice.`;
 
             const result = await InvokeLLM({
                 prompt,
@@ -254,6 +315,9 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Cosmic Context */}
+                <CosmicContextBar />
 
                 {/* Empty state */}
                 {!isLoading && checkIns.length === 0 && (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
+import CosmicContextBar from "@/components/cosmic/CosmicContextBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,6 +83,9 @@ export default function Dashboard() {
                         How are you feeling today?
                     </p>
                 </div>
+
+                {/* Cosmic Context Bar */}
+                <CosmicContextBar />
 
                 {/* Quick Stats */}
                 <div className="grid md:grid-cols-3 gap-6 mb-8">

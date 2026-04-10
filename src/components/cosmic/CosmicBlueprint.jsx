@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const SYSTEMS = [
   { id: "astrology",       label: "Astrology",      emoji: "♈", color: "#f472b6", check: d => d?.sun_sign,        angle: -90 },
@@ -16,7 +18,47 @@ function polarXY(angleDeg, r = R) {
   return [CX + r * Math.cos(angleDeg * DEG), CY + r * Math.sin(angleDeg * DEG)];
 }
 
+// Popup menu rendered as SVG foreignObject
+function NodeMenu({ node, onClose, onEdit, onDeepDive }) {
+  const [lx, ly] = polarXY(node.angle, R + 30);
+  // Shift menu so it stays inside SVG viewBox
+  const mx = Math.max(30, Math.min(lx - 70, 200));
+  const my = Math.max(10, Math.min(ly - 10, 240));
+
+  return (
+    <foreignObject x={mx} y={my} width="140" height="80">
+      <div xmlns="http://www.w3.org/1999/xhtml"
+        style={{
+          background: 'rgba(14,10,35,0.96)',
+          border: `1px solid ${node.color}40`,
+          borderRadius: 8,
+          padding: '6px 4px',
+          boxShadow: `0 0 20px ${node.color}30`,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+        }}>
+        <button onClick={onEdit}
+          style={{ fontSize: 11, color: 'rgba(220,210,240,0.9)', background: `${node.color}18`, border: `1px solid ${node.color}30`, borderRadius: 5, padding: '4px 8px', cursor: 'pointer', textAlign: 'left' }}>
+          ✏️ Edit Data
+        </button>
+        <button onClick={onDeepDive}
+          style={{ fontSize: 11, color: node.color, background: `${node.color}12`, border: `1px solid ${node.color}30`, borderRadius: 5, padding: '4px 8px', cursor: 'pointer', textAlign: 'left' }}>
+          ✦ Deep Dive
+        </button>
+        <button onClick={onClose}
+          style={{ fontSize: 10, color: 'rgba(180,170,210,0.4)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 2 }}>
+          close
+        </button>
+      </div>
+    </foreignObject>
+  );
+}
+
 export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
+  const navigate = useNavigate();
+  const [activeMenu, setActiveMenu] = useState(null); // node id
+
   const nodes = SYSTEMS.map(s => {
     const [x, y] = polarXY(s.angle);
     const isEnabled = enabledSystems.includes(s.id);
@@ -26,10 +68,31 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
 
   const completedCount = nodes.filter(n => n.hasFilled).length;
 
+  const handleNodeClick = (node) => {
+    if (node.hasFilled) {
+      // Toggle menu
+      setActiveMenu(prev => prev === node.id ? null : node.id);
+    } else {
+      // Go to systems/profile tab to enable or fill in
+      navigate(createPageUrl("CosmicAddons") + (node.isEnabled ? "?tab=profile" : "?tab=systems"));
+    }
+  };
+
+  const goEdit = (node) => {
+    setActiveMenu(null);
+    navigate(createPageUrl("CosmicAddons") + "?tab=profile");
+  };
+
+  const goDeepDive = (node) => {
+    setActiveMenu(null);
+    navigate(createPageUrl("CosmicAddons") + "?tab=deepdive");
+  };
+
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative">
-        <svg viewBox="0 0 320 320" width="300" height="300" className="overflow-visible">
+        <svg viewBox="0 0 320 320" width="300" height="300" className="overflow-visible"
+          onClick={(e) => { if (e.target.tagName === 'svg') setActiveMenu(null); }}>
           <defs>
             {SYSTEMS.map(s => (
               <radialGradient key={s.id} id={`grad-${s.id}`} cx="50%" cy="50%" r="50%">
@@ -55,10 +118,9 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
               strokeWidth={n.hasFilled ? "0.8" : "0.5"}
               opacity={n.hasFilled ? 0.35 : 0.15} />
           ))}
-          {/* Center flower circle */}
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(192,132,252,0.12)" strokeWidth="0.5" />
 
-          {/* Spoke lines from center to nodes */}
+          {/* Spokes */}
           {nodes.map(n => (
             <line key={`spoke-${n.id}`}
               x1={CX} y1={CY} x2={n.x} y2={n.y}
@@ -68,7 +130,7 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
               strokeDasharray={n.isEnabled && !n.hasFilled ? "4 4" : "none"} />
           ))}
 
-          {/* Outer connecting ring lines */}
+          {/* Outer ring */}
           {nodes.map((n, i) => {
             const next = nodes[(i + 1) % nodes.length];
             const bothFilled = n.hasFilled && next.hasFilled;
@@ -83,13 +145,8 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
 
           {/* Inner hexagon */}
           <polygon
-            points={nodes.map(n => {
-              const [x, y] = polarXY(n.angle, R * 0.45);
-              return `${x},${y}`;
-            }).join(" ")}
-            fill="rgba(139,92,246,0.04)"
-            stroke="rgba(139,92,246,0.15)"
-            strokeWidth="0.8" />
+            points={nodes.map(n => { const [x, y] = polarXY(n.angle, R * 0.45); return `${x},${y}`; }).join(" ")}
+            fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.15)" strokeWidth="0.8" />
 
           {/* Center node */}
           <circle cx={CX} cy={CY} r={22} fill="url(#grad-center)" stroke="rgba(192,132,252,0.3)" strokeWidth="1" />
@@ -100,8 +157,15 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
           {nodes.map(n => {
             const labelR = R + 30;
             const [lx, ly] = polarXY(n.angle, labelR);
+            const isMenuOpen = activeMenu === n.id;
             return (
-              <g key={n.id} filter={n.hasFilled ? "url(#glow)" : undefined}>
+              <g key={n.id} filter={n.hasFilled ? "url(#glow)" : undefined}
+                onClick={() => handleNodeClick(n)}
+                style={{ cursor: 'pointer' }}>
+                {/* Hover/active pulse ring */}
+                {isMenuOpen && (
+                  <circle cx={n.x} cy={n.y} r={30} fill="none" stroke={n.color} strokeWidth="1.5" opacity="0.6" />
+                )}
                 {/* Outer ring for filled nodes */}
                 {n.hasFilled && (
                   <circle cx={n.x} cy={n.y} r={26} fill="none" stroke={n.color} strokeWidth="1" opacity="0.4" />
@@ -126,6 +190,20 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
               </g>
             );
           })}
+
+          {/* Context menu overlay for filled nodes */}
+          {activeMenu && (() => {
+            const node = nodes.find(n => n.id === activeMenu);
+            if (!node) return null;
+            return (
+              <NodeMenu
+                node={node}
+                onClose={() => setActiveMenu(null)}
+                onEdit={() => goEdit(node)}
+                onDeepDive={() => goDeepDive(node)}
+              />
+            );
+          })()}
         </svg>
       </div>
 
@@ -146,9 +224,9 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
       </div>
 
       <p className="text-xs text-center" style={{ color: 'rgba(180,170,210,0.4)', maxWidth: 260 }}>
-        {completedCount === 0 ? "Enable systems and fill in your profile to illuminate your blueprint" :
+        {completedCount === 0 ? "Tap any node to enable or fill in your profile" :
          completedCount === 6 ? "✦ Your full blueprint is activated" :
-         `${completedCount} of 6 systems activated`}
+         `${completedCount} of 6 systems activated — tap to explore`}
       </p>
     </div>
   );

@@ -48,7 +48,10 @@ export default function CosmicAddons() {
     const { toast } = useToast();
     const [profile, setProfile] = useState(EMPTY_PROFILE);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState("systems");
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const defaultTab = urlParams.get('tab') || 'systems';
+    const [activeTab, setActiveTab] = useState(defaultTab);
 
     useEffect(() => { loadProfile(); }, []);
 

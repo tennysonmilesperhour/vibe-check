@@ -212,11 +212,11 @@ Please provide supportive insights about patterns, relationships, and gentle sug
     }));
 
     return (
-        <div className="p-6 space-y-8 min-h-screen relative">
+        <div className="p-4 space-y-5 min-h-screen relative">
             <div className="orb-purple" style={{ top: '-60px', left: '20%' }} />
             <div className="max-w-7xl mx-auto relative z-10">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>✦ Your Data</p>
                         <h1 className="text-4xl font-bold gradient-text mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
@@ -254,7 +254,7 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 </div>
 
                 {/* Stats Overview */}
-                <div className="grid md:grid-cols-4 gap-4 mb-8">
+                <div className="grid md:grid-cols-4 gap-3 mb-5">
                     {[
                         { label: 'Avg Mood', icon: Target, value: getFilteredData().length > 0 ? (getFilteredData().reduce((s,e)=>s+e.mood_score,0)/getFilteredData().length).toFixed(1)+'/10' : '—', color: '#c084fc' },
                         { label: 'Entries', icon: Calendar, value: getFilteredData().length, color: '#38bdf8' },
@@ -286,7 +286,7 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 )}
 
                 {/* Charts */}
-                <div className="grid lg:grid-cols-2 gap-6 mb-8">
+                <div className="grid lg:grid-cols-2 gap-4 mb-5">
                     <div className="glass-card p-6">
                         <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Mood Trend</h3>
                         <div className="h-64">
@@ -338,7 +338,7 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 </div>
 
                 {/* Relationship Analysis */}
-                <div className="glass-card p-6 mb-8">
+                <div className="glass-card p-4 mb-5">
                     <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Relationship Impact</h3>
                     <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>How different people appear in your highs and lows</p>
                     <div>
@@ -378,7 +378,7 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 </div>
 
                 {/* AI Insights */}
-                <div className="glass-card-glow p-6">
+                <div className="glass-card-glow p-4">
                     <div className="flex items-center gap-2 mb-1">
                         <Sparkles className="w-5 h-5" style={{ color: '#c084fc' }} />
                         <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Oracle Insights</h3>

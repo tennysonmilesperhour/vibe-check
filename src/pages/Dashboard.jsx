@@ -56,14 +56,14 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="p-6 space-y-8 min-h-screen relative">
+        <div className="p-4 space-y-5 min-h-screen relative">
             {/* Decorative orbs */}
             <div className="orb-purple" style={{ top: '-60px', right: '10%' }} />
             <div className="orb-blue" style={{ top: '40%', left: '-40px' }} />
 
             <div className="max-w-6xl mx-auto relative z-10">
                 {/* Header */}
-                <div className="mb-10">
+                <div className="mb-6">
                     <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>
                         ✦ Welcome back
                     </p>
@@ -79,7 +79,7 @@ export default function Dashboard() {
                 <CosmicContextBar />
 
                 {/* Quick Stats */}
-                <div className="grid md:grid-cols-3 gap-5 mb-8">
+                <div className="grid md:grid-cols-3 gap-3 mb-5">
                     {/* Today's mood */}
                     <div className="glass-card p-6 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
@@ -144,7 +144,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid md:grid-cols-2 gap-5 mb-8">
+                <div className="grid md:grid-cols-2 gap-3 mb-5">
                     {!todayCheckIn && (
                         <div className="glass-card-glow p-6 relative overflow-hidden">
                             <div className="absolute inset-0 shimmer rounded-2xl opacity-30 pointer-events-none" />
@@ -193,11 +193,9 @@ export default function Dashboard() {
                 </div>
 
                 {/* Recent Check-ins */}
-                <div className="glass-card p-6 mb-6">
-                    <div className="flex items-center justify-between mb-5">
-                        <h2 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.95)' }}>
-                            Recent Check-ins
-                        </h2>
+                <div className="glass-card p-4 mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                        <h2 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.95)' }}>Recent Check-ins</h2>
                         <Link to={createPageUrl("Analytics")}>
                             <Button variant="ghost" size="sm" style={{ color: '#c084fc' }}>View all</Button>
                         </Link>
@@ -250,15 +248,11 @@ export default function Dashboard() {
                 </div>
 
                 {/* Cosmic Wisdom */}
-                <div className="glass-card p-6 mb-6">
-                    <div className="flex items-center justify-between mb-5">
+                <div className="glass-card p-4 mb-4">
+                    <div className="flex items-center justify-between mb-3">
                         <div>
-                            <h2 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.95)' }}>
-                                ✦ Cosmic Wisdom
-                            </h2>
-                            <p className="text-xs mt-0.5" style={{ color: 'rgba(180,170,210,0.5)' }}>
-                                Personalised insight from your blueprint — click to reveal
-                            </p>
+                            <h2 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.95)' }}>✦ Cosmic Wisdom</h2>
+                            <p className="text-xs mt-0.5" style={{ color: 'rgba(180,170,210,0.5)' }}>Personalised insight — click to reveal</p>
                         </div>
                         <Link to="/CosmicWisdom">
                             <Button variant="ghost" size="sm" style={{ color: '#c084fc' }}>View all</Button>

@@ -1,237 +1,311 @@
 import React, { useState, useEffect } from "react";
 import { DailyCheckIn } from "@/entities/all";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format, isToday } from "date-fns";
-import { ArrowLeft, Save, Heart } from "lucide-react";
+import { ArrowLeft, Save, ChevronDown, ChevronUp } from "lucide-react";
+
+const EMOTIONS = [
+  { label: "Joyful", emoji: "✨" },
+  { label: "Grateful", emoji: "🙏" },
+  { label: "Calm", emoji: "🌊" },
+  { label: "Excited", emoji: "🔥" },
+  { label: "Loved", emoji: "💜" },
+  { label: "Hopeful", emoji: "🌱" },
+  { label: "Proud", emoji: "⭐" },
+  { label: "Creative", emoji: "🎨" },
+  { label: "Anxious", emoji: "😰" },
+  { label: "Sad", emoji: "💧" },
+  { label: "Frustrated", emoji: "😤" },
+  { label: "Tired", emoji: "😴" },
+  { label: "Lonely", emoji: "🌑" },
+  { label: "Overwhelmed", emoji: "🌀" },
+  { label: "Numb", emoji: "🪨" },
+  { label: "Angry", emoji: "⚡" },
+];
+
+const ACTIVITIES = [
+  { label: "Exercise", emoji: "🏃" },
+  { label: "Meditation", emoji: "🧘" },
+  { label: "Journaling", emoji: "📝" },
+  { label: "Nature", emoji: "🌿" },
+  { label: "Social", emoji: "👥" },
+  { label: "Creative work", emoji: "🎨" },
+  { label: "Learning", emoji: "📚" },
+  { label: "Rest", emoji: "🛋️" },
+  { label: "Healthy eating", emoji: "🥗" },
+  { label: "Music", emoji: "🎵" },
+  { label: "Spiritual practice", emoji: "✦" },
+  { label: "Therapy/coaching", emoji: "💬" },
+];
+
+function QuickSlider({ label, value, onChange, lowLabel, highLabel, color = "#c084fc" }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium" style={{ color: 'rgba(200,190,230,0.8)' }}>{label}</span>
+        <span className="text-lg font-bold w-8 text-center" style={{ color, fontFamily: 'Space Grotesk, sans-serif' }}>{value}</span>
+      </div>
+      <Slider value={[value]} onValueChange={([v]) => onChange(v)} max={10} min={1} step={1} className="w-full" />
+      <div className="flex justify-between text-xs mt-1" style={{ color: 'rgba(160,150,190,0.45)' }}>
+        <span>{lowLabel}</span>
+        <span>{highLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+function TagGrid({ items, selected, onToggle }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {items.map(item => {
+        const isSelected = selected.includes(item.label);
+        return (
+          <button
+            key={item.label}
+            type="button"
+            onClick={() => onToggle(item.label)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all"
+            style={{
+              background: isSelected ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.04)',
+              border: isSelected ? '1px solid rgba(192,132,252,0.5)' : '1px solid rgba(255,255,255,0.08)',
+              color: isSelected ? '#c084fc' : 'rgba(200,190,230,0.65)',
+              transform: isSelected ? 'scale(1.03)' : 'scale(1)',
+            }}
+          >
+            <span>{item.emoji}</span>
+            <span>{item.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CollapsibleSection({ title, subtitle, color = 'rgba(192,132,252,0.8)', borderColor = 'rgba(139,92,246,0.15)', children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="glass-card overflow-hidden" style={{ border: `1px solid ${borderColor}` }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full p-5 flex items-center justify-between text-left"
+      >
+        <div>
+          <h3 className="text-sm font-semibold" style={{ color, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{title}</h3>
+          {subtitle && <p className="text-xs mt-0.5" style={{ color: 'rgba(180,170,210,0.45)' }}>{subtitle}</p>}
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 shrink-0" style={{ color }} /> : <ChevronDown className="w-4 h-4 shrink-0" style={{ color }} />}
+      </button>
+      {open && <div className="px-5 pb-5">{children}</div>}
+    </div>
+  );
+}
+
+const EMPTY_FORM = {
+  date: format(new Date(), 'yyyy-MM-dd'),
+  mood_score: 6,
+  energy_level: 6,
+  sleep_quality: 6,
+  emotions: [],
+  activities: [],
+  high_moment: { description: '', who_involved: '', context: '', intensity: 6 },
+  low_moment: { description: '', who_involved: '', context: '', intensity: 4 },
+  gratitude: '',
+  notes: '',
+};
 
 export default function DailyLog() {
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        date: format(new Date(), 'yyyy-MM-dd'),
-        mood_score: 5,
-        high_moment: {
-            description: '',
-            who_involved: '',
-            context: '',
-            intensity: 5
-        },
-        low_moment: {
-            description: '',
-            who_involved: '',
-            context: '',
-            intensity: 5
-        },
-        gratitude: '',
-        notes: ''
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingEntry, setExistingEntry] = useState(null);
+
+  useEffect(() => { checkForExistingEntry(); }, [formData.date]);
+
+  const checkForExistingEntry = async () => {
+    const entries = await DailyCheckIn.filter({ date: formData.date });
+    if (entries.length > 0) {
+      setExistingEntry(entries[0]);
+      setFormData({ ...EMPTY_FORM, ...entries[0] });
+    } else {
+      setExistingEntry(null);
+      setFormData(prev => ({ ...EMPTY_FORM, date: prev.date }));
+    }
+  };
+
+  const toggleTag = (field, label) => {
+    setFormData(prev => {
+      const arr = prev[field] || [];
+      return { ...prev, [field]: arr.includes(label) ? arr.filter(x => x !== label) : [...arr, label] };
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [existingEntry, setExistingEntry] = useState(null);
+  };
 
-    useEffect(() => {
-        checkForExistingEntry();
-    }, [formData.date]);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    if (existingEntry) {
+      await DailyCheckIn.update(existingEntry.id, formData);
+    } else {
+      await DailyCheckIn.create(formData);
+    }
+    navigate(createPageUrl("Dashboard"));
+    setIsSubmitting(false);
+  };
 
-    const checkForExistingEntry = async () => {
-        const entries = await DailyCheckIn.filter({ date: formData.date });
-        if (entries.length > 0) {
-            setExistingEntry(entries[0]);
-            setFormData(entries[0]);
-        } else {
-            setExistingEntry(null);
-        }
-    };
+  const getMoodEmoji = (score) => {
+    if (score >= 9) return "🌟";
+    if (score >= 7) return "😊";
+    if (score >= 6) return "🙂";
+    if (score >= 4) return "😐";
+    if (score >= 2) return "😔";
+    return "😢";
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        
-        try {
-            if (existingEntry) {
-                await DailyCheckIn.update(existingEntry.id, formData);
-            } else {
-                await DailyCheckIn.create(formData);
-            }
-            navigate(createPageUrl("Dashboard"));
-        } catch (error) {
-            console.error("Error saving check-in:", error);
-        }
-        
-        setIsSubmitting(false);
-    };
+  return (
+    <div className="p-4 md:p-6 space-y-4 min-h-screen relative">
+      <div className="orb-purple" style={{ top: '-40px', right: '15%' }} />
+      <div className="max-w-2xl mx-auto relative z-10">
 
-    const getMoodEmoji = (score) => {
-        if (score >= 9) return "🌟";
-        if (score >= 7) return "😊";
-        if (score >= 6) return "🙂";
-        if (score >= 4) return "😐";
-        if (score >= 2) return "😔";
-        return "😢";
-    };
-
-    const getMoodLabel = (score) => {
-        if (score >= 9) return "Amazing";
-        if (score >= 7) return "Great";
-        if (score >= 6) return "Good";
-        if (score >= 4) return "Okay";
-        if (score >= 2) return "Difficult";
-        return "Very Difficult";
-    };
-
-    return (
-        <div className="p-6 space-y-6 min-h-screen relative">
-            <div className="orb-purple" style={{ top: '-40px', right: '15%' }} />
-            <div className="max-w-3xl mx-auto relative z-10">
-                {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
-                    <Button variant="outline" size="icon" onClick={() => navigate(createPageUrl("Dashboard"))}
-                        className="rounded-full" style={{ borderColor: 'rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.08)', color: '#c084fc' }}>
-                        <ArrowLeft className="w-4 h-4" />
-                    </Button>
-                    <div>
-                        <h1 className="text-3xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                            Daily Check-In
-                        </h1>
-                        <p className="text-sm" style={{ color: 'rgba(180,170,210,0.6)' }}>
-                            {existingEntry ? "Update your entry" : "How was your day?"}
-                        </p>
-                    </div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Date */}
-                    <div className="glass-card p-5">
-                        <h3 className="text-sm font-semibold mb-3" style={{ color: 'rgba(192,132,252,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Date</h3>
-                        <Input type="date" value={formData.date}
-                            onChange={(e) => setFormData({...formData, date: e.target.value})}
-                            max={format(new Date(), 'yyyy-MM-dd')} className="max-w-xs" />
-                        {isToday(new Date(formData.date)) && (
-                            <Badge className="mt-2 text-xs" style={{ background: 'rgba(139,92,246,0.15)', color: '#c084fc', border: '1px solid rgba(139,92,246,0.2)' }}>
-                                Today
-                            </Badge>
-                        )}
-                    </div>
-
-                    {/* Overall Mood */}
-                    <div className="glass-card p-6">
-                        <h3 className="text-sm font-semibold mb-1" style={{ color: 'rgba(192,132,252,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Overall Mood</h3>
-                        <p className="text-xs mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>How would you rate your overall mood today?</p>
-                        <div className="text-center space-y-3 mb-6">
-                            <div className="text-6xl">{getMoodEmoji(formData.mood_score)}</div>
-                            <div>
-                                <div className="text-3xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                                    {formData.mood_score}<span className="text-xl">/10</span>
-                                </div>
-                                <div className="text-base" style={{ color: 'rgba(180,170,210,0.65)' }}>{getMoodLabel(formData.mood_score)}</div>
-                            </div>
-                        </div>
-                        <div className="px-4">
-                            <Slider value={[formData.mood_score]}
-                                onValueChange={([value]) => setFormData({...formData, mood_score: value})}
-                                max={10} min={1} step={1} className="w-full" />
-                            <div className="flex justify-between text-xs mt-2" style={{ color: 'rgba(160,150,190,0.45)' }}>
-                                <span>1 · Terrible</span><span>10 · Amazing</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* High Moment */}
-                    <div className="glass-card p-6" style={{ border: '1px solid rgba(45,212,191,0.15)' }}>
-                        <h3 className="text-sm font-semibold mb-1" style={{ color: 'rgba(45,212,191,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>✨ High Point</h3>
-                        <p className="text-xs mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>What was the best part of your day?</p>
-                        <div className="space-y-4">
-                            <div><Label htmlFor="high-description" style={{ color: 'rgba(200,190,230,0.7)' }}>What happened?</Label>
-                                <Textarea id="high-description" placeholder="Describe the high point..." value={formData.high_moment.description}
-                                    onChange={(e) => setFormData({...formData, high_moment: {...formData.high_moment, description: e.target.value}})} className="mt-1" />
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div><Label htmlFor="high-who" style={{ color: 'rgba(200,190,230,0.7)' }}>Who was involved?</Label>
-                                    <Input id="high-who" placeholder="People present..." value={formData.high_moment.who_involved}
-                                        onChange={(e) => setFormData({...formData, high_moment: {...formData.high_moment, who_involved: e.target.value}})} className="mt-1" />
-                                </div>
-                                <div><Label htmlFor="high-context" style={{ color: 'rgba(200,190,230,0.7)' }}>Where/when?</Label>
-                                    <Input id="high-context" placeholder="Context..." value={formData.high_moment.context}
-                                        onChange={(e) => setFormData({...formData, high_moment: {...formData.high_moment, context: e.target.value}})} className="mt-1" />
-                                </div>
-                            </div>
-                            <div><Label style={{ color: 'rgba(200,190,230,0.7)' }}>Intensity (1-10)</Label>
-                                <div className="mt-2">
-                                    <Slider value={[formData.high_moment.intensity]}
-                                        onValueChange={([value]) => setFormData({...formData, high_moment: {...formData.high_moment, intensity: value}})}
-                                        max={10} min={1} step={1} className="w-full" />
-                                    <div className="text-center mt-1 text-sm font-semibold" style={{ color: '#2dd4bf' }}>{formData.high_moment.intensity}/10</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Low Moment */}
-                    <div className="glass-card p-6" style={{ border: '1px solid rgba(244,114,182,0.15)' }}>
-                        <h3 className="text-sm font-semibold mb-1" style={{ color: 'rgba(244,114,182,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>🌧️ Challenging Moment</h3>
-                        <p className="text-xs mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>What was difficult or challenging today?</p>
-                        <div className="space-y-4">
-                            <div><Label htmlFor="low-description" style={{ color: 'rgba(200,190,230,0.7)' }}>What happened?</Label>
-                                <Textarea id="low-description" placeholder="Describe what was challenging..." value={formData.low_moment.description}
-                                    onChange={(e) => setFormData({...formData, low_moment: {...formData.low_moment, description: e.target.value}})} className="mt-1" />
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div><Label htmlFor="low-who" style={{ color: 'rgba(200,190,230,0.7)' }}>Who was involved?</Label>
-                                    <Input id="low-who" placeholder="People present..." value={formData.low_moment.who_involved}
-                                        onChange={(e) => setFormData({...formData, low_moment: {...formData.low_moment, who_involved: e.target.value}})} className="mt-1" />
-                                </div>
-                                <div><Label htmlFor="low-context" style={{ color: 'rgba(200,190,230,0.7)' }}>Where/when?</Label>
-                                    <Input id="low-context" placeholder="Context..." value={formData.low_moment.context}
-                                        onChange={(e) => setFormData({...formData, low_moment: {...formData.low_moment, context: e.target.value}})} className="mt-1" />
-                                </div>
-                            </div>
-                            <div><Label style={{ color: 'rgba(200,190,230,0.7)' }}>Intensity (1-10)</Label>
-                                <div className="mt-2">
-                                    <Slider value={[formData.low_moment.intensity]}
-                                        onValueChange={([value]) => setFormData({...formData, low_moment: {...formData.low_moment, intensity: value}})}
-                                        max={10} min={1} step={1} className="w-full" />
-                                    <div className="text-center mt-1 text-sm font-semibold" style={{ color: '#f472b6' }}>{formData.low_moment.intensity}/10</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Reflection */}
-                    <div className="glass-card p-6">
-                        <h3 className="text-sm font-semibold mb-5" style={{ color: 'rgba(192,132,252,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                            ♡ Reflection
-                        </h3>
-                        <div className="space-y-4">
-                            <div><Label htmlFor="gratitude" style={{ color: 'rgba(200,190,230,0.7)' }}>What are you grateful for today?</Label>
-                                <Textarea id="gratitude" placeholder="I'm grateful for..." value={formData.gratitude}
-                                    onChange={(e) => setFormData({...formData, gratitude: e.target.value})} className="mt-1" />
-                            </div>
-                            <div><Label htmlFor="notes" style={{ color: 'rgba(200,190,230,0.7)' }}>Additional notes</Label>
-                                <Textarea id="notes" placeholder="Any other thoughts..." value={formData.notes}
-                                    onChange={(e) => setFormData({...formData, notes: e.target.value})} className="mt-1" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Submit */}
-                    <div className="flex justify-end gap-3">
-                        <Button type="button" variant="outline" onClick={() => navigate(createPageUrl("Dashboard"))}
-                            style={{ borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(200,190,230,0.7)', background: 'transparent' }}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={isSubmitting} className="btn-cosmic rounded-xl font-semibold">
-                            <Save className="w-4 h-4 mr-2" />
-                            {isSubmitting ? 'Saving...' : existingEntry ? 'Update Entry' : 'Save Entry'}
-                        </Button>
-                    </div>
-                </form>
-            </div>
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="outline" size="icon" onClick={() => navigate(createPageUrl("Dashboard"))}
+            className="rounded-full shrink-0" style={{ borderColor: 'rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.08)', color: '#c084fc' }}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Daily Check-In</h1>
+            <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>
+              {existingEntry ? "Updating today's entry" : "Quick, honest, no pressure"}
+            </p>
+          </div>
         </div>
-    );
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* Date */}
+          <div className="glass-card p-4 flex items-center gap-4">
+            <div className="flex-1">
+              <Label className="text-xs uppercase tracking-widest mb-1 block" style={{ color: 'rgba(139,92,246,0.7)' }}>Date</Label>
+              <Input type="date" value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                max={format(new Date(), 'yyyy-MM-dd')} className="max-w-xs text-sm" />
+            </div>
+            {isToday(new Date(formData.date)) && (
+              <span className="text-xs px-3 py-1 rounded-full shrink-0"
+                style={{ background: 'rgba(139,92,246,0.15)', color: '#c084fc', border: '1px solid rgba(139,92,246,0.2)' }}>
+                Today
+              </span>
+            )}
+          </div>
+
+          {/* Core sliders */}
+          <div className="glass-card p-5 space-y-6">
+            <div className="text-center mb-2">
+              <div className="text-5xl mb-1">{getMoodEmoji(formData.mood_score)}</div>
+              <p className="text-xs uppercase tracking-widest" style={{ color: 'rgba(139,92,246,0.6)' }}>How are you feeling?</p>
+            </div>
+            <QuickSlider label="Mood" value={formData.mood_score}
+              onChange={v => setFormData({ ...formData, mood_score: v })}
+              lowLabel="Rough" highLabel="Amazing" color="#c084fc" />
+            <QuickSlider label="Energy" value={formData.energy_level}
+              onChange={v => setFormData({ ...formData, energy_level: v })}
+              lowLabel="Depleted" highLabel="Vibrant" color="#38bdf8" />
+            <QuickSlider label="Sleep" value={formData.sleep_quality}
+              onChange={v => setFormData({ ...formData, sleep_quality: v })}
+              lowLabel="Poor" highLabel="Restorative" color="#2dd4bf" />
+          </div>
+
+          {/* Emotions */}
+          <div className="glass-card p-5">
+            <h3 className="text-sm font-semibold mb-1 uppercase tracking-widest" style={{ color: 'rgba(192,132,252,0.8)' }}>Emotions</h3>
+            <p className="text-xs mb-4" style={{ color: 'rgba(180,170,210,0.45)' }}>Tap everything that resonates today</p>
+            <TagGrid items={EMOTIONS} selected={formData.emotions || []} onToggle={l => toggleTag('emotions', l)} />
+          </div>
+
+          {/* Activities */}
+          <div className="glass-card p-5">
+            <h3 className="text-sm font-semibold mb-1 uppercase tracking-widest" style={{ color: 'rgba(56,189,248,0.8)' }}>What did you do?</h3>
+            <p className="text-xs mb-4" style={{ color: 'rgba(180,170,210,0.45)' }}>Select all that apply</p>
+            <TagGrid items={ACTIVITIES} selected={formData.activities || []} onToggle={l => toggleTag('activities', l)} />
+          </div>
+
+          {/* High moment — collapsible */}
+          <CollapsibleSection title="✨ High Point" subtitle="Optional — what was good?" color="rgba(45,212,191,0.8)" borderColor="rgba(45,212,191,0.15)">
+            <div className="space-y-3">
+              <Textarea placeholder="What happened?" value={formData.high_moment.description}
+                onChange={e => setFormData({ ...formData, high_moment: { ...formData.high_moment, description: e.target.value } })}
+                className="text-sm resize-none" rows={2} />
+              <div className="grid grid-cols-2 gap-3">
+                <Input placeholder="Who was involved?" value={formData.high_moment.who_involved}
+                  onChange={e => setFormData({ ...formData, high_moment: { ...formData.high_moment, who_involved: e.target.value } })}
+                  className="text-sm" />
+                <Input placeholder="Where / when?" value={formData.high_moment.context}
+                  onChange={e => setFormData({ ...formData, high_moment: { ...formData.high_moment, context: e.target.value } })}
+                  className="text-sm" />
+              </div>
+              <QuickSlider label="Intensity" value={formData.high_moment.intensity}
+                onChange={v => setFormData({ ...formData, high_moment: { ...formData.high_moment, intensity: v } })}
+                lowLabel="Mild" highLabel="Peak" color="#2dd4bf" />
+            </div>
+          </CollapsibleSection>
+
+          {/* Low moment — collapsible */}
+          <CollapsibleSection title="🌧️ Challenge" subtitle="Optional — what was hard?" color="rgba(244,114,182,0.8)" borderColor="rgba(244,114,182,0.15)">
+            <div className="space-y-3">
+              <Textarea placeholder="What happened?" value={formData.low_moment.description}
+                onChange={e => setFormData({ ...formData, low_moment: { ...formData.low_moment, description: e.target.value } })}
+                className="text-sm resize-none" rows={2} />
+              <div className="grid grid-cols-2 gap-3">
+                <Input placeholder="Who was involved?" value={formData.low_moment.who_involved}
+                  onChange={e => setFormData({ ...formData, low_moment: { ...formData.low_moment, who_involved: e.target.value } })}
+                  className="text-sm" />
+                <Input placeholder="Where / when?" value={formData.low_moment.context}
+                  onChange={e => setFormData({ ...formData, low_moment: { ...formData.low_moment, context: e.target.value } })}
+                  className="text-sm" />
+              </div>
+              <QuickSlider label="Intensity" value={formData.low_moment.intensity}
+                onChange={v => setFormData({ ...formData, low_moment: { ...formData.low_moment, intensity: v } })}
+                lowLabel="Minor" highLabel="Heavy" color="#f472b6" />
+            </div>
+          </CollapsibleSection>
+
+          {/* Gratitude + Notes — collapsible */}
+          <CollapsibleSection title="♡ Reflection" subtitle="Optional — gratitude & notes" color="rgba(192,132,252,0.8)" borderColor="rgba(139,92,246,0.15)">
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs mb-1 block" style={{ color: 'rgba(200,190,230,0.6)' }}>I'm grateful for…</Label>
+                <Textarea placeholder="Even something small counts" value={formData.gratitude}
+                  onChange={e => setFormData({ ...formData, gratitude: e.target.value })}
+                  className="text-sm resize-none" rows={2} />
+              </div>
+              <div>
+                <Label className="text-xs mb-1 block" style={{ color: 'rgba(200,190,230,0.6)' }}>Any other thoughts</Label>
+                <Textarea placeholder="Stream of consciousness, no rules…" value={formData.notes}
+                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  className="text-sm resize-none" rows={3} />
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          {/* Submit */}
+          <div className="flex gap-3 pt-2 pb-8">
+            <Button type="button" variant="outline" onClick={() => navigate(createPageUrl("Dashboard"))}
+              className="flex-1" style={{ borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(200,190,230,0.6)', background: 'transparent' }}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="btn-cosmic rounded-xl font-semibold flex-1">
+              <Save className="w-4 h-4 mr-2" />
+              {isSubmitting ? 'Saving…' : existingEntry ? 'Update' : 'Save Check-In'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }

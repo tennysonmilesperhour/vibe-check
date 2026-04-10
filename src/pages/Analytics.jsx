@@ -124,7 +124,7 @@ export default function Analytics() {
                 }
             }
 
-            const prompt = `As a supportive AI assistant (not a medical professional), analyze this mood tracking data and provide gentle, encouraging insights. 
+            const prompt = `As a wise oracle and compassionate guide (not a medical professional), read this emotional data and offer gentle, illuminating insights. 
 
 Data summary:
 - Total entries: ${filteredData.length}
@@ -417,8 +417,8 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                         ) : (
                             <div className="text-center py-8">
                                 <Button onClick={generateInsights} className="btn-cosmic rounded-xl">
-                                    <Sparkles className="w-4 h-4 mr-2" />
-                                    Generate Insights
+                                                    <Sparkles className="w-4 h-4 mr-2" />
+                                                     Consult the Oracle
                                 </Button>
                             </div>
                         )}

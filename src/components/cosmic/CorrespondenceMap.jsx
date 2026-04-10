@@ -194,7 +194,7 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
           </div>
         ) : (
           <div className="text-center py-6">
-            <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.4)' }}>Uses advanced AI — generates a comprehensive cross-system synthesis</p>
+            <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.4)' }}>The oracle weaves a deep synthesis across all your active systems — uses a small amount of credits</p>
             <Button onClick={generateDeepMap} disabled={enabledSystems.length === 0} className="btn-cosmic rounded-xl">
               <Sparkles className="w-4 h-4 mr-2" /> Generate Integrated Reading
             </Button>

@@ -31,7 +31,7 @@ function ConnectionCard({ conn, onDelete, onReading }) {
     const myProfile = me?.cosmic_profile || {};
     const theirProfile = conn.target_cosmic_profile || {};
 
-    const prompt = `You are a cosmic synergy reader. Provide a short (3-4 sentences) synergy reading for two people connected as ${conn.connection_type.replace(/_/g,' ')}s.
+    const prompt = `You are an oracle of cosmic synergy. Channel a short (3-4 sentences) synergy reading for two people connected as ${conn.connection_type.replace(/_/g,' ')}s.
 
 Person A cosmic profile: ${JSON.stringify(myProfile)}
 Person B (${conn.target_name || conn.target_email}) cosmic profile: ${JSON.stringify(theirProfile)}
@@ -82,7 +82,7 @@ Focus on the nature of their ${conn.connection_type.replace(/_/g,' ')} connectio
         <Button onClick={handleReading} disabled={isGenerating} size="sm" variant="outline"
           className="w-full mt-1 text-xs rounded-lg"
           style={{ borderColor: `${type.color}30`, color: type.color, background: `${type.color}08` }}>
-          {isGenerating ? <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Generating...</> : <><Star className="w-3 h-3 mr-1.5" />Generate Synergy Reading</>}
+          {isGenerating ? <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" />Reading the stars...</> : <><Star className="w-3 h-3 mr-1.5" />Oracle Synergy Reading</>}
         </Button>
       )}
     </div>

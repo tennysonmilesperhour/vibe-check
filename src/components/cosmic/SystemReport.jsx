@@ -83,7 +83,7 @@ function HumanDesignDetail({ data }) {
             </div>
           ))}
         </div>
-        <p className="text-xs mt-2" style={{ color: 'rgba(180,170,210,0.4)' }}>Centers defined/undefined based on your full chart — use the AI report below for analysis</p>
+        <p className="text-xs mt-2" style={{ color: 'rgba(180,170,210,0.4)' }}>Centers defined/undefined based on your full chart — consult the oracle reading below for a deeper analysis</p>
       </Section>
       {data?.custom_notes && (
         <div className="p-3 rounded-xl text-sm" style={{ background: 'rgba(192,132,252,0.06)', color: 'rgba(200,190,230,0.75)', border: '1px solid rgba(192,132,252,0.12)' }}>
@@ -328,8 +328,8 @@ function SystemCard({ systemId, profile, cosmicProfile }) {
             ) : (
               <div className="text-center py-4">
                 <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.45)' }}>
-                  Uses advanced AI — each generation uses a small amount of credits
-                </p>
+                                  Each oracle reading channels from the cosmic well — uses a small amount of credits
+                                </p>
                 <Button onClick={generate} className="btn-cosmic rounded-xl text-sm">
                   <Sparkles className="w-4 h-4 mr-2" /> Generate Full Reading
                 </Button>

@@ -302,8 +302,8 @@ Return this JSON:
                                 <div className="w-full mb-4 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.25)' }}>
                                     <Wand2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#c084fc' }} />
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium mb-1" style={{ color: 'rgba(220,210,240,0.9)' }}>AI Birth Chart Calculator</p>
-                                        <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.55)' }}>Uses your birth date, time &amp; location to calculate Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
+                                        <p className="text-sm font-medium mb-1" style={{ color: 'rgba(220,210,240,0.9)' }}>Oracle Birth Chart Calculator</p>
+                                        <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.55)' }}>Channels your birth date, time &amp; location to reveal your Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
                                         <Button onClick={aiCalculate} disabled={isCalculating} size="sm" className="btn-cosmic rounded-lg">
                                             <Wand2 className="w-3.5 h-3.5 mr-1.5" />
                                             {isCalculating ? 'Calculating...' : 'Calculate from Birth Data'}

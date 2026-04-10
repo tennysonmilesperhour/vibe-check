@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import CardGeometry from "./CardGeometry";
 
 // ── Card Back — original cosmic SVG design ───────────────────────────────────
 function CardBack() {
@@ -60,18 +61,10 @@ function CardBack() {
   );
 }
 
-// ── Card Front — original symbolic SVG art ───────────────────────────────────
+// ── Card Front — geometry-based SVG art ─────────────────────────────────────
 function CardFront({ card, reversed }) {
-  const isMajor = card.id < 22;
   const c = card.color;
-
-  // Hex to RGB helper for gradient stops
-  const hexAlpha = (hex, alpha) => {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    return `rgba(${r},${g},${b},${alpha})`;
-  };
+  const isMajor = card.id < 22;
 
   return (
     <svg viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"
@@ -82,58 +75,53 @@ function CardFront({ card, reversed }) {
           <stop offset="100%" stopColor="#04020e"/>
         </radialGradient>
         <radialGradient id={`glow-${card.id}`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={c} stopOpacity="0.3"/>
+          <stop offset="0%" stopColor={c} stopOpacity="0.25"/>
           <stop offset="100%" stopColor={c} stopOpacity="0"/>
         </radialGradient>
       </defs>
       {/* Background */}
       <rect width="120" height="200" rx="7" fill={`url(#bg-${card.id})`}/>
-      {/* Subtle color wash */}
-      <rect width="120" height="200" rx="7" fill={c} opacity="0.06"/>
+      <rect width="120" height="200" rx="7" fill={c} opacity="0.05"/>
       {/* Border */}
-      <rect x="3" y="3" width="114" height="194" rx="5" fill="none" stroke={c} strokeWidth="1.2" opacity="0.6"/>
-      <rect x="6" y="6" width="108" height="188" rx="4" fill="none" stroke={c} strokeWidth="0.5" opacity="0.3"/>
-      {/* Top roman numeral / court label */}
-      <text x="60" y="20" textAnchor="middle" fontSize="9" fill={c} opacity="0.8" fontFamily="Georgia, serif" fontWeight="bold">
-        {card.roman}
+      <rect x="3" y="3" width="114" height="194" rx="5" fill="none" stroke={c} strokeWidth="1.2" opacity="0.55"/>
+      <rect x="6" y="6" width="108" height="188" rx="4" fill="none" stroke={c} strokeWidth="0.5" opacity="0.25"/>
+      {/* Top roman numeral */}
+      <text x="60" y="20" textAnchor="middle" fontSize="9" fill={c} opacity="0.75"
+        fontFamily="Georgia, serif" fontWeight="bold">{card.roman}</text>
+      <line x1="15" y1="24" x2="105" y2="24" stroke={c} strokeWidth="0.5" opacity="0.25"/>
+      {/* Glow */}
+      <circle cx="60" cy="100" r="46" fill={`url(#glow-${card.id})`}/>
+      {/* Sacred geometry — rendered via CardGeometry as foreignObject */}
+      <foreignObject x="12" y="30" width="96" height="110">
+        <div xmlns="http://www.w3.org/1999/xhtml"
+          style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <CardGeometry type={card.geoType} color={c} size={88}/>
+        </div>
+      </foreignObject>
+      {/* Bottom section */}
+      <line x1="15" y1="145" x2="105" y2="145" stroke={c} strokeWidth="0.5" opacity="0.25"/>
+      <text x="60" y="159" textAnchor="middle" fontSize="8" fill={c}
+        fontFamily="Georgia, serif" fontWeight="bold" opacity="0.88">
+        {card.name.length > 17 ? card.name.slice(0,16)+'…' : card.name}
       </text>
-      {/* Divider */}
-      <line x1="15" y1="24" x2="105" y2="24" stroke={c} strokeWidth="0.5" opacity="0.3"/>
-      {/* Center glow */}
-      <circle cx="60" cy="100" r="42" fill={`url(#glow-${card.id})`}/>
-      {/* Decorative circle rings */}
-      <circle cx="60" cy="100" r="38" fill="none" stroke={c} strokeWidth="0.6" opacity="0.25"/>
-      <circle cx="60" cy="100" r="28" fill="none" stroke={c} strokeWidth="0.8" opacity="0.2"/>
-      {/* Symbol — large central glyph */}
-      <text x="60" y="115" textAnchor="middle" fontSize="36" dominantBaseline="middle" opacity="0.9">
-        {card.symbol}
-      </text>
-      {/* For major arcana: decorative radial lines */}
-      {isMajor && Array.from({length:8}).map((_,i) => {
-        const a = (i*45) * Math.PI/180;
-        const x1=60+30*Math.cos(a), y1=100+30*Math.sin(a);
-        const x2=60+40*Math.cos(a), y2=100+40*Math.sin(a);
-        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={c} strokeWidth="0.8" opacity="0.35"/>;
-      })}
-      {/* Bottom divider */}
-      <line x1="15" y1="143" x2="105" y2="143" stroke={c} strokeWidth="0.5" opacity="0.3"/>
-      {/* Card name */}
-      <text x="60" y="158" textAnchor="middle" fontSize="8.5" fill={c} fontFamily="Georgia, serif" fontWeight="bold" opacity="0.9">
-        {card.name.length > 16 ? card.name.slice(0,15)+'…' : card.name}
-      </text>
-      {/* Keywords */}
-      <text x="60" y="171" textAnchor="middle" fontSize="6" fill={c} opacity="0.55" fontFamily="Georgia, serif">
+      <text x="60" y="171" textAnchor="middle" fontSize="5.8" fill={c} opacity="0.5"
+        fontFamily="Georgia, serif">
         {card.keywords.slice(0,2).join('  ·  ')}
       </text>
-      {/* Reversed indicator */}
       {reversed && (
-        <text x="60" y="185" textAnchor="middle" fontSize="5.5" fill="#f472b6" opacity="0.7" fontFamily="serif" letterSpacing="1">
-          ▽ REVERSED
-        </text>
+        <text x="60" y="184" textAnchor="middle" fontSize="5.5" fill="#f472b6" opacity="0.65"
+          fontFamily="serif" letterSpacing="1">▽ REVERSED</text>
       )}
-      {/* Corner ornaments */}
-      {[[10,12],[110,12],[10,188],[110,188]].map(([cx,cy],i) => (
-        <text key={i} x={cx} y={cy} textAnchor="middle" fontSize="6" fill={c} opacity="0.4" fontFamily="serif">✦</text>
+      {/* Corner marks */}
+      {[[10,13],[110,13],[10,189],[110,189]].map(([x,y],i) => (
+        <line key={i}
+          x1={x-(i%2===0?2:-2)} y1={y}
+          x2={x+(i%2===0?2:-2)} y2={y}
+          stroke={c} strokeWidth="0.8" opacity="0.35"/>
+      ))}
+      {[[10,13],[110,13],[10,189],[110,189]].map(([x,y],i) => (
+        <line key={`v${i}`} x1={x} y1={y-2} x2={x} y2={y+2}
+          stroke={c} strokeWidth="0.8" opacity="0.35"/>
       ))}
     </svg>
   );

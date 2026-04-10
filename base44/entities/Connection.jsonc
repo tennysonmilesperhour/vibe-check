@@ -1,0 +1,45 @@
+{
+  "name": "Connection",
+  "type": "object",
+  "properties": {
+    "target_email": {
+      "type": "string",
+      "description": "Email of the connected person"
+    },
+    "target_name": {
+      "type": "string",
+      "description": "Display name of the connected person"
+    },
+    "connection_type": {
+      "type": "string",
+      "enum": [
+        "friend",
+        "business_partner",
+        "creative_collaborator",
+        "lover"
+      ],
+      "description": "Nature of the connection"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active"
+      ],
+      "default": "active",
+      "description": "Connection status"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Personal notes about this connection"
+    },
+    "target_cosmic_profile": {
+      "type": "object",
+      "description": "Cached cosmic profile data of the connected person"
+    }
+  },
+  "required": [
+    "target_email",
+    "connection_type"
+  ]
+}

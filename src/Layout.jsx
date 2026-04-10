@@ -9,14 +9,19 @@ import {
     Calendar,
     Shield,
     Menu,
-    X
+    X,
+    Stars,
+    UserPlus
 } from "lucide-react";
+import { useState as useInviteState } from "react";
+import InviteModal from "@/components/InviteModal";
 
 const navigationItems = [
     { title: "Dashboard", url: createPageUrl("Dashboard"), icon: Heart, description: "Overview & check-ins" },
     { title: "Daily Log", url: createPageUrl("DailyLog"), icon: Calendar, description: "Log your highs & lows" },
     { title: "Patterns", url: createPageUrl("Analytics"), icon: BarChart3, description: "Insights & trends" },
     { title: "Relationships", url: createPageUrl("Relationships"), icon: Users, description: "Your connections" },
+    { title: "Constellation", url: "/Constellation", icon: Stars, description: "Synergy readings" },
     { title: "Healing Board", url: createPageUrl("HealingBoard"), icon: Sparkles, description: "Track your growth" },
     { title: "Boundaries", url: createPageUrl("Boundaries"), icon: Shield, description: "Alerts & thresholds" },
     { title: "Cosmic Add-ons", url: createPageUrl("CosmicAddons"), icon: Sparkles, description: "Astrology, HD, Gene Keys" },
@@ -113,6 +118,7 @@ function SidebarFooterContent() {
 export default function Layout({ children }) {
     const location = useLocation();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [inviteOpen, setInviteOpen] = useState(false);
 
     // Close on route change
     useEffect(() => { setMobileOpen(false); }, [location.pathname]);
@@ -134,6 +140,14 @@ export default function Layout({ children }) {
                 }}>
                 <SidebarHeader />
                 <NavLinks location={location} onNavigate={() => {}} />
+                <div className="px-3 pb-2">
+                    <button onClick={() => setInviteOpen(true)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                        style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', color: '#c084fc' }}>
+                        <UserPlus className="w-4 h-4" />
+                        Invite a Friend
+                    </button>
+                </div>
                 <SidebarFooterContent />
             </aside>
 
@@ -187,6 +201,14 @@ export default function Layout({ children }) {
                     </button>
                 </div>
                 <NavLinks location={location} onNavigate={() => setMobileOpen(false)} />
+                <div className="px-3 pb-2">
+                    <button onClick={() => { setMobileOpen(false); setInviteOpen(true); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
+                        style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)', color: '#c084fc' }}>
+                        <UserPlus className="w-4 h-4" />
+                        Invite a Friend
+                    </button>
+                </div>
                 <SidebarFooterContent />
             </aside>
 
@@ -213,6 +235,7 @@ export default function Layout({ children }) {
                 <div className="flex-1 overflow-auto">
                     {children}
                 </div>
+            <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
             </main>
         </div>
     );

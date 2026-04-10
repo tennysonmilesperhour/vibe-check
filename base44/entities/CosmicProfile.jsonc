@@ -2,6 +2,14 @@
   "name": "CosmicProfile",
   "type": "object",
   "properties": {
+    "first_name": {
+      "type": "string",
+      "description": "User's first name (used for numerology, life path, etc.)"
+    },
+    "last_name": {
+      "type": "string",
+      "description": "User's last name (used for numerology, expression number, etc.)"
+    },
     "birth_date": {
       "type": "string",
       "format": "date",
@@ -50,19 +58,16 @@
           "description": "Manifestor, Generator, Manifesting Generator, Projector, Reflector"
         },
         "authority": {
-          "type": "string",
-          "description": "Emotional, Sacral, Splenic, etc."
+          "type": "string"
         },
         "profile": {
-          "type": "string",
-          "description": "e.g. 2/4, 6/2"
+          "type": "string"
         },
         "strategy": {
           "type": "string"
         },
         "definition": {
-          "type": "string",
-          "description": "Single, Split, Triple Split, Quadruple Split"
+          "type": "string"
         },
         "incarnation_cross": {
           "type": "string"
@@ -76,28 +81,22 @@
       "type": "object",
       "properties": {
         "life_work": {
-          "type": "string",
-          "description": "Life's Work Gene Key number"
+          "type": "string"
         },
         "evolution": {
-          "type": "string",
-          "description": "Evolution Gene Key number"
+          "type": "string"
         },
         "radiance": {
-          "type": "string",
-          "description": "Radiance Gene Key number"
+          "type": "string"
         },
         "purpose": {
-          "type": "string",
-          "description": "Purpose Gene Key number"
+          "type": "string"
         },
         "attraction": {
-          "type": "string",
-          "description": "Attraction Gene Key number"
+          "type": "string"
         },
         "iq": {
-          "type": "string",
-          "description": "IQ Gene Key number"
+          "type": "string"
         },
         "custom_notes": {
           "type": "string"

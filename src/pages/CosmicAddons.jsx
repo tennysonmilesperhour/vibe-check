@@ -16,6 +16,8 @@ import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
 import CosmicInsightBadge from "@/components/cosmic/CosmicInsightBadge";
 
 const EMPTY_PROFILE = {
+    first_name: "",
+    last_name: "",
     birth_date: "",
     birth_time: "",
     birth_location: "",
@@ -131,10 +133,22 @@ export default function CosmicAddons() {
 
                         {/* Birth Data */}
                         <div className="glass-card p-6">
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Birth Data</h3>
+                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Name & Birth Data</h3>
                             <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>
-                                Used to calculate or verify your charts across systems. Optional — you can skip to manual entry.
+                                Your name is used for numerology calculations (expression number, soul urge, life path). Birth data helps calculate or verify your charts.
                             </p>
+                            <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>First Name</Label>
+                                    <Input className="mt-1" placeholder="Your first name" value={profile.first_name}
+                                        onChange={e => setProfile(prev => ({ ...prev, first_name: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>Last Name</Label>
+                                    <Input className="mt-1" placeholder="Your last name" value={profile.last_name}
+                                        onChange={e => setProfile(prev => ({ ...prev, last_name: e.target.value }))} />
+                                </div>
+                            </div>
                             <div className="grid md:grid-cols-3 gap-4">
                                 <div>
                                     <Label style={{ color: 'rgba(200,190,230,0.7)' }}>Date of Birth</Label>

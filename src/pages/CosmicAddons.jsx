@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Sparkles, Save, Info, BookOpen } from "lucide-react";
+import { Sparkles, Save, Info, BookOpen, Wand2 } from "lucide-react";
 import SystemToggle, { SYSTEMS } from "@/components/cosmic/SystemToggle";
 import {
     AstrologyForm, HumanDesignForm, GeneKeysForm,
@@ -50,6 +50,7 @@ export default function CosmicAddons() {
     const { toast } = useToast();
     const [profile, setProfile] = useState(EMPTY_PROFILE);
     const [isSaving, setIsSaving] = useState(false);
+    const [isCalculating, setIsCalculating] = useState(false);
 
     const urlParams = new URLSearchParams(window.location.search);
     const defaultTab = urlParams.get('tab') || 'systems';
@@ -85,6 +86,88 @@ export default function CosmicAddons() {
 
     const setSystemData = (systemKey, data) => {
         setProfile(prev => ({ ...prev, [systemKey]: data }));
+    };
+
+    const canCalculate = profile.birth_date && (profile.birth_city || profile.birth_country);
+
+    const aiCalculate = async () => {
+        if (!canCalculate) return;
+        setIsCalculating(true);
+        const location = [profile.birth_city, profile.birth_state, profile.birth_country].filter(Boolean).join(', ');
+        const prompt = `You are an expert astrologer and Human Design analyst. Calculate the following for a person born on ${profile.birth_date}${profile.birth_time ? ' at ' + profile.birth_time : ''} in ${location}.
+
+Return ONLY a JSON object with these exact fields (use null if genuinely cannot determine):
+- moon_sign: zodiac sign (e.g. "Scorpio")
+- rising_sign: zodiac sign (requires birth time; null if no time given)
+- north_node: zodiac sign of North Node
+- hd_type: one of Manifestor, Generator, Manifesting Generator, Projector, Reflector
+- hd_authority: one of Emotional / Solar Plexus, Sacral, Splenic, Ego / Heart, G Center / Self, Environment (Mental Projector), Lunar (Reflector)
+- hd_profile: e.g. "3/5 – Martyr / Heretic" (use format X/X – Name / Name)
+- hd_strategy: e.g. "To Respond"
+- hd_definition: one of Single Definition, Split Definition, Triple Split, Quadruple Split
+- hd_incarnation_cross: e.g. "Right Angle Cross of the Sphinx"
+- gk_life_work: Gene Key number 1-64 (Conscious Sun gate)
+- gk_evolution: Gene Key number 1-64 (Conscious Earth gate)
+- gk_radiance: Gene Key number 1-64 (Conscious Moon gate)
+- gk_purpose: Gene Key number 1-64 (Conscious Node gate)
+- gk_attraction: Gene Key number 1-64 (Unconscious Sun gate)
+- gk_iq: Gene Key number 1-64 (Unconscious Node gate)
+- chakra_dominant: one of Root (Muladhara) – Safety & grounding, Sacral (Svadhisthana) – Creativity & pleasure, Solar Plexus (Manipura) – Power & will, Heart (Anahata) – Love & connection, Throat (Vishuddha) – Expression & truth, Third Eye (Ajna) – Intuition & insight, Crown (Sahasrara) – Consciousness & unity
+
+Use actual ephemeris calculations where possible. Be precise.`;
+
+        const result = await base44.integrations.Core.InvokeLLM({
+            prompt,
+            add_context_from_internet: true,
+            response_json_schema: {
+                type: 'object',
+                properties: {
+                    moon_sign: { type: 'string' }, rising_sign: { type: 'string' },
+                    north_node: { type: 'string' },
+                    hd_type: { type: 'string' }, hd_authority: { type: 'string' },
+                    hd_profile: { type: 'string' }, hd_strategy: { type: 'string' },
+                    hd_definition: { type: 'string' }, hd_incarnation_cross: { type: 'string' },
+                    gk_life_work: { type: 'string' }, gk_evolution: { type: 'string' },
+                    gk_radiance: { type: 'string' }, gk_purpose: { type: 'string' },
+                    gk_attraction: { type: 'string' }, gk_iq: { type: 'string' },
+                    chakra_dominant: { type: 'string' }
+                }
+            }
+        });
+
+        setProfile(prev => ({
+            ...prev,
+            astrology: {
+                ...prev.astrology,
+                ...(result.moon_sign && !prev.astrology?.moon_sign ? { moon_sign: result.moon_sign } : {}),
+                ...(result.rising_sign && !prev.astrology?.rising_sign ? { rising_sign: result.rising_sign } : {}),
+                ...(result.north_node && !prev.astrology?.north_node ? { north_node: result.north_node } : {}),
+            },
+            human_design: {
+                ...prev.human_design,
+                ...(result.hd_type && !prev.human_design?.type ? { type: result.hd_type } : {}),
+                ...(result.hd_authority && !prev.human_design?.authority ? { authority: result.hd_authority } : {}),
+                ...(result.hd_profile && !prev.human_design?.profile ? { profile: result.hd_profile } : {}),
+                ...(result.hd_strategy && !prev.human_design?.strategy ? { strategy: result.hd_strategy } : {}),
+                ...(result.hd_definition && !prev.human_design?.definition ? { definition: result.hd_definition } : {}),
+                ...(result.hd_incarnation_cross && !prev.human_design?.incarnation_cross ? { incarnation_cross: result.hd_incarnation_cross } : {}),
+            },
+            gene_keys: {
+                ...prev.gene_keys,
+                ...(result.gk_life_work && !prev.gene_keys?.life_work ? { life_work: result.gk_life_work } : {}),
+                ...(result.gk_evolution && !prev.gene_keys?.evolution ? { evolution: result.gk_evolution } : {}),
+                ...(result.gk_radiance && !prev.gene_keys?.radiance ? { radiance: result.gk_radiance } : {}),
+                ...(result.gk_purpose && !prev.gene_keys?.purpose ? { purpose: result.gk_purpose } : {}),
+                ...(result.gk_attraction && !prev.gene_keys?.attraction ? { attraction: result.gk_attraction } : {}),
+                ...(result.gk_iq && !prev.gene_keys?.iq ? { iq: result.gk_iq } : {}),
+            },
+            chakras: {
+                ...prev.chakras,
+                ...(result.chakra_dominant && !prev.chakras?.dominant_center ? { dominant_center: result.chakra_dominant } : {}),
+            }
+        }));
+        setIsCalculating(false);
+        toast({ title: "✦ Birth chart calculated", description: "Fields auto-filled from your birth data. Review and adjust anything that looks off." });
     };
 
     const enabledSystems = profile.enabled_systems || [];
@@ -203,7 +286,24 @@ export default function CosmicAddons() {
                         {/* Sacred Geometry Blueprint */}
                         <div className="glass-card p-6 flex flex-col items-center" style={{ border: '1px solid rgba(139,92,246,0.2)' }}>
                             <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Your Cosmic Blueprint</h3>
-                            <p className="text-sm mb-5 w-full" style={{ color: 'rgba(180,170,210,0.55)' }}>Systems light up as you fill in your profile data</p>
+                            <p className="text-sm mb-3 w-full" style={{ color: 'rgba(180,170,210,0.55)' }}>Systems light up as you fill in your profile data</p>
+                            {canCalculate ? (
+                                <div className="w-full mb-4 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.25)' }}>
+                                    <Wand2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#c084fc' }} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium mb-1" style={{ color: 'rgba(220,210,240,0.9)' }}>AI Birth Chart Calculator</p>
+                                        <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.55)' }}>Uses your birth date, time &amp; location to calculate Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
+                                        <Button onClick={aiCalculate} disabled={isCalculating} size="sm" className="btn-cosmic rounded-lg">
+                                            <Wand2 className="w-3.5 h-3.5 mr-1.5" />
+                                            {isCalculating ? 'Calculating...' : 'Calculate from Birth Data'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="w-full mb-4 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <p className="text-xs" style={{ color: 'rgba(180,170,210,0.45)' }}>💡 Add your birth date and city in the <strong style={{color:'rgba(192,132,252,0.7)'}}>Systems tab</strong> to unlock AI birth chart calculation.</p>
+                                </div>
+                            )}
                             <CosmicBlueprint enabledSystems={enabledSystems} profile={profile} />
                         </div>
 

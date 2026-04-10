@@ -348,13 +348,51 @@ export function TarotForm({ data, onChange, birthDate }) {
     );
 }
 
+const CHAKRA_FOCUS_OPTIONS = [
+    "Root (Muladhara) – Safety & grounding",
+    "Sacral (Svadhisthana) – Creativity & pleasure",
+    "Solar Plexus (Manipura) – Power & will",
+    "Heart (Anahata) – Love & connection",
+    "Throat (Vishuddha) – Expression & truth",
+    "Third Eye (Ajna) – Intuition & insight",
+    "Crown (Sahasrara) – Consciousness & unity"
+];
+
 export function ChakraForm({ data, onChange }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
+    const focusAreas = data?.focus_areas || [];
+    const toggleFocus = (area) => {
+        const next = focusAreas.includes(area)
+            ? focusAreas.filter(a => a !== area)
+            : [...focusAreas, area];
+        set('focus_areas', next);
+    };
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Dominant Center" hint="The chakra that most characterizes your nature or needs the most attention">
+            <Field label="Dominant Center" hint="The chakra that most characterizes your nature">
                 <SimpleSelect value={data?.dominant_center} onChange={v => set('dominant_center', v)} options={CHAKRA_CENTERS} />
             </Field>
+            <div className="md:col-span-2">
+                <Field label="Focus Areas" hint="Chakras you're actively working with or want referenced in insights">
+                    <div className="mt-2 flex flex-wrap gap-2">
+                        {CHAKRA_FOCUS_OPTIONS.map(area => {
+                            const active = focusAreas.includes(area);
+                            const short = area.split(' – ')[0];
+                            return (
+                                <button key={area} type="button" onClick={() => toggleFocus(area)}
+                                    className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                                    style={{
+                                        background: active ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.04)',
+                                        border: active ? '1px solid rgba(139,92,246,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                                        color: active ? '#c084fc' : 'rgba(180,170,210,0.6)',
+                                    }}>
+                                    {short}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </Field>
+            </div>
             <div className="md:col-span-2">
                 <Field label="Personal Notes">
                     <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="Areas of focus, practices, imbalances you're working with..." />

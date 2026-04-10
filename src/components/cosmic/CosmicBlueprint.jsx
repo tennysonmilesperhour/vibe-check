@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -18,22 +18,67 @@ function polarXY(angleDeg, r = R) {
   return [CX + r * Math.cos(angleDeg * DEG), CY + r * Math.sin(angleDeg * DEG)];
 }
 
-// Popup menu rendered as SVG foreignObject
-function NodeMenu({ node, onClose, onEdit, onDeepDive }) {
-  const [lx, ly] = polarXY(node.angle, R + 30);
-  // Shift menu so it stays inside SVG viewBox
-  const mx = Math.max(30, Math.min(lx - 70, 200));
-  const my = Math.max(10, Math.min(ly - 10, 240));
+// Tooltip rendered as SVG foreignObject — used for both hover (desktop) and tap (mobile)
+function NodeTooltip({ node, isMobile, onClose, onNavigate }) {
+  const [lx, ly] = polarXY(node.angle, R + 28);
+  const mx = Math.max(20, Math.min(lx - 70, 210));
+  const my = Math.max(8, Math.min(ly - 8, isMobile ? 230 : 235));
+  const height = isMobile ? 90 : 52;
+
+  const label = node.isEnabled
+    ? `Fill in ${node.label} data`
+    : `Enable ${node.label} system`;
+  const dest = node.isEnabled ? "?tab=profile" : "?tab=systems";
 
   return (
-    <foreignObject x={mx} y={my} width="140" height="80">
+    <foreignObject x={mx} y={my} width="148" height={height} style={{ pointerEvents: isMobile ? 'all' : 'none' }}>
       <div xmlns="http://www.w3.org/1999/xhtml"
         style={{
-          background: 'rgba(14,10,35,0.96)',
+          background: 'rgba(10,6,28,0.97)',
+          border: `1px solid ${node.color}50`,
+          borderRadius: 8,
+          padding: '7px 9px',
+          boxShadow: `0 0 20px ${node.color}25`,
+          fontSize: 11,
+          color: 'rgba(220,210,240,0.85)',
+          lineHeight: 1.4,
+        }}>
+        <div style={{ fontWeight: 600, color: node.color, marginBottom: 3, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {node.label}
+        </div>
+        <div style={{ marginBottom: isMobile ? 7 : 0 }}>{label}</div>
+        {isMobile && (
+          <div style={{ display: 'flex', gap: 5, marginTop: 4 }}>
+            <button onClick={() => onNavigate(dest)}
+              style={{ flex: 1, fontSize: 10, color: 'white', background: node.color, border: 'none', borderRadius: 5, padding: '4px 6px', cursor: 'pointer', fontWeight: 600 }}>
+              Go →
+            </button>
+            <button onClick={onClose}
+              style={{ fontSize: 10, color: 'rgba(180,170,210,0.5)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, padding: '4px 8px', cursor: 'pointer' }}>
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+    </foreignObject>
+  );
+}
+
+// Menu for filled nodes
+function NodeMenu({ node, onClose, onEdit, onDeepDive }) {
+  const [lx, ly] = polarXY(node.angle, R + 28);
+  const mx = Math.max(20, Math.min(lx - 70, 210));
+  const my = Math.max(8, Math.min(ly - 8, 230));
+
+  return (
+    <foreignObject x={mx} y={my} width="144" height="84" style={{ pointerEvents: 'all' }}>
+      <div xmlns="http://www.w3.org/1999/xhtml"
+        style={{
+          background: 'rgba(10,6,28,0.97)',
           border: `1px solid ${node.color}40`,
           borderRadius: 8,
-          padding: '6px 4px',
-          boxShadow: `0 0 20px ${node.color}30`,
+          padding: '6px 5px',
+          boxShadow: `0 0 22px ${node.color}30`,
           display: 'flex',
           flexDirection: 'column',
           gap: 4,
@@ -47,7 +92,7 @@ function NodeMenu({ node, onClose, onEdit, onDeepDive }) {
           ✦ Deep Dive
         </button>
         <button onClick={onClose}
-          style={{ fontSize: 10, color: 'rgba(180,170,210,0.4)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 2 }}>
+          style={{ fontSize: 10, color: 'rgba(180,170,210,0.35)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 1 }}>
           close
         </button>
       </div>
@@ -57,42 +102,57 @@ function NodeMenu({ node, onClose, onEdit, onDeepDive }) {
 
 export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
   const navigate = useNavigate();
-  const [activeMenu, setActiveMenu] = useState(null); // node id
+  // activeMenu = id of filled node showing edit/deepdive menu
+  const [activeMenu, setActiveMenu] = useState(null);
+  // tooltip = { id, mobile: bool } for unfilled nodes
+  const [tooltip, setTooltip] = useState(null);
 
   const nodes = SYSTEMS.map(s => {
     const [x, y] = polarXY(s.angle);
     const isEnabled = enabledSystems.includes(s.id);
-    const hasFilled = isEnabled && s.check(profile[s.id]);
+    // hasFilled based on data alone — independent of enabledSystems toggle
+    const hasFilled = !!s.check(profile[s.id]);
     return { ...s, x, y, isEnabled, hasFilled };
   });
 
   const completedCount = nodes.filter(n => n.hasFilled).length;
 
-  const handleNodeClick = (node) => {
+  const handleNodeClick = (node, e) => {
     if (node.hasFilled) {
-      // Toggle menu
+      setTooltip(null);
       setActiveMenu(prev => prev === node.id ? null : node.id);
+      return;
+    }
+    // For unfilled: on mobile (touch) show tap tooltip; on desktop navigate immediately
+    const isTouch = e.nativeEvent?.pointerType === 'touch' || ('ontouchstart' in window && window.innerWidth < 768);
+    if (isTouch) {
+      setActiveMenu(null);
+      setTooltip(prev => prev?.id === node.id ? null : { id: node.id, mobile: true });
     } else {
-      // Go to systems/profile tab to enable or fill in
       navigate(createPageUrl("CosmicAddons") + (node.isEnabled ? "?tab=profile" : "?tab=systems"));
     }
   };
 
-  const goEdit = (node) => {
-    setActiveMenu(null);
-    navigate(createPageUrl("CosmicAddons") + "?tab=profile");
+  const handleNodeHover = (node, entering) => {
+    if (node.hasFilled) return;
+    if (entering) {
+      setTooltip({ id: node.id, mobile: false });
+    } else {
+      setTooltip(prev => (prev && !prev.mobile) ? null : prev);
+    }
   };
 
-  const goDeepDive = (node) => {
+  const handleNavigate = (dest) => {
+    setTooltip(null);
     setActiveMenu(null);
-    navigate(createPageUrl("CosmicAddons") + "?tab=deepdive");
+    navigate(createPageUrl("CosmicAddons") + dest);
   };
 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative">
         <svg viewBox="0 0 320 320" width="300" height="300" className="overflow-visible"
-          onClick={(e) => { if (e.target.tagName === 'svg') setActiveMenu(null); }}>
+          onClick={(e) => { if (e.target.tagName === 'svg') { setActiveMenu(null); setTooltip(null); } }}>
           <defs>
             {SYSTEMS.map(s => (
               <radialGradient key={s.id} id={`grad-${s.id}`} cx="50%" cy="50%" r="50%">
@@ -108,114 +168,123 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
               <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
+            <filter id="glow-soft">
+              <feGaussianBlur stdDeviation="5" result="coloredBlur" />
+              <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
           </defs>
 
           {/* ── Progressive background complexity ── */}
-          {/* Layer 1 (1+ systems): outer ring */}
+          {/* Layer 1 (1+ filled): single outer ring */}
           {completedCount >= 1 && (
-            <circle cx={CX} cy={CY} r={R * 1.55} fill="none" stroke="rgba(192,132,252,0.08)" strokeWidth="0.6" />
+            <circle cx={CX} cy={CY} r={R * 1.52} fill="none" stroke="rgba(192,132,252,0.22)" strokeWidth="0.8" />
           )}
-          {/* Layer 2 (2+ systems): second outer ring + 6 petals */}
+
+          {/* Layer 2 (2+ filled): second ring + 6 petal circles */}
           {completedCount >= 2 && (
             <>
-              <circle cx={CX} cy={CY} r={R * 1.95} fill="none" stroke="rgba(139,92,246,0.07)" strokeWidth="0.5" />
+              <circle cx={CX} cy={CY} r={R * 1.9} fill="none" stroke="rgba(139,92,246,0.18)" strokeWidth="0.7" />
               {nodes.map((n, i) => {
-                const [px, py] = polarXY(n.angle, R * 1.55);
-                return <circle key={`p2-${i}`} cx={px} cy={py} r={R * 0.55} fill="none" stroke="rgba(192,132,252,0.07)" strokeWidth="0.5" />;
+                const [px, py] = polarXY(n.angle, R * 1.52);
+                return <circle key={`p2-${i}`} cx={px} cy={py} r={R * 0.52} fill="none" stroke="rgba(192,132,252,0.16)" strokeWidth="0.6" />;
               })}
-            </>
-          )}
-          {/* Layer 3 (3+ systems): inner triangles */}
-          {completedCount >= 3 && (
-            <>
-              <polygon
-                points={[0,2,4].map(i => { const [x,y] = polarXY(nodes[i].angle, R * 1.1); return `${x},${y}`; }).join(' ')}
-                fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.12)" strokeWidth="0.6" />
-              <polygon
-                points={[1,3,5].map(i => { const [x,y] = polarXY(nodes[i].angle, R * 1.1); return `${x},${y}`; }).join(' ')}
-                fill="rgba(56,189,248,0.03)" stroke="rgba(56,189,248,0.10)" strokeWidth="0.6" />
-            </>
-          )}
-          {/* Layer 4 (4+ systems): more petals at mid radius */}
-          {completedCount >= 4 && (
-            <>
-              {nodes.map((n, i) => {
-                const [px, py] = polarXY(n.angle + 30, R * 0.9);
-                return <circle key={`p4-${i}`} cx={px} cy={py} r={R * 0.7} fill="none" stroke="rgba(244,114,182,0.06)" strokeWidth="0.5" />;
-              })}
-              <circle cx={CX} cy={CY} r={R * 0.7} fill="none" stroke="rgba(192,132,252,0.1)" strokeWidth="0.5" />
-            </>
-          )}
-          {/* Layer 5 (5+ systems): outer star polygon + corner circles */}
-          {completedCount >= 5 && (
-            <>
-              <polygon
-                points={nodes.map(n => { const [x,y] = polarXY(n.angle, R * 1.38); return `${x},${y}`; }).join(' ')}
-                fill="rgba(251,191,36,0.03)" stroke="rgba(251,191,36,0.12)" strokeWidth="0.7" />
-              {nodes.map((n, i) => {
-                const [px, py] = polarXY(n.angle, R * 1.75);
-                return <circle key={`p5-${i}`} cx={px} cy={py} r={R * 0.4} fill="none" stroke="rgba(251,191,36,0.06)" strokeWidth="0.4" />;
-              })}
-            </>
-          )}
-          {/* Layer 6 (all 6): full Flower of Life — corner + fill rings */}
-          {completedCount === 6 && (
-            <>
-              {nodes.map((n, i) => {
-                const [px, py] = polarXY(n.angle, R * 2.1);
-                return <circle key={`p6a-${i}`} cx={px} cy={py} r={R} fill="none" stroke="rgba(192,132,252,0.06)" strokeWidth="0.4" />;
-              })}
-              {nodes.map((n, i) => {
-                const [px, py] = polarXY(n.angle + 30, R * 1.78);
-                return <circle key={`p6b-${i}`} cx={px} cy={py} r={R * 0.55} fill="none" stroke="rgba(56,189,248,0.06)" strokeWidth="0.4" />;
-              })}
-              <circle cx={CX} cy={CY} r={R * 2.3} fill="none" stroke="rgba(192,132,252,0.07)" strokeWidth="0.5" />
-              <polygon
-                points={nodes.map(n => { const [x,y] = polarXY(n.angle, R * 1.7); return `${x},${y}`; }).join(' ')}
-                fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.1)" strokeWidth="0.5" />
             </>
           )}
 
-          {/* Flower of Life — background circles */}
+          {/* Layer 3 (3+ filled): two interlocking triangles (Star of David) */}
+          {completedCount >= 3 && (
+            <>
+              <polygon
+                points={[0,2,4].map(i => { const [x,y] = polarXY(nodes[i].angle, R * 1.08); return `${x},${y}`; }).join(' ')}
+                fill="rgba(139,92,246,0.07)" stroke="rgba(139,92,246,0.28)" strokeWidth="0.8" />
+              <polygon
+                points={[1,3,5].map(i => { const [x,y] = polarXY(nodes[i].angle, R * 1.08); return `${x},${y}`; }).join(' ')}
+                fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.22)" strokeWidth="0.8" />
+            </>
+          )}
+
+          {/* Layer 4 (4+ filled): inner petal ring + mid circle */}
+          {completedCount >= 4 && (
+            <>
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle + 30, R * 0.88);
+                return <circle key={`p4-${i}`} cx={px} cy={py} r={R * 0.68} fill="none" stroke="rgba(244,114,182,0.14)" strokeWidth="0.6" />;
+              })}
+              <circle cx={CX} cy={CY} r={R * 0.68} fill="none" stroke="rgba(192,132,252,0.20)" strokeWidth="0.7" />
+            </>
+          )}
+
+          {/* Layer 5 (5+ filled): outer star hexagon + satellite circles */}
+          {completedCount >= 5 && (
+            <>
+              <polygon
+                points={nodes.map(n => { const [x,y] = polarXY(n.angle, R * 1.35); return `${x},${y}`; }).join(' ')}
+                fill="rgba(251,191,36,0.05)" stroke="rgba(251,191,36,0.26)" strokeWidth="0.9" />
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle, R * 1.72);
+                return <circle key={`p5-${i}`} cx={px} cy={py} r={R * 0.38} fill="none" stroke="rgba(251,191,36,0.14)" strokeWidth="0.5" />;
+              })}
+            </>
+          )}
+
+          {/* Layer 6 (all 6): full Flower of Life expansion */}
+          {completedCount === 6 && (
+            <>
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle, R * 2.05);
+                return <circle key={`p6a-${i}`} cx={px} cy={py} r={R} fill="none" stroke="rgba(192,132,252,0.13)" strokeWidth="0.5" />;
+              })}
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle + 30, R * 1.75);
+                return <circle key={`p6b-${i}`} cx={px} cy={py} r={R * 0.52} fill="none" stroke="rgba(56,189,248,0.13)" strokeWidth="0.5" />;
+              })}
+              <circle cx={CX} cy={CY} r={R * 2.25} fill="none" stroke="rgba(192,132,252,0.14)" strokeWidth="0.6" />
+              <polygon
+                points={nodes.map(n => { const [x,y] = polarXY(n.angle, R * 1.68); return `${x},${y}`; }).join(' ')}
+                fill="rgba(139,92,246,0.06)" stroke="rgba(139,92,246,0.20)" strokeWidth="0.7" />
+            </>
+          )}
+
+          {/* Flower of Life — per-node background circles */}
           {nodes.map(n => (
             <circle key={`bg-${n.id}`} cx={n.x} cy={n.y} r={R}
               fill="none"
-              stroke={n.hasFilled ? n.color : "rgba(255,255,255,0.06)"}
-              strokeWidth={n.hasFilled ? "0.8" : "0.5"}
-              opacity={n.hasFilled ? 0.35 : 0.15} />
+              stroke={n.hasFilled ? n.color : "rgba(255,255,255,0.07)"}
+              strokeWidth={n.hasFilled ? "1" : "0.5"}
+              opacity={n.hasFilled ? 0.4 : 0.18} />
           ))}
-          <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(192,132,252,0.12)" strokeWidth="0.5" />
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(192,132,252,0.15)" strokeWidth="0.6" />
 
           {/* Spokes */}
           {nodes.map(n => (
             <line key={`spoke-${n.id}`}
               x1={CX} y1={CY} x2={n.x} y2={n.y}
-              stroke={n.hasFilled ? n.color : "rgba(255,255,255,0.08)"}
+              stroke={n.hasFilled ? n.color : "rgba(255,255,255,0.09)"}
               strokeWidth={n.hasFilled ? "1.5" : "0.6"}
-              opacity={n.hasFilled ? 0.5 : 0.3}
+              opacity={n.hasFilled ? 0.55 : 0.35}
               strokeDasharray={n.isEnabled && !n.hasFilled ? "4 4" : "none"} />
           ))}
 
-          {/* Outer ring */}
+          {/* Outer ring connectors */}
           {nodes.map((n, i) => {
             const next = nodes[(i + 1) % nodes.length];
             const bothFilled = n.hasFilled && next.hasFilled;
             return (
               <line key={`ring-${i}`}
                 x1={n.x} y1={n.y} x2={next.x} y2={next.y}
-                stroke={bothFilled ? `url(#grad-${n.id})` : "rgba(255,255,255,0.07)"}
+                stroke={bothFilled ? n.color : "rgba(255,255,255,0.08)"}
                 strokeWidth={bothFilled ? "1.5" : "0.5"}
-                opacity={bothFilled ? 0.6 : 0.25} />
+                opacity={bothFilled ? 0.65 : 0.28} />
             );
           })}
 
           {/* Inner hexagon */}
           <polygon
-            points={nodes.map(n => { const [x, y] = polarXY(n.angle, R * 0.45); return `${x},${y}`; }).join(" ")}
-            fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.15)" strokeWidth="0.8" />
+            points={nodes.map(n => { const [x, y] = polarXY(n.angle, R * 0.44); return `${x},${y}`; }).join(" ")}
+            fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.18)" strokeWidth="0.9" />
 
           {/* Center node */}
-          <circle cx={CX} cy={CY} r={22} fill="url(#grad-center)" stroke="rgba(192,132,252,0.3)" strokeWidth="1" />
+          <circle cx={CX} cy={CY} r={22} fill="url(#grad-center)" stroke="rgba(192,132,252,0.35)" strokeWidth="1" filter={completedCount >= 3 ? "url(#glow-soft)" : undefined} />
           <text x={CX} y={CY + 1} textAnchor="middle" dominantBaseline="middle" fontSize="14" fill="rgba(255,255,255,0.85)">✦</text>
           <text x={CX} y={CY + 34} textAnchor="middle" fontSize="8" fill="rgba(192,132,252,0.6)" letterSpacing="2">BLUEPRINT</text>
 
@@ -224,40 +293,44 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
             const labelR = R + 30;
             const [lx, ly] = polarXY(n.angle, labelR);
             const isMenuOpen = activeMenu === n.id;
+            const isTooltipOpen = tooltip?.id === n.id;
+
             return (
-              <g key={n.id} filter={n.hasFilled ? "url(#glow)" : undefined}
-                onClick={() => handleNodeClick(n)}
+              <g key={n.id}
+                filter={n.hasFilled ? "url(#glow)" : undefined}
+                onClick={(e) => handleNodeClick(n, e)}
+                onMouseEnter={() => handleNodeHover(n, true)}
+                onMouseLeave={() => handleNodeHover(n, false)}
                 style={{ cursor: 'pointer' }}>
-                {/* Hover/active pulse ring */}
-                {isMenuOpen && (
-                  <circle cx={n.x} cy={n.y} r={30} fill="none" stroke={n.color} strokeWidth="1.5" opacity="0.6" />
+                {/* Active ring */}
+                {(isMenuOpen || isTooltipOpen) && (
+                  <circle cx={n.x} cy={n.y} r={30} fill="none" stroke={n.color} strokeWidth="1.5" opacity="0.55" />
                 )}
-                {/* Outer ring for filled nodes */}
+                {/* Outer glow ring for filled nodes */}
                 {n.hasFilled && (
                   <circle cx={n.x} cy={n.y} r={26} fill="none" stroke={n.color} strokeWidth="1" opacity="0.4" />
                 )}
-                {/* Main node circle */}
+                {/* Main node */}
                 <circle cx={n.x} cy={n.y} r={20}
-                  fill={n.hasFilled ? `url(#grad-${n.id})` : n.isEnabled ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.02)"}
-                  stroke={n.hasFilled ? n.color : n.isEnabled ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.08)"}
+                  fill={n.hasFilled ? `url(#grad-${n.id})` : n.isEnabled ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.02)"}
+                  stroke={n.hasFilled ? n.color : n.isEnabled ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.09)"}
                   strokeWidth={n.hasFilled ? "1.5" : "1"} />
                 {/* Emoji */}
-                <text x={n.x} y={n.y + 1} textAnchor="middle" dominantBaseline="middle"
-                  fontSize="12"
-                  fill={n.hasFilled ? "white" : n.isEnabled ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.15)"}>
+                <text x={n.x} y={n.y + 1} textAnchor="middle" dominantBaseline="middle" fontSize="12"
+                  fill={n.hasFilled ? "white" : n.isEnabled ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.17)"}>
                   {n.emoji}
                 </text>
                 {/* Label */}
                 <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
                   fontSize="7.5" letterSpacing="0.5"
-                  fill={n.hasFilled ? n.color : n.isEnabled ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.18)"}>
+                  fill={n.hasFilled ? n.color : n.isEnabled ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.2)"}>
                   {n.label.toUpperCase()}
                 </text>
               </g>
             );
           })}
 
-          {/* Context menu overlay for filled nodes */}
+          {/* Overlays (rendered last so they're on top) */}
           {activeMenu && (() => {
             const node = nodes.find(n => n.id === activeMenu);
             if (!node) return null;
@@ -265,8 +338,21 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
               <NodeMenu
                 node={node}
                 onClose={() => setActiveMenu(null)}
-                onEdit={() => goEdit(node)}
-                onDeepDive={() => goDeepDive(node)}
+                onEdit={() => { setActiveMenu(null); navigate(createPageUrl("CosmicAddons") + "?tab=profile"); }}
+                onDeepDive={() => { setActiveMenu(null); navigate(createPageUrl("CosmicAddons") + "?tab=deepdive"); }}
+              />
+            );
+          })()}
+
+          {tooltip && (() => {
+            const node = nodes.find(n => n.id === tooltip.id);
+            if (!node || node.hasFilled) return null;
+            return (
+              <NodeTooltip
+                node={node}
+                isMobile={tooltip.mobile}
+                onClose={() => setTooltip(null)}
+                onNavigate={handleNavigate}
               />
             );
           })()}

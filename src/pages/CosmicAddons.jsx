@@ -15,6 +15,8 @@ import {
 import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
 import CosmicInsightBadge from "@/components/cosmic/CosmicInsightBadge";
 import CosmicBlueprint from "@/components/cosmic/CosmicBlueprint";
+import SystemReports from "@/components/cosmic/SystemReport";
+import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";
 
 const EMPTY_PROFILE = {
     first_name: "",
@@ -115,11 +117,12 @@ export default function CosmicAddons() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="mb-6 w-full grid grid-cols-3"
+                    <TabsList className="mb-6 w-full grid grid-cols-4"
                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
                         <TabsTrigger value="systems">Systems</TabsTrigger>
                         <TabsTrigger value="profile">My Profile</TabsTrigger>
-                        <TabsTrigger value="correspondences">Correspondences</TabsTrigger>
+                        <TabsTrigger value="correspondences">Connections</TabsTrigger>
+                        <TabsTrigger value="deepdive">Deep Dive</TabsTrigger>
                     </TabsList>
 
                     {/* ── Tab 1: Toggle Systems ── */}
@@ -223,52 +226,19 @@ export default function CosmicAddons() {
                         )}
                     </TabsContent>
 
-                    {/* ── Tab 3: Correspondences ── */}
+                    {/* ── Tab 3: Connections ── */}
                     <TabsContent value="correspondences" className="space-y-6">
-                        <div className="glass-card p-6">
-                            <div className="flex items-center gap-2 mb-1">
-                                <BookOpen className="w-5 h-5" style={{ color: '#c084fc' }} />
-                                <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>How the Systems Relate</h3>
-                            </div>
-                            <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>
-                                These cross-system correspondences are included in your AI insights when both systems are enabled.
-                            </p>
-                            <div className="space-y-4">
-                                {CORRESPONDENCE_PAIRS.map(pair => {
-                                    const bothEnabled = pair.systems.every(s => enabledSystems.includes(s));
-                                    const text = SYSTEM_CORRESPONDENCES[pair.key];
-                                    return (
-                                        <div key={pair.key} className="p-5 rounded-xl transition-all"
-                                            style={{
-                                                background: bothEnabled ? 'rgba(139,92,246,0.08)' : 'rgba(255,255,255,0.02)',
-                                                border: bothEnabled ? '1px solid rgba(139,92,246,0.25)' : '1px solid rgba(255,255,255,0.06)',
-                                                opacity: bothEnabled ? 1 : 0.5
-                                            }}>
-                                            <div className="flex flex-wrap items-center gap-2 mb-3">
-                                                {pair.systems.map(s => <CosmicInsightBadge key={s} systemId={s} />)}
-                                                {bothEnabled ? (
-                                                    <Badge className="text-xs" style={{ background: 'rgba(139,92,246,0.2)', color: '#c084fc', border: '1px solid rgba(139,92,246,0.3)' }}>Active in AI insights</Badge>
-                                                ) : (
-                                                    <Badge className="text-xs" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(180,170,210,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>Enable both to activate</Badge>
-                                                )}
-                                            </div>
-                                            <p className="text-sm leading-relaxed" style={{ color: 'rgba(200,190,230,0.75)' }}>
-                                                {text?.trim()}
-                                            </p>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        <CorrespondenceMap enabledSystems={enabledSystems} profile={profile} />
+                    </TabsContent>
 
+                    {/* ── Tab 4: Deep Dive ── */}
+                    <TabsContent value="deepdive" className="space-y-6">
                         <div className="glass-card p-5">
-                            <div className="flex items-start gap-3">
-                                <Info className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#c084fc' }} />
-                                <p className="text-sm" style={{ color: 'rgba(180,170,210,0.7)' }}>
-                                    <strong style={{ color: 'rgba(210,200,235,0.9)' }}>How this works:</strong> When you generate AI insights on the Analytics page, your enabled systems and their cross-correspondences are automatically included in the analysis prompt. The AI uses them as a lens — not as fixed predictions, but as archetypal language to help surface deeper patterns in your emotional data.
-                                </p>
-                            </div>
+                            <p className="text-sm" style={{ color: 'rgba(180,170,210,0.6)' }}>
+                                Each system below has a full structured breakdown + an AI-generated deep reading. Expand any system to generate your personalized report. Each can be exported as a PDF.
+                            </p>
                         </div>
+                        <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile} />
                     </TabsContent>
                 </Tabs>
             </div>

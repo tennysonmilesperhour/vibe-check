@@ -110,6 +110,72 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
             </filter>
           </defs>
 
+          {/* ── Progressive background complexity ── */}
+          {/* Layer 1 (1+ systems): outer ring */}
+          {completedCount >= 1 && (
+            <circle cx={CX} cy={CY} r={R * 1.55} fill="none" stroke="rgba(192,132,252,0.08)" strokeWidth="0.6" />
+          )}
+          {/* Layer 2 (2+ systems): second outer ring + 6 petals */}
+          {completedCount >= 2 && (
+            <>
+              <circle cx={CX} cy={CY} r={R * 1.95} fill="none" stroke="rgba(139,92,246,0.07)" strokeWidth="0.5" />
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle, R * 1.55);
+                return <circle key={`p2-${i}`} cx={px} cy={py} r={R * 0.55} fill="none" stroke="rgba(192,132,252,0.07)" strokeWidth="0.5" />;
+              })}
+            </>
+          )}
+          {/* Layer 3 (3+ systems): inner triangles */}
+          {completedCount >= 3 && (
+            <>
+              <polygon
+                points={[0,2,4].map(i => { const [x,y] = polarXY(nodes[i].angle, R * 1.1); return `${x},${y}`; }).join(' ')}
+                fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.12)" strokeWidth="0.6" />
+              <polygon
+                points={[1,3,5].map(i => { const [x,y] = polarXY(nodes[i].angle, R * 1.1); return `${x},${y}`; }).join(' ')}
+                fill="rgba(56,189,248,0.03)" stroke="rgba(56,189,248,0.10)" strokeWidth="0.6" />
+            </>
+          )}
+          {/* Layer 4 (4+ systems): more petals at mid radius */}
+          {completedCount >= 4 && (
+            <>
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle + 30, R * 0.9);
+                return <circle key={`p4-${i}`} cx={px} cy={py} r={R * 0.7} fill="none" stroke="rgba(244,114,182,0.06)" strokeWidth="0.5" />;
+              })}
+              <circle cx={CX} cy={CY} r={R * 0.7} fill="none" stroke="rgba(192,132,252,0.1)" strokeWidth="0.5" />
+            </>
+          )}
+          {/* Layer 5 (5+ systems): outer star polygon + corner circles */}
+          {completedCount >= 5 && (
+            <>
+              <polygon
+                points={nodes.map(n => { const [x,y] = polarXY(n.angle, R * 1.38); return `${x},${y}`; }).join(' ')}
+                fill="rgba(251,191,36,0.03)" stroke="rgba(251,191,36,0.12)" strokeWidth="0.7" />
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle, R * 1.75);
+                return <circle key={`p5-${i}`} cx={px} cy={py} r={R * 0.4} fill="none" stroke="rgba(251,191,36,0.06)" strokeWidth="0.4" />;
+              })}
+            </>
+          )}
+          {/* Layer 6 (all 6): full Flower of Life — corner + fill rings */}
+          {completedCount === 6 && (
+            <>
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle, R * 2.1);
+                return <circle key={`p6a-${i}`} cx={px} cy={py} r={R} fill="none" stroke="rgba(192,132,252,0.06)" strokeWidth="0.4" />;
+              })}
+              {nodes.map((n, i) => {
+                const [px, py] = polarXY(n.angle + 30, R * 1.78);
+                return <circle key={`p6b-${i}`} cx={px} cy={py} r={R * 0.55} fill="none" stroke="rgba(56,189,248,0.06)" strokeWidth="0.4" />;
+              })}
+              <circle cx={CX} cy={CY} r={R * 2.3} fill="none" stroke="rgba(192,132,252,0.07)" strokeWidth="0.5" />
+              <polygon
+                points={nodes.map(n => { const [x,y] = polarXY(n.angle, R * 1.7); return `${x},${y}`; }).join(' ')}
+                fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.1)" strokeWidth="0.5" />
+            </>
+          )}
+
           {/* Flower of Life — background circles */}
           {nodes.map(n => (
             <circle key={`bg-${n.id}`} cx={n.x} cy={n.y} r={R}

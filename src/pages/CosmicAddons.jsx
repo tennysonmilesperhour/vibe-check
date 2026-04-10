@@ -94,31 +94,38 @@ export default function CosmicAddons() {
         if (!canCalculate) return;
         setIsCalculating(true);
         const location = [profile.birth_city, profile.birth_state, profile.birth_country].filter(Boolean).join(', ');
-        const prompt = `You are an expert astrologer and Human Design analyst. Calculate the following for a person born on ${profile.birth_date}${profile.birth_time ? ' at ' + profile.birth_time : ''} in ${location}.
+        const prompt = `You are a master astrologer, Human Design analyst, and Gene Keys reader with access to precise ephemeris data.
 
-Return ONLY a JSON object with these exact fields (use null if genuinely cannot determine):
-- moon_sign: zodiac sign (e.g. "Scorpio")
-- rising_sign: zodiac sign (requires birth time; null if no time given)
-- north_node: zodiac sign of North Node
-- hd_type: one of Manifestor, Generator, Manifesting Generator, Projector, Reflector
-- hd_authority: one of Emotional / Solar Plexus, Sacral, Splenic, Ego / Heart, G Center / Self, Environment (Mental Projector), Lunar (Reflector)
-- hd_profile: e.g. "3/5 – Martyr / Heretic" (use format X/X – Name / Name)
-- hd_strategy: e.g. "To Respond"
-- hd_definition: one of Single Definition, Split Definition, Triple Split, Quadruple Split
-- hd_incarnation_cross: e.g. "Right Angle Cross of the Sphinx"
-- gk_life_work: Gene Key number 1-64 (Conscious Sun gate)
-- gk_evolution: Gene Key number 1-64 (Conscious Earth gate)
-- gk_radiance: Gene Key number 1-64 (Conscious Moon gate)
-- gk_purpose: Gene Key number 1-64 (Conscious Node gate)
-- gk_attraction: Gene Key number 1-64 (Unconscious Sun gate)
-- gk_iq: Gene Key number 1-64 (Unconscious Node gate)
-- chakra_dominant: one of Root (Muladhara) – Safety & grounding, Sacral (Svadhisthana) – Creativity & pleasure, Solar Plexus (Manipura) – Power & will, Heart (Anahata) – Love & connection, Throat (Vishuddha) – Expression & truth, Third Eye (Ajna) – Intuition & insight, Crown (Sahasrara) – Consciousness & unity
+Calculate everything for: Born ${profile.birth_date}${profile.birth_time ? ' at ' + profile.birth_time : ''}, in ${location}.
 
-Use actual ephemeris calculations where possible. Be precise.`;
+IMPORTANT: You MUST return actual calculated values for ALL fields. Do not return null unless genuinely impossible.
+
+For Gene Keys: Use the I Ching hexagram gates from the Human Design bodygraph. The Conscious Sun gate = Life's Work key number (1-64).
+
+Return this JSON:
+{
+  "moon_sign": "<zodiac sign, e.g. Scorpio>",
+  "rising_sign": "<zodiac sign, requires birth time>",
+  "north_node": "<zodiac sign of North Node>",
+  "hd_type": "<one of: Manifestor, Generator, Manifesting Generator, Projector, Reflector>",
+  "hd_authority": "<e.g. Emotional / Solar Plexus>",
+  "hd_profile": "<e.g. 3/5>",
+  "hd_strategy": "<e.g. To Respond>",
+  "hd_definition": "<one of: Single Definition, Split Definition, Triple Split, Quadruple Split>",
+  "hd_incarnation_cross": "<e.g. Right Angle Cross of the Sphinx>",
+  "gk_life_work": "<number 1-64>",
+  "gk_evolution": "<number 1-64>",
+  "gk_radiance": "<number 1-64>",
+  "gk_purpose": "<number 1-64>",
+  "gk_attraction": "<number 1-64>",
+  "gk_iq": "<number 1-64>",
+  "chakra_dominant": "<one of: Root (Muladhara) \u2013 Safety & grounding, Sacral (Svadhisthana) \u2013 Creativity & pleasure, Solar Plexus (Manipura) \u2013 Power & will, Heart (Anahata) \u2013 Love & connection, Throat (Vishuddha) \u2013 Expression & truth, Third Eye (Ajna) \u2013 Intuition & insight, Crown (Sahasrara) \u2013 Consciousness & unity>"
+}`;
 
         const result = await base44.integrations.Core.InvokeLLM({
             prompt,
             add_context_from_internet: true,
+            model: 'gemini_3_1_pro',
             response_json_schema: {
                 type: 'object',
                 properties: {
@@ -135,39 +142,43 @@ Use actual ephemeris calculations where possible. Be precise.`;
             }
         });
 
-        setProfile(prev => ({
-            ...prev,
+        const newProfile = {
+            ...profile,
             astrology: {
-                ...prev.astrology,
-                ...(result.moon_sign && !prev.astrology?.moon_sign ? { moon_sign: result.moon_sign } : {}),
-                ...(result.rising_sign && !prev.astrology?.rising_sign ? { rising_sign: result.rising_sign } : {}),
-                ...(result.north_node && !prev.astrology?.north_node ? { north_node: result.north_node } : {}),
+                ...profile.astrology,
+                ...(result.moon_sign ? { moon_sign: result.moon_sign } : {}),
+                ...(result.rising_sign ? { rising_sign: result.rising_sign } : {}),
+                ...(result.north_node ? { north_node: result.north_node } : {}),
             },
             human_design: {
-                ...prev.human_design,
-                ...(result.hd_type && !prev.human_design?.type ? { type: result.hd_type } : {}),
-                ...(result.hd_authority && !prev.human_design?.authority ? { authority: result.hd_authority } : {}),
-                ...(result.hd_profile && !prev.human_design?.profile ? { profile: result.hd_profile } : {}),
-                ...(result.hd_strategy && !prev.human_design?.strategy ? { strategy: result.hd_strategy } : {}),
-                ...(result.hd_definition && !prev.human_design?.definition ? { definition: result.hd_definition } : {}),
-                ...(result.hd_incarnation_cross && !prev.human_design?.incarnation_cross ? { incarnation_cross: result.hd_incarnation_cross } : {}),
+                ...profile.human_design,
+                ...(result.hd_type ? { type: result.hd_type } : {}),
+                ...(result.hd_authority ? { authority: result.hd_authority } : {}),
+                ...(result.hd_profile ? { profile: result.hd_profile } : {}),
+                ...(result.hd_strategy ? { strategy: result.hd_strategy } : {}),
+                ...(result.hd_definition ? { definition: result.hd_definition } : {}),
+                ...(result.hd_incarnation_cross ? { incarnation_cross: result.hd_incarnation_cross } : {}),
             },
             gene_keys: {
-                ...prev.gene_keys,
-                ...(result.gk_life_work && !prev.gene_keys?.life_work ? { life_work: result.gk_life_work } : {}),
-                ...(result.gk_evolution && !prev.gene_keys?.evolution ? { evolution: result.gk_evolution } : {}),
-                ...(result.gk_radiance && !prev.gene_keys?.radiance ? { radiance: result.gk_radiance } : {}),
-                ...(result.gk_purpose && !prev.gene_keys?.purpose ? { purpose: result.gk_purpose } : {}),
-                ...(result.gk_attraction && !prev.gene_keys?.attraction ? { attraction: result.gk_attraction } : {}),
-                ...(result.gk_iq && !prev.gene_keys?.iq ? { iq: result.gk_iq } : {}),
+                ...profile.gene_keys,
+                ...(result.gk_life_work ? { life_work: result.gk_life_work } : {}),
+                ...(result.gk_evolution ? { evolution: result.gk_evolution } : {}),
+                ...(result.gk_radiance ? { radiance: result.gk_radiance } : {}),
+                ...(result.gk_purpose ? { purpose: result.gk_purpose } : {}),
+                ...(result.gk_attraction ? { attraction: result.gk_attraction } : {}),
+                ...(result.gk_iq ? { iq: result.gk_iq } : {}),
             },
             chakras: {
-                ...prev.chakras,
-                ...(result.chakra_dominant && !prev.chakras?.dominant_center ? { dominant_center: result.chakra_dominant } : {}),
+                ...profile.chakras,
+                ...(result.chakra_dominant ? { dominant_center: result.chakra_dominant } : {}),
             }
-        }));
+        };
+
+        setProfile(newProfile);
+        // Auto-save so changes persist
+        await base44.auth.updateMe({ cosmic_profile: newProfile });
         setIsCalculating(false);
-        toast({ title: "✦ Birth chart calculated", description: "Fields auto-filled from your birth data. Review and adjust anything that looks off." });
+        toast({ title: "✦ Birth chart calculated & saved", description: "Human Design, Gene Keys, Moon sign, and more have been filled in. Review and adjust anything that looks off." });
     };
 
     const enabledSystems = profile.enabled_systems || [];

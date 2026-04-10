@@ -23,7 +23,9 @@ const EMPTY_PROFILE = {
     last_name: "",
     birth_date: "",
     birth_time: "",
-    birth_location: "",
+    birth_city: "",
+    birth_state: "",
+    birth_country: "",
     enabled_systems: ["astrology"],
     astrology: {},
     human_design: {},
@@ -167,10 +169,23 @@ export default function CosmicAddons() {
                                     <Input type="time" className="mt-1" value={profile.birth_time}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_time: e.target.value }))} />
                                 </div>
+                                <div />
+                            </div>
+                            <div className="grid md:grid-cols-3 gap-4 mt-4">
                                 <div>
-                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>Place of Birth <span className="text-xs opacity-60">(optional)</span></Label>
-                                    <Input className="mt-1" placeholder="City, Country" value={profile.birth_location}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_location: e.target.value }))} />
+                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>City of Birth</Label>
+                                    <Input className="mt-1" placeholder="e.g. Denver" value={profile.birth_city || ''}
+                                        onChange={e => setProfile(prev => ({ ...prev, birth_city: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>State / Region <span className="text-xs opacity-60">(optional)</span></Label>
+                                    <Input className="mt-1" placeholder="e.g. Colorado" value={profile.birth_state || ''}
+                                        onChange={e => setProfile(prev => ({ ...prev, birth_state: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>Country of Birth</Label>
+                                    <Input className="mt-1" placeholder="e.g. United States" value={profile.birth_country || ''}
+                                        onChange={e => setProfile(prev => ({ ...prev, birth_country: e.target.value }))} />
                                 </div>
                             </div>
                         </div>

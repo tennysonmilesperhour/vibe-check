@@ -3,32 +3,40 @@
   "type": "object",
   "properties": {
     "first_name": {
-      "type": "string",
-      "description": "User's first name (used for numerology, life path, etc.)"
+      "type": "string"
     },
     "last_name": {
-      "type": "string",
-      "description": "User's last name (used for numerology, expression number, etc.)"
+      "type": "string"
     },
     "birth_date": {
       "type": "string",
-      "format": "date",
-      "description": "User's birth date"
+      "format": "date"
     },
     "birth_time": {
       "type": "string",
-      "description": "Birth time in HH:MM format (optional, for rising sign accuracy)"
+      "description": "HH:MM format"
+    },
+    "birth_city": {
+      "type": "string",
+      "description": "City of birth"
+    },
+    "birth_state": {
+      "type": "string",
+      "description": "State or region of birth"
+    },
+    "birth_country": {
+      "type": "string",
+      "description": "Country of birth"
     },
     "birth_location": {
       "type": "string",
-      "description": "City or place of birth"
+      "description": "Legacy combined field (deprecated in favour of city/state/country)"
     },
     "enabled_systems": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Which systems are toggled on: astrology, gene_keys, human_design, numerology, tarot_archetype, chakras"
+      }
     },
     "astrology": {
       "type": "object",
@@ -54,8 +62,7 @@
       "type": "object",
       "properties": {
         "type": {
-          "type": "string",
-          "description": "Manifestor, Generator, Manifesting Generator, Projector, Reflector"
+          "type": "string"
         },
         "authority": {
           "type": "string"

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { InvokeLLM } from "@/integrations/Core";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { format, subDays, parseISO } from "date-fns";
-import { TrendingUp, Brain, Calendar, Users, Target } from "lucide-react";
+import { TrendingUp, Sparkles, Calendar, Users, Target } from "lucide-react";
 import CosmicContextBar from "@/components/cosmic/CosmicContextBar";
 import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
 
@@ -380,8 +380,8 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 {/* AI Insights */}
                 <div className="glass-card-glow p-6">
                     <div className="flex items-center gap-2 mb-1">
-                        <Brain className="w-5 h-5" style={{ color: '#c084fc' }} />
-                        <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>AI Insights</h3>
+                        <Sparkles className="w-5 h-5" style={{ color: '#c084fc' }} />
+                        <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Oracle Insights</h3>
                     </div>
                     <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>
                         Supportive observations from your data (not medical advice)
@@ -417,7 +417,7 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                         ) : (
                             <div className="text-center py-8">
                                 <Button onClick={generateInsights} className="btn-cosmic rounded-xl">
-                                    <Brain className="w-4 h-4 mr-2" />
+                                    <Sparkles className="w-4 h-4 mr-2" />
                                     Generate Insights
                                 </Button>
                             </div>

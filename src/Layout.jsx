@@ -15,7 +15,7 @@ import {
 const navigationItems = [
     { title: "Dashboard", url: createPageUrl("Dashboard"), icon: Heart, description: "Overview & check-ins" },
     { title: "Daily Log", url: createPageUrl("DailyLog"), icon: Calendar, description: "Log your highs & lows" },
-    { title: "Analytics", url: createPageUrl("Analytics"), icon: BarChart3, description: "Trends & patterns" },
+    { title: "Patterns", url: createPageUrl("Analytics"), icon: BarChart3, description: "Insights & trends" },
     { title: "Relationships", url: createPageUrl("Relationships"), icon: Users, description: "Your connections" },
     { title: "Healing Board", url: createPageUrl("HealingBoard"), icon: Sparkles, description: "Track your growth" },
     { title: "Boundaries", url: createPageUrl("Boundaries"), icon: Shield, description: "Alerts & thresholds" },

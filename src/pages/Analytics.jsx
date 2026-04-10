@@ -220,10 +220,10 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>✦ Your Data</p>
                         <h1 className="text-4xl font-bold gradient-text mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                            Analytics & Insights
+                            Patterns & Insights
                         </h1>
                         <p className="text-base" style={{color: 'rgba(180,170,210,0.65)'}}>
-                            Understanding your emotional patterns
+                            Discover the rhythms within your story
                         </p>
                     </div>
                     

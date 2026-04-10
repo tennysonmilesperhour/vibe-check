@@ -11,7 +11,8 @@ import {
     Menu,
     X,
     Stars,
-    UserPlus
+    UserPlus,
+    Layers
 } from "lucide-react";
 import { useState as useInviteState } from "react";
 import InviteModal from "@/components/InviteModal";
@@ -22,6 +23,7 @@ const navigationItems = [
     { title: "Patterns", url: createPageUrl("Analytics"), icon: BarChart3, description: "Insights & trends" },
     { title: "Relationships", url: createPageUrl("Relationships"), icon: Users, description: "Your connections" },
     { title: "Constellation", url: "/Constellation", icon: Stars, description: "Synergy readings" },
+    { title: "Tarot Oracle", url: "/TarotReading", icon: Layers, description: "Spreads & card readings" },
     { title: "Healing Board", url: createPageUrl("HealingBoard"), icon: Sparkles, description: "Track your growth" },
     { title: "Boundaries", url: createPageUrl("Boundaries"), icon: Shield, description: "Alerts & thresholds" },
     { title: "Cosmic Add-ons", url: createPageUrl("CosmicAddons"), icon: Sparkles, description: "Astrology, HD, Gene Keys" },

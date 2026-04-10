@@ -14,6 +14,7 @@ import {
 } from "@/components/cosmic/ProfileForm";
 import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
 import CosmicInsightBadge from "@/components/cosmic/CosmicInsightBadge";
+import CosmicBlueprint from "@/components/cosmic/CosmicBlueprint";
 
 const EMPTY_PROFILE = {
     first_name: "",
@@ -82,7 +83,7 @@ export default function CosmicAddons() {
     const enabledSystems = profile.enabled_systems || [];
 
     const systemForms = {
-        astrology: <AstrologyForm data={profile.astrology} onChange={d => setSystemData('astrology', d)} />,
+        astrology: <AstrologyForm data={profile.astrology} onChange={d => setSystemData('astrology', d)} birthDate={profile.birth_date} />,
         human_design: <HumanDesignForm data={profile.human_design} onChange={d => setSystemData('human_design', d)} />,
         gene_keys: <GeneKeysForm data={profile.gene_keys} onChange={d => setSystemData('gene_keys', d)} />,
         numerology: <NumerologyForm data={profile.numerology} onChange={d => setSystemData('numerology', d)} />,
@@ -178,6 +179,13 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 2: Profile Detail Forms ── */}
                     <TabsContent value="profile" className="space-y-6">
+                        {/* Sacred Geometry Blueprint */}
+                        <div className="glass-card p-6 flex flex-col items-center" style={{ border: '1px solid rgba(139,92,246,0.2)' }}>
+                            <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Your Cosmic Blueprint</h3>
+                            <p className="text-sm mb-5 w-full" style={{ color: 'rgba(180,170,210,0.55)' }}>Systems light up as you fill in your profile data</p>
+                            <CosmicBlueprint enabledSystems={enabledSystems} profile={profile} />
+                        </div>
+
                         {enabledSystems.length === 0 ? (
                             <div className="glass-card p-12 text-center">
                                 <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(139,92,246,0.4)' }} />

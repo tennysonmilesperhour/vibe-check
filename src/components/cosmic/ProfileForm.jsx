@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,12 +33,47 @@ function SimpleSelect({ value, onChange, options, placeholder }) {
     );
 }
 
-export function AstrologyForm({ data, onChange }) {
+function getSunSign(birthDate) {
+    if (!birthDate) return null;
+    const d = new Date(birthDate);
+    const month = d.getUTCMonth() + 1;
+    const day = d.getUTCDate();
+    if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return "Aries";
+    if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return "Taurus";
+    if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return "Gemini";
+    if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return "Cancer";
+    if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return "Leo";
+    if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return "Virgo";
+    if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return "Libra";
+    if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return "Scorpio";
+    if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return "Sagittarius";
+    if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return "Capricorn";
+    if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return "Aquarius";
+    return "Pisces";
+}
+
+export function AstrologyForm({ data, onChange, birthDate }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
+
+    useEffect(() => {
+        const autoSign = getSunSign(birthDate);
+        if (autoSign && !data?.sun_sign) {
+            onChange({ ...data, sun_sign: autoSign });
+        }
+    }, [birthDate]);
+
     return (
         <div className="grid md:grid-cols-2 gap-5">
             <Field label="Sun Sign" hint="Your core identity and conscious self">
-                <SimpleSelect value={data?.sun_sign} onChange={v => set('sun_sign', v)} options={ZODIAC_SIGNS} />
+                <div className="relative">
+                    <SimpleSelect value={data?.sun_sign} onChange={v => set('sun_sign', v)} options={ZODIAC_SIGNS} />
+                    {birthDate && getSunSign(birthDate) === data?.sun_sign && (
+                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
+                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>
+                            auto
+                        </span>
+                    )}
+                </div>
             </Field>
             <Field label="Moon Sign" hint="Your emotional nature and inner world">
                 <SimpleSelect value={data?.moon_sign} onChange={v => set('moon_sign', v)} options={ZODIAC_SIGNS} />

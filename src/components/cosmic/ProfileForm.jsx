@@ -1,4 +1,91 @@
 import React, { useEffect } from "react";
+
+// ── Shared auto-calculation helpers ──
+
+const PYTHAGOREAN = {
+  a:1,b:2,c:3,d:4,e:5,f:6,g:7,h:8,i:9,
+  j:1,k:2,l:3,m:4,n:5,o:6,p:7,q:8,r:9,
+  s:1,t:2,u:3,v:4,w:5,x:6,y:7,z:8
+};
+const VOWELS = new Set(['a','e','i','o','u']);
+
+function reduceNum(n, keepMaster = true) {
+  if (keepMaster && (n === 11 || n === 22 || n === 33)) return n;
+  if (n < 10) return n;
+  const s = String(n).split('').reduce((a, d) => a + parseInt(d), 0);
+  return reduceNum(s, keepMaster);
+}
+
+function sumDigits(str) {
+  return String(str).replace(/\D/g, '').split('').reduce((a, d) => a + parseInt(d), 0);
+}
+
+function calcLifePath(birthDate) {
+  if (!birthDate) return null;
+  const d = new Date(birthDate);
+  const month = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  const year = d.getUTCFullYear();
+  const total = sumDigits(month) + sumDigits(day) + sumDigits(year);
+  return String(reduceNum(total));
+}
+
+function calcPersonalYear(birthDate) {
+  if (!birthDate) return null;
+  const d = new Date(birthDate);
+  const month = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  const year = new Date().getFullYear();
+  const total = sumDigits(month) + sumDigits(day) + sumDigits(year);
+  return String(reduceNum(total));
+}
+
+function nameToNumbers(name, vowelsOnly = false) {
+  return (name || '').toLowerCase().split('').reduce((sum, ch) => {
+    if (!PYTHAGOREAN[ch]) return sum;
+    if (vowelsOnly && !VOWELS.has(ch)) return sum;
+    return sum + PYTHAGOREAN[ch];
+  }, 0);
+}
+
+function calcExpression(firstName, lastName) {
+  if (!firstName && !lastName) return null;
+  const total = nameToNumbers(firstName) + nameToNumbers(lastName);
+  if (total === 0) return null;
+  return String(reduceNum(total));
+}
+
+function calcSoulUrge(firstName, lastName) {
+  if (!firstName && !lastName) return null;
+  const total = nameToNumbers(firstName, true) + nameToNumbers(lastName, true);
+  if (total === 0) return null;
+  return String(reduceNum(total));
+}
+
+function calcTarotBirthCard(birthDate) {
+  if (!birthDate) return null;
+  const d = new Date(birthDate);
+  const month = d.getUTCMonth() + 1;
+  const day = d.getUTCDate();
+  const year = d.getUTCFullYear();
+  let total = month + day + year;
+  // reduce until <= 21
+  while (total > 21) {
+    total = String(total).split('').reduce((a, x) => a + parseInt(x), 0);
+  }
+  return total;
+}
+
+const TAROT_BY_NUM = {
+  0: "0 – The Fool", 1: "1 – The Magician", 2: "2 – The High Priestess",
+  3: "3 – The Empress", 4: "4 – The Emperor", 5: "5 – The Hierophant",
+  6: "6 – The Lovers", 7: "7 – The Chariot", 8: "8 – Strength",
+  9: "9 – The Hermit", 10: "10 – Wheel of Fortune", 11: "11 – Justice",
+  12: "12 – The Hanged Man", 13: "13 – Death", 14: "14 – Temperance",
+  15: "15 – The Devil", 16: "16 – The Tower", 17: "17 – The Star",
+  18: "18 – The Moon", 19: "19 – The Sun", 20: "20 – Judgement",
+  21: "21 – The World"
+};
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -154,21 +241,59 @@ export function GeneKeysForm({ data, onChange }) {
     );
 }
 
-export function NumerologyForm({ data, onChange }) {
+export function NumerologyForm({ data, onChange, birthDate, firstName, lastName }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
+
+    const autoLifePath = calcLifePath(birthDate);
+    const autoPersonalYear = calcPersonalYear(birthDate);
+    const autoExpression = calcExpression(firstName, lastName);
+    const autoSoulUrge = calcSoulUrge(firstName, lastName);
+
+    useEffect(() => {
+        const updates = {};
+        if (autoLifePath && !data?.life_path) updates.life_path = autoLifePath;
+        if (autoPersonalYear && !data?.personal_year) updates.personal_year = autoPersonalYear;
+        if (autoExpression && !data?.expression) updates.expression = autoExpression;
+        if (autoSoulUrge && !data?.soul_urge) updates.soul_urge = autoSoulUrge;
+        if (Object.keys(updates).length > 0) onChange({ ...data, ...updates });
+    }, [birthDate, firstName, lastName]);
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Life Path Number" hint="Your soul's core lesson and overall theme">
-                <SimpleSelect value={data?.life_path} onChange={v => set('life_path', v)} options={LIFE_PATH_NUMBERS} />
+            <Field label="Life Path Number" hint="Calculated from your birth date">
+                <div className="relative">
+                    <SimpleSelect value={data?.life_path} onChange={v => set('life_path', v)} options={LIFE_PATH_NUMBERS} />
+                    {autoLifePath && data?.life_path === autoLifePath && (
+                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
+                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                    )}
+                </div>
             </Field>
-            <Field label="Expression Number" hint="Your natural talents and life's purpose from your full name">
-                <SimpleSelect value={data?.expression} onChange={v => set('expression', v)} options={LIFE_PATH_NUMBERS} />
+            <Field label="Expression Number" hint="Calculated from your full name">
+                <div className="relative">
+                    <SimpleSelect value={data?.expression} onChange={v => set('expression', v)} options={LIFE_PATH_NUMBERS} />
+                    {autoExpression && data?.expression === autoExpression && (
+                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
+                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                    )}
+                </div>
             </Field>
-            <Field label="Soul Urge Number" hint="Your inner desires and heart's true longing">
-                <SimpleSelect value={data?.soul_urge} onChange={v => set('soul_urge', v)} options={LIFE_PATH_NUMBERS} />
+            <Field label="Soul Urge Number" hint="Calculated from vowels in your name">
+                <div className="relative">
+                    <SimpleSelect value={data?.soul_urge} onChange={v => set('soul_urge', v)} options={LIFE_PATH_NUMBERS} />
+                    {autoSoulUrge && data?.soul_urge === autoSoulUrge && (
+                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
+                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                    )}
+                </div>
             </Field>
-            <Field label="Personal Year Number" hint="The energy and theme of your current calendar year">
-                <SimpleSelect value={data?.personal_year} onChange={v => set('personal_year', v)} options={LIFE_PATH_NUMBERS} />
+            <Field label="Personal Year Number" hint="Calculated from birth date + current year">
+                <div className="relative">
+                    <SimpleSelect value={data?.personal_year} onChange={v => set('personal_year', v)} options={LIFE_PATH_NUMBERS} />
+                    {autoPersonalYear && data?.personal_year === autoPersonalYear && (
+                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
+                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                    )}
+                </div>
             </Field>
             <div className="md:col-span-2">
                 <Field label="Personal Notes">
@@ -179,15 +304,40 @@ export function NumerologyForm({ data, onChange }) {
     );
 }
 
-export function TarotForm({ data, onChange }) {
+export function TarotForm({ data, onChange, birthDate }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
+
+    const birthCardNum = calcTarotBirthCard(birthDate);
+    const autoBirthCard = birthCardNum !== null ? TAROT_BY_NUM[birthCardNum] : null;
+    // Shadow card = reduce birth card number to single digit if > 9
+    const shadowCardNum = birthCardNum !== null ? (birthCardNum > 9 ? String(birthCardNum).split('').reduce((a,x)=>a+parseInt(x),0) : birthCardNum) : null;
+    const autoShadowCard = shadowCardNum !== null && shadowCardNum !== birthCardNum ? TAROT_BY_NUM[shadowCardNum] : null;
+
+    useEffect(() => {
+        const updates = {};
+        if (autoBirthCard && !data?.birth_card) updates.birth_card = autoBirthCard;
+        if (autoShadowCard && !data?.shadow_card) updates.shadow_card = autoShadowCard;
+        if (Object.keys(updates).length > 0) onChange({ ...data, ...updates });
+    }, [birthDate]);
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Birth Card" hint="Your primary soul archetype derived from your birth date">
-                <SimpleSelect value={data?.birth_card} onChange={v => set('birth_card', v)} options={TAROT_MAJOR_ARCANA} />
+            <Field label="Birth Card" hint="Calculated from your birth date">
+                <div className="relative">
+                    <SimpleSelect value={data?.birth_card} onChange={v => set('birth_card', v)} options={TAROT_MAJOR_ARCANA} />
+                    {autoBirthCard && data?.birth_card === autoBirthCard && (
+                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
+                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                    )}
+                </div>
             </Field>
-            <Field label="Shadow / Teacher Card" hint="The complementary archetype that balances your birth card">
-                <SimpleSelect value={data?.shadow_card} onChange={v => set('shadow_card', v)} options={TAROT_MAJOR_ARCANA} />
+            <Field label="Shadow / Teacher Card" hint="The complementary archetype (reduced digit of birth card)">
+                <div className="relative">
+                    <SimpleSelect value={data?.shadow_card} onChange={v => set('shadow_card', v)} options={TAROT_MAJOR_ARCANA} />
+                    {autoShadowCard && data?.shadow_card === autoShadowCard && (
+                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
+                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                    )}
+                </div>
             </Field>
             <div className="md:col-span-2">
                 <Field label="Personal Notes">

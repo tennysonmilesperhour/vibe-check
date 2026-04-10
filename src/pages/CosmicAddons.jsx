@@ -91,8 +91,8 @@ export default function CosmicAddons() {
         astrology: <AstrologyForm data={profile.astrology} onChange={d => setSystemData('astrology', d)} birthDate={profile.birth_date} />,
         human_design: <HumanDesignForm data={profile.human_design} onChange={d => setSystemData('human_design', d)} />,
         gene_keys: <GeneKeysForm data={profile.gene_keys} onChange={d => setSystemData('gene_keys', d)} />,
-        numerology: <NumerologyForm data={profile.numerology} onChange={d => setSystemData('numerology', d)} />,
-        tarot_archetype: <TarotForm data={profile.tarot_archetype} onChange={d => setSystemData('tarot_archetype', d)} />,
+        numerology: <NumerologyForm data={profile.numerology} onChange={d => setSystemData('numerology', d)} birthDate={profile.birth_date} firstName={profile.first_name} lastName={profile.last_name} />,
+        tarot_archetype: <TarotForm data={profile.tarot_archetype} onChange={d => setSystemData('tarot_archetype', d)} birthDate={profile.birth_date} />,
         chakras: <ChakraForm data={profile.chakras} onChange={d => setSystemData('chakras', d)} />,
     };
 

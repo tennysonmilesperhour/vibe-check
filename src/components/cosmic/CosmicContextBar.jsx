@@ -70,17 +70,17 @@ export default function CosmicContextBar() {
 
     return (
         <Card className="border-0 shadow-sm mb-6"
-            style={{ background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)', borderColor: '#c4b5fd' }}>
+            style={{ background: 'linear-gradient(135deg, #FAF6FF 0%, #F0E9FB 100%)', borderColor: '#D9CCF0' }}>
             <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4" style={{ color: '#7c3aed' }} />
+                        <Sparkles className="w-4 h-4" style={{ color: '#C4699A' }} />
                         <span className="text-sm font-semibold" style={{ color: '#5b21b6' }}>Your Cosmic Context</span>
                         <Badge className="text-xs bg-violet-100 text-violet-700">{enabled.length} system{enabled.length !== 1 ? 's' : ''} active</Badge>
                     </div>
                     <div className="flex items-center gap-2">
                         <Link to={createPageUrl("CosmicAddons")}>
-                            <Button variant="ghost" size="sm" className="text-xs h-7" style={{ color: '#7c3aed' }}>
+                            <Button variant="ghost" size="sm" className="text-xs h-7" style={{ color: '#C4699A' }}>
                                 Edit
                             </Button>
                         </Link>
@@ -99,7 +99,7 @@ export default function CosmicContextBar() {
                 </div>
                 {summaries.length > 2 && (
                     <button onClick={() => setExpanded(e => !e)}
-                        className="text-xs mt-2 font-medium" style={{ color: '#7c3aed' }}>
+                        className="text-xs mt-2 font-medium" style={{ color: '#C4699A' }}>
                         {expanded ? 'Show less ↑' : `Show all ${summaries.length} systems ↓`}
                     </button>
                 )}

@@ -218,11 +218,11 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>✦ Your Data</p>
+                        <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(138,114,184,0.7)' }}>✦ Your Data</p>
                         <h1 className="text-4xl font-bold gradient-text mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                             Patterns & Insights
                         </h1>
-                        <p className="text-base" style={{color: 'rgba(180,170,210,0.65)'}}>
+                        <p className="text-base" style={{color: 'rgba(105,95,128,0.75)'}}>
                             Discover the rhythms within your story
                         </p>
                     </div>
@@ -256,17 +256,17 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 {/* Stats Overview */}
                 <div className="grid md:grid-cols-4 gap-3 mb-5">
                     {[
-                        { label: 'Avg Mood', icon: Target, value: getFilteredData().length > 0 ? (getFilteredData().reduce((s,e)=>s+e.mood_score,0)/getFilteredData().length).toFixed(1)+'/10' : '—', color: '#c084fc' },
-                        { label: 'Entries', icon: Calendar, value: getFilteredData().length, color: '#38bdf8' },
-                        { label: 'Best Day', icon: TrendingUp, value: getFilteredData().length > 0 ? Math.max(...getFilteredData().map(e=>e.mood_score))+'/10' : '—', color: '#2dd4bf' },
-                        { label: 'People', icon: Users, value: getRelationshipStats().length, color: '#f472b6' },
+                        { label: 'Avg Mood', icon: Target, value: getFilteredData().length > 0 ? (getFilteredData().reduce((s,e)=>s+e.mood_score,0)/getFilteredData().length).toFixed(1)+'/10' : '—', color: '#8A72B8' },
+                        { label: 'Entries', icon: Calendar, value: getFilteredData().length, color: '#6B95C8' },
+                        { label: 'Best Day', icon: TrendingUp, value: getFilteredData().length > 0 ? Math.max(...getFilteredData().map(e=>e.mood_score))+'/10' : '—', color: '#C9834B' },
+                        { label: 'People', icon: Users, value: getRelationshipStats().length, color: '#C25E8F' },
                     ].map(({ label, icon: Icon, value, color }) => (
                         <div key={label} className="glass-card p-5">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: `${color}99` }}>{label}</span>
                                 <Icon className="w-4 h-4" style={{ color }} />
                             </div>
-                            <div className="text-2xl font-bold" style={{ color: 'rgba(220,210,240,0.95)', fontFamily: 'Space Grotesk, sans-serif' }}>{value}</div>
+                            <div className="text-2xl font-bold" style={{ color: 'rgba(61,52,80,0.95)', fontFamily: 'Space Grotesk, sans-serif' }}>{value}</div>
                         </div>
                     ))}
                 </div>
@@ -278,8 +278,8 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 {!isLoading && checkIns.length === 0 && (
                     <div className="glass-card p-16 text-center mb-8">
                         <div className="text-5xl mb-4">✦</div>
-                        <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(200,190,230,0.8)' }}>No data yet</h3>
-                        <p className="text-sm" style={{ color: 'rgba(160,150,190,0.55)' }}>
+                        <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(82,72,104,0.9)' }}>No data yet</h3>
+                        <p className="text-sm" style={{ color: 'rgba(122,112,144,0.65)' }}>
                             Start logging daily check-ins and your trends will appear here.
                         </p>
                     </div>
@@ -288,7 +288,7 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 {/* Charts */}
                 <div className="grid lg:grid-cols-2 gap-4 mb-5">
                     <div className="glass-card p-6">
-                        <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Mood Trend</h3>
+                        <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Mood Trend</h3>
                         <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={chartData}>
@@ -305,9 +305,9 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                                         <Line
                                             type="monotone"
                                             dataKey="mood"
-                                            stroke="#c084fc"
+                                            stroke="#8A72B8"
                                             strokeWidth={3}
-                                            dot={{ fill: '#c084fc', strokeWidth: 2, r: 4 }}
+                                            dot={{ fill: '#8A72B8', strokeWidth: 2, r: 4 }}
                                         />
                                     </LineChart>
                                 </ResponsiveContainer>
@@ -315,7 +315,7 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                     </div>
 
                     <div className="glass-card p-6">
-                        <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>High vs Low Intensity</h3>
+                        <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>High vs Low Intensity</h3>
                         <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartData}>
@@ -329,8 +329,8 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                                                 borderRadius: '8px'
                                             }}
                                         />
-                                        <Bar dataKey="high" fill="#c084fc" name="High Moments" />
-                                        <Bar dataKey="low" fill="#38bdf8" name="Low Moments" />
+                                        <Bar dataKey="high" fill="#8A72B8" name="High Moments" />
+                                        <Bar dataKey="low" fill="#6B95C8" name="Low Moments" />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -339,13 +339,13 @@ Please provide supportive insights about patterns, relationships, and gentle sug
 
                 {/* Relationship Analysis */}
                 <div className="glass-card p-4 mb-5">
-                    <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Relationship Impact</h3>
-                    <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>How different people appear in your highs and lows</p>
+                    <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Relationship Impact</h3>
+                    <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>How different people appear in your highs and lows</p>
                     <div>
                         {getRelationshipStats().length === 0 ? (
                             <div className="text-center py-8">
-                                <Users className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(180,170,210,0.3)' }} />
-                                <p className="text-sm" style={{ color: 'rgba(160,150,190,0.5)' }}>
+                                <Users className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(105,95,128,0.4)' }} />
+                                <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>
                                     Log check-ins with "who was involved" to see relationship impact here.
                                 </p>
                             </div>
@@ -353,18 +353,18 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                         <div className="space-y-3">{
                             getRelationshipStats().slice(0, 6).map((stat) => (
                                 <div key={stat.person} className="flex items-center justify-between p-4 rounded-xl"
-                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                    style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(61,52,80,0.08)' }}>
                                     <div className="flex-1">
-                                        <h4 className="font-semibold text-sm" style={{ color: 'rgba(220,210,240,0.9)' }}>{stat.person}</h4>
-                                        <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>
+                                        <h4 className="font-semibold text-sm" style={{ color: 'rgba(61,52,80,0.9)' }}>{stat.person}</h4>
+                                        <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>
                                             {stat.highs} highs · {stat.lows} lows · {stat.total} mentions
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className="text-lg font-bold" style={{ color: 'rgba(220,210,240,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>{stat.ratio}%</span>
+                                        <span className="text-lg font-bold" style={{ color: 'rgba(61,52,80,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>{stat.ratio}%</span>
                                         <Badge className="text-xs" style={{
-                                            background: parseFloat(stat.ratio) >= 60 ? 'rgba(45,212,191,0.15)' : parseFloat(stat.ratio) >= 40 ? 'rgba(251,191,36,0.15)' : 'rgba(244,114,182,0.15)',
-                                            color: parseFloat(stat.ratio) >= 60 ? '#2dd4bf' : parseFloat(stat.ratio) >= 40 ? '#fbbf24' : '#f472b6',
+                                            background: parseFloat(stat.ratio) >= 60 ? 'rgba(201,131,75,0.15)' : parseFloat(stat.ratio) >= 40 ? 'rgba(184,144,47,0.15)' : 'rgba(194,94,143,0.15)',
+                                            color: parseFloat(stat.ratio) >= 60 ? '#C9834B' : parseFloat(stat.ratio) >= 40 ? '#B8902F' : '#C25E8F',
                                             border: 'none'
                                         }}>
                                             {parseFloat(stat.ratio) >= 60 ? 'Positive' : parseFloat(stat.ratio) >= 40 ? 'Balanced' : 'Challenging'}
@@ -380,33 +380,33 @@ Please provide supportive insights about patterns, relationships, and gentle sug
                 {/* AI Insights */}
                 <div className="glass-card-glow p-4">
                     <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className="w-5 h-5" style={{ color: '#c084fc' }} />
-                        <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Oracle Insights</h3>
+                        <Sparkles className="w-5 h-5" style={{ color: '#8A72B8' }} />
+                        <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Oracle Insights</h3>
                     </div>
-                    <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>
+                    <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>
                         Supportive observations from your data (not medical advice)
                     </p>
                     <div>
                         {isLoadingInsights ? (
                             <div className="flex items-center gap-3 py-8">
                                 <div className="animate-spin rounded-full h-6 w-6"
-                                    style={{ border: '2px solid rgba(192,132,252,0.2)', borderTopColor: '#c084fc' }} />
-                                <span style={{ color: 'rgba(180,170,210,0.7)' }}>Weaving your cosmic insights...</span>
+                                    style={{ border: '2px solid rgba(138,114,184,0.2)', borderTopColor: '#8A72B8' }} />
+                                <span style={{ color: 'rgba(105,95,128,0.8)' }}>Weaving your cosmic insights...</span>
                             </div>
                         ) : insights ? (
                             <div className="space-y-5">
                                 {[
-                                    { key: 'key_patterns', label: 'Key Patterns', color: '#c084fc' },
-                                    { key: 'relationship_insights', label: 'Relationship Insights', color: '#38bdf8' },
-                                    { key: 'encouraging_notes', label: 'Encouraging Notes', color: '#2dd4bf' },
-                                    { key: 'gentle_suggestions', label: 'Gentle Suggestions', color: '#f472b6' },
+                                    { key: 'key_patterns', label: 'Key Patterns', color: '#8A72B8' },
+                                    { key: 'relationship_insights', label: 'Relationship Insights', color: '#6B95C8' },
+                                    { key: 'encouraging_notes', label: 'Encouraging Notes', color: '#C9834B' },
+                                    { key: 'gentle_suggestions', label: 'Gentle Suggestions', color: '#C25E8F' },
                                 ].map(({ key, label, color }) => insights[key]?.length > 0 && (
                                     <div key={key}>
                                         <h4 className="text-sm font-semibold mb-2" style={{ color, fontFamily: 'Space Grotesk, sans-serif' }}>{label}</h4>
                                         <div className="space-y-2">
                                             {insights[key].map((item, i) => (
                                                 <div key={i} className="p-3 rounded-xl text-sm"
-                                                    style={{ background: `${color}0a`, border: `1px solid ${color}20`, color: 'rgba(210,200,235,0.8)' }}>
+                                                    style={{ background: `${color}0a`, border: `1px solid ${color}20`, color: 'rgba(70,60,92,0.8)' }}>
                                                     {item}
                                                 </div>
                                             ))}

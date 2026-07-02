@@ -157,7 +157,7 @@ export function AstrologyForm({ data, onChange, birthDate }) {
                     <SimpleSelect value={data?.sun_sign} onChange={v => set('sun_sign', v)} options={ZODIAC_SIGNS} />
                     {birthDate && getSunSign(birthDate) === data?.sun_sign && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>
                             auto
                         </span>
                     )}
@@ -265,7 +265,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     <SimpleSelect value={data?.life_path} onChange={v => set('life_path', v)} options={LIFE_PATH_NUMBERS} />
                     {autoLifePath && data?.life_path === autoLifePath && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -274,7 +274,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     <SimpleSelect value={data?.expression} onChange={v => set('expression', v)} options={LIFE_PATH_NUMBERS} />
                     {autoExpression && data?.expression === autoExpression && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -283,7 +283,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     <SimpleSelect value={data?.soul_urge} onChange={v => set('soul_urge', v)} options={LIFE_PATH_NUMBERS} />
                     {autoSoulUrge && data?.soul_urge === autoSoulUrge && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -292,7 +292,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     <SimpleSelect value={data?.personal_year} onChange={v => set('personal_year', v)} options={LIFE_PATH_NUMBERS} />
                     {autoPersonalYear && data?.personal_year === autoPersonalYear && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -327,7 +327,7 @@ export function TarotForm({ data, onChange, birthDate }) {
                     <SimpleSelect value={data?.birth_card} onChange={v => set('birth_card', v)} options={TAROT_MAJOR_ARCANA} />
                     {autoBirthCard && data?.birth_card === autoBirthCard && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -336,7 +336,7 @@ export function TarotForm({ data, onChange, birthDate }) {
                     <SimpleSelect value={data?.shadow_card} onChange={v => set('shadow_card', v)} options={TAROT_MAJOR_ARCANA} />
                     {autoShadowCard && data?.shadow_card === autoShadowCard && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -415,9 +415,9 @@ export function ChakraForm({ data, onChange }) {
                                 <button key={area} type="button" onClick={() => toggleFocus(area)}
                                     className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                                     style={{
-                                        background: active ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.04)',
-                                        border: active ? '1px solid rgba(139,92,246,0.5)' : '1px solid rgba(255,255,255,0.1)',
-                                        color: active ? '#c084fc' : 'rgba(180,170,210,0.6)',
+                                        background: active ? 'rgba(138,114,184,0.25)' : 'rgba(255,255,255,0.64)',
+                                        border: active ? '1px solid rgba(138,114,184,0.5)' : '1px solid rgba(61,52,80,0.12)',
+                                        color: active ? '#8A72B8' : 'rgba(105,95,128,0.7)',
                                     }}>
                                     {short}
                                 </button>

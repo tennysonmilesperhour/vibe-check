@@ -20,7 +20,7 @@ const DECKS = {
     title: "Tarot Reading",
     eyebrow: "✦ The Cards Speak",
     subtitle: "Shuffle the deck, choose your spread, and let the cards reveal their wisdom",
-    color: "#c084fc",
+    color: "#8A72B8",
   },
   oracle: {
     id: "oracle",
@@ -32,7 +32,7 @@ const DECKS = {
     title: "Oracle Reading",
     eyebrow: "✦ The Oracle Speaks",
     subtitle: "Oracle cards meet you in the present — draw for gentle guidance on right now",
-    color: "#2dd4bf",
+    color: "#C9834B",
   },
 };
 
@@ -101,15 +101,15 @@ function ReadingDetail({ drawnCards, spread }) {
   if (flippedCount === 0) return null;
 
   return (
-    <div className="glass-card mt-6" style={{ border: '1px solid rgba(139,92,246,0.25)' }}>
+    <div className="glass-card mt-6" style={{ border: '1px solid rgba(138,114,184,0.25)' }}>
       <button className="w-full flex items-center justify-between p-5" onClick={() => setOpen(o => !o)}>
         <div className="flex items-center gap-2">
-          <Info className="w-4 h-4" style={{ color: '#c084fc' }} />
-          <span className="font-semibold text-sm" style={{ color: 'rgba(220,210,240,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>
+          <Info className="w-4 h-4" style={{ color: '#8A72B8' }} />
+          <span className="font-semibold text-sm" style={{ color: 'rgba(61,52,80,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>
             Reading Interpretations ({flippedCount} revealed)
           </span>
         </div>
-        {open ? <ChevronUp className="w-4 h-4" style={{color:'rgba(180,170,210,0.5)'}}/> : <ChevronDown className="w-4 h-4" style={{color:'rgba(180,170,210,0.5)'}}/>}
+        {open ? <ChevronUp className="w-4 h-4" style={{color:'rgba(105,95,128,0.6)'}}/> : <ChevronDown className="w-4 h-4" style={{color:'rgba(105,95,128,0.6)'}}/>}
       </button>
       {open && (
         <div className="px-5 pb-5 space-y-4">
@@ -125,12 +125,12 @@ function ReadingDetail({ drawnCards, spread }) {
                       {drawn.card.name}
                     </span>
                     {drawn.reversed && (
-                      <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(244,114,182,0.15)', color: '#f472b6' }}>
+                      <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(194,94,143,0.15)', color: '#C25E8F' }}>
                         Reversed
                       </span>
                     )}
                   </div>
-                  <Badge className="text-xs ml-auto" style={{ background: 'rgba(139,92,246,0.12)', color: 'rgba(180,170,210,0.7)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                  <Badge className="text-xs ml-auto" style={{ background: 'rgba(138,114,184,0.12)', color: 'rgba(105,95,128,0.8)', border: '1px solid rgba(138,114,184,0.2)' }}>
                     {pos.label}
                   </Badge>
                 </div>
@@ -141,7 +141,7 @@ function ReadingDetail({ drawnCards, spread }) {
                     </span>
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed" style={{ color: 'rgba(210,200,235,0.8)' }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgba(70,60,92,0.8)' }}>
                   {drawn.reversed ? drawn.card.reversed : drawn.card.meaning}
                 </p>
               </div>
@@ -228,11 +228,11 @@ export default function TarotReading() {
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>{deck.eyebrow}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(138,114,184,0.7)' }}>{deck.eyebrow}</p>
           <h1 className="text-4xl font-bold gradient-text mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {deck.title}
           </h1>
-          <p className="text-base" style={{ color: 'rgba(180,170,210,0.65)' }}>
+          <p className="text-base" style={{ color: 'rgba(105,95,128,0.75)' }}>
             {deck.subtitle}
           </p>
         </div>
@@ -241,10 +241,10 @@ export default function TarotReading() {
           <>
             {/* Deck Selection */}
             <div className="glass-card p-6 mb-6">
-              <h2 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>
+              <h2 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>
                 ✦ Choose Your Deck
               </h2>
-              <p className="text-sm mb-4" style={{ color: 'rgba(180,170,210,0.5)' }}>
+              <p className="text-sm mb-4" style={{ color: 'rgba(105,95,128,0.6)' }}>
                 Tarot maps the deeper archetypal journey · Oracle offers direct guidance for the present moment
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -254,12 +254,12 @@ export default function TarotReading() {
                     <button key={d.id} onClick={() => switchDeck(d.id)}
                       className="p-4 rounded-xl text-left transition-all"
                       style={{
-                        background: active ? `${d.color}20` : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${active ? `${d.color}70` : 'rgba(255,255,255,0.08)'}`,
+                        background: active ? `${d.color}20` : 'rgba(255,255,255,0.64)',
+                        border: `1px solid ${active ? `${d.color}70` : 'rgba(61,52,80,0.1)'}`,
                       }}>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xl">{d.emoji}</span>
-                        <span className="font-bold text-sm" style={{ color: active ? d.color : 'rgba(210,200,235,0.75)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                        <span className="font-bold text-sm" style={{ color: active ? d.color : 'rgba(70,60,92,0.75)', fontFamily: 'Space Grotesk, sans-serif' }}>
                           {d.name}
                         </span>
                         {active && (
@@ -268,7 +268,7 @@ export default function TarotReading() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>{d.tagline}</p>
+                      <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>{d.tagline}</p>
                     </button>
                   );
                 })}
@@ -277,7 +277,7 @@ export default function TarotReading() {
 
             {/* Shuffle Controls */}
             <div className="glass-card p-6 mb-6">
-              <h2 className="text-base font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>
+              <h2 className="text-base font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>
                 ✦ Prepare the Deck
               </h2>
 
@@ -286,9 +286,9 @@ export default function TarotReading() {
                 <button onClick={() => setShuffleMode("auto")}
                   className="flex-1 py-2 rounded-xl text-sm font-medium transition-all"
                   style={{
-                    background: shuffleMode === "auto" ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${shuffleMode === "auto" ? 'rgba(139,92,246,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                    color: shuffleMode === "auto" ? '#c084fc' : 'rgba(180,170,210,0.5)',
+                    background: shuffleMode === "auto" ? 'rgba(138,114,184,0.25)' : 'rgba(255,255,255,0.64)',
+                    border: `1px solid ${shuffleMode === "auto" ? 'rgba(138,114,184,0.5)' : 'rgba(61,52,80,0.1)'}`,
+                    color: shuffleMode === "auto" ? '#8A72B8' : 'rgba(105,95,128,0.6)',
                   }}>
                   <Shuffle className="w-4 h-4 inline mr-2" />
                   Auto Shuffle
@@ -296,9 +296,9 @@ export default function TarotReading() {
                 <button onClick={() => setShuffleMode("manual")}
                   className="flex-1 py-2 rounded-xl text-sm font-medium transition-all"
                   style={{
-                    background: shuffleMode === "manual" ? 'rgba(56,189,248,0.15)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${shuffleMode === "manual" ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                    color: shuffleMode === "manual" ? '#38bdf8' : 'rgba(180,170,210,0.5)',
+                    background: shuffleMode === "manual" ? 'rgba(107,149,200,0.15)' : 'rgba(255,255,255,0.64)',
+                    border: `1px solid ${shuffleMode === "manual" ? 'rgba(107,149,200,0.4)' : 'rgba(61,52,80,0.1)'}`,
+                    color: shuffleMode === "manual" ? '#6B95C8' : 'rgba(105,95,128,0.6)',
                   }}>
                   <Hash className="w-4 h-4 inline mr-2" />
                   True Random (seed)
@@ -307,7 +307,7 @@ export default function TarotReading() {
 
               {shuffleMode === "manual" && (
                 <div className="mb-4">
-                  <p className="text-xs mb-2" style={{ color: 'rgba(180,170,210,0.55)' }}>
+                  <p className="text-xs mb-2" style={{ color: 'rgba(105,95,128,0.65)' }}>
                     Enter any number as your seed — close your eyes and let a number come to you, or use a date, a lucky number, anything meaningful.
                   </p>
                   <div className="flex gap-2">
@@ -338,7 +338,7 @@ export default function TarotReading() {
               </Button>
 
               {shuffled && (
-                <p className="text-center text-xs mt-3" style={{ color: 'rgba(45,212,191,0.7)' }}>
+                <p className="text-center text-xs mt-3" style={{ color: 'rgba(201,131,75,0.7)' }}>
                   ✦ The deck is ready — choose your spread below
                 </p>
               )}
@@ -346,10 +346,10 @@ export default function TarotReading() {
 
             {/* Spread Selection */}
             <div className="glass-card p-6">
-              <h2 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>
+              <h2 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>
                 Choose Your Spread
               </h2>
-              <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>
+              <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.6)' }}>
                 Each spread asks different questions of the oracle
               </p>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -360,31 +360,31 @@ export default function TarotReading() {
                     disabled={!shuffled}
                     className="p-4 rounded-xl text-left transition-all"
                     style={{
-                      background: shuffled ? 'rgba(139,92,246,0.08)' : 'rgba(255,255,255,0.02)',
-                      border: `1px solid ${shuffled ? 'rgba(139,92,246,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                      background: shuffled ? 'rgba(138,114,184,0.08)' : 'rgba(255,255,255,0.5)',
+                      border: `1px solid ${shuffled ? 'rgba(138,114,184,0.3)' : 'rgba(255,255,255,0.72)'}`,
                       opacity: shuffled ? 1 : 0.45,
                       cursor: shuffled ? 'pointer' : 'not-allowed',
                     }}
-                    onMouseEnter={e => { if (shuffled) e.currentTarget.style.background = 'rgba(139,92,246,0.18)'; }}
-                    onMouseLeave={e => { if (shuffled) e.currentTarget.style.background = 'rgba(139,92,246,0.08)'; }}
+                    onMouseEnter={e => { if (shuffled) e.currentTarget.style.background = 'rgba(138,114,184,0.18)'; }}
+                    onMouseLeave={e => { if (shuffled) e.currentTarget.style.background = 'rgba(138,114,184,0.08)'; }}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-sm" style={{ color: 'rgba(220,210,240,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                      <span className="font-bold text-sm" style={{ color: 'rgba(61,52,80,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>
                         {spread.name}
                       </span>
-                      <Badge className="text-xs shrink-0" style={{ background: 'rgba(192,132,252,0.15)', color: '#c084fc', border: '1px solid rgba(192,132,252,0.25)' }}>
+                      <Badge className="text-xs shrink-0" style={{ background: 'rgba(138,114,184,0.15)', color: '#8A72B8', border: '1px solid rgba(138,114,184,0.25)' }}>
                         {spread.positions.length} card{spread.positions.length > 1 ? 's' : ''}
                       </Badge>
                     </div>
-                    <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>{spread.description}</p>
+                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>{spread.description}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {spread.positions.slice(0, 4).map(p => (
-                        <span key={p.label} className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(180,170,210,0.45)', fontSize: 9 }}>
+                        <span key={p.label} className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.64)', color: 'rgba(105,95,128,0.55)', fontSize: 9 }}>
                           {p.label}
                         </span>
                       ))}
                       {spread.positions.length > 4 && (
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: 'rgba(139,92,246,0.5)', fontSize: 9 }}>
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: 'rgba(138,114,184,0.5)', fontSize: 9 }}>
                           +{spread.positions.length - 4} more
                         </span>
                       )}
@@ -400,27 +400,27 @@ export default function TarotReading() {
             <div className="glass-card p-5 mb-4">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h2 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.95)' }}>
+                  <h2 className="text-lg font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.95)' }}>
                     {selectedSpread.name}
                   </h2>
-                  <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>{selectedSpread.description}</p>
+                  <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>{selectedSpread.description}</p>
                 </div>
                 <div className="flex gap-2">
                   {!allFlipped && anyFlipped && (
                     <Button size="sm" onClick={handleRevealAll} className="rounded-xl text-xs"
-                      style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8' }}>
+                      style={{ background: 'rgba(107,149,200,0.15)', border: '1px solid rgba(107,149,200,0.3)', color: '#6B95C8' }}>
                       Reveal All
                     </Button>
                   )}
                   <Button size="sm" onClick={reset} variant="outline" className="rounded-xl text-xs"
-                    style={{ borderColor: 'rgba(139,92,246,0.3)', color: '#c084fc', background: 'rgba(139,92,246,0.08)' }}>
+                    style={{ borderColor: 'rgba(138,114,184,0.3)', color: '#8A72B8', background: 'rgba(138,114,184,0.08)' }}>
                     New Reading
                   </Button>
                 </div>
               </div>
 
               {!anyFlipped && (
-                <p className="text-xs py-2 px-3 rounded-lg mb-2" style={{ background: 'rgba(192,132,252,0.08)', color: 'rgba(192,132,252,0.7)', border: '1px solid rgba(192,132,252,0.15)' }}>
+                <p className="text-xs py-2 px-3 rounded-lg mb-2" style={{ background: 'rgba(138,114,184,0.08)', color: 'rgba(138,114,184,0.7)', border: '1px solid rgba(138,114,184,0.15)' }}>
                   ✦ Hold your question in your heart, then tap each card to reveal its message
                 </p>
               )}

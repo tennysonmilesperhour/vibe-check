@@ -3,13 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const SYSTEMS = [
-  { id: "astrology",       label: "Astrology",      emoji: "♈", color: "#f472b6", check: d => d?.sun_sign        },
-  { id: "human_design",    label: "Human Design",   emoji: "⬡", color: "#c084fc", check: d => d?.type            },
-  { id: "gene_keys",       label: "Gene Keys",      emoji: "🧬", color: "#38bdf8", check: d => d?.life_work      },
-  { id: "numerology",      label: "Numerology",     emoji: "∞", color: "#2dd4bf", check: d => d?.life_path       },
-  { id: "tarot_archetype", label: "Tarot",          emoji: "✦", color: "#fbbf24", check: d => d?.birth_card      },
-  { id: "enneagram",       label: "Enneagram",      emoji: "９", color: "#fb923c", check: d => d?.type            },
-  { id: "chakras",         label: "Chakras",        emoji: "◎", color: "#a78bfa", check: d => d?.dominant_center },
+  { id: "astrology",       label: "Astrology",      emoji: "♈", color: "#C25E8F", check: d => d?.sun_sign        },
+  { id: "human_design",    label: "Human Design",   emoji: "⬡", color: "#8A72B8", check: d => d?.type            },
+  { id: "gene_keys",       label: "Gene Keys",      emoji: "🧬", color: "#6B95C8", check: d => d?.life_work      },
+  { id: "numerology",      label: "Numerology",     emoji: "∞", color: "#C9834B", check: d => d?.life_path       },
+  { id: "tarot_archetype", label: "Tarot",          emoji: "✦", color: "#B8902F", check: d => d?.birth_card      },
+  { id: "enneagram",       label: "Enneagram",      emoji: "９", color: "#C07A3E", check: d => d?.type            },
+  { id: "chakras",         label: "Chakras",        emoji: "◎", color: "#9179C9", check: d => d?.dominant_center },
 ].map((s, i, arr) => ({ ...s, angle: -90 + i * (360 / arr.length) }));
 
 const TOTAL = SYSTEMS.length;
@@ -37,13 +37,13 @@ function NodeTooltip({ node, isMobile, onClose, onNavigate }) {
     <foreignObject x={mx} y={my} width="148" height={height} style={{ pointerEvents: isMobile ? 'all' : 'none' }}>
       <div xmlns="http://www.w3.org/1999/xhtml"
         style={{
-          background: 'rgba(10,6,28,0.97)',
+          background: 'rgba(255,255,255,0.97)',
           border: `1px solid ${node.color}50`,
           borderRadius: 8,
           padding: '7px 9px',
           boxShadow: `0 0 20px ${node.color}25`,
           fontSize: 11,
-          color: 'rgba(220,210,240,0.85)',
+          color: 'rgba(61,52,80,0.85)',
           lineHeight: 1.4,
         }}>
         <div style={{ fontWeight: 600, color: node.color, marginBottom: 3, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -57,7 +57,7 @@ function NodeTooltip({ node, isMobile, onClose, onNavigate }) {
               Go →
             </button>
             <button onClick={onClose}
-              style={{ fontSize: 10, color: 'rgba(180,170,210,0.5)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, padding: '4px 8px', cursor: 'pointer' }}>
+              style={{ fontSize: 10, color: 'rgba(105,95,128,0.6)', background: 'rgba(255,255,255,0.68)', border: '1px solid rgba(61,52,80,0.12)', borderRadius: 5, padding: '4px 8px', cursor: 'pointer' }}>
               ✕
             </button>
           </div>
@@ -77,7 +77,7 @@ function NodeMenu({ node, onClose, onEdit, onDeepDive }) {
     <foreignObject x={mx} y={my} width="144" height="84" style={{ pointerEvents: 'all' }}>
       <div xmlns="http://www.w3.org/1999/xhtml"
         style={{
-          background: 'rgba(10,6,28,0.97)',
+          background: 'rgba(255,255,255,0.97)',
           border: `1px solid ${node.color}40`,
           borderRadius: 8,
           padding: '6px 5px',
@@ -87,7 +87,7 @@ function NodeMenu({ node, onClose, onEdit, onDeepDive }) {
           gap: 4,
         }}>
         <button onClick={onEdit}
-          style={{ fontSize: 11, color: 'rgba(220,210,240,0.9)', background: `${node.color}18`, border: `1px solid ${node.color}30`, borderRadius: 5, padding: '4px 8px', cursor: 'pointer', textAlign: 'left' }}>
+          style={{ fontSize: 11, color: 'rgba(61,52,80,0.9)', background: `${node.color}18`, border: `1px solid ${node.color}30`, borderRadius: 5, padding: '4px 8px', cursor: 'pointer', textAlign: 'left' }}>
           ✏️ Edit Data
         </button>
         <button onClick={onDeepDive}
@@ -95,7 +95,7 @@ function NodeMenu({ node, onClose, onEdit, onDeepDive }) {
           ✦ Deep Dive
         </button>
         <button onClick={onClose}
-          style={{ fontSize: 10, color: 'rgba(180,170,210,0.35)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 1 }}>
+          style={{ fontSize: 10, color: 'rgba(105,95,128,0.45)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'center', marginTop: 1 }}>
           close
         </button>
       </div>
@@ -164,8 +164,8 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
               </radialGradient>
             ))}
             <radialGradient id="grad-center" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#c084fc" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.1" />
+              <stop offset="0%" stopColor="#8A72B8" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#6B95C8" stopOpacity="0.1" />
             </radialGradient>
             <filter id="glow">
               <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -180,16 +180,16 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
           {/* ── Progressive background complexity ── */}
           {/* Layer 1 (1+ filled): single outer ring */}
           {completedCount >= 1 && (
-            <circle cx={CX} cy={CY} r={R * 1.52} fill="none" stroke="rgba(192,132,252,0.22)" strokeWidth="0.8" />
+            <circle cx={CX} cy={CY} r={R * 1.52} fill="none" stroke="rgba(138,114,184,0.22)" strokeWidth="0.8" />
           )}
 
           {/* Layer 2 (2+ filled): second ring + 6 petal circles */}
           {completedCount >= 2 && (
             <>
-              <circle cx={CX} cy={CY} r={R * 1.9} fill="none" stroke="rgba(139,92,246,0.18)" strokeWidth="0.7" />
+              <circle cx={CX} cy={CY} r={R * 1.9} fill="none" stroke="rgba(138,114,184,0.18)" strokeWidth="0.7" />
               {nodes.map((n, i) => {
                 const [px, py] = polarXY(n.angle, R * 1.52);
-                return <circle key={`p2-${i}`} cx={px} cy={py} r={R * 0.52} fill="none" stroke="rgba(192,132,252,0.16)" strokeWidth="0.6" />;
+                return <circle key={`p2-${i}`} cx={px} cy={py} r={R * 0.52} fill="none" stroke="rgba(138,114,184,0.16)" strokeWidth="0.6" />;
               })}
             </>
           )}
@@ -199,10 +199,10 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
             <>
               <polygon
                 points={[0,2,4].map(i => { const [x,y] = polarXY(nodes[i].angle, R * 1.08); return `${x},${y}`; }).join(' ')}
-                fill="rgba(139,92,246,0.07)" stroke="rgba(139,92,246,0.28)" strokeWidth="0.8" />
+                fill="rgba(138,114,184,0.07)" stroke="rgba(138,114,184,0.28)" strokeWidth="0.8" />
               <polygon
                 points={[1,3,5].map(i => { const [x,y] = polarXY(nodes[i].angle, R * 1.08); return `${x},${y}`; }).join(' ')}
-                fill="rgba(56,189,248,0.05)" stroke="rgba(56,189,248,0.22)" strokeWidth="0.8" />
+                fill="rgba(107,149,200,0.05)" stroke="rgba(107,149,200,0.22)" strokeWidth="0.8" />
             </>
           )}
 
@@ -211,9 +211,9 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
             <>
               {nodes.map((n, i) => {
                 const [px, py] = polarXY(n.angle + 30, R * 0.88);
-                return <circle key={`p4-${i}`} cx={px} cy={py} r={R * 0.68} fill="none" stroke="rgba(244,114,182,0.14)" strokeWidth="0.6" />;
+                return <circle key={`p4-${i}`} cx={px} cy={py} r={R * 0.68} fill="none" stroke="rgba(194,94,143,0.14)" strokeWidth="0.6" />;
               })}
-              <circle cx={CX} cy={CY} r={R * 0.68} fill="none" stroke="rgba(192,132,252,0.20)" strokeWidth="0.7" />
+              <circle cx={CX} cy={CY} r={R * 0.68} fill="none" stroke="rgba(138,114,184,0.2)" strokeWidth="0.7" />
             </>
           )}
 
@@ -222,10 +222,10 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
             <>
               <polygon
                 points={nodes.map(n => { const [x,y] = polarXY(n.angle, R * 1.35); return `${x},${y}`; }).join(' ')}
-                fill="rgba(251,191,36,0.05)" stroke="rgba(251,191,36,0.26)" strokeWidth="0.9" />
+                fill="rgba(184,144,47,0.05)" stroke="rgba(184,144,47,0.26)" strokeWidth="0.9" />
               {nodes.map((n, i) => {
                 const [px, py] = polarXY(n.angle, R * 1.72);
-                return <circle key={`p5-${i}`} cx={px} cy={py} r={R * 0.38} fill="none" stroke="rgba(251,191,36,0.14)" strokeWidth="0.5" />;
+                return <circle key={`p5-${i}`} cx={px} cy={py} r={R * 0.38} fill="none" stroke="rgba(184,144,47,0.14)" strokeWidth="0.5" />;
               })}
             </>
           )}
@@ -235,16 +235,16 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
             <>
               {nodes.map((n, i) => {
                 const [px, py] = polarXY(n.angle, R * 2.05);
-                return <circle key={`p6a-${i}`} cx={px} cy={py} r={R} fill="none" stroke="rgba(192,132,252,0.13)" strokeWidth="0.5" />;
+                return <circle key={`p6a-${i}`} cx={px} cy={py} r={R} fill="none" stroke="rgba(138,114,184,0.13)" strokeWidth="0.5" />;
               })}
               {nodes.map((n, i) => {
                 const [px, py] = polarXY(n.angle + 30, R * 1.75);
-                return <circle key={`p6b-${i}`} cx={px} cy={py} r={R * 0.52} fill="none" stroke="rgba(56,189,248,0.13)" strokeWidth="0.5" />;
+                return <circle key={`p6b-${i}`} cx={px} cy={py} r={R * 0.52} fill="none" stroke="rgba(107,149,200,0.13)" strokeWidth="0.5" />;
               })}
-              <circle cx={CX} cy={CY} r={R * 2.25} fill="none" stroke="rgba(192,132,252,0.14)" strokeWidth="0.6" />
+              <circle cx={CX} cy={CY} r={R * 2.25} fill="none" stroke="rgba(138,114,184,0.14)" strokeWidth="0.6" />
               <polygon
                 points={nodes.map(n => { const [x,y] = polarXY(n.angle, R * 1.68); return `${x},${y}`; }).join(' ')}
-                fill="rgba(139,92,246,0.06)" stroke="rgba(139,92,246,0.20)" strokeWidth="0.7" />
+                fill="rgba(138,114,184,0.06)" stroke="rgba(138,114,184,0.2)" strokeWidth="0.7" />
             </>
           )}
 
@@ -252,17 +252,17 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
           {nodes.map(n => (
             <circle key={`bg-${n.id}`} cx={n.x} cy={n.y} r={R}
               fill="none"
-              stroke={n.hasFilled ? n.color : "rgba(255,255,255,0.07)"}
+              stroke={n.hasFilled ? n.color : "rgba(255,255,255,0.76)"}
               strokeWidth={n.hasFilled ? "1" : "0.5"}
               opacity={n.hasFilled ? 0.4 : 0.18} />
           ))}
-          <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(192,132,252,0.15)" strokeWidth="0.6" />
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(138,114,184,0.15)" strokeWidth="0.6" />
 
           {/* Spokes */}
           {nodes.map(n => (
             <line key={`spoke-${n.id}`}
               x1={CX} y1={CY} x2={n.x} y2={n.y}
-              stroke={n.hasFilled ? n.color : "rgba(255,255,255,0.09)"}
+              stroke={n.hasFilled ? n.color : "rgba(61,52,80,0.11)"}
               strokeWidth={n.hasFilled ? "1.5" : "0.6"}
               opacity={n.hasFilled ? 0.55 : 0.35}
               strokeDasharray={n.isEnabled && !n.hasFilled ? "4 4" : "none"} />
@@ -275,7 +275,7 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
             return (
               <line key={`ring-${i}`}
                 x1={n.x} y1={n.y} x2={next.x} y2={next.y}
-                stroke={bothFilled ? n.color : "rgba(255,255,255,0.08)"}
+                stroke={bothFilled ? n.color : "rgba(61,52,80,0.1)"}
                 strokeWidth={bothFilled ? "1.5" : "0.5"}
                 opacity={bothFilled ? 0.65 : 0.28} />
             );
@@ -284,12 +284,12 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
           {/* Inner hexagon */}
           <polygon
             points={nodes.map(n => { const [x, y] = polarXY(n.angle, R * 0.44); return `${x},${y}`; }).join(" ")}
-            fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.18)" strokeWidth="0.9" />
+            fill="rgba(138,114,184,0.05)" stroke="rgba(138,114,184,0.18)" strokeWidth="0.9" />
 
           {/* Center node */}
-          <circle cx={CX} cy={CY} r={22} fill="url(#grad-center)" stroke="rgba(192,132,252,0.35)" strokeWidth="1" filter={completedCount >= 3 ? "url(#glow-soft)" : undefined} />
-          <text x={CX} y={CY + 1} textAnchor="middle" dominantBaseline="middle" fontSize="14" fill="rgba(255,255,255,0.85)">✦</text>
-          <text x={CX} y={CY + 34} textAnchor="middle" fontSize="8" fill="rgba(192,132,252,0.6)" letterSpacing="2">BLUEPRINT</text>
+          <circle cx={CX} cy={CY} r={22} fill="url(#grad-center)" stroke="rgba(138,114,184,0.35)" strokeWidth="1" filter={completedCount >= 3 ? "url(#glow-soft)" : undefined} />
+          <text x={CX} y={CY + 1} textAnchor="middle" dominantBaseline="middle" fontSize="14" fill="rgba(61,52,80,0.88)">✦</text>
+          <text x={CX} y={CY + 34} textAnchor="middle" fontSize="8" fill="rgba(138,114,184,0.6)" letterSpacing="2">BLUEPRINT</text>
 
           {/* System nodes */}
           {nodes.map(n => {
@@ -315,18 +315,18 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
                 )}
                 {/* Main node */}
                 <circle cx={n.x} cy={n.y} r={20}
-                  fill={n.hasFilled ? `url(#grad-${n.id})` : n.isEnabled ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.02)"}
-                  stroke={n.hasFilled ? n.color : n.isEnabled ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.09)"}
+                  fill={n.hasFilled ? `url(#grad-${n.id})` : n.isEnabled ? "rgba(255,255,255,0.68)" : "rgba(255,255,255,0.5)"}
+                  stroke={n.hasFilled ? n.color : n.isEnabled ? "rgba(61,52,80,0.28)" : "rgba(61,52,80,0.11)"}
                   strokeWidth={n.hasFilled ? "1.5" : "1"} />
                 {/* Emoji */}
                 <text x={n.x} y={n.y + 1} textAnchor="middle" dominantBaseline="middle" fontSize="12"
-                  fill={n.hasFilled ? "white" : n.isEnabled ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.17)"}>
+                  fill={n.hasFilled ? "white" : n.isEnabled ? "rgba(61,52,80,0.53)" : "rgba(61,52,80,0.21)"}>
                   {n.emoji}
                 </text>
                 {/* Label */}
                 <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
                   fontSize="7.5" letterSpacing="0.5"
-                  fill={n.hasFilled ? n.color : n.isEnabled ? "rgba(255,255,255,0.38)" : "rgba(255,255,255,0.2)"}>
+                  fill={n.hasFilled ? n.color : n.isEnabled ? "rgba(61,52,80,0.47)" : "rgba(61,52,80,0.25)"}>
                   {n.label.toUpperCase()}
                 </text>
               </g>
@@ -363,22 +363,22 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>
+      <div className="flex items-center gap-4 text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'rgba(255,255,255,0.15)' }} />
+          <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'rgba(61,52,80,0.17)' }} />
           Not enabled
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full inline-block" style={{ border: '1px solid rgba(255,255,255,0.3)' }} />
+          <span className="w-2 h-2 rounded-full inline-block" style={{ border: '1px solid rgba(61,52,80,0.38)' }} />
           Enabled, needs data
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full inline-block" style={{ background: '#c084fc' }} />
+          <span className="w-2 h-2 rounded-full inline-block" style={{ background: '#8A72B8' }} />
           Active & filled
         </span>
       </div>
 
-      <p className="text-xs text-center" style={{ color: 'rgba(180,170,210,0.4)', maxWidth: 260 }}>
+      <p className="text-xs text-center" style={{ color: 'rgba(105,95,128,0.5)', maxWidth: 260 }}>
         {completedCount === 0 ? "Tap any node to enable or fill in your profile" :
          completedCount === TOTAL ? "✦ Your full blueprint is activated" :
          `${completedCount} of ${TOTAL} systems activated — tap to explore`}

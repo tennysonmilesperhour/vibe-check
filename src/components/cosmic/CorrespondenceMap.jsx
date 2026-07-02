@@ -125,21 +125,21 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
       {activePairs.length > 0 && (
         <div className="glass-card p-6">
           <div className="flex items-center gap-2 mb-1">
-            <BookOpen className="w-5 h-5" style={{ color: '#c084fc' }} />
-            <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Active Connections</h3>
+            <BookOpen className="w-5 h-5" style={{ color: '#8A72B8' }} />
+            <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Active Connections</h3>
           </div>
-          <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>Live cross-system resonances from your enabled blueprint</p>
+          <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.6)' }}>Live cross-system resonances from your enabled blueprint</p>
           <div className="space-y-4">
             {activePairs.map(pair => (
               <div key={pair.key} className="p-5 rounded-xl"
-                style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.25)' }}>
+                style={{ background: 'rgba(138,114,184,0.08)', border: '1px solid rgba(138,114,184,0.25)' }}>
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   {pair.systems.map(s => <CosmicInsightBadge key={s} systemId={s} />)}
-                  <Badge className="text-xs" style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>
+                  <Badge className="text-xs" style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>
                     ✦ Active
                   </Badge>
                 </div>
-                <p className="text-sm leading-relaxed" style={{ color: 'rgba(210,200,235,0.8)' }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgba(70,60,92,0.8)' }}>
                   {SYSTEM_CORRESPONDENCES[pair.key]?.trim()}
                 </p>
               </div>
@@ -151,15 +151,15 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
       {/* Inactive pairs */}
       {inactivePairs.length > 0 && (
         <div className="glass-card p-6">
-          <h3 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: 'rgba(180,170,210,0.45)' }}>Unlock by enabling both systems</h3>
+          <h3 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: 'rgba(105,95,128,0.55)' }}>Unlock by enabling both systems</h3>
           <div className="space-y-3">
             {inactivePairs.map(pair => (
               <div key={pair.key} className="p-4 rounded-xl opacity-45"
-                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(61,52,80,0.08)' }}>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   {pair.systems.map(s => <CosmicInsightBadge key={s} systemId={s} />)}
                 </div>
-                <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>
+                <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>
                   {SYSTEM_CORRESPONDENCES[pair.key]?.trim().slice(0, 80)}…
                 </p>
               </div>
@@ -172,32 +172,32 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
       <div className="glass-card-glow p-6">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5" style={{ color: '#c084fc' }} />
-            <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Integrated Blueprint Reading</h3>
+            <Sparkles className="w-5 h-5" style={{ color: '#8A72B8' }} />
+            <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Integrated Blueprint Reading</h3>
           </div>
           {deepReport && (
             <Button size="sm" variant="outline" onClick={() => exportMapPDF(profile, deepReport)}
-              className="gap-1.5 text-xs" style={{ borderColor: 'rgba(192,132,252,0.3)', color: '#c084fc', background: 'transparent' }}>
+              className="gap-1.5 text-xs" style={{ borderColor: 'rgba(138,114,184,0.3)', color: '#8A72B8', background: 'transparent' }}>
               <Download className="w-3 h-3" /> Export Full PDF
             </Button>
           )}
         </div>
-        <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.5)' }}>
+        <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.6)' }}>
           A synthesized reading across all your active systems — the unified story they tell together
         </p>
 
         {loading ? (
           <div className="flex items-center gap-3 py-8">
-            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#c084fc' }} />
-            <span className="text-sm" style={{ color: 'rgba(180,170,210,0.6)' }}>Weaving your integrated blueprint…</span>
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#8A72B8' }} />
+            <span className="text-sm" style={{ color: 'rgba(105,95,128,0.7)' }}>Weaving your integrated blueprint…</span>
           </div>
         ) : deepReport ? (
-          <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(210,200,235,0.85)' }}>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(70,60,92,0.85)' }}>
             {deepReport}
           </div>
         ) : (
           <div className="text-center py-6">
-            <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.4)' }}>The oracle weaves a deep synthesis across all your active systems — uses a small amount of credits</p>
+            <p className="text-xs mb-3" style={{ color: 'rgba(105,95,128,0.5)' }}>The oracle weaves a deep synthesis across all your active systems — uses a small amount of credits</p>
             <Button onClick={generateDeepMap} disabled={enabledSystems.length === 0} className="btn-cosmic rounded-xl">
               <Sparkles className="w-4 h-4 mr-2" /> Generate Integrated Reading
             </Button>
@@ -209,7 +209,7 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
       {!deepReport && activePairs.length > 0 && (
         <div className="flex justify-end">
           <Button variant="outline" onClick={() => exportMapPDF(profile, null)}
-            className="gap-2 text-sm" style={{ borderColor: 'rgba(139,92,246,0.3)', color: '#c084fc', background: 'rgba(139,92,246,0.05)' }}>
+            className="gap-2 text-sm" style={{ borderColor: 'rgba(138,114,184,0.3)', color: '#8A72B8', background: 'rgba(138,114,184,0.05)' }}>
             <Download className="w-4 h-4" /> Export Correspondence Map PDF
           </Button>
         </div>

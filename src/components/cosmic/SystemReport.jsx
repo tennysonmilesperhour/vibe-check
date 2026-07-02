@@ -9,9 +9,9 @@ import { SYSTEM_CORRESPONDENCES } from "./correspondences";
 function DataRow({ label, value }) {
   if (!value) return null;
   return (
-    <div className="flex flex-wrap items-baseline gap-2 py-1.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-      <span className="text-xs uppercase tracking-widest w-36 shrink-0" style={{ color: 'rgba(180,170,210,0.5)' }}>{label}</span>
-      <span className="text-sm font-medium" style={{ color: 'rgba(220,210,240,0.9)' }}>{value}</span>
+    <div className="flex flex-wrap items-baseline gap-2 py-1.5 border-b" style={{ borderColor: 'rgba(61,52,80,0.08)' }}>
+      <span className="text-xs uppercase tracking-widest w-36 shrink-0" style={{ color: 'rgba(105,95,128,0.6)' }}>{label}</span>
+      <span className="text-sm font-medium" style={{ color: 'rgba(61,52,80,0.9)' }}>{value}</span>
     </div>
   );
 }
@@ -19,7 +19,7 @@ function DataRow({ label, value }) {
 function Section({ title, children }) {
   return (
     <div className="mb-5">
-      <h4 className="text-xs font-bold uppercase tracking-widest mb-3 pb-1" style={{ color: 'rgba(192,132,252,0.7)', borderBottom: '1px solid rgba(139,92,246,0.15)' }}>{title}</h4>
+      <h4 className="text-xs font-bold uppercase tracking-widest mb-3 pb-1" style={{ color: 'rgba(138,114,184,0.7)', borderBottom: '1px solid rgba(138,114,184,0.15)' }}>{title}</h4>
       {children}
     </div>
   );
@@ -41,22 +41,22 @@ function AstrologyDetail({ data }) {
   return (
     <Section title="Planetary Placements">
       {PLANETS.map(p => data?.[p.key] && (
-        <div key={p.key} className="flex items-start gap-3 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div key={p.key} className="flex items-start gap-3 py-2.5" style={{ borderBottom: '1px solid rgba(61,52,80,0.06)' }}>
           <div className="w-28 shrink-0">
-            <p className="text-sm font-semibold" style={{ color: 'rgba(244,114,182,0.9)' }}>{p.label}</p>
-            <p className="text-xs" style={{ color: 'rgba(180,170,210,0.4)' }}>{p.desc}</p>
+            <p className="text-sm font-semibold" style={{ color: 'rgba(194,94,143,0.9)' }}>{p.label}</p>
+            <p className="text-xs" style={{ color: 'rgba(105,95,128,0.5)' }}>{p.desc}</p>
           </div>
           <div className="flex-1">
             <span className="px-2.5 py-1 rounded-full text-sm font-medium"
-              style={{ background: 'rgba(244,114,182,0.1)', color: 'rgba(244,114,182,0.85)', border: '1px solid rgba(244,114,182,0.2)' }}>
+              style={{ background: 'rgba(194,94,143,0.1)', color: 'rgba(194,94,143,0.85)', border: '1px solid rgba(194,94,143,0.2)' }}>
               {data[p.key]}
             </span>
           </div>
         </div>
       ))}
       {data?.custom_notes && (
-        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(244,114,182,0.06)', color: 'rgba(200,190,230,0.75)', border: '1px solid rgba(244,114,182,0.12)' }}>
-          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(244,114,182,0.5)' }}>Personal Notes</span>
+        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(194,94,143,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(194,94,143,0.12)' }}>
+          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(194,94,143,0.5)' }}>Personal Notes</span>
           {data.custom_notes}
         </div>
       )}
@@ -78,16 +78,16 @@ function HumanDesignDetail({ data }) {
       <Section title="9 Centers Overview">
         <div className="grid grid-cols-3 gap-2">
           {HD_CENTERS.map(c => (
-            <div key={c} className="p-2 rounded-lg text-center text-xs" style={{ background: 'rgba(192,132,252,0.05)', border: '1px solid rgba(192,132,252,0.1)', color: 'rgba(200,190,230,0.6)' }}>
+            <div key={c} className="p-2 rounded-lg text-center text-xs" style={{ background: 'rgba(138,114,184,0.05)', border: '1px solid rgba(138,114,184,0.1)', color: 'rgba(82,72,104,0.7)' }}>
               {c}
             </div>
           ))}
         </div>
-        <p className="text-xs mt-2" style={{ color: 'rgba(180,170,210,0.4)' }}>Centers defined/undefined based on your full chart — consult the oracle reading below for a deeper analysis</p>
+        <p className="text-xs mt-2" style={{ color: 'rgba(105,95,128,0.5)' }}>Centers defined/undefined based on your full chart — consult the oracle reading below for a deeper analysis</p>
       </Section>
       {data?.custom_notes && (
-        <div className="p-3 rounded-xl text-sm" style={{ background: 'rgba(192,132,252,0.06)', color: 'rgba(200,190,230,0.75)', border: '1px solid rgba(192,132,252,0.12)' }}>
-          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(192,132,252,0.5)' }}>Personal Notes</span>
+        <div className="p-3 rounded-xl text-sm" style={{ background: 'rgba(138,114,184,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(138,114,184,0.12)' }}>
+          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(138,114,184,0.5)' }}>Personal Notes</span>
           {data.custom_notes}
         </div>
       )}
@@ -115,9 +115,9 @@ function GeneKeysDetail({ data }) {
       {sequences.map(seq => (
         <Section key={seq.group} title={seq.group}>
           {seq.keys.map(k => data?.[k.key] && (
-            <div key={k.key} className="flex items-center gap-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-              <span className="text-xs w-44 shrink-0" style={{ color: 'rgba(180,170,210,0.5)' }}>{k.label}</span>
-              <span className="px-2.5 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(56,189,248,0.1)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.2)' }}>
+            <div key={k.key} className="flex items-center gap-3 py-2" style={{ borderBottom: '1px solid rgba(61,52,80,0.06)' }}>
+              <span className="text-xs w-44 shrink-0" style={{ color: 'rgba(105,95,128,0.6)' }}>{k.label}</span>
+              <span className="px-2.5 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(107,149,200,0.1)', color: '#6B95C8', border: '1px solid rgba(107,149,200,0.2)' }}>
                 Key {data[k.key]}
               </span>
             </div>
@@ -133,7 +133,7 @@ function GenericDetail({ data, fields }) {
     <Section title="Profile Data">
       {fields.map(f => <DataRow key={f.key} label={f.label} value={data?.[f.key]} />)}
       {data?.custom_notes && (
-        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(139,92,246,0.06)', color: 'rgba(200,190,230,0.75)', border: '1px solid rgba(139,92,246,0.12)' }}>
+        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(138,114,184,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(138,114,184,0.12)' }}>
           {data.custom_notes}
         </div>
       )}
@@ -249,24 +249,24 @@ async function exportToPDF(systemLabel, reportText, profileData) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 const SYSTEM_META = {
-  astrology:       { label: "Astrology",       color: "#f472b6", emoji: "♈", Detail: AstrologyDetail },
-  human_design:    { label: "Human Design",    color: "#c084fc", emoji: "⬡", Detail: HumanDesignDetail },
-  gene_keys:       { label: "Gene Keys",       color: "#38bdf8", emoji: "🧬", Detail: GeneKeysDetail },
-  numerology:      { label: "Numerology",      color: "#2dd4bf", emoji: "∞",
+  astrology:       { label: "Astrology",       color: "#C25E8F", emoji: "♈", Detail: AstrologyDetail },
+  human_design:    { label: "Human Design",    color: "#8A72B8", emoji: "⬡", Detail: HumanDesignDetail },
+  gene_keys:       { label: "Gene Keys",       color: "#6B95C8", emoji: "🧬", Detail: GeneKeysDetail },
+  numerology:      { label: "Numerology",      color: "#C9834B", emoji: "∞",
     Detail: ({ data }) => <GenericDetail data={data} fields={[
       { key: 'life_path', label: 'Life Path' }, { key: 'expression', label: 'Expression' },
       { key: 'soul_urge', label: 'Soul Urge' }, { key: 'personal_year', label: 'Personal Year' },
     ]} /> },
-  tarot_archetype: { label: "Tarot Archetype", color: "#fbbf24", emoji: "✦",
+  tarot_archetype: { label: "Tarot Archetype", color: "#B8902F", emoji: "✦",
     Detail: ({ data }) => <GenericDetail data={data} fields={[
       { key: 'birth_card', label: 'Birth Card' }, { key: 'shadow_card', label: 'Shadow Card' },
     ]} /> },
-  enneagram:       { label: "Enneagram",       color: "#fb923c", emoji: "🎭",
+  enneagram:       { label: "Enneagram",       color: "#C07A3E", emoji: "🎭",
     Detail: ({ data }) => <GenericDetail data={data} fields={[
       { key: 'type', label: 'Type' }, { key: 'wing', label: 'Wing' },
       { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Tritype' },
     ]} /> },
-  chakras:         { label: "Chakras",         color: "#a78bfa", emoji: "◎",
+  chakras:         { label: "Chakras",         color: "#9179C9", emoji: "◎",
     Detail: ({ data }) => <GenericDetail data={data} fields={[
       { key: 'dominant_center', label: 'Dominant Center' },
     ]} /> },
@@ -299,8 +299,8 @@ function SystemCard({ systemId, profile, cosmicProfile }) {
         <div className="flex items-center gap-3">
           <span className="text-2xl">{emoji}</span>
           <div>
-            <h3 className="font-bold text-base" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.95)' }}>{label}</h3>
-            <p className="text-xs mt-0.5" style={{ color: 'rgba(180,170,210,0.5)' }}>Full system report</p>
+            <h3 className="font-bold text-base" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.95)' }}>{label}</h3>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(105,95,128,0.6)' }}>Full system report</p>
           </div>
         </div>
         {expanded ? <ChevronUp className="w-4 h-4" style={{ color }} /> : <ChevronDown className="w-4 h-4" style={{ color }} />}
@@ -329,15 +329,15 @@ function SystemCard({ systemId, profile, cosmicProfile }) {
             {loading ? (
               <div className="flex items-center gap-3 py-6">
                 <Loader2 className="w-5 h-5 animate-spin" style={{ color }} />
-                <span className="text-sm" style={{ color: 'rgba(180,170,210,0.6)' }}>Generating your {label} reading…</span>
+                <span className="text-sm" style={{ color: 'rgba(105,95,128,0.7)' }}>Generating your {label} reading…</span>
               </div>
             ) : report ? (
-              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(210,200,235,0.85)' }}>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(70,60,92,0.85)' }}>
                 {report}
               </div>
             ) : (
               <div className="text-center py-4">
-                <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.45)' }}>
+                <p className="text-xs mb-3" style={{ color: 'rgba(105,95,128,0.55)' }}>
                                   Each oracle reading channels from the cosmic well — uses a small amount of credits
                                 </p>
                 <Button onClick={generate} className="btn-cosmic rounded-xl text-sm">
@@ -356,9 +356,9 @@ export default function SystemReports({ enabledSystems, profile, cosmicProfile }
   if (enabledSystems.length === 0) {
     return (
       <div className="glass-card p-12 text-center">
-        <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(139,92,246,0.4)' }} />
-        <p className="font-medium mb-1" style={{ color: 'rgba(200,190,230,0.7)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems enabled</p>
-        <p className="text-sm" style={{ color: 'rgba(160,150,190,0.5)' }}>Enable at least one system on the Systems tab.</p>
+        <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(138,114,184,0.4)' }} />
+        <p className="font-medium mb-1" style={{ color: 'rgba(82,72,104,0.8)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems enabled</p>
+        <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>Enable at least one system on the Systems tab.</p>
       </div>
     );
   }

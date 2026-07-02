@@ -7,10 +7,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { Search, Plus, Sparkles, Trash2, Users, Briefcase, Palette, Heart, Star, Loader2 } from "lucide-react";
 
 const CONNECTION_TYPES = [
-  { id: "friend",                label: "Friend",                icon: Users,   color: "#38bdf8", emoji: "🤝" },
-  { id: "business_partner",     label: "Business Partner",      icon: Briefcase, color: "#fbbf24", emoji: "💼" },
-  { id: "creative_collaborator",label: "Creative Collaborator", icon: Palette,  color: "#f472b6", emoji: "🎨" },
-  { id: "lover",                 label: "Lover",                 icon: Heart,    color: "#fb7185", emoji: "💖" },
+  { id: "friend",                label: "Friend",                icon: Users,   color: "#6B95C8", emoji: "🤝" },
+  { id: "business_partner",     label: "Business Partner",      icon: Briefcase, color: "#B8902F", emoji: "💼" },
+  { id: "creative_collaborator",label: "Creative Collaborator", icon: Palette,  color: "#C25E8F", emoji: "🎨" },
+  { id: "lover",                 label: "Lover",                 icon: Heart,    color: "#C2606E", emoji: "💖" },
 ];
 
 function ConnectionCard({ conn, onDelete, onReading }) {
@@ -52,10 +52,10 @@ Focus on the nature of their ${conn.connection_type.replace(/_/g,' ')} connectio
             {type.emoji}
           </div>
           <div>
-            <p className="font-semibold text-sm" style={{ color: 'rgba(220,210,240,0.95)', fontFamily: 'Space Grotesk, sans-serif' }}>
+            <p className="font-semibold text-sm" style={{ color: 'rgba(61,52,80,0.95)', fontFamily: 'Space Grotesk, sans-serif' }}>
               {conn.target_name || conn.target_email}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'rgba(160,150,190,0.6)' }}>{conn.target_email}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(122,112,144,0.7)' }}>{conn.target_email}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -63,19 +63,19 @@ Focus on the nature of their ${conn.connection_type.replace(/_/g,' ')} connectio
             {type.label}
           </span>
           <button onClick={handleDelete} disabled={isDeleting} className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10"
-            style={{ color: 'rgba(180,170,210,0.35)' }}>
+            style={{ color: 'rgba(105,95,128,0.45)' }}>
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {conn.notes && (
-        <p className="text-xs mb-3 italic" style={{ color: 'rgba(180,170,210,0.5)' }}>{conn.notes}</p>
+        <p className="text-xs mb-3 italic" style={{ color: 'rgba(105,95,128,0.6)' }}>{conn.notes}</p>
       )}
 
       {reading ? (
-        <div className="mt-3 p-3 rounded-xl text-xs leading-relaxed" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', color: 'rgba(200,190,230,0.8)' }}>
-          <p className="text-xs font-semibold mb-1.5" style={{ color: '#c084fc' }}>✦ Synergy Reading</p>
+        <div className="mt-3 p-3 rounded-xl text-xs leading-relaxed" style={{ background: 'rgba(138,114,184,0.08)', border: '1px solid rgba(138,114,184,0.2)', color: 'rgba(82,72,104,0.9)' }}>
+          <p className="text-xs font-semibold mb-1.5" style={{ color: '#8A72B8' }}>✦ Synergy Reading</p>
           {reading}
         </div>
       ) : (
@@ -172,23 +172,23 @@ export default function Constellation() {
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl pulse-glow"
-              style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #0ea5e9 100%)' }}>
+              style={{ background: 'linear-gradient(135deg, #C4699A 0%, #C98A4E 50%, #8FA8D8 100%)' }}>
               🌌
             </div>
             <div className="text-left">
               <h1 className="text-3xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>My Constellation</h1>
-              <p className="text-sm" style={{ color: 'rgba(139,92,246,0.7)' }}>Friends · Partners · Collaborators · Lovers</p>
+              <p className="text-sm" style={{ color: 'rgba(138,114,184,0.7)' }}>Friends · Partners · Collaborators · Lovers</p>
             </div>
           </div>
-          <p className="text-base max-w-xl mx-auto" style={{ color: 'rgba(180,170,210,0.6)' }}>
+          <p className="text-base max-w-xl mx-auto" style={{ color: 'rgba(105,95,128,0.7)' }}>
             Link cosmic profiles to reveal synergy readings — how your energies combine, what you offer each other, and where you grow together.
           </p>
         </div>
 
         {/* Search & Add */}
-        <div className="glass-card p-6 mb-8" style={{ border: '1px solid rgba(139,92,246,0.2)' }}>
-          <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Add a Connection</h3>
-          <p className="text-sm mb-4" style={{ color: 'rgba(180,170,210,0.5)' }}>Search by email address to find someone on Vibe Check.</p>
+        <div className="glass-card p-6 mb-8" style={{ border: '1px solid rgba(138,114,184,0.2)' }}>
+          <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Add a Connection</h3>
+          <p className="text-sm mb-4" style={{ color: 'rgba(105,95,128,0.6)' }}>Search by email address to find someone on Vibe Check.</p>
 
           <div className="flex gap-2 mb-4">
             <Input
@@ -204,23 +204,23 @@ export default function Constellation() {
           </div>
 
           {searchResult && !searchResult.found && (
-            <div className="p-3 rounded-xl text-sm mb-4" style={{ background: 'rgba(255,100,100,0.08)', border: '1px solid rgba(255,100,100,0.2)', color: 'rgba(220,150,150,0.8)' }}>
+            <div className="p-3 rounded-xl text-sm mb-4" style={{ background: 'rgba(255,100,100,0.08)', border: '1px solid rgba(255,100,100,0.2)', color: 'rgba(176,90,90,0.8)' }}>
               No user found with that email. You can invite them using the button in the sidebar.
             </div>
           )}
 
           {searchResult?.found && (
-            <div className="p-4 rounded-xl mb-4" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.25)' }}>
+            <div className="p-4 rounded-xl mb-4" style={{ background: 'rgba(138,114,184,0.08)', border: '1px solid rgba(138,114,184,0.25)' }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #7c3aed, #0ea5e9)', color: 'white' }}>
+                  style={{ background: 'linear-gradient(135deg, #C4699A, #8FA8D8)', color: 'white' }}>
                   {(searchResult.user.full_name || searchResult.user.email)[0].toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-semibold text-sm" style={{ color: 'rgba(220,210,240,0.95)' }}>{searchResult.user.full_name || "—"}</p>
-                  <p className="text-xs" style={{ color: 'rgba(160,150,190,0.65)' }}>{searchResult.user.email}</p>
+                  <p className="font-semibold text-sm" style={{ color: 'rgba(61,52,80,0.95)' }}>{searchResult.user.full_name || "—"}</p>
+                  <p className="text-xs" style={{ color: 'rgba(122,112,144,0.75)' }}>{searchResult.user.email}</p>
                   {searchResult.cosmic_profile?.enabled_systems?.length > 0 && (
-                    <p className="text-xs mt-0.5" style={{ color: '#c084fc' }}>
+                    <p className="text-xs mt-0.5" style={{ color: '#8A72B8' }}>
                       ✦ {searchResult.cosmic_profile.enabled_systems.length} cosmic systems active
                     </p>
                   )}
@@ -228,15 +228,15 @@ export default function Constellation() {
               </div>
 
               <div className="mb-3">
-                <p className="text-xs mb-2" style={{ color: 'rgba(200,190,230,0.6)' }}>Connection type</p>
+                <p className="text-xs mb-2" style={{ color: 'rgba(82,72,104,0.7)' }}>Connection type</p>
                 <div className="flex flex-wrap gap-2">
                   {CONNECTION_TYPES.map(t => (
                     <button key={t.id} onClick={() => setSelectedType(t.id)}
                       className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                       style={{
-                        background: selectedType === t.id ? `${t.color}25` : 'rgba(255,255,255,0.04)',
-                        border: selectedType === t.id ? `1px solid ${t.color}50` : '1px solid rgba(255,255,255,0.1)',
-                        color: selectedType === t.id ? t.color : 'rgba(180,170,210,0.6)',
+                        background: selectedType === t.id ? `${t.color}25` : 'rgba(255,255,255,0.64)',
+                        border: selectedType === t.id ? `1px solid ${t.color}50` : '1px solid rgba(61,52,80,0.12)',
+                        color: selectedType === t.id ? t.color : 'rgba(105,95,128,0.7)',
                       }}>
                       {t.emoji} {t.label}
                     </button>
@@ -262,13 +262,13 @@ export default function Constellation() {
         {/* Connections list */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#c084fc' }} />
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#8A72B8' }} />
           </div>
         ) : connections.length === 0 ? (
           <div className="glass-card p-12 text-center">
             <div className="text-4xl mb-3">🌌</div>
-            <p className="font-medium mb-1" style={{ color: 'rgba(200,190,230,0.7)', fontFamily: 'Space Grotesk, sans-serif' }}>Your constellation is empty</p>
-            <p className="text-sm" style={{ color: 'rgba(160,150,190,0.5)' }}>Search for a friend's email above to add them and unlock synergy readings.</p>
+            <p className="font-medium mb-1" style={{ color: 'rgba(82,72,104,0.8)', fontFamily: 'Space Grotesk, sans-serif' }}>Your constellation is empty</p>
+            <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>Search for a friend's email above to add them and unlock synergy readings.</p>
           </div>
         ) : (
           <div className="space-y-8">

@@ -123,10 +123,10 @@ export default function Boundaries() {
     };
 
     const sevColor = (s) => ({
-        high: { bg: 'rgba(244,114,182,0.12)', color: '#f472b6', border: 'rgba(244,114,182,0.25)' },
-        medium: { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
-        low: { bg: 'rgba(56,189,248,0.12)', color: '#38bdf8', border: 'rgba(56,189,248,0.25)' },
-    }[s] || { bg: 'rgba(255,255,255,0.05)', color: 'rgba(200,190,230,0.7)', border: 'rgba(255,255,255,0.1)' });
+        high: { bg: 'rgba(194,94,143,0.12)', color: '#C25E8F', border: 'rgba(194,94,143,0.25)' },
+        medium: { bg: 'rgba(184,144,47,0.12)', color: '#B8902F', border: 'rgba(184,144,47,0.25)' },
+        low: { bg: 'rgba(107,149,200,0.12)', color: '#6B95C8', border: 'rgba(107,149,200,0.25)' },
+    }[s] || { bg: 'rgba(255,255,255,0.68)', color: 'rgba(82,72,104,0.8)', border: 'rgba(61,52,80,0.12)' });
 
     const avgMood = recentCheckIns.length > 0
         ? recentCheckIns.slice(0, 7).reduce((s, c) => s + c.mood_score, 0) / Math.min(7, recentCheckIns.length)
@@ -138,15 +138,15 @@ export default function Boundaries() {
             <div className="max-w-5xl mx-auto relative z-10">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>✦ Protection</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(138,114,184,0.7)' }}>✦ Protection</p>
                     <div className="flex items-center justify-center gap-3 mb-3">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                            style={{ background: 'linear-gradient(135deg, #7c3aed, #0ea5e9)', boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}>
+                            style={{ background: 'linear-gradient(135deg, #C4699A, #8FA8D8)', boxShadow: '0 0 20px rgba(186,124,164,0.4)' }}>
                             <Shield className="w-6 h-6 text-white" />
                         </div>
                         <h1 className="text-4xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Boundaries & Alerts</h1>
                     </div>
-                    <p className="text-base max-w-2xl mx-auto" style={{ color: 'rgba(180,170,210,0.65)' }}>
+                    <p className="text-base max-w-2xl mx-auto" style={{ color: 'rgba(105,95,128,0.75)' }}>
                         Set protective thresholds and receive alerts when patterns suggest you might need extra care.
                     </p>
                 </div>
@@ -154,13 +154,13 @@ export default function Boundaries() {
                 {/* Status Cards */}
                 <div className="grid md:grid-cols-3 gap-5 mb-8">
                     {[
-                        { label: 'Active Alerts', icon: AlertTriangle, color: '#f472b6',
+                        { label: 'Active Alerts', icon: AlertTriangle, color: '#C25E8F',
                           value: alerts.filter(a => !a.is_acknowledged).length,
                           sub: alerts.filter(a => !a.is_acknowledged).length === 0 ? "✓ All clear" : "Need attention" },
-                        { label: 'Threshold Status', icon: TrendingDown, color: '#38bdf8',
+                        { label: 'Threshold Status', icon: TrendingDown, color: '#6B95C8',
                           value: avgMood === null ? '—' : avgMood >= settings.mood_threshold ? 'Safe' : 'Below',
                           sub: avgMood !== null ? `7-day avg: ${avgMood.toFixed(1)}/10` : "No data yet" },
-                        { label: 'Protection Level', icon: Lock, color: '#2dd4bf',
+                        { label: 'Protection Level', icon: Lock, color: '#C9834B',
                           value: settings.password_protection ? "High" : "Standard",
                           sub: "Export protection" },
                     ].map(({ label, icon: Icon, color, value, sub }) => (
@@ -169,8 +169,8 @@ export default function Boundaries() {
                                 <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: `${color}99` }}>{label}</span>
                                 <Icon className="w-4 h-4" style={{ color }} />
                             </div>
-                            <div className="text-2xl font-bold mb-1" style={{ color: 'rgba(220,210,240,0.95)', fontFamily: 'Space Grotesk, sans-serif' }}>{value}</div>
-                            <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>{sub}</p>
+                            <div className="text-2xl font-bold mb-1" style={{ color: 'rgba(61,52,80,0.95)', fontFamily: 'Space Grotesk, sans-serif' }}>{value}</div>
+                            <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>{sub}</p>
                         </div>
                     ))}
                 </div>
@@ -178,43 +178,43 @@ export default function Boundaries() {
                 {/* Settings */}
                 <div className="glass-card p-6 mb-6">
                     <div className="flex items-center gap-2 mb-1">
-                        <Settings className="w-5 h-5" style={{ color: '#c084fc' }} />
-                        <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Boundary Settings</h3>
+                        <Settings className="w-5 h-5" style={{ color: '#8A72B8' }} />
+                        <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Boundary Settings</h3>
                     </div>
-                    <p className="text-sm mb-6" style={{ color: 'rgba(180,170,210,0.55)' }}>Configure when you want to be alerted about concerning patterns</p>
+                    <p className="text-sm mb-6" style={{ color: 'rgba(105,95,128,0.65)' }}>Configure when you want to be alerted about concerning patterns</p>
 
                     <div className="space-y-6">
                         <div>
-                            <Label className="text-sm font-medium" style={{ color: 'rgba(200,190,230,0.8)' }}>
-                                Mood Threshold Alert — currently <strong style={{ color: '#c084fc' }}>{settings.mood_threshold}/10</strong>
+                            <Label className="text-sm font-medium" style={{ color: 'rgba(82,72,104,0.9)' }}>
+                                Mood Threshold Alert — currently <strong style={{ color: '#8A72B8' }}>{settings.mood_threshold}/10</strong>
                             </Label>
-                            <p className="text-xs mb-3" style={{ color: 'rgba(160,150,190,0.5)' }}>Alert when your 7-day average falls below this level</p>
+                            <p className="text-xs mb-3" style={{ color: 'rgba(122,112,144,0.6)' }}>Alert when your 7-day average falls below this level</p>
                             <Slider value={[settings.mood_threshold]}
                                 onValueChange={([v]) => setSettings({...settings, mood_threshold: v})}
                                 max={8} min={2} step={0.5} className="w-full" />
-                            <div className="flex justify-between text-xs mt-1" style={{ color: 'rgba(160,150,190,0.4)' }}>
+                            <div className="flex justify-between text-xs mt-1" style={{ color: 'rgba(122,112,144,0.5)' }}>
                                 <span>2 · Very sensitive</span><span>8 · Less sensitive</span>
                             </div>
                         </div>
 
                         <div>
-                            <Label className="text-sm font-medium" style={{ color: 'rgba(200,190,230,0.8)' }}>
-                                Consecutive Days Alert — currently <strong style={{ color: '#c084fc' }}>{settings.consecutive_alerts} days</strong>
+                            <Label className="text-sm font-medium" style={{ color: 'rgba(82,72,104,0.9)' }}>
+                                Consecutive Days Alert — currently <strong style={{ color: '#8A72B8' }}>{settings.consecutive_alerts} days</strong>
                             </Label>
-                            <p className="text-xs mb-3" style={{ color: 'rgba(160,150,190,0.5)' }}>Alert after this many consecutive high or low mood days in a row</p>
+                            <p className="text-xs mb-3" style={{ color: 'rgba(122,112,144,0.6)' }}>Alert after this many consecutive high or low mood days in a row</p>
                             <Slider value={[settings.consecutive_alerts]}
                                 onValueChange={([v]) => setSettings({...settings, consecutive_alerts: v})}
                                 max={7} min={2} step={1} className="w-full" />
-                            <div className="flex justify-between text-xs mt-1" style={{ color: 'rgba(160,150,190,0.4)' }}>
+                            <div className="flex justify-between text-xs mt-1" style={{ color: 'rgba(122,112,144,0.5)' }}>
                                 <span>2 days</span><span>7 days</span>
                             </div>
                         </div>
 
-                        <div className="space-y-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div className="space-y-4 pt-4" style={{ borderTop: '1px solid rgba(61,52,80,0.1)' }}>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <Label className="text-sm font-medium" style={{ color: 'rgba(200,190,230,0.8)' }}>Enable Notifications</Label>
-                                    <p className="text-xs" style={{ color: 'rgba(160,150,190,0.5)' }}>Show dashboard alerts when boundaries are crossed</p>
+                                    <Label className="text-sm font-medium" style={{ color: 'rgba(82,72,104,0.9)' }}>Enable Notifications</Label>
+                                    <p className="text-xs" style={{ color: 'rgba(122,112,144,0.6)' }}>Show dashboard alerts when boundaries are crossed</p>
                                 </div>
                                 <Switch checked={settings.enable_notifications}
                                     onCheckedChange={(c) => setSettings({...settings, enable_notifications: c})} />
@@ -222,8 +222,8 @@ export default function Boundaries() {
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <Label className="text-sm font-medium" style={{ color: 'rgba(200,190,230,0.8)' }}>Password-Protect Exports</Label>
-                                    <p className="text-xs" style={{ color: 'rgba(160,150,190,0.5)' }}>For use in legal documentation if needed</p>
+                                    <Label className="text-sm font-medium" style={{ color: 'rgba(82,72,104,0.9)' }}>Password-Protect Exports</Label>
+                                    <p className="text-xs" style={{ color: 'rgba(122,112,144,0.6)' }}>For use in legal documentation if needed</p>
                                 </div>
                                 <Switch checked={settings.password_protection}
                                     onCheckedChange={(c) => setSettings({...settings, password_protection: c})} />
@@ -231,7 +231,7 @@ export default function Boundaries() {
 
                             {settings.password_protection && (
                                 <div>
-                                    <Label htmlFor="export-password" style={{ color: 'rgba(200,190,230,0.7)' }}>Export Password</Label>
+                                    <Label htmlFor="export-password" style={{ color: 'rgba(82,72,104,0.8)' }}>Export Password</Label>
                                     <Input id="export-password" type="password" value={settings.export_password}
                                         onChange={(e) => setSettings({...settings, export_password: e.target.value})}
                                         placeholder="Set a password for protected exports" className="mt-1 max-w-xs" />
@@ -242,12 +242,12 @@ export default function Boundaries() {
                         <div className="flex flex-wrap justify-between gap-3 pt-2">
                             <div className="flex gap-3">
                                 <Button onClick={checkBoundaries} variant="outline" disabled={checkingBoundaries}
-                                    style={{ borderColor: 'rgba(139,92,246,0.3)', color: '#c084fc', background: 'rgba(139,92,246,0.08)' }}>
+                                    style={{ borderColor: 'rgba(138,114,184,0.3)', color: '#8A72B8', background: 'rgba(138,114,184,0.08)' }}>
                                     <Bell className="w-4 h-4 mr-2" />
                                     {checkingBoundaries ? 'Checking...' : 'Check Boundaries Now'}
                                 </Button>
                                 <Button onClick={exportData} variant="outline"
-                                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(200,190,230,0.7)', background: 'transparent' }}>
+                                    style={{ borderColor: 'rgba(61,52,80,0.12)', color: 'rgba(82,72,104,0.8)', background: 'transparent' }}>
                                     <Download className="w-4 h-4 mr-2" />
                                     Export Data
                                 </Button>
@@ -261,8 +261,8 @@ export default function Boundaries() {
 
                 {/* Alerts List */}
                 <div className="glass-card p-6">
-                    <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Recent Alerts</h3>
-                    <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>Boundary alerts and notifications history</p>
+                    <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Recent Alerts</h3>
+                    <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>Boundary alerts and notifications history</p>
 
                     {alerts.length > 0 ? (
                         <div className="space-y-3">
@@ -275,21 +275,21 @@ export default function Boundaries() {
                                             <div className="flex items-start gap-3 flex-1">
                                                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: sev.color }} />
                                                 <div className="flex-1">
-                                                    <p className="text-sm" style={{ color: 'rgba(210,200,235,0.85)' }}>{alert.message}</p>
+                                                    <p className="text-sm" style={{ color: 'rgba(70,60,92,0.85)' }}>{alert.message}</p>
                                                     <div className="flex flex-wrap items-center gap-2 mt-2">
                                                         <Badge className="text-xs" style={{ background: sev.bg, color: sev.color, border: `1px solid ${sev.border}` }}>{alert.severity}</Badge>
-                                                        <span className="text-xs" style={{ color: 'rgba(160,150,190,0.5)' }}>
+                                                        <span className="text-xs" style={{ color: 'rgba(122,112,144,0.6)' }}>
                                                             {format(parseISO(alert.created_date), "MMM d, h:mm a")}
                                                         </span>
                                                         {alert.is_acknowledged && (
-                                                            <span className="text-xs font-medium" style={{ color: '#2dd4bf' }}>✓ Acknowledged</span>
+                                                            <span className="text-xs font-medium" style={{ color: '#C9834B' }}>✓ Acknowledged</span>
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
                                             {!alert.is_acknowledged && (
                                                 <Button size="sm" variant="outline" className="shrink-0"
-                                                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(200,190,230,0.7)', background: 'rgba(255,255,255,0.04)' }}
+                                                    style={{ borderColor: 'rgba(61,52,80,0.12)', color: 'rgba(82,72,104,0.8)', background: 'rgba(255,255,255,0.64)' }}
                                                     onClick={() => acknowledgeAlert(alert.id)}>
                                                     <CheckCircle className="w-3 h-3 mr-1" /> Acknowledge
                                                 </Button>
@@ -301,9 +301,9 @@ export default function Boundaries() {
                         </div>
                     ) : (
                         <div className="text-center py-10">
-                            <Shield className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(139,92,246,0.3)' }} />
-                            <h3 className="text-lg font-medium mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(200,190,230,0.7)' }}>No alerts yet</h3>
-                            <p className="text-sm" style={{ color: 'rgba(160,150,190,0.5)' }}>
+                            <Shield className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(138,114,184,0.3)' }} />
+                            <h3 className="text-lg font-medium mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(82,72,104,0.8)' }}>No alerts yet</h3>
+                            <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>
                                 Log daily check-ins and use "Check Boundaries Now" to run a pattern analysis.
                             </p>
                         </div>

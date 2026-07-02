@@ -43,6 +43,29 @@ export const TAROT_MAJOR_ARCANA = [
     "20 – Judgement", "21 – The World"
 ];
 
+export const ENNEAGRAM_TYPES = [
+    "1 – The Reformer",
+    "2 – The Helper",
+    "3 – The Achiever",
+    "4 – The Individualist",
+    "5 – The Investigator",
+    "6 – The Loyalist",
+    "7 – The Enthusiast",
+    "8 – The Challenger",
+    "9 – The Peacemaker"
+];
+
+export const ENNEAGRAM_WINGS = [
+    "1w9", "1w2", "2w1", "2w3", "3w2", "3w4", "4w3", "4w5", "5w4",
+    "5w6", "6w5", "6w7", "7w6", "7w8", "8w7", "8w9", "9w8", "9w1"
+];
+
+export const ENNEAGRAM_INSTINCTS = [
+    "Self-Preservation (sp)",
+    "Social (so)",
+    "Sexual / One-to-One (sx)"
+];
+
 export const CHAKRA_CENTERS = [
     "Root (Muladhara) – Safety & grounding",
     "Sacral (Svadhisthana) – Creativity & pleasure",
@@ -77,5 +100,14 @@ Human Design's 9 Centers correspond directly to the chakra system: Root Center =
 Numerology and Tarot are deeply linked. Your Life Path number corresponds to a Major Arcana card (1 = Magician, 2 = High Priestess, etc., with master numbers 11 = Justice, 22 = The Fool). The birth card in Tarot is calculated similarly to the Life Path number.`,
 
     gene_keys_chakras: `
-The 64 Gene Keys are organized into biological sequences that correlate with the body's energy centers. The Activation Sequence maps to physical wellbeing (lower chakras), the Venus Sequence to emotional intelligence (heart center), and the Pearl Sequence to vocation and prosperity (higher expression).`
+The 64 Gene Keys are organized into biological sequences that correlate with the body's energy centers. The Activation Sequence maps to physical wellbeing (lower chakras), the Venus Sequence to emotional intelligence (heart center), and the Pearl Sequence to vocation and prosperity (higher expression).`,
+
+    enneagram_astrology: `
+Both systems describe core archetypal drives. The Enneagram's nine types echo planetary signatures: Type 1's inner critic mirrors Saturn/Virgo precision, Type 2 resonates with Venus/Cancer nurturing, Type 4 with Neptune/Pisces depth, Type 8 with Mars/Scorpio intensity. Your Sun and Moon signs often color how your Enneagram type expresses and defends itself.`,
+
+    enneagram_human_design: `
+The Enneagram maps psychological motivation (core fear and desire) while Human Design maps energetic mechanics (how your energy is built to operate). A Projector Type 3 achieves differently than a Generator Type 3. Your HD Authority shows how to make decisions; your Enneagram type shows the patterns that hijack them — together they reveal both the vehicle and the driver.`,
+
+    enneagram_gene_keys: `
+The Enneagram's growth path — from fixation toward essence — parallels the Gene Keys' journey from Shadow through Gift to Siddhi. Your type's core passion (e.g. Type 1's resentment, Type 9's sloth) often names the same pattern as a prominent Shadow in your hologenetic profile, offering two languages for the same inner work.`
 };

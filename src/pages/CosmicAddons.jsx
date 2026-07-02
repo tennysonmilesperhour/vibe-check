@@ -10,7 +10,7 @@ import { Sparkles, Save, Info, BookOpen, Wand2 } from "lucide-react";
 import SystemToggle, { SYSTEMS } from "@/components/cosmic/SystemToggle";
 import {
     AstrologyForm, HumanDesignForm, GeneKeysForm,
-    NumerologyForm, TarotForm, ChakraForm
+    NumerologyForm, TarotForm, ChakraForm, EnneagramForm
 } from "@/components/cosmic/ProfileForm";
 import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
 import CosmicInsightBadge from "@/components/cosmic/CosmicInsightBadge";
@@ -32,6 +32,7 @@ const EMPTY_PROFILE = {
     gene_keys: {},
     numerology: {},
     tarot_archetype: {},
+    enneagram: {},
     chakras: {}
 };
 
@@ -189,6 +190,7 @@ Return this JSON:
         gene_keys: <GeneKeysForm data={profile.gene_keys} onChange={d => setSystemData('gene_keys', d)} />,
         numerology: <NumerologyForm data={profile.numerology} onChange={d => setSystemData('numerology', d)} birthDate={profile.birth_date} firstName={profile.first_name} lastName={profile.last_name} />,
         tarot_archetype: <TarotForm data={profile.tarot_archetype} onChange={d => setSystemData('tarot_archetype', d)} birthDate={profile.birth_date} />,
+        enneagram: <EnneagramForm data={profile.enneagram} onChange={d => setSystemData('enneagram', d)} />,
         chakras: <ChakraForm data={profile.chakras} onChange={d => setSystemData('chakras', d)} />,
     };
 
@@ -201,15 +203,15 @@ Return this JSON:
                 <div className="text-center mb-10">
                     <div className="flex items-center justify-center gap-3 mb-4">
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl pulse-glow"
-                            style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #0ea5e9 100%)' }}>
+                            style={{ background: 'linear-gradient(135deg, #C4699A 0%, #C98A4E 50%, #8FA8D8 100%)' }}>
                             ✨
                         </div>
                         <div className="text-left">
                             <h1 className="text-3xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Cosmic Add-ons</h1>
-                            <p className="text-sm" style={{ color: 'rgba(139,92,246,0.7)' }}>Astrology · Human Design · Gene Keys · and more</p>
+                            <p className="text-sm" style={{ color: 'rgba(138,114,184,0.7)' }}>Astrology · Human Design · Gene Keys · and more</p>
                         </div>
                     </div>
-                    <p className="text-base max-w-2xl mx-auto" style={{ color: 'rgba(180,170,210,0.65)' }}>
+                    <p className="text-base max-w-2xl mx-auto" style={{ color: 'rgba(105,95,128,0.75)' }}>
                         Layer your unique cosmic blueprint onto your emotional data. Toggle on the systems you work with,
                         enter your profile details, and the AI will weave them together for richer, more personalised insights.
                     </p>
@@ -217,7 +219,7 @@ Return this JSON:
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="mb-6 w-full grid grid-cols-4"
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        style={{ background: 'rgba(255,255,255,0.68)', border: '1px solid rgba(61,52,80,0.1)' }}>
                         <TabsTrigger value="systems">Systems</TabsTrigger>
                         <TabsTrigger value="profile">My Profile</TabsTrigger>
                         <TabsTrigger value="correspondences">Connections</TabsTrigger>
@@ -227,8 +229,8 @@ Return this JSON:
                     {/* ── Tab 1: Toggle Systems ── */}
                     <TabsContent value="systems" className="space-y-6">
                         <div className="glass-card p-6">
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Choose Your Systems</h3>
-                            <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>
+                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Choose Your Systems</h3>
+                            <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>
                                 Toggle on the wisdom frameworks you resonate with. Only enabled systems appear in your AI insights.
                             </p>
                             <SystemToggle enabledSystems={enabledSystems} onToggle={toggleSystem} />
@@ -236,30 +238,30 @@ Return this JSON:
 
                         {/* Birth Data */}
                         <div className="glass-card p-6">
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Name & Birth Data</h3>
-                            <p className="text-sm mb-5" style={{ color: 'rgba(180,170,210,0.55)' }}>
+                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Name & Birth Data</h3>
+                            <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>
                                 Your name is used for numerology calculations (expression number, soul urge, life path). Birth data helps calculate or verify your charts.
                             </p>
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>First Name</Label>
+                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>First Name</Label>
                                     <Input className="mt-1" placeholder="Your first name" value={profile.first_name}
                                         onChange={e => setProfile(prev => ({ ...prev, first_name: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>Last Name</Label>
+                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Last Name</Label>
                                     <Input className="mt-1" placeholder="Your last name" value={profile.last_name}
                                         onChange={e => setProfile(prev => ({ ...prev, last_name: e.target.value }))} />
                                 </div>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
                                 <div>
-                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>Date of Birth</Label>
+                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Date of Birth</Label>
                                     <Input type="date" className="mt-1" value={profile.birth_date}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_date: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>Time of Birth <span className="text-xs opacity-60">(optional)</span></Label>
+                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Time of Birth <span className="text-xs opacity-60">(optional)</span></Label>
                                     <Input type="time" className="mt-1" value={profile.birth_time}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_time: e.target.value }))} />
                                 </div>
@@ -267,17 +269,17 @@ Return this JSON:
                             </div>
                             <div className="grid md:grid-cols-3 gap-4 mt-4">
                                 <div>
-                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>City of Birth</Label>
+                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>City of Birth</Label>
                                     <Input className="mt-1" placeholder="e.g. Denver" value={profile.birth_city || ''}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_city: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>State / Region <span className="text-xs opacity-60">(optional)</span></Label>
+                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>State / Region <span className="text-xs opacity-60">(optional)</span></Label>
                                     <Input className="mt-1" placeholder="e.g. Colorado" value={profile.birth_state || ''}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_state: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'rgba(200,190,230,0.7)' }}>Country of Birth</Label>
+                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Country of Birth</Label>
                                     <Input className="mt-1" placeholder="e.g. United States" value={profile.birth_country || ''}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_country: e.target.value }))} />
                                 </div>
@@ -295,15 +297,16 @@ Return this JSON:
                     {/* ── Tab 2: Profile Detail Forms ── */}
                     <TabsContent value="profile" className="space-y-6">
                         {/* Sacred Geometry Blueprint */}
-                        <div className="glass-card p-6 flex flex-col items-center" style={{ border: '1px solid rgba(139,92,246,0.2)' }}>
-                            <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>Your Cosmic Blueprint</h3>
-                            <p className="text-sm mb-3 w-full" style={{ color: 'rgba(180,170,210,0.55)' }}>Systems light up as you fill in your profile data</p>
+                        <div className="glass-card p-6 flex flex-col items-center" style={{ border: '1px solid rgba(138,114,184,0.2)' }}>
+                            <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Your Cosmic Blueprint</h3>
+                            <p className="text-sm mb-3 w-full" style={{ color: 'rgba(105,95,128,0.65)' }}>Systems light up as you fill in your profile data</p>
                             {canCalculate ? (
-                                <div className="w-full mb-4 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.25)' }}>
-                                    <Wand2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#c084fc' }} />
+                                <div className="w-full mb-4 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(138,114,184,0.08)', border: '1px solid rgba(138,114,184,0.25)' }}>
+                                    <Wand2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#8A72B8' }} />
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium mb-1" style={{ color: 'rgba(220,210,240,0.9)' }}>Oracle Birth Chart Calculator</p>
-                                        <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.55)' }}>Channels your birth date, time &amp; location to reveal your Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
+                                        <p className="text-sm font-medium mb-1" style={{ color: 'rgba(61,52,80,0.9)' }}>Oracle Birth Chart Calculator</p>
+                                        <p className="text-xs mb-2" style={{ color: 'rgba(105,95,128,0.65)' }}>Channels your birth date, time &amp; location to reveal your Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
+                                        <p className="text-xs mb-3" style={{ color: 'rgba(184,144,47,0.75)' }}>A note on accuracy: your Sun sign, numerology, and Tarot birth card are calculated exactly in-app from your birth data. Moon, Rising, Human Design and Gene Keys need precise ephemeris math — the oracle's estimates are usually right but not guaranteed, so cross-check them against a trusted chart and edit anything that's off.</p>
                                         <Button onClick={aiCalculate} disabled={isCalculating} size="sm" className="btn-cosmic rounded-lg">
                                             <Wand2 className="w-3.5 h-3.5 mr-1.5" />
                                             {isCalculating ? 'Calculating...' : 'Calculate from Birth Data'}
@@ -311,8 +314,8 @@ Return this JSON:
                                     </div>
                                 </div>
                             ) : (
-                                <div className="w-full mb-4 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                    <p className="text-xs" style={{ color: 'rgba(180,170,210,0.45)' }}>💡 Add your birth date and city in the <strong style={{color:'rgba(192,132,252,0.7)'}}>Systems tab</strong> to unlock AI birth chart calculation.</p>
+                                <div className="w-full mb-4 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(61,52,80,0.1)' }}>
+                                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.55)' }}>💡 Add your birth date and city in the <strong style={{color:'rgba(138,114,184,0.7)'}}>Systems tab</strong> to unlock AI birth chart calculation.</p>
                                 </div>
                             )}
                             <CosmicBlueprint enabledSystems={enabledSystems} profile={profile} />
@@ -320,9 +323,9 @@ Return this JSON:
 
                         {enabledSystems.length === 0 ? (
                             <div className="glass-card p-12 text-center">
-                                <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(139,92,246,0.4)' }} />
-                                <p className="font-medium mb-1" style={{ color: 'rgba(200,190,230,0.7)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems enabled</p>
-                                <p className="text-sm" style={{ color: 'rgba(160,150,190,0.5)' }}>
+                                <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(138,114,184,0.4)' }} />
+                                <p className="font-medium mb-1" style={{ color: 'rgba(82,72,104,0.8)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems enabled</p>
+                                <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>
                                     Go to the Systems tab and toggle on at least one system to enter your profile.
                                 </p>
                             </div>
@@ -332,12 +335,12 @@ Return this JSON:
                                 if (!system) return null;
                                 return (
                                     <div key={systemId} className="glass-card p-6"
-                                        style={{ border: '1px solid rgba(139,92,246,0.2)' }}>
+                                        style={{ border: '1px solid rgba(138,114,184,0.2)' }}>
                                         <div className="flex items-center gap-3 mb-5">
                                             <span className="text-2xl">{system.emoji}</span>
                                             <div>
-                                                <h3 className="font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>{system.label}</h3>
-                                                <p className="text-xs mt-0.5" style={{ color: 'rgba(180,170,210,0.5)' }}>{system.description}</p>
+                                                <h3 className="font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>{system.label}</h3>
+                                                <p className="text-xs mt-0.5" style={{ color: 'rgba(105,95,128,0.6)' }}>{system.description}</p>
                                             </div>
                                         </div>
                                         {systemForms[systemId]}
@@ -363,7 +366,7 @@ Return this JSON:
                     {/* ── Tab 4: Deep Dive ── */}
                     <TabsContent value="deepdive" className="space-y-6">
                         <div className="glass-card p-5">
-                            <p className="text-sm" style={{ color: 'rgba(180,170,210,0.6)' }}>
+                            <p className="text-sm" style={{ color: 'rgba(105,95,128,0.7)' }}>
                                 Each system below has a full structured breakdown + an AI-generated deep reading. Expand any system to generate your personalized report. Each can be exported as a PDF.
                             </p>
                         </div>

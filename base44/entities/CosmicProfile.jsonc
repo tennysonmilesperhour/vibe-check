@@ -144,6 +144,26 @@
         }
       }
     },
+    "enneagram": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "wing": {
+          "type": "string"
+        },
+        "instinct": {
+          "type": "string"
+        },
+        "tritype": {
+          "type": "string"
+        },
+        "custom_notes": {
+          "type": "string"
+        }
+      }
+    },
     "chakras": {
       "type": "object",
       "properties": {

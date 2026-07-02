@@ -80,6 +80,16 @@ function buildCosmicContext(profile) {
         ].filter(Boolean);
         if (items.length) parts.push(`TAROT: ${items.join(', ')}`);
     }
+    if (enabled.includes('enneagram') && profile.enneagram) {
+        const e = profile.enneagram;
+        const items = [
+            e.type && `Type ${e.type}`,
+            e.wing && `Wing ${e.wing}`,
+            e.instinct && `Instinct: ${e.instinct}`,
+            e.tritype && `Tritype ${e.tritype}`,
+        ].filter(Boolean);
+        if (items.length) parts.push(`ENNEAGRAM: ${items.join(', ')}${e.custom_notes ? '. Notes: ' + e.custom_notes : ''}`);
+    }
     if (enabled.includes('chakras') && profile.chakras) {
         const c = profile.chakras;
         if (c.dominant_center) parts.push(`CHAKRA FOCUS: ${c.dominant_center}`);

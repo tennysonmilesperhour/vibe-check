@@ -92,7 +92,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     ZODIAC_SIGNS, HUMAN_DESIGN_TYPES, HUMAN_DESIGN_AUTHORITIES, HUMAN_DESIGN_PROFILES,
-    GENE_KEY_NUMBERS, LIFE_PATH_NUMBERS, TAROT_MAJOR_ARCANA, CHAKRA_CENTERS
+    GENE_KEY_NUMBERS, LIFE_PATH_NUMBERS, TAROT_MAJOR_ARCANA, CHAKRA_CENTERS,
+    ENNEAGRAM_TYPES, ENNEAGRAM_WINGS, ENNEAGRAM_INSTINCTS
 } from "./correspondences";
 
 function Field({ label, hint, children }) {
@@ -156,7 +157,7 @@ export function AstrologyForm({ data, onChange, birthDate }) {
                     <SimpleSelect value={data?.sun_sign} onChange={v => set('sun_sign', v)} options={ZODIAC_SIGNS} />
                     {birthDate && getSunSign(birthDate) === data?.sun_sign && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>
                             auto
                         </span>
                     )}
@@ -264,7 +265,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     <SimpleSelect value={data?.life_path} onChange={v => set('life_path', v)} options={LIFE_PATH_NUMBERS} />
                     {autoLifePath && data?.life_path === autoLifePath && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -273,7 +274,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     <SimpleSelect value={data?.expression} onChange={v => set('expression', v)} options={LIFE_PATH_NUMBERS} />
                     {autoExpression && data?.expression === autoExpression && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -282,7 +283,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     <SimpleSelect value={data?.soul_urge} onChange={v => set('soul_urge', v)} options={LIFE_PATH_NUMBERS} />
                     {autoSoulUrge && data?.soul_urge === autoSoulUrge && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -291,7 +292,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     <SimpleSelect value={data?.personal_year} onChange={v => set('personal_year', v)} options={LIFE_PATH_NUMBERS} />
                     {autoPersonalYear && data?.personal_year === autoPersonalYear && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -326,7 +327,7 @@ export function TarotForm({ data, onChange, birthDate }) {
                     <SimpleSelect value={data?.birth_card} onChange={v => set('birth_card', v)} options={TAROT_MAJOR_ARCANA} />
                     {autoBirthCard && data?.birth_card === autoBirthCard && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
@@ -335,13 +336,45 @@ export function TarotForm({ data, onChange, birthDate }) {
                     <SimpleSelect value={data?.shadow_card} onChange={v => set('shadow_card', v)} options={TAROT_MAJOR_ARCANA} />
                     {autoShadowCard && data?.shadow_card === autoShadowCard && (
                         <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(45,212,191,0.15)', color: '#2dd4bf', border: '1px solid rgba(45,212,191,0.25)' }}>auto</span>
+                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
                     )}
                 </div>
             </Field>
             <div className="md:col-span-2">
                 <Field label="Personal Notes">
                     <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="Suit affinities, spread patterns, anything else..." />
+                </Field>
+            </div>
+        </div>
+    );
+}
+
+export function EnneagramForm({ data, onChange }) {
+    const set = (key, val) => onChange({ ...data, [key]: val });
+
+    // Narrow wing options to the selected type's two neighbors (e.g. type 4 → 4w3, 4w5)
+    const typeNum = data?.type ? data.type.split(' ')[0] : null;
+    const wingOptions = typeNum
+        ? ENNEAGRAM_WINGS.filter(w => w.startsWith(typeNum + 'w'))
+        : ENNEAGRAM_WINGS;
+
+    return (
+        <div className="grid md:grid-cols-2 gap-5">
+            <Field label="Type" hint="Your core motivation — the fear you avoid and the desire that drives you">
+                <SimpleSelect value={data?.type} onChange={v => set('type', v)} options={ENNEAGRAM_TYPES} />
+            </Field>
+            <Field label="Wing" hint="The neighboring type that flavors how your core type expresses">
+                <SimpleSelect value={data?.wing} onChange={v => set('wing', v)} options={wingOptions} />
+            </Field>
+            <Field label="Instinctual Variant" hint="Which survival drive leads: self-preservation, social, or one-to-one">
+                <SimpleSelect value={data?.instinct} onChange={v => set('instinct', v)} options={ENNEAGRAM_INSTINCTS} />
+            </Field>
+            <Field label="Tritype" hint="Optional — your dominant type in each center, e.g. 469 or 358">
+                <Input className="mt-1" value={data?.tritype || ''} onChange={e => set('tritype', e.target.value)} placeholder="e.g. 469" />
+            </Field>
+            <div className="md:col-span-2">
+                <Field label="Personal Notes">
+                    <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="Growth/stress patterns you've noticed, levels of health, subtype details..." />
                 </Field>
             </div>
         </div>
@@ -382,9 +415,9 @@ export function ChakraForm({ data, onChange }) {
                                 <button key={area} type="button" onClick={() => toggleFocus(area)}
                                     className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                                     style={{
-                                        background: active ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.04)',
-                                        border: active ? '1px solid rgba(139,92,246,0.5)' : '1px solid rgba(255,255,255,0.1)',
-                                        color: active ? '#c084fc' : 'rgba(180,170,210,0.6)',
+                                        background: active ? 'rgba(138,114,184,0.25)' : 'rgba(255,255,255,0.64)',
+                                        border: active ? '1px solid rgba(138,114,184,0.5)' : '1px solid rgba(61,52,80,0.12)',
+                                        color: active ? '#8A72B8' : 'rgba(105,95,128,0.7)',
                                     }}>
                                     {short}
                                 </button>

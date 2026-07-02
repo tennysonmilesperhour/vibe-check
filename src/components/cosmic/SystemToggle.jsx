@@ -8,54 +8,63 @@ const SYSTEMS = [
         label: "Astrology",
         emoji: "♈",
         description: "Sun, Moon & Rising signs, North Node — planetary cycles and archetypes",
-        activeColor: '#818cf8',
-        activeBg: 'rgba(129,140,248,0.1)',
-        activeBorder: 'rgba(129,140,248,0.3)',
+        activeColor: '#7E85C8',
+        activeBg: 'rgba(126,133,200,0.1)',
+        activeBorder: 'rgba(126,133,200,0.3)',
     },
     {
         id: "human_design",
         label: "Human Design",
         emoji: "⬡",
         description: "Type, Authority, Profile & Strategy — your energetic blueprint for decisions",
-        activeColor: '#fbbf24',
-        activeBg: 'rgba(251,191,36,0.1)',
-        activeBorder: 'rgba(251,191,36,0.3)',
+        activeColor: '#B8902F',
+        activeBg: 'rgba(184,144,47,0.1)',
+        activeBorder: 'rgba(184,144,47,0.3)',
     },
     {
         id: "gene_keys",
         label: "Gene Keys",
         emoji: "🧬",
         description: "Your Hologenetic Profile — shadow, gift and siddhi layers of consciousness",
-        activeColor: '#2dd4bf',
-        activeBg: 'rgba(45,212,191,0.1)',
-        activeBorder: 'rgba(45,212,191,0.3)',
+        activeColor: '#C9834B',
+        activeBg: 'rgba(201,131,75,0.1)',
+        activeBorder: 'rgba(201,131,75,0.3)',
     },
     {
         id: "numerology",
         label: "Numerology",
         emoji: "🔢",
         description: "Life Path, Expression & Soul Urge numbers — vibrational patterns in your name and birth date",
-        activeColor: '#c084fc',
-        activeBg: 'rgba(192,132,252,0.1)',
-        activeBorder: 'rgba(192,132,252,0.3)',
+        activeColor: '#8A72B8',
+        activeBg: 'rgba(138,114,184,0.1)',
+        activeBorder: 'rgba(138,114,184,0.3)',
     },
     {
         id: "tarot_archetype",
         label: "Tarot Archetype",
         emoji: "🃏",
         description: "Birth Card and Shadow Card — the Major Arcana archetypes that shape your journey",
-        activeColor: '#f472b6',
-        activeBg: 'rgba(244,114,182,0.1)',
-        activeBorder: 'rgba(244,114,182,0.3)',
+        activeColor: '#C25E8F',
+        activeBg: 'rgba(194,94,143,0.1)',
+        activeBorder: 'rgba(194,94,143,0.3)',
+    },
+    {
+        id: "enneagram",
+        label: "Enneagram",
+        emoji: "🎭",
+        description: "Type, Wing & Instinct — your core motivations, fears and path of growth",
+        activeColor: '#C07A3E',
+        activeBg: 'rgba(192,122,62,0.1)',
+        activeBorder: 'rgba(192,122,62,0.3)',
     },
     {
         id: "chakras",
         label: "Chakra System",
         emoji: "🌀",
         description: "Dominant energy center and areas of focus — where life force flows and stagnates",
-        activeColor: '#38bdf8',
-        activeBg: 'rgba(56,189,248,0.1)',
-        activeBorder: 'rgba(56,189,248,0.3)',
+        activeColor: '#6B95C8',
+        activeBg: 'rgba(107,149,200,0.1)',
+        activeBorder: 'rgba(107,149,200,0.3)',
     }
 ];
 
@@ -70,15 +79,15 @@ export default function SystemToggle({ enabledSystems, onToggle }) {
                     <div key={system.id}
                         className="flex items-center justify-between p-4 rounded-xl transition-all duration-200 cursor-pointer"
                         style={{
-                            background: isEnabled ? system.activeBg : 'rgba(255,255,255,0.03)',
-                            border: `1px solid ${isEnabled ? system.activeBorder : 'rgba(255,255,255,0.08)'}`,
+                            background: isEnabled ? system.activeBg : 'rgba(255,255,255,0.5)',
+                            border: `1px solid ${isEnabled ? system.activeBorder : 'rgba(61,52,80,0.1)'}`,
                         }}
                         onClick={() => onToggle(system.id)}>
                         <div className="flex items-start gap-3 flex-1">
                             <span className="text-2xl mt-0.5">{system.emoji}</span>
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-semibold text-sm" style={{ color: isEnabled ? system.activeColor : 'rgba(210,200,235,0.8)' }}>
+                                    <span className="font-semibold text-sm" style={{ color: isEnabled ? system.activeColor : 'rgba(70,60,92,0.8)' }}>
                                         {system.label}
                                     </span>
                                     {isEnabled && (
@@ -87,7 +96,7 @@ export default function SystemToggle({ enabledSystems, onToggle }) {
                                         </Badge>
                                     )}
                                 </div>
-                                <p className="text-xs" style={{ color: 'rgba(160,150,190,0.55)' }}>{system.description}</p>
+                                <p className="text-xs" style={{ color: 'rgba(122,112,144,0.65)' }}>{system.description}</p>
                             </div>
                         </div>
                         <Switch checked={isEnabled} onCheckedChange={() => onToggle(system.id)} onClick={e => e.stopPropagation()} />

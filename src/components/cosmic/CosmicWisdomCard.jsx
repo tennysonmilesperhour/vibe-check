@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 
 const PERIOD_CONFIG = {
-    daily:   { label: "Today",      emoji: "☀️",  color: "#fbbf24", glow: "rgba(251,191,36,0.35)" },
-    weekly:  { label: "This Week",  emoji: "🌙",  color: "#c084fc", glow: "rgba(192,132,252,0.35)" },
-    monthly: { label: "This Month", emoji: "🌊",  color: "#38bdf8", glow: "rgba(56,189,248,0.35)"  },
-    yearly:  { label: "This Year",  emoji: "⭐",  color: "#2dd4bf", glow: "rgba(45,212,191,0.35)"  },
+    daily:   { label: "Today",      emoji: "☀️",  color: "#B8902F", glow: "rgba(184,144,47,0.35)" },
+    weekly:  { label: "This Week",  emoji: "🌙",  color: "#8A72B8", glow: "rgba(138,114,184,0.35)" },
+    monthly: { label: "This Month", emoji: "🌊",  color: "#6B95C8", glow: "rgba(107,149,200,0.35)"  },
+    yearly:  { label: "This Year",  emoji: "⭐",  color: "#C9834B", glow: "rgba(201,131,75,0.35)"  },
 };
 
 function getPeriodKey(type) {
@@ -95,9 +95,9 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
             onClick={!wisdom ? undefined : markRead}
             style={{
                 background: isUnread
-                    ? `linear-gradient(135deg, rgba(10,8,30,0.95), rgba(20,14,50,0.95))`
-                    : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${isUnread ? cfg.color : 'rgba(255,255,255,0.08)'}`,
+                    ? `linear-gradient(135deg, rgba(253,251,247,0.95), rgba(255,255,255,0.95))`
+                    : 'rgba(255,255,255,0.5)',
+                border: `1px solid ${isUnread ? cfg.color : 'rgba(61,52,80,0.1)'}`,
                 boxShadow: isUnread ? `0 0 30px ${cfg.glow}, 0 0 60px ${cfg.glow}40` : 'none',
                 animation: isUnread ? 'pulse-border 2.5s ease-in-out infinite' : 'none',
             }}
@@ -123,13 +123,13 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                         <Button variant="ghost" size="icon" className="h-7 w-7"
                             disabled={generating}
                             onClick={() => generate(true)}
-                            style={{ color: 'rgba(180,170,210,0.4)' }}>
+                            style={{ color: 'rgba(105,95,128,0.5)' }}>
                             <RefreshCw className={`w-3 h-3 ${generating ? 'animate-spin' : ''}`} />
                         </Button>
                     )}
                     {wisdom && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={markRead}
-                            style={{ color: 'rgba(180,170,210,0.5)' }}>
+                            style={{ color: 'rgba(105,95,128,0.6)' }}>
                             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </Button>
                     )}
@@ -141,13 +141,13 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                 <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 shrink-0"
                         style={{ border: `2px solid ${cfg.color}30`, borderTopColor: cfg.color }} />
-                    <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>
+                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>
                         {generating ? "Channeling your cosmic wisdom..." : "Loading..."}
                     </p>
                 </div>
             ) : error ? (
                 <div className="flex items-center justify-between gap-3" onClick={e => e.stopPropagation()}>
-                    <p className="text-xs" style={{ color: 'rgba(244,114,182,0.7)' }}>{error}</p>
+                    <p className="text-xs" style={{ color: 'rgba(194,94,143,0.7)' }}>{error}</p>
                     <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg shrink-0"
                         style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
                         <RefreshCw className="w-3 h-3 mr-1" /> Retry
@@ -155,7 +155,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                 </div>
             ) : !hasProfile ? null : !wisdom ? (
                 <div className="flex items-center justify-between" onClick={e => e.stopPropagation()}>
-                    <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>No wisdom generated yet</p>
+                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>No wisdom generated yet</p>
                     <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg"
                         style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
                         <Sparkles className="w-3 h-3 mr-1" /> Generate
@@ -164,20 +164,20 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
             ) : (
                 <div>
                     {wisdom.theme && (
-                        <p className="text-sm font-semibold mb-2" style={{ color: 'rgba(220,210,240,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                        <p className="text-sm font-semibold mb-2" style={{ color: 'rgba(61,52,80,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>
                             {wisdom.theme}
                         </p>
                     )}
                     {/* Preview line always visible */}
                     {!expanded && (
-                        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgba(180,170,210,0.65)' }}>
+                        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgba(105,95,128,0.75)' }}>
                             {wisdom.wisdom}
                         </p>
                     )}
                     {/* Full content when expanded */}
                     {expanded && (
                         <div className="space-y-3 mt-1">
-                            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'rgba(210,200,235,0.85)' }}>
+                            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'rgba(70,60,92,0.85)' }}>
                                 {wisdom.wisdom}
                             </p>
                             {wisdom.contemplation && (
@@ -186,7 +186,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                                     <p className="text-xs font-semibold mb-1 uppercase tracking-widest" style={{ color: cfg.color }}>
                                         Contemplation
                                     </p>
-                                    <p className="text-sm italic leading-relaxed" style={{ color: 'rgba(210,200,235,0.8)' }}>
+                                    <p className="text-sm italic leading-relaxed" style={{ color: 'rgba(70,60,92,0.8)' }}>
                                         {wisdom.contemplation}
                                     </p>
                                 </div>

@@ -10,7 +10,7 @@ import { Sparkles, Save, Info, BookOpen, Wand2 } from "lucide-react";
 import SystemToggle, { SYSTEMS } from "@/components/cosmic/SystemToggle";
 import {
     AstrologyForm, HumanDesignForm, GeneKeysForm,
-    NumerologyForm, TarotForm, ChakraForm
+    NumerologyForm, TarotForm, ChakraForm, EnneagramForm
 } from "@/components/cosmic/ProfileForm";
 import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
 import CosmicInsightBadge from "@/components/cosmic/CosmicInsightBadge";
@@ -32,6 +32,7 @@ const EMPTY_PROFILE = {
     gene_keys: {},
     numerology: {},
     tarot_archetype: {},
+    enneagram: {},
     chakras: {}
 };
 
@@ -189,6 +190,7 @@ Return this JSON:
         gene_keys: <GeneKeysForm data={profile.gene_keys} onChange={d => setSystemData('gene_keys', d)} />,
         numerology: <NumerologyForm data={profile.numerology} onChange={d => setSystemData('numerology', d)} birthDate={profile.birth_date} firstName={profile.first_name} lastName={profile.last_name} />,
         tarot_archetype: <TarotForm data={profile.tarot_archetype} onChange={d => setSystemData('tarot_archetype', d)} birthDate={profile.birth_date} />,
+        enneagram: <EnneagramForm data={profile.enneagram} onChange={d => setSystemData('enneagram', d)} />,
         chakras: <ChakraForm data={profile.chakras} onChange={d => setSystemData('chakras', d)} />,
     };
 
@@ -303,7 +305,8 @@ Return this JSON:
                                     <Wand2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#c084fc' }} />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium mb-1" style={{ color: 'rgba(220,210,240,0.9)' }}>Oracle Birth Chart Calculator</p>
-                                        <p className="text-xs mb-3" style={{ color: 'rgba(180,170,210,0.55)' }}>Channels your birth date, time &amp; location to reveal your Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
+                                        <p className="text-xs mb-2" style={{ color: 'rgba(180,170,210,0.55)' }}>Channels your birth date, time &amp; location to reveal your Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
+                                        <p className="text-xs mb-3" style={{ color: 'rgba(251,191,36,0.75)' }}>A note on accuracy: your Sun sign, numerology, and Tarot birth card are calculated exactly in-app from your birth data. Moon, Rising, Human Design and Gene Keys need precise ephemeris math — the oracle's estimates are usually right but not guaranteed, so cross-check them against a trusted chart and edit anything that's off.</p>
                                         <Button onClick={aiCalculate} disabled={isCalculating} size="sm" className="btn-cosmic rounded-lg">
                                             <Wand2 className="w-3.5 h-3.5 mr-1.5" />
                                             {isCalculating ? 'Calculating...' : 'Calculate from Birth Data'}

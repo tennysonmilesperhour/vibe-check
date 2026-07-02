@@ -174,6 +174,11 @@ Cover: (1) Life Path — the core soul lesson and life theme in depth, (2) Expre
 Birth Card: ${profile.birth_card || '?'}, Shadow/Teacher Card: ${profile.shadow_card || '?'}.
 Cover: (1) Birth Card archetype — the soul's primary lens and gifts, (2) Shadow/Teacher Card — what challenges and initiates this person, (3) The dynamic interplay between the two cards and how they create a complete picture, (4) How this archetype shows up in relationships, vocation, and personal growth, (5) Practices and contemplations aligned with this archetypal path.`,
 
+    enneagram: `You are a wise, psychologically grounded Enneagram teacher. Generate a comprehensive type reading for: ${birthInfo}.
+Type: ${profile.type || '?'}, Wing: ${profile.wing || '?'}, Instinctual Variant: ${profile.instinct || '?'}${profile.tritype ? `, Tritype: ${profile.tritype}` : ''}.
+${profile.custom_notes ? `Additional notes: ${profile.custom_notes}` : ''}
+Cover: (1) The core type — its basic fear, basic desire, and the passion/fixation that runs the pattern, (2) How the wing flavors the type's expression, (3) The instinctual variant — how the survival drive shapes daily behavior and relationships, (4) Lines of integration (growth) and disintegration (stress) — what health and stress look like for this type, (5) A practical growth path: practices, reframes, and what waking up from the pattern feels like.`,
+
     chakras: `You are an energy healing and chakra guide. Generate a comprehensive chakra analysis for: ${birthInfo}.
 Dominant/Focus Center: ${profile.dominant_center || '?'}.
 ${profile.custom_notes ? `Additional notes: ${profile.custom_notes}` : ''}
@@ -255,6 +260,11 @@ const SYSTEM_META = {
   tarot_archetype: { label: "Tarot Archetype", color: "#fbbf24", emoji: "✦",
     Detail: ({ data }) => <GenericDetail data={data} fields={[
       { key: 'birth_card', label: 'Birth Card' }, { key: 'shadow_card', label: 'Shadow Card' },
+    ]} /> },
+  enneagram:       { label: "Enneagram",       color: "#fb923c", emoji: "🎭",
+    Detail: ({ data }) => <GenericDetail data={data} fields={[
+      { key: 'type', label: 'Type' }, { key: 'wing', label: 'Wing' },
+      { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Tritype' },
     ]} /> },
   chakras:         { label: "Chakras",         color: "#a78bfa", emoji: "◎",
     Detail: ({ data }) => <GenericDetail data={data} fields={[

@@ -15,6 +15,9 @@ const PAIRS = [
   { systems: ["human_design", "chakras"],      key: "human_design_chakras" },
   { systems: ["numerology", "tarot_archetype"],key: "numerology_tarot" },
   { systems: ["gene_keys", "chakras"],         key: "gene_keys_chakras" },
+  { systems: ["enneagram", "astrology"],       key: "enneagram_astrology" },
+  { systems: ["enneagram", "human_design"],    key: "enneagram_human_design" },
+  { systems: ["enneagram", "gene_keys"],       key: "enneagram_gene_keys" },
 ];
 
 async function exportMapPDF(profile, deepReport) {

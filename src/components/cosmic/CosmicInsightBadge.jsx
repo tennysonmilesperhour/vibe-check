@@ -7,6 +7,7 @@ const SYSTEM_STYLES = {
     gene_keys: { emoji: "🧬", label: "Gene Keys", color: "bg-emerald-100 text-emerald-700" },
     numerology: { emoji: "🔢", label: "Numerology", color: "bg-purple-100 text-purple-700" },
     tarot_archetype: { emoji: "🃏", label: "Tarot", color: "bg-rose-100 text-rose-700" },
+    enneagram: { emoji: "🎭", label: "Enneagram", color: "bg-orange-100 text-orange-700" },
     chakras: { emoji: "🌀", label: "Chakras", color: "bg-teal-100 text-teal-700" },
 };
 

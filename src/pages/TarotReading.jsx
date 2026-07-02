@@ -5,6 +5,36 @@ import { Badge } from "@/components/ui/badge";
 import { Shuffle, RefreshCw, Hash, ChevronDown, ChevronUp, Info } from "lucide-react";
 import TarotCard from "@/components/tarot/TarotCard";
 import { FULL_DECK, SPREADS } from "@/components/tarot/tarotDeck";
+import { ORACLE_DECK } from "@/components/tarot/oracleDeck";
+
+// Two distinct decks: tarot (78 archetypal cards, reversals, deeper arcs)
+// and oracle (44 cards, present-moment guidance, never reversed)
+const DECKS = {
+  tarot: {
+    id: "tarot",
+    name: "Tarot",
+    emoji: "🃏",
+    tagline: "78 cards · archetypal journeys, past & future arcs",
+    cards: FULL_DECK,
+    allowReversals: true,
+    title: "Tarot Reading",
+    eyebrow: "✦ The Cards Speak",
+    subtitle: "Shuffle the deck, choose your spread, and let the cards reveal their wisdom",
+    color: "#c084fc",
+  },
+  oracle: {
+    id: "oracle",
+    name: "Oracle",
+    emoji: "✨",
+    tagline: "44 cards · present-moment guidance & affirmation",
+    cards: ORACLE_DECK,
+    allowReversals: false,
+    title: "Oracle Reading",
+    eyebrow: "✦ The Oracle Speaks",
+    subtitle: "Oracle cards meet you in the present — draw for gentle guidance on right now",
+    color: "#2dd4bf",
+  },
+};
 
 // ── Seeded shuffle using a number as seed ───────────────────────────────────
 function seededShuffle(arr, seed) {
@@ -125,6 +155,7 @@ function ReadingDetail({ drawnCards, spread }) {
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function TarotReading() {
+  const [deckId, setDeckId] = useState("tarot"); // "tarot" | "oracle"
   const [selectedSpread, setSelectedSpread] = useState(null);
   const [drawnCards, setDrawnCards] = useState([]);
   const [shuffleMode, setShuffleMode] = useState("auto"); // "auto" | "manual"
@@ -132,6 +163,16 @@ export default function TarotReading() {
   const [shuffled, setShuffled] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
   const [animatingCards, setAnimatingCards] = useState(false);
+
+  const deck = DECKS[deckId];
+
+  const switchDeck = (id) => {
+    if (id === deckId) return;
+    setDeckId(id);
+    setSelectedSpread(null);
+    setDrawnCards([]);
+    setShuffled(false);
+  };
 
   const handleShuffle = async () => {
     setIsShuffling(true);
@@ -142,16 +183,16 @@ export default function TarotReading() {
   };
 
   const dealSpread = (spread) => {
-    let deck;
+    let cards;
     if (shuffleMode === "manual" && seedInput) {
-      deck = seededShuffle(FULL_DECK, parseInt(seedInput, 10) || Date.now());
+      cards = seededShuffle(deck.cards, parseInt(seedInput, 10) || Date.now());
     } else {
-      deck = randomShuffle(FULL_DECK);
+      cards = randomShuffle(deck.cards);
     }
 
     const drawn = spread.positions.map((_, i) => ({
-      card: deck[i],
-      reversed: Math.random() < 0.25,
+      card: cards[i],
+      reversed: deck.allowReversals && Math.random() < 0.25,
       flipped: false,
     }));
 
@@ -187,17 +228,53 @@ export default function TarotReading() {
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>✦ The Oracle Speaks</p>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(139,92,246,0.7)' }}>{deck.eyebrow}</p>
           <h1 className="text-4xl font-bold gradient-text mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-            Tarot Reading
+            {deck.title}
           </h1>
           <p className="text-base" style={{ color: 'rgba(180,170,210,0.65)' }}>
-            Shuffle the deck, choose your spread, and let the cards reveal their wisdom
+            {deck.subtitle}
           </p>
         </div>
 
         {!selectedSpread ? (
           <>
+            {/* Deck Selection */}
+            <div className="glass-card p-6 mb-6">
+              <h2 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>
+                ✦ Choose Your Deck
+              </h2>
+              <p className="text-sm mb-4" style={{ color: 'rgba(180,170,210,0.5)' }}>
+                Tarot maps the deeper archetypal journey · Oracle offers direct guidance for the present moment
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {Object.values(DECKS).map(d => {
+                  const active = d.id === deckId;
+                  return (
+                    <button key={d.id} onClick={() => switchDeck(d.id)}
+                      className="p-4 rounded-xl text-left transition-all"
+                      style={{
+                        background: active ? `${d.color}20` : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${active ? `${d.color}70` : 'rgba(255,255,255,0.08)'}`,
+                      }}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xl">{d.emoji}</span>
+                        <span className="font-bold text-sm" style={{ color: active ? d.color : 'rgba(210,200,235,0.75)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                          {d.name}
+                        </span>
+                        {active && (
+                          <Badge className="text-xs ml-auto" style={{ background: `${d.color}20`, color: d.color, border: `1px solid ${d.color}40` }}>
+                            Selected
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs" style={{ color: 'rgba(180,170,210,0.5)' }}>{d.tagline}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Shuffle Controls */}
             <div className="glass-card p-6 mb-6">
               <h2 className="text-base font-bold mb-4" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(220,210,240,0.9)' }}>

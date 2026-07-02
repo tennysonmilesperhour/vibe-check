@@ -3,13 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const SYSTEMS = [
-  { id: "astrology",       label: "Astrology",      emoji: "♈", color: "#f472b6", check: d => d?.sun_sign,        angle: -90 },
-  { id: "human_design",    label: "Human Design",   emoji: "⬡", color: "#c084fc", check: d => d?.type,            angle: -30 },
-  { id: "gene_keys",       label: "Gene Keys",      emoji: "🧬", color: "#38bdf8", check: d => d?.life_work,      angle: 30  },
-  { id: "numerology",      label: "Numerology",     emoji: "∞", color: "#2dd4bf", check: d => d?.life_path,       angle: 90  },
-  { id: "tarot_archetype", label: "Tarot",          emoji: "✦", color: "#fbbf24", check: d => d?.birth_card,      angle: 150 },
-  { id: "chakras",         label: "Chakras",        emoji: "◎", color: "#a78bfa", check: d => d?.dominant_center, angle: 210 },
-];
+  { id: "astrology",       label: "Astrology",      emoji: "♈", color: "#f472b6", check: d => d?.sun_sign        },
+  { id: "human_design",    label: "Human Design",   emoji: "⬡", color: "#c084fc", check: d => d?.type            },
+  { id: "gene_keys",       label: "Gene Keys",      emoji: "🧬", color: "#38bdf8", check: d => d?.life_work      },
+  { id: "numerology",      label: "Numerology",     emoji: "∞", color: "#2dd4bf", check: d => d?.life_path       },
+  { id: "tarot_archetype", label: "Tarot",          emoji: "✦", color: "#fbbf24", check: d => d?.birth_card      },
+  { id: "enneagram",       label: "Enneagram",      emoji: "９", color: "#fb923c", check: d => d?.type            },
+  { id: "chakras",         label: "Chakras",        emoji: "◎", color: "#a78bfa", check: d => d?.dominant_center },
+].map((s, i, arr) => ({ ...s, angle: -90 + i * (360 / arr.length) }));
+
+const TOTAL = SYSTEMS.length;
 
 const DEG = Math.PI / 180;
 const CX = 160, CY = 160, R = 82;
@@ -227,8 +230,8 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
             </>
           )}
 
-          {/* Layer 6 (all 6): full Flower of Life expansion */}
-          {completedCount === 6 && (
+          {/* Final layer (all systems): full Flower of Life expansion */}
+          {completedCount === TOTAL && (
             <>
               {nodes.map((n, i) => {
                 const [px, py] = polarXY(n.angle, R * 2.05);
@@ -377,8 +380,8 @@ export default function CosmicBlueprint({ enabledSystems = [], profile = {} }) {
 
       <p className="text-xs text-center" style={{ color: 'rgba(180,170,210,0.4)', maxWidth: 260 }}>
         {completedCount === 0 ? "Tap any node to enable or fill in your profile" :
-         completedCount === 6 ? "✦ Your full blueprint is activated" :
-         `${completedCount} of 6 systems activated — tap to explore`}
+         completedCount === TOTAL ? "✦ Your full blueprint is activated" :
+         `${completedCount} of ${TOTAL} systems activated — tap to explore`}
       </p>
     </div>
   );

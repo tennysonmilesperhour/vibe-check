@@ -49,6 +49,15 @@ const SYSTEMS = [
         activeBorder: 'rgba(244,114,182,0.3)',
     },
     {
+        id: "enneagram",
+        label: "Enneagram",
+        emoji: "🎭",
+        description: "Type, Wing & Instinct — your core motivations, fears and path of growth",
+        activeColor: '#fb923c',
+        activeBg: 'rgba(251,146,60,0.1)',
+        activeBorder: 'rgba(251,146,60,0.3)',
+    },
+    {
         id: "chakras",
         label: "Chakra System",
         emoji: "🌀",

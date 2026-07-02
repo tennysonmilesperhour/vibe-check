@@ -92,7 +92,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     ZODIAC_SIGNS, HUMAN_DESIGN_TYPES, HUMAN_DESIGN_AUTHORITIES, HUMAN_DESIGN_PROFILES,
-    GENE_KEY_NUMBERS, LIFE_PATH_NUMBERS, TAROT_MAJOR_ARCANA, CHAKRA_CENTERS
+    GENE_KEY_NUMBERS, LIFE_PATH_NUMBERS, TAROT_MAJOR_ARCANA, CHAKRA_CENTERS,
+    ENNEAGRAM_TYPES, ENNEAGRAM_WINGS, ENNEAGRAM_INSTINCTS
 } from "./correspondences";
 
 function Field({ label, hint, children }) {
@@ -342,6 +343,38 @@ export function TarotForm({ data, onChange, birthDate }) {
             <div className="md:col-span-2">
                 <Field label="Personal Notes">
                     <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="Suit affinities, spread patterns, anything else..." />
+                </Field>
+            </div>
+        </div>
+    );
+}
+
+export function EnneagramForm({ data, onChange }) {
+    const set = (key, val) => onChange({ ...data, [key]: val });
+
+    // Narrow wing options to the selected type's two neighbors (e.g. type 4 → 4w3, 4w5)
+    const typeNum = data?.type ? data.type.split(' ')[0] : null;
+    const wingOptions = typeNum
+        ? ENNEAGRAM_WINGS.filter(w => w.startsWith(typeNum + 'w'))
+        : ENNEAGRAM_WINGS;
+
+    return (
+        <div className="grid md:grid-cols-2 gap-5">
+            <Field label="Type" hint="Your core motivation — the fear you avoid and the desire that drives you">
+                <SimpleSelect value={data?.type} onChange={v => set('type', v)} options={ENNEAGRAM_TYPES} />
+            </Field>
+            <Field label="Wing" hint="The neighboring type that flavors how your core type expresses">
+                <SimpleSelect value={data?.wing} onChange={v => set('wing', v)} options={wingOptions} />
+            </Field>
+            <Field label="Instinctual Variant" hint="Which survival drive leads: self-preservation, social, or one-to-one">
+                <SimpleSelect value={data?.instinct} onChange={v => set('instinct', v)} options={ENNEAGRAM_INSTINCTS} />
+            </Field>
+            <Field label="Tritype" hint="Optional — your dominant type in each center, e.g. 469 or 358">
+                <Input className="mt-1" value={data?.tritype || ''} onChange={e => set('tritype', e.target.value)} placeholder="e.g. 469" />
+            </Field>
+            <div className="md:col-span-2">
+                <Field label="Personal Notes">
+                    <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="Growth/stress patterns you've noticed, levels of health, subtype details..." />
                 </Field>
             </div>
         </div>

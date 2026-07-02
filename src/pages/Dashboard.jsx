@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Calendar, TrendingUp, TrendingDown, Heart, Plus, AlertTriangle, Sparkles, Star } from "lucide-react";
-import { format, isToday } from "date-fns";
+import { format } from "date-fns";
+import { isTodayKey, parseLocalDate } from "@/lib/dates";
 import CosmicContextBar from "@/components/cosmic/CosmicContextBar";
 import CosmicWisdomCard from "@/components/cosmic/CosmicWisdomCard";
 
@@ -23,7 +24,7 @@ export default function Dashboard() {
         setIsLoading(true);
         const checkIns = await DailyCheckIn.list('-date', 7);
         setRecentCheckIns(checkIns);
-        const todayEntry = checkIns.find(entry => isToday(new Date(entry.date)));
+        const todayEntry = checkIns.find(entry => isTodayKey(entry.date));
         setTodayCheckIn(todayEntry);
         if (checkIns.length > 0) {
             const average = checkIns.reduce((sum, entry) => sum + entry.mood_score, 0) / checkIns.length;
@@ -222,7 +223,7 @@ export default function Dashboard() {
                                     </div>
                                     <div className="flex-1">
                                         <span className="text-sm font-medium" style={{ color: 'rgba(70,60,92,0.85)' }}>
-                                            {format(new Date(checkIn.date), "MMMM d, yyyy")}
+                                            {format(parseLocalDate(checkIn.date), "MMMM d, yyyy")}
                                         </span>
                                         {checkIn.high_moment?.description && (
                                             <p className="text-xs mt-0.5 truncate" style={{ color: 'rgba(112,102,134,0.65)' }}>

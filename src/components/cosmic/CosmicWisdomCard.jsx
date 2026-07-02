@@ -3,28 +3,14 @@ import { base44 } from "@/api/base44Client";
 import { generateCosmicWisdom } from "@/functions/generateCosmicWisdom";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { getPeriodKey } from "@/lib/dates";
 
 const PERIOD_CONFIG = {
-    daily:   { label: "Today",      emoji: "☀️",  color: "#B8902F", glow: "rgba(184,144,47,0.35)" },
-    weekly:  { label: "This Week",  emoji: "🌙",  color: "#8A72B8", glow: "rgba(138,114,184,0.35)" },
-    monthly: { label: "This Month", emoji: "🌊",  color: "#6B95C8", glow: "rgba(107,149,200,0.35)"  },
-    yearly:  { label: "This Year",  emoji: "⭐",  color: "#C9834B", glow: "rgba(201,131,75,0.35)"  },
+    daily:   { label: "Today",      emoji: "☀️",  color: "var(--gh-gold)",   glow: "rgba(253,201,78,0.35)" },
+    weekly:  { label: "This Week",  emoji: "🌙",  color: "var(--gh-rose)",   glow: "rgba(244,140,160,0.35)" },
+    monthly: { label: "This Month", emoji: "🌊",  color: "var(--gh-peach)",  glow: "rgba(247,158,126,0.35)" },
+    yearly:  { label: "This Year",  emoji: "⭐",  color: "var(--gh-amber)",  glow: "rgba(250,176,94,0.35)" },
 };
-
-function getPeriodKey(type) {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    if (type === 'daily') return `${y}-${m}-${d}`;
-    if (type === 'weekly') {
-        const startOfYear = new Date(y, 0, 1);
-        const weekNum = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-        return `${y}-W${String(weekNum).padStart(2, '0')}`;
-    }
-    if (type === 'monthly') return `${y}-${m}`;
-    if (type === 'yearly') return `${y}`;
-}
 
 export default function CosmicWisdomCard({ periodType = "daily" }) {
     const cfg = PERIOD_CONFIG[periodType];
@@ -49,7 +35,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
             setHasProfile(true);
 
             // Try to load existing via the function (it checks cache first)
-            const res = await generateCosmicWisdom({ period_type: periodType, force_regenerate: false });
+            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: false });
             if (res?.data?.wisdom) {
                 setWisdom(res.data.wisdom);
             }
@@ -65,7 +51,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         setGenerating(true);
         setError(null);
         try {
-            const res = await generateCosmicWisdom({ period_type: periodType, force_regenerate: force });
+            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: force });
             if (res?.data?.wisdom) setWisdom(res.data.wisdom);
         } catch (e) {
             const msg = e?.response?.data?.error || e?.message || 'Generation failed';

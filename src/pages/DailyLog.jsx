@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { format, isToday } from "date-fns";
+import { format } from "date-fns";
+import { isTodayKey } from "@/lib/dates";
 import { ArrowLeft, Save, ChevronDown, ChevronUp } from "lucide-react";
 
 const EMOTIONS = [
@@ -196,7 +197,7 @@ export default function DailyLog() {
                 onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 max={format(new Date(), 'yyyy-MM-dd')} className="max-w-xs text-sm" />
             </div>
-            {isToday(new Date(formData.date)) && (
+            {isTodayKey(formData.date) && (
               <span className="text-xs px-3 py-1 rounded-full shrink-0"
                 style={{ background: 'rgba(138,114,184,0.15)', color: '#8A72B8', border: '1px solid rgba(138,114,184,0.2)' }}>
                 Today

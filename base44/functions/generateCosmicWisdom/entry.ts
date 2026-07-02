@@ -1,21 +1,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { getPeriodKey } from '../shared/periodKey.ts';
 
-function getPeriodKey(type) {
-    const now = new Date();
-    const y = now.getUTCFullYear();
-    const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const d = String(now.getUTCDate()).padStart(2, '0');
+// Clients send their locally-computed period_key so wisdom rolls over at the
+// user's midnight, not the server's UTC midnight. Validate shape before trusting.
+const PERIOD_KEY_SHAPES = {
+    daily: /^\d{4}-\d{2}-\d{2}$/,
+    weekly: /^\d{4}-W\d{2}$/,
+    monthly: /^\d{4}-\d{2}$/,
+    yearly: /^\d{4}$/,
+};
 
-    if (type === 'daily') return `${y}-${m}-${d}`;
-    if (type === 'weekly') {
-        // ISO week number
-        const startOfYear = new Date(Date.UTC(y, 0, 1));
-        const weekNum = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getUTCDay() + 1) / 7);
-        return `${y}-W${String(weekNum).padStart(2, '0')}`;
-    }
-    if (type === 'monthly') return `${y}-${m}`;
-    if (type === 'yearly') return `${y}`;
-    return `${y}-${m}-${d}`;
+function resolvePeriodKey(periodType, clientKey) {
+    const shape = PERIOD_KEY_SHAPES[periodType] || PERIOD_KEY_SHAPES.daily;
+    if (typeof clientKey === 'string' && shape.test(clientKey)) return clientKey;
+    return getPeriodKey(periodType); // fallback: server-local (still ISO-correct)
 }
 
 function buildCosmicContext(profile) {
@@ -106,7 +104,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { period_type = 'daily', force_regenerate = false } = body;
+    const { period_type = 'daily', force_regenerate = false, period_key: clientPeriodKey } = body;
 
     const profile = user.cosmic_profile || {};
     const enabledSystems = profile.enabled_systems || [];
@@ -118,7 +116,7 @@ Deno.serve(async (req) => {
     }
 
     const systemsKey = [...enabledSystems].sort().join(',');
-    const periodKey = getPeriodKey(period_type);
+    const periodKey = resolvePeriodKey(period_type, clientPeriodKey);
 
     // Check if we already have wisdom for this period + systems combo
     if (!force_regenerate) {

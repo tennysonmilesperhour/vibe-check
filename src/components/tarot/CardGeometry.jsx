@@ -3,20 +3,10 @@ import React from "react";
 // ── Sacred Geometry renderer — one per card archetype ───────────────────────
 // All shapes are original SVG geometry, no text/emoji, purely symbolic
 
+import { polar, starPoints, pts } from "@/lib/geometry";
+
 const π = Math.PI;
 const cos = Math.cos, sin = Math.sin;
-
-function pts(arr) { return arr.map(([x,y]) => `${x},${y}`).join(' '); }
-function polar(cx, cy, r, angleDeg) {
-  const a = (angleDeg - 90) * π / 180;
-  return [cx + r * cos(a), cy + r * sin(a)];
-}
-function starPoints(cx, cy, r1, r2, n) {
-  return Array.from({ length: n * 2 }, (_, i) => {
-    const r = i % 2 === 0 ? r1 : r2;
-    return polar(cx, cy, r, (i * 180) / n);
-  });
-}
 
 export default function CardGeometry({ type, color, size = 36 }) {
   const s = size;

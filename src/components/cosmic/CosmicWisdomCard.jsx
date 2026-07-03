@@ -3,7 +3,16 @@ import { base44 } from "@/api/base44Client";
 import { generateCosmicWisdom } from "@/functions/generateCosmicWisdom";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
-import { getPeriodKey } from "@/lib/dates";
+import { getPeriodKey, todayKey } from "@/lib/dates";
+import { resonanceGraph, summarizeGraph } from "@/lib/resonance/graph";
+
+const buildResonanceSummary = (user) => {
+    try {
+        return summarizeGraph(resonanceGraph(user?.cosmic_profile || {}, todayKey()));
+    } catch {
+        return "";
+    }
+};
 
 const PERIOD_CONFIG = {
     daily:   { label: "Today",      emoji: "☀️",  color: "var(--gh-gold)",   glow: "rgba(253,201,78,0.35)" },
@@ -20,6 +29,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
     const [expanded, setExpanded] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
     const [error, setError] = useState(null);
+    const [me, setMe] = useState(null);
 
     useEffect(() => {
         checkAndLoad();
@@ -30,12 +40,13 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         setError(null);
         try {
             const user = await base44.auth.me();
+            setMe(user);
             const enabled = user?.cosmic_profile?.enabled_systems || [];
             if (enabled.length === 0) { setLoading(false); return; }
             setHasProfile(true);
 
             // Try to load existing via the function (it checks cache first)
-            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: false });
+            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: false, resonance_summary: buildResonanceSummary(user) });
             if (res?.data?.wisdom) {
                 setWisdom(res.data.wisdom);
             }
@@ -51,7 +62,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         setGenerating(true);
         setError(null);
         try {
-            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: force });
+            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: force, resonance_summary: buildResonanceSummary(me) });
             if (res?.data?.wisdom) setWisdom(res.data.wisdom);
         } catch (e) {
             const msg = e?.response?.data?.error || e?.message || 'Generation failed';

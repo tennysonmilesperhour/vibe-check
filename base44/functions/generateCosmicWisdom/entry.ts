@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { period_type = 'daily', force_regenerate = false, period_key: clientPeriodKey } = body;
+    const { period_type = 'daily', force_regenerate = false, period_key: clientPeriodKey, resonance_summary } = body;
 
     const profile = user.cosmic_profile || {};
     const enabledSystems = profile.enabled_systems || [];
@@ -156,6 +156,9 @@ The person's name is ${name}.${birthDate ? ` They were born on ${birthDate}.` : 
 
 Their active cosmic profile:
 ${cosmicContext}
+${typeof resonance_summary === 'string' && resonance_summary.length > 0 && resonance_summary.length < 4000 ? `
+Their computed resonance map (cross-system connections that are structurally true, not vibes — weave these in):
+${resonance_summary}` : ''}
 
 IMPORTANT: If the profile only has a birth date and active system names (but no specific chart details like sun sign, life path, etc.), CALCULATE or INFER the relevant values from the birth date yourself using your knowledge of these systems. For example, derive the sun sign from the birth date, calculate the life path number from the digits of the birth date, etc. Then use those inferred values as the basis of the reading. Do not mention that you calculated them — just use them naturally.
 

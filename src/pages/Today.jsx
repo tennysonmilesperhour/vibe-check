@@ -14,6 +14,7 @@ import CheckInCeremony from "@/features/today/CheckInCeremony";
 import TodaySummary from "@/features/today/TodaySummary";
 import AlertInline from "@/features/today/AlertInline";
 import CosmicWisdomCard from "@/components/cosmic/CosmicWisdomCard";
+import MiniLoom from "@/features/loom/MiniLoom";
 import { createPageUrl } from "@/utils";
 
 /**
@@ -28,6 +29,7 @@ export default function Today() {
   const [streak, setStreak] = useState(0);
   const [lastEntryAt, setLastEntryAt] = useState(null);
   const [mode, setMode] = useState("landing"); // landing | ceremony | peek
+  const [profile, setProfile] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +51,7 @@ export default function Today() {
 
   useEffect(() => {
     load();
+    base44.auth.me().then((me) => setProfile(me?.cosmic_profile || null)).catch(() => {});
     // one-time data migration, safe to call every mount
     migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
   }, [load]);
@@ -122,9 +125,16 @@ export default function Today() {
 
         {entry && <TodaySummary entry={entry} onEdit={() => setMode("ceremony")} />}
 
-        <section aria-label="Today's wisdom">
-          <CosmicWisdomCard periodType="daily" />
-        </section>
+        <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start">
+          <section aria-label="Today's wisdom">
+            <CosmicWisdomCard periodType="daily" />
+          </section>
+          {profile && (
+            <aside aria-label="Your Loom today" className="md:w-56">
+              <MiniLoom profile={profile} />
+            </aside>
+          )}
+        </div>
 
         <nav aria-label="Continue" className="flex flex-wrap gap-4 hairline pt-6 text-sm font-medium">
           <Link to={createPageUrl("Analytics")} style={{ color: "var(--gh-accent)" }}>See your patterns</Link>

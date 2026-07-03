@@ -10,6 +10,8 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/components/ui/use-toast";
 import { Shield, AlertTriangle, CheckCircle, Settings, Download, Lock, TrendingDown, Bell } from "lucide-react";
 import { format, parseISO } from "date-fns";
+import { todayKey } from "@/lib/dates";
+import { encryptJson, fetchAllPages } from "@/lib/crypto";
 
 export default function Boundaries() {
     const { toast } = useToast();
@@ -44,7 +46,9 @@ export default function Boundaries() {
 
     const saveSettings = async () => {
         setSavingSettings(true);
-        await base44.auth.updateMe({ boundary_settings: settings });
+        // Never persist the export password; it lives only in this session.
+        const { export_password: _omit, ...persistable } = settings;
+        await base44.auth.updateMe({ boundary_settings: persistable });
         setSavingSettings(false);
         toast({ title: "Settings saved", description: "Your boundary settings have been updated." });
     };
@@ -104,22 +108,41 @@ export default function Boundaries() {
         loadData();
     };
 
-    const exportData = () => {
+    const exportData = async () => {
         if (settings.password_protection && !settings.export_password) {
-            toast({ title: "Set export password first", variant: "destructive" });
+            toast({ title: "Enter a password to encrypt the export", variant: "destructive" });
             return;
         }
-        const data = { export_date: new Date().toISOString(), password_protected: settings.password_protection, check_ins: recentCheckIns, alerts };
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `vibe-check-export-${format(new Date(), 'yyyy-MM-dd')}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        toast({ title: "Export complete", description: "Your data has been downloaded." });
+        try {
+            // Full history, not just the recent window.
+            const allCheckIns = await fetchAllPages((limit, offset) => DailyCheckIn.list('-date', limit, offset));
+            const allAlerts = await fetchAllPages((limit, offset) => BoundaryAlert.list('-created_date', limit, offset)).catch(() => alerts);
+            const payload = { export_date: new Date().toISOString(), check_ins: allCheckIns, alerts: allAlerts };
+
+            let fileBody;
+            let filename = `vibe-check-export-${todayKey()}`;
+            if (settings.password_protection) {
+                // Real AES-GCM encryption; the password is used here and never persisted.
+                fileBody = JSON.stringify(await encryptJson(payload, settings.export_password), null, 2);
+                filename += '.enc.json';
+            } else {
+                fileBody = JSON.stringify(payload, null, 2);
+                filename += '.json';
+            }
+
+            const blob = new Blob([fileBody], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            toast({ title: "Export complete", description: settings.password_protection ? "Encrypted with your password. Keep it safe; it cannot be recovered." : "Your full history has been downloaded." });
+        } catch (e) {
+            toast({ title: "Export failed", description: e?.message || "Something went wrong.", variant: "destructive" });
+        }
     };
 
     const sevColor = (s) => ({
@@ -222,8 +245,8 @@ export default function Boundaries() {
 
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <Label className="text-sm font-medium" style={{ color: 'rgba(82,72,104,0.9)' }}>Password-Protect Exports</Label>
-                                    <p className="text-xs" style={{ color: 'rgba(122,112,144,0.6)' }}>For use in legal documentation if needed</p>
+                                    <Label className="text-sm font-medium" style={{ color: 'var(--gh-ink-soft)' }}>Encrypt exports</Label>
+                                    <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>AES-256 encryption with a password you enter at export time. The password is never stored.</p>
                                 </div>
                                 <Switch checked={settings.password_protection}
                                     onCheckedChange={(c) => setSettings({...settings, password_protection: c})} />

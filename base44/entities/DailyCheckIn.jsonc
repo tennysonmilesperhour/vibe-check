@@ -84,6 +84,19 @@
     "notes": {
       "type": "string",
       "description": "Additional notes or reflections"
+    },
+    "moon_phase": {
+      "type": "string",
+      "description": "Computed lunar phase name at check-in time, stamped by the resonance engine"
+    },
+    "personal_day": {
+      "type": "number",
+      "description": "Numerology personal day number (1-9), stamped by the resonance engine"
+    },
+    "person_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Person entity ids involved in today's moments (replaces free-text who_involved)"
     }
   },
   "required": [

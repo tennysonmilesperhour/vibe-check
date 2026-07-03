@@ -3,17 +3,14 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Sparkles, Save, Info, BookOpen, Wand2 } from "lucide-react";
+import { Sparkles, Save, Wand2 } from "lucide-react";
 import SystemToggle, { SYSTEMS } from "@/components/cosmic/SystemToggle";
 import {
     AstrologyForm, HumanDesignForm, GeneKeysForm,
     NumerologyForm, TarotForm, ChakraForm, EnneagramForm
 } from "@/components/cosmic/ProfileForm";
-import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
-import CosmicInsightBadge from "@/components/cosmic/CosmicInsightBadge";
 import CosmicBlueprint from "@/components/cosmic/CosmicBlueprint";
 import SystemReports from "@/components/cosmic/SystemReport";
 import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";

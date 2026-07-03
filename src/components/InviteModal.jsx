@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Copy, Mail, Link, Check } from "lucide-react";
+import { Copy, Mail, Check } from "lucide-react";
 
 export default function InviteModal({ open, onClose }) {
   const { toast } = useToast();

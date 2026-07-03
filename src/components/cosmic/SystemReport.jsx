@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
-import { SYSTEM_CORRESPONDENCES } from "./correspondences";
 
 // ── Per-system detail renderers ─────────────────────────────────────────────
 

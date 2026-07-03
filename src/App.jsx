@@ -6,9 +6,6 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import CosmicWisdomPage from './pages/CosmicWisdom';
-import ConstellationPage from './pages/Constellation';
-import TarotReadingPage from './pages/TarotReading';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -60,9 +57,6 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
-      <Route path="/CosmicWisdom" element={<LayoutWrapper currentPageName="CosmicWisdom"><CosmicWisdomPage /></LayoutWrapper>} />
-      <Route path="/Constellation" element={<LayoutWrapper currentPageName="Constellation"><ConstellationPage /></LayoutWrapper>} />
-      <Route path="/TarotReading" element={<LayoutWrapper currentPageName="TarotReading"><TarotReadingPage /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

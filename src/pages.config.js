@@ -54,6 +54,9 @@ import Relationships from './pages/Relationships';
 import HealingBoard from './pages/HealingBoard';
 import Boundaries from './pages/Boundaries';
 import CosmicAddons from './pages/CosmicAddons';
+import Constellation from './pages/Constellation';
+import TarotReading from './pages/TarotReading';
+import CosmicWisdom from './pages/CosmicWisdom';
 import __Layout from './Layout.jsx';
 
 
@@ -65,6 +68,9 @@ export const PAGES = {
     "HealingBoard": HealingBoard,
     "Boundaries": Boundaries,
     "CosmicAddons": CosmicAddons,
+    "Constellation": Constellation,
+    "TarotReading": TarotReading,
+    "CosmicWisdom": CosmicWisdom,
 }
 
 export const pagesConfig = {

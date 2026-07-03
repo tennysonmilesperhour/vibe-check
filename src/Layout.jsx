@@ -14,7 +14,6 @@ import {
     UserPlus,
     Layers
 } from "lucide-react";
-import { useState as useInviteState } from "react";
 import InviteModal from "@/components/InviteModal";
 
 const navigationItems = [

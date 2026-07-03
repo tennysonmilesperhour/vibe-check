@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { Search, Plus, Sparkles, Trash2, Users, Briefcase, Palette, Heart, Star, Loader2 } from "lucide-react";
+import { Search, Plus, Trash2, Users, Briefcase, Palette, Heart, Star, Loader2 } from "lucide-react";
 
 const CONNECTION_TYPES = [
   { id: "friend",                label: "Friend",                icon: Users,   color: "#6B95C8", emoji: "🤝" },

@@ -144,7 +144,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                 </div>
             ) : error ? (
                 <div className="flex items-center justify-between gap-3" onClick={e => e.stopPropagation()}>
-                    <p className="text-xs" style={{ color: 'rgba(194,94,143,0.7)' }}>{error}</p>
+                    <p className="text-xs" style={{ color: 'rgba(217,92,80,0.7)' }}>{error}</p>
                     <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg shrink-0"
                         style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
                         <RefreshCw className="w-3 h-3 mr-1" /> Retry
@@ -183,7 +183,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                                     <p className="text-xs font-semibold mb-1 uppercase tracking-widest" style={{ color: cfg.color }}>
                                         Contemplation
                                     </p>
-                                    <p className="text-sm italic leading-relaxed" style={{ color: 'rgba(70,60,92,0.8)' }}>
+                                    <p className="text-sm leading-relaxed" style={{ color: 'var(--gh-ink-soft)' }}>
                                         {wisdom.contemplation}
                                     </p>
                                 </div>

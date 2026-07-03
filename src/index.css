@@ -171,11 +171,11 @@
   .ghost-cream-button:hover { background: rgba(255, 253, 246, 0.12); }
 }
 
-/* ── TRANSITIONAL compat layer ─────────────────────────────────
-   Legacy class names still referenced by pages awaiting their
-   workstream rewrite (W3–W7). Mapped to Golden Hour equivalents:
-   flat surfaces, solid ink, no blur, no gradient text.
-   DELETE this whole block in the W7 verification sweep. */
+/* ── Legacy-class mapping ──────────────────────────────────────
+   Older components (SystemToggle, ProfileForm, SystemReport,
+   CorrespondenceMap, InviteModal, HealingBoard) still use these
+   class names. They resolve to Golden Hour flat surfaces:
+   solid ink, real borders, no blur, no gradient text. */
 .glass-card,
 .glass-card-glow {
   background: var(--gh-cream);

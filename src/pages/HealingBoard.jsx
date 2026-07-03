@@ -16,25 +16,25 @@ const categoryInfo = {
         icon: Heart,
         title: "Devotions",
         description: "Practices and rituals that nourish your soul",
-        color: '#C25E8F',
-        border: 'rgba(194,94,143,0.2)',
-        bg: 'rgba(194,94,143,0.08)',
+        color: '#D95C50',
+        border: 'rgba(217,92,80,0.2)',
+        bg: 'rgba(217,92,80,0.08)',
     },
     empowerments: {
         icon: Star,
         title: "Empowerments",
         description: "Ways you're claiming your power and voice",
-        color: '#8A72B8',
-        border: 'rgba(138,114,184,0.2)',
-        bg: 'rgba(138,114,184,0.08)',
+        color: '#C2503C',
+        border: 'rgba(194,80,60,0.2)',
+        bg: 'rgba(194,80,60,0.08)',
     },
     integrity_lines: {
         icon: Shield,
         title: "Integrity Lines",
         description: "Values and principles you won't compromise",
-        color: '#6B95C8',
-        border: 'rgba(107,149,200,0.2)',
-        bg: 'rgba(107,149,200,0.08)',
+        color: '#F2952E',
+        border: 'rgba(242,149,46,0.2)',
+        bg: 'rgba(242,149,46,0.08)',
     },
     gifts: {
         icon: Gift,
@@ -141,7 +141,7 @@ export default function HealingBoard() {
             <div className="max-w-7xl mx-auto relative z-10">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(138,114,184,0.7)' }}>✦ Growth</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(194,80,60,0.7)' }}>✦ Growth</p>
                     <div className="flex items-center justify-center gap-3 mb-3">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center pulse-glow"
                             style={{ background: 'linear-gradient(135deg, #C4699A, #8FA8D8)', boxShadow: '0 0 20px rgba(186,124,164,0.4)' }}>
@@ -284,7 +284,7 @@ export default function HealingBoard() {
                 {/* Add/Edit Dialog */}
                 <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                     <DialogContent className="max-w-lg"
-                        style={{ background: 'rgba(253,251,247,0.98)', border: '1px solid rgba(138,114,184,0.2)' }}>
+                        style={{ background: 'rgba(253,251,247,0.98)', border: '1px solid rgba(194,80,60,0.2)' }}>
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2 gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                                 {React.createElement(categoryInfo[formData.category].icon, { className: "w-5 h-5", style: { color: categoryInfo[formData.category].color } })}

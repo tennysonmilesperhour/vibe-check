@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { shareNodeAsImage } from "@/lib/share";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ export default function CosmicAddons() {
     const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify(EMPTY_PROFILE));
     const [isSaving, setIsSaving] = useState(false);
     const [isCalculating, setIsCalculating] = useState(false);
+    const loomRef = useRef(null);
 
     // Two-way URL sync: back button and refresh keep your place.
     const [activeTab, setActiveTab] = useSearchParamState('tab', 'systems');
@@ -216,12 +218,18 @@ Return this JSON:
                 {/* Header */}
                 {/* ── The Loom: hero of the cosmos ── */}
                 <SkyField className="mb-10" showSun={false} veilIntensity={0.5}>
-                    <div className="max-w-lg mx-auto px-6 py-8">
+                    <div className="max-w-lg mx-auto px-6 py-8" ref={loomRef}>
                         <h1 className="text-4xl text-center" style={{ color: 'var(--gh-cream)' }}>Your Loom</h1>
                         <p className="text-sm text-center mt-1 mb-6" style={{ color: 'rgba(255,253,246,0.85)' }}>
                             Seven systems, one map. Tap a point or a thread.
                         </p>
                         <Loom profile={profile} onDeepDive={() => setActiveTab('deepdive')} />
+                        <div className="text-center mt-4" data-html2canvas-ignore="true">
+                            <button type="button" className="ghost-cream-button text-xs py-2"
+                                onClick={async () => { try { await shareNodeAsImage(loomRef.current, 'my-loom.png'); } catch (e) {} }}>
+                                Save your Loom as an image
+                            </button>
+                        </div>
                     </div>
                 </SkyField>
 
@@ -320,12 +328,12 @@ Return this JSON:
                     {/* ── Tab 2: Profile Detail Forms ── */}
                     <TabsContent value="profile" className="space-y-6">
                         {/* Sacred Geometry Blueprint */}
-                        <div className="glass-card p-6 flex flex-col items-center" style={{ border: '1px solid rgba(138,114,184,0.2)' }}>
+                        <div className="glass-card p-6 flex flex-col items-center" style={{ border: '1px solid rgba(194,80,60,0.2)' }}>
                             <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Your Cosmic Blueprint</h3>
                             <p className="text-sm mb-3 w-full" style={{ color: 'rgba(105,95,128,0.65)' }}>Systems light up as you fill in your profile data</p>
                             {canCalculate ? (
-                                <div className="w-full mb-4 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(138,114,184,0.08)', border: '1px solid rgba(138,114,184,0.25)' }}>
-                                    <Wand2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#8A72B8' }} />
+                                <div className="w-full mb-4 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(194,80,60,0.08)', border: '1px solid rgba(194,80,60,0.25)' }}>
+                                    <Wand2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#C2503C' }} />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium mb-1" style={{ color: 'rgba(61,52,80,0.9)' }}>Oracle Birth Chart Calculator</p>
                                         <p className="text-xs mb-2" style={{ color: 'rgba(105,95,128,0.65)' }}>Channels your birth date, time &amp; location to reveal your Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
@@ -338,14 +346,14 @@ Return this JSON:
                                 </div>
                             ) : (
                                 <div className="w-full mb-4 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(61,52,80,0.1)' }}>
-                                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.55)' }}>💡 Add your birth date and city in the <strong style={{color:'rgba(138,114,184,0.7)'}}>Systems tab</strong> to unlock AI birth chart calculation.</p>
+                                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.55)' }}>💡 Add your birth date and city in the <strong style={{color:'rgba(194,80,60,0.7)'}}>Systems tab</strong> to unlock AI birth chart calculation.</p>
                                 </div>
                             )}
                         </div>
 
                         {enabledSystems.length === 0 ? (
                             <div className="glass-card p-12 text-center">
-                                <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(138,114,184,0.4)' }} />
+                                <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(194,80,60,0.4)' }} />
                                 <p className="font-medium mb-1" style={{ color: 'rgba(82,72,104,0.8)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems enabled</p>
                                 <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>
                                     Go to the Systems tab and toggle on at least one system to enter your profile.
@@ -357,7 +365,7 @@ Return this JSON:
                                 if (!system) return null;
                                 return (
                                     <div key={systemId} className="glass-card p-6"
-                                        style={{ border: '1px solid rgba(138,114,184,0.2)' }}>
+                                        style={{ border: '1px solid rgba(194,80,60,0.2)' }}>
                                         <div className="flex items-center gap-3 mb-5">
                                             <span className="text-2xl">{system.emoji}</span>
                                             <div>

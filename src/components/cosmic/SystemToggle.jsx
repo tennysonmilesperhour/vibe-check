@@ -35,18 +35,18 @@ const SYSTEMS = [
         label: "Numerology",
         emoji: "🔢",
         description: "Life Path, Expression & Soul Urge numbers — vibrational patterns in your name and birth date",
-        activeColor: '#8A72B8',
-        activeBg: 'rgba(138,114,184,0.1)',
-        activeBorder: 'rgba(138,114,184,0.3)',
+        activeColor: '#C2503C',
+        activeBg: 'rgba(194,80,60,0.1)',
+        activeBorder: 'rgba(194,80,60,0.3)',
     },
     {
         id: "tarot_archetype",
         label: "Tarot Archetype",
         emoji: "🃏",
         description: "Birth Card and Shadow Card — the Major Arcana archetypes that shape your journey",
-        activeColor: '#C25E8F',
-        activeBg: 'rgba(194,94,143,0.1)',
-        activeBorder: 'rgba(194,94,143,0.3)',
+        activeColor: '#D95C50',
+        activeBg: 'rgba(217,92,80,0.1)',
+        activeBorder: 'rgba(217,92,80,0.3)',
     },
     {
         id: "enneagram",
@@ -62,9 +62,9 @@ const SYSTEMS = [
         label: "Chakra System",
         emoji: "🌀",
         description: "Dominant energy center and areas of focus — where life force flows and stagnates",
-        activeColor: '#6B95C8',
-        activeBg: 'rgba(107,149,200,0.1)',
-        activeBorder: 'rgba(107,149,200,0.3)',
+        activeColor: '#F2952E',
+        activeBg: 'rgba(242,149,46,0.1)',
+        activeBorder: 'rgba(242,149,46,0.3)',
     }
 ];
 

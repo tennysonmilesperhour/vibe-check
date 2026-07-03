@@ -1,30 +1,55 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { EMOTIONS } from "./vocab";
-import { Pencil } from "lucide-react";
+import { Pencil, ImageDown } from "lucide-react";
+import { shareNodeAsImage } from "@/lib/share";
+import { todayKey } from "@/lib/dates";
 
 const emojiFor = (label) => EMOTIONS.find((e) => e.label === label)?.emoji || "";
 
 /** Field-register summary of today's saved entry. */
 export default function TodaySummary({ entry, onEdit }) {
+  const cardRef = useRef(null);
+  const [sharing, setSharing] = useState(false);
+
+  const share = async () => {
+    setSharing(true);
+    try {
+      await shareNodeAsImage(cardRef.current, `vibe-${todayKey()}.png`);
+    } catch {
+      // capture is best-effort; the day itself is already kept
+    }
+    setSharing(false);
+  };
   const scores = [
     { label: "MOOD", value: entry.mood_score },
     { label: "ENERGY", value: entry.energy_level },
     { label: "SLEEP", value: entry.sleep_quality },
   ];
   return (
-    <section aria-labelledby="today-summary-heading">
+    <section aria-labelledby="today-summary-heading" ref={cardRef} className="field-wash p-1">
       <div className="flex items-end justify-between">
         <h2 id="today-summary-heading" className="text-3xl" style={{ color: "var(--gh-ink)" }}>
           Today, kept
         </h2>
-        <button
-          type="button"
-          onClick={onEdit}
-          className="inline-flex items-center gap-1.5 text-sm font-medium"
-          style={{ color: "var(--gh-accent)" }}
-        >
-          <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Revisit today
-        </button>
+        <span className="flex gap-3" data-html2canvas-ignore="true">
+          <button
+            type="button"
+            onClick={share}
+            disabled={sharing}
+            className="inline-flex items-center gap-1.5 text-sm font-medium"
+            style={{ color: "var(--gh-ink-muted)" }}
+          >
+            <ImageDown className="w-3.5 h-3.5" aria-hidden="true" /> {sharing ? "Capturing…" : "Share as image"}
+          </button>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="inline-flex items-center gap-1.5 text-sm font-medium"
+            style={{ color: "var(--gh-accent)" }}
+          >
+            <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Revisit today
+          </button>
+        </span>
       </div>
 
       <div className="flex mt-4">

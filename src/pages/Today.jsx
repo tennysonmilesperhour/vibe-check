@@ -89,8 +89,9 @@ export default function Today() {
     return <div className="min-h-[60vh] field-wash" aria-busy="true" />;
   }
 
-  // ── pre-check-in: the invitation ──
+  // ── pre-check-in: the invitation (first-run gets the welcome) ──
   if (!entry && mode !== "peek") {
+    const isFirstRun = !lastEntryAt && streak === 0;
     return (
       <SkyField className="min-h-[calc(100vh-0px)]">
         <PageTransition className="max-w-3xl mx-auto px-6 py-16 md:py-24">
@@ -99,15 +100,27 @@ export default function Today() {
             {lastEntryAt ? ` · ${hoursSince(lastEntryAt)} hours since your last entry` : ""}
           </p>
           <h1 className="mt-4 text-5xl md:text-7xl" style={{ color: "var(--gh-cream)", maxWidth: "12ch", lineHeight: 0.98 }}>
-            How did today actually feel?
+            {isFirstRun ? "Welcome to the golden hour" : "How did today actually feel?"}
           </h1>
+          {isFirstRun && (
+            <p className="mt-5 text-base max-w-md" style={{ color: "rgba(255,253,246,0.9)" }}>
+              One honest check-in each evening. Over time this place learns
+              your weather, your people, and the sky you were born under.
+            </p>
+          )}
           <div className="mt-10 flex flex-wrap gap-3">
             <button type="button" className="cream-button" onClick={() => setMode("ceremony")}>
-              Begin check-in
+              {isFirstRun ? "Begin your first check-in" : "Begin check-in"}
             </button>
-            <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>
-              Skip to reflection
-            </button>
+            {isFirstRun && !profile?.enabled_systems?.length ? (
+              <Link to={createPageUrl("CosmicAddons")} className="ghost-cream-button inline-block">
+                Weave your cosmos first
+              </Link>
+            ) : (
+              <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>
+                Skip to reflection
+              </button>
+            )}
           </div>
           {streak > 0 && (
             <p className="mt-10 text-sm" style={{ color: "rgba(255,253,246,0.85)" }}>

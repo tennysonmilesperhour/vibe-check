@@ -33,7 +33,7 @@ export default function InviteModal({ open, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(138,114,184,0.25)', maxWidth: 420 }}>
+      <DialogContent style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(194,80,60,0.25)', maxWidth: 420 }}>
         <DialogHeader>
           <DialogTitle className="gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 18 }}>
             ✦ Invite to Your Constellation
@@ -53,7 +53,7 @@ export default function InviteModal({ open, onClose }) {
               {inviteUrl}
             </div>
             <Button onClick={handleCopyLink} size="sm" variant="outline"
-              style={{ border: '1px solid rgba(138,114,184,0.3)', color: copied ? '#C9834B' : '#8A72B8', background: 'rgba(138,114,184,0.08)' }}>
+              style={{ border: '1px solid rgba(194,80,60,0.3)', color: copied ? '#C9834B' : '#C2503C', background: 'rgba(194,80,60,0.08)' }}>
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </Button>
           </div>

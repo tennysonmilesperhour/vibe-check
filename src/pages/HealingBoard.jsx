@@ -6,33 +6,35 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Plus, Edit, Heart, Shield, Gift, Star, TrendingUp } from "lucide-react";
-import { format } from "date-fns";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Slider } from "@/components/ui/slider";
+import { Sparkles, Plus, Edit, Heart, Shield, Gift, Star, TrendingUp, Trash2, X } from "lucide-react";
+import { todayKey } from "@/lib/dates";
 
 const categoryInfo = {
     devotions: {
         icon: Heart,
         title: "Devotions",
         description: "Practices and rituals that nourish your soul",
-        color: '#C25E8F',
-        border: 'rgba(194,94,143,0.2)',
-        bg: 'rgba(194,94,143,0.08)',
+        color: '#D95C50',
+        border: 'rgba(217,92,80,0.2)',
+        bg: 'rgba(217,92,80,0.08)',
     },
     empowerments: {
         icon: Star,
         title: "Empowerments",
         description: "Ways you're claiming your power and voice",
-        color: '#8A72B8',
-        border: 'rgba(138,114,184,0.2)',
-        bg: 'rgba(138,114,184,0.08)',
+        color: '#C2503C',
+        border: 'rgba(194,80,60,0.2)',
+        bg: 'rgba(194,80,60,0.08)',
     },
     integrity_lines: {
         icon: Shield,
         title: "Integrity Lines",
         description: "Values and principles you won't compromise",
-        color: '#6B95C8',
-        border: 'rgba(107,149,200,0.2)',
-        bg: 'rgba(107,149,200,0.08)',
+        color: '#F2952E',
+        border: 'rgba(242,149,46,0.2)',
+        bg: 'rgba(242,149,46,0.08)',
     },
     gifts: {
         icon: Gift,
@@ -49,6 +51,8 @@ export default function HealingBoard() {
     const [selectedCategory, setSelectedCategory] = useState("devotions");
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
+    const [deletingItem, setDeletingItem] = useState(null);
+    const [milestoneDraft, setMilestoneDraft] = useState("");
     const [formData, setFormData] = useState({
         category: "devotions",
         title: "",
@@ -108,9 +112,25 @@ export default function HealingBoard() {
     };
 
     const addMilestone = () => {
-        const milestone = prompt("Add a milestone:");
-        if (milestone) {
-            setFormData({ ...formData, milestones: [...formData.milestones, { date: format(new Date(), 'yyyy-MM-dd'), milestone }] });
+        const text = milestoneDraft.trim();
+        if (text) {
+            setFormData({ ...formData, milestones: [...formData.milestones, { date: todayKey(), milestone: text }] });
+            setMilestoneDraft("");
+        }
+    };
+
+    const removeMilestone = (index) => {
+        setFormData({ ...formData, milestones: formData.milestones.filter((_, i) => i !== index) });
+    };
+
+    const deleteItem = async () => {
+        if (!deletingItem) return;
+        try {
+            await HealingProgress.delete(deletingItem.id);
+            setDeletingItem(null);
+            loadHealingProgress();
+        } catch {
+            setDeletingItem(null);
         }
     };
 
@@ -118,11 +138,10 @@ export default function HealingBoard() {
 
     return (
         <div className="p-6 space-y-8 min-h-screen relative">
-            <div className="orb-purple" style={{ top: '-40px', left: '20%' }} />
             <div className="max-w-7xl mx-auto relative z-10">
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(138,114,184,0.7)' }}>✦ Growth</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(194,80,60,0.7)' }}>✦ Growth</p>
                     <div className="flex items-center justify-center gap-3 mb-3">
                         <div className="w-12 h-12 rounded-xl flex items-center justify-center pulse-glow"
                             style={{ background: 'linear-gradient(135deg, #C4699A, #8FA8D8)', boxShadow: '0 0 20px rgba(186,124,164,0.4)' }}>
@@ -208,10 +227,16 @@ export default function HealingBoard() {
                                         </h3>
                                         <p className="text-xs" style={{ color: 'rgba(105,95,128,0.65)' }}>{item.description}</p>
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={() => editItem(item)}
-                                        style={{ color: 'rgba(105,95,128,0.6)' }}>
-                                        <Edit className="w-4 h-4" />
-                                    </Button>
+                                    <div className="flex">
+                                        <Button variant="ghost" size="icon" aria-label={`Edit ${item.title}`} onClick={() => editItem(item)}
+                                            style={{ color: 'var(--gh-ink-muted)' }}>
+                                            <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" aria-label={`Delete ${item.title}`} onClick={() => setDeletingItem(item)}
+                                            style={{ color: 'var(--gh-ink-muted)' }}>
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div className="mb-3">
                                     <div className="flex justify-between items-center mb-1">
@@ -259,7 +284,7 @@ export default function HealingBoard() {
                 {/* Add/Edit Dialog */}
                 <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                     <DialogContent className="max-w-lg"
-                        style={{ background: 'rgba(253,251,247,0.98)', border: '1px solid rgba(138,114,184,0.2)' }}>
+                        style={{ background: 'rgba(253,251,247,0.98)', border: '1px solid rgba(194,80,60,0.2)' }}>
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2 gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                                 {React.createElement(categoryInfo[formData.category].icon, { className: "w-5 h-5", style: { color: categoryInfo[formData.category].color } })}
@@ -280,10 +305,10 @@ export default function HealingBoard() {
                                     placeholder="Describe this area of growth..." rows={3} className="mt-1" />
                             </div>
                             <div>
-                                <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Progress Level ({formData.progress_level}%)</Label>
-                                <input type="range" min="0" max="100" value={formData.progress_level}
-                                    onChange={(e) => setFormData({...formData, progress_level: parseInt(e.target.value)})}
-                                    className="w-full mt-2" style={{ accentColor: '#8A72B8' }} />
+                                <Label style={{ color: 'var(--gh-ink-soft)' }}>Progress Level ({formData.progress_level}%)</Label>
+                                <Slider min={0} max={100} step={1} value={[formData.progress_level]}
+                                    onValueChange={([v]) => setFormData({...formData, progress_level: v})}
+                                    className="mt-3" aria-label="Progress level" />
                             </div>
                             <div>
                                 <Label htmlFor="reflection" style={{ color: 'rgba(82,72,104,0.8)' }}>Reflection Notes</Label>
@@ -292,22 +317,27 @@ export default function HealingBoard() {
                                     placeholder="Your thoughts and reflections..." rows={3} className="mt-1" />
                             </div>
                             <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Milestones</Label>
-                                    <Button type="button" variant="outline" size="sm" onClick={addMilestone}
-                                        style={{ borderColor: 'rgba(61,52,80,0.12)', color: 'rgba(82,72,104,0.8)', background: 'transparent' }}>
+                                <Label style={{ color: 'var(--gh-ink-soft)' }}>Milestones</Label>
+                                <div className="flex gap-2 mt-2">
+                                    <Input value={milestoneDraft} onChange={(e) => setMilestoneDraft(e.target.value)}
+                                        placeholder="Name a milestone"
+                                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addMilestone(); } }} />
+                                    <Button type="button" variant="outline" size="sm" onClick={addMilestone} disabled={!milestoneDraft.trim()}>
                                         <Plus className="w-3 h-3 mr-1" /> Add
                                     </Button>
                                 </div>
                                 {formData.milestones?.length > 0 && (
-                                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                                    <div className="space-y-2 max-h-32 overflow-y-auto mt-2">
                                         {formData.milestones.map((milestone, i) => (
-                                            <div key={i} className="flex items-center p-2 rounded-xl text-sm"
-                                                style={{ background: 'rgba(255,255,255,0.64)', border: '1px solid rgba(61,52,80,0.1)' }}>
+                                            <div key={i} className="flex items-center justify-between p-2 text-sm"
+                                                style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
                                                 <div>
-                                                    <div style={{ color: 'rgba(82,72,104,0.95)' }}>{milestone.milestone}</div>
-                                                    <div className="text-xs" style={{ color: 'rgba(122,112,144,0.6)' }}>{milestone.date}</div>
+                                                    <div style={{ color: 'var(--gh-ink)' }}>{milestone.milestone}</div>
+                                                    <div className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{milestone.date}</div>
                                                 </div>
+                                                <button type="button" aria-label={`Remove milestone: ${milestone.milestone}`} onClick={() => removeMilestone(i)}>
+                                                    <X className="w-3.5 h-3.5" style={{ color: 'var(--gh-ink-muted)' }} />
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
@@ -325,6 +355,21 @@ export default function HealingBoard() {
                         </form>
                     </DialogContent>
                 </Dialog>
+
+                <AlertDialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Release "{deletingItem?.title}"?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This removes the item and its milestones. The growth it recorded stays yours.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Keep it</AlertDialogCancel>
+                            <AlertDialogAction onClick={deleteItem}>Delete item</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );

@@ -1,0 +1,31 @@
+import React from "react";
+import { useSearchParamState } from "@/lib/deeplink";
+import TarotTable from "@/features/practice/TarotTable";
+import HealingBoard from "./HealingBoard";
+
+/** Active inner work: the tarot table and the healing board, one roof. */
+export default function Practice() {
+  const [tab, setTab] = useSearchParamState("tab", "tarot");
+
+  return (
+    <div className={tab === "tarot" ? "dusk-surface min-h-screen" : "field-wash min-h-screen"}>
+      <nav aria-label="Practice areas" className="flex justify-center gap-1 pt-6">
+        {[["tarot", "Tarot & Oracle"], ["healing", "Healing Board"]].map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            aria-current={tab === id ? "page" : undefined}
+            className="px-4 py-2 text-sm font-bold"
+            style={tab === id
+              ? { background: tab === "tarot" ? "var(--gh-gold)" : "var(--gh-ink)", color: tab === "tarot" ? "var(--gh-dusk-deep)" : "var(--gh-field)" }
+              : { border: "1px solid", borderColor: tab === "tarot" ? "rgba(245,229,216,0.35)" : "hsl(var(--border))", color: tab === "tarot" ? "var(--gh-dusk-ink)" : "var(--gh-ink-soft)" }}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      {tab === "healing" ? <HealingBoard /> : <TarotTable />}
+    </div>
+  );
+}

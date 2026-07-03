@@ -125,14 +125,14 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
       {activePairs.length > 0 && (
         <div className="glass-card p-6">
           <div className="flex items-center gap-2 mb-1">
-            <BookOpen className="w-5 h-5" style={{ color: '#8A72B8' }} />
+            <BookOpen className="w-5 h-5" style={{ color: '#C2503C' }} />
             <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Active Connections</h3>
           </div>
           <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.6)' }}>Live cross-system resonances from your enabled blueprint</p>
           <div className="space-y-4">
             {activePairs.map(pair => (
               <div key={pair.key} className="p-5 rounded-xl"
-                style={{ background: 'rgba(138,114,184,0.08)', border: '1px solid rgba(138,114,184,0.25)' }}>
+                style={{ background: 'rgba(194,80,60,0.08)', border: '1px solid rgba(194,80,60,0.25)' }}>
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   {pair.systems.map(s => <CosmicInsightBadge key={s} systemId={s} />)}
                   <Badge className="text-xs" style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>
@@ -172,12 +172,12 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
       <div className="glass-card-glow p-6">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5" style={{ color: '#8A72B8' }} />
+            <Sparkles className="w-5 h-5" style={{ color: '#C2503C' }} />
             <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Integrated Blueprint Reading</h3>
           </div>
           {deepReport && (
             <Button size="sm" variant="outline" onClick={() => exportMapPDF(profile, deepReport)}
-              className="gap-1.5 text-xs" style={{ borderColor: 'rgba(138,114,184,0.3)', color: '#8A72B8', background: 'transparent' }}>
+              className="gap-1.5 text-xs" style={{ borderColor: 'rgba(194,80,60,0.3)', color: '#C2503C', background: 'transparent' }}>
               <Download className="w-3 h-3" /> Export Full PDF
             </Button>
           )}
@@ -188,7 +188,7 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
 
         {loading ? (
           <div className="flex items-center gap-3 py-8">
-            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#8A72B8' }} />
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#C2503C' }} />
             <span className="text-sm" style={{ color: 'rgba(105,95,128,0.7)' }}>Weaving your integrated blueprint…</span>
           </div>
         ) : deepReport ? (
@@ -209,7 +209,7 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
       {!deepReport && activePairs.length > 0 && (
         <div className="flex justify-end">
           <Button variant="outline" onClick={() => exportMapPDF(profile, null)}
-            className="gap-2 text-sm" style={{ borderColor: 'rgba(138,114,184,0.3)', color: '#8A72B8', background: 'rgba(138,114,184,0.05)' }}>
+            className="gap-2 text-sm" style={{ borderColor: 'rgba(194,80,60,0.3)', color: '#C2503C', background: 'rgba(194,80,60,0.05)' }}>
             <Download className="w-4 h-4" /> Export Correspondence Map PDF
           </Button>
         </div>

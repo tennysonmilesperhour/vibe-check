@@ -415,9 +415,9 @@ export function ChakraForm({ data, onChange }) {
                                 <button key={area} type="button" onClick={() => toggleFocus(area)}
                                     className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
                                     style={{
-                                        background: active ? 'rgba(138,114,184,0.25)' : 'rgba(255,255,255,0.64)',
-                                        border: active ? '1px solid rgba(138,114,184,0.5)' : '1px solid rgba(61,52,80,0.12)',
-                                        color: active ? '#8A72B8' : 'rgba(105,95,128,0.7)',
+                                        background: active ? 'rgba(194,80,60,0.25)' : 'rgba(255,255,255,0.64)',
+                                        border: active ? '1px solid rgba(194,80,60,0.5)' : '1px solid rgba(61,52,80,0.12)',
+                                        color: active ? '#C2503C' : 'rgba(105,95,128,0.7)',
                                     }}>
                                     {short}
                                 </button>

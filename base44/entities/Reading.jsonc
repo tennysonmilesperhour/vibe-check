@@ -1,0 +1,46 @@
+{
+  "name": "Reading",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Local date key (yyyy-MM-dd) the reading was drawn"
+    },
+    "deck": {
+      "type": "string",
+      "enum": ["tarot", "oracle"],
+      "description": "Which deck was used"
+    },
+    "spread": {
+      "type": "string",
+      "description": "Spread id, e.g. single, three-card, celtic-cross"
+    },
+    "question": {
+      "type": "string",
+      "description": "Optional question or intention held for the reading"
+    },
+    "cards": {
+      "type": "array",
+      "description": "Drawn cards in position order",
+      "items": {
+        "type": "object",
+        "properties": {
+          "card_id": { "type": "number", "description": "Card id within its deck" },
+          "position": { "type": "string", "description": "Spread position label" },
+          "reversed": { "type": "boolean" }
+        }
+      }
+    },
+    "interpretation": {
+      "type": "string",
+      "description": "AI interpretation woven from the spread and the user's current context"
+    },
+    "linked_checkin_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date key of the check-in this reading accompanies, if any"
+    }
+  },
+  "required": ["date", "deck", "spread", "cards"]
+}

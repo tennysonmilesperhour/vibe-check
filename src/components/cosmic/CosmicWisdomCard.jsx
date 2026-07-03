@@ -3,28 +3,23 @@ import { base44 } from "@/api/base44Client";
 import { generateCosmicWisdom } from "@/functions/generateCosmicWisdom";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { getPeriodKey, todayKey } from "@/lib/dates";
+import { resonanceGraph, summarizeGraph } from "@/lib/resonance/graph";
 
-const PERIOD_CONFIG = {
-    daily:   { label: "Today",      emoji: "☀️",  color: "#B8902F", glow: "rgba(184,144,47,0.35)" },
-    weekly:  { label: "This Week",  emoji: "🌙",  color: "#8A72B8", glow: "rgba(138,114,184,0.35)" },
-    monthly: { label: "This Month", emoji: "🌊",  color: "#6B95C8", glow: "rgba(107,149,200,0.35)"  },
-    yearly:  { label: "This Year",  emoji: "⭐",  color: "#C9834B", glow: "rgba(201,131,75,0.35)"  },
+const buildResonanceSummary = (user) => {
+    try {
+        return summarizeGraph(resonanceGraph(user?.cosmic_profile || {}, todayKey()));
+    } catch {
+        return "";
+    }
 };
 
-function getPeriodKey(type) {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    if (type === 'daily') return `${y}-${m}-${d}`;
-    if (type === 'weekly') {
-        const startOfYear = new Date(y, 0, 1);
-        const weekNum = Math.ceil(((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7);
-        return `${y}-W${String(weekNum).padStart(2, '0')}`;
-    }
-    if (type === 'monthly') return `${y}-${m}`;
-    if (type === 'yearly') return `${y}`;
-}
+const PERIOD_CONFIG = {
+    daily:   { label: "Today",      emoji: "☀️",  color: "var(--gh-gold)",   glow: "rgba(253,201,78,0.35)" },
+    weekly:  { label: "This Week",  emoji: "🌙",  color: "var(--gh-rose)",   glow: "rgba(244,140,160,0.35)" },
+    monthly: { label: "This Month", emoji: "🌊",  color: "var(--gh-peach)",  glow: "rgba(247,158,126,0.35)" },
+    yearly:  { label: "This Year",  emoji: "⭐",  color: "var(--gh-amber)",  glow: "rgba(250,176,94,0.35)" },
+};
 
 export default function CosmicWisdomCard({ periodType = "daily" }) {
     const cfg = PERIOD_CONFIG[periodType];
@@ -34,6 +29,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
     const [expanded, setExpanded] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
     const [error, setError] = useState(null);
+    const [me, setMe] = useState(null);
 
     useEffect(() => {
         checkAndLoad();
@@ -44,12 +40,13 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         setError(null);
         try {
             const user = await base44.auth.me();
+            setMe(user);
             const enabled = user?.cosmic_profile?.enabled_systems || [];
             if (enabled.length === 0) { setLoading(false); return; }
             setHasProfile(true);
 
             // Try to load existing via the function (it checks cache first)
-            const res = await generateCosmicWisdom({ period_type: periodType, force_regenerate: false });
+            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: false, resonance_summary: buildResonanceSummary(user) });
             if (res?.data?.wisdom) {
                 setWisdom(res.data.wisdom);
             }
@@ -65,7 +62,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         setGenerating(true);
         setError(null);
         try {
-            const res = await generateCosmicWisdom({ period_type: periodType, force_regenerate: force });
+            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: force, resonance_summary: buildResonanceSummary(me) });
             if (res?.data?.wisdom) setWisdom(res.data.wisdom);
         } catch (e) {
             const msg = e?.response?.data?.error || e?.message || 'Generation failed';
@@ -147,7 +144,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                 </div>
             ) : error ? (
                 <div className="flex items-center justify-between gap-3" onClick={e => e.stopPropagation()}>
-                    <p className="text-xs" style={{ color: 'rgba(194,94,143,0.7)' }}>{error}</p>
+                    <p className="text-xs" style={{ color: 'rgba(217,92,80,0.7)' }}>{error}</p>
                     <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg shrink-0"
                         style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
                         <RefreshCw className="w-3 h-3 mr-1" /> Retry
@@ -186,7 +183,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                                     <p className="text-xs font-semibold mb-1 uppercase tracking-widest" style={{ color: cfg.color }}>
                                         Contemplation
                                     </p>
-                                    <p className="text-sm italic leading-relaxed" style={{ color: 'rgba(70,60,92,0.8)' }}>
+                                    <p className="text-sm leading-relaxed" style={{ color: 'var(--gh-ink-soft)' }}>
                                         {wisdom.contemplation}
                                     </p>
                                 </div>

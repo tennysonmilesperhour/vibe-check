@@ -2,13 +2,10 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import CosmicWisdomPage from './pages/CosmicWisdom';
-import ConstellationPage from './pages/Constellation';
-import TarotReadingPage from './pages/TarotReading';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -60,9 +57,15 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
-      <Route path="/CosmicWisdom" element={<LayoutWrapper currentPageName="CosmicWisdom"><CosmicWisdomPage /></LayoutWrapper>} />
-      <Route path="/Constellation" element={<LayoutWrapper currentPageName="Constellation"><ConstellationPage /></LayoutWrapper>} />
-      <Route path="/TarotReading" element={<LayoutWrapper currentPageName="TarotReading"><TarotReadingPage /></LayoutWrapper>} />
+      {/* legacy routes from the pre-golden-hour IA */}
+      <Route path="/Dashboard" element={<Navigate to="/Today" replace />} />
+      <Route path="/DailyLog" element={<Navigate to="/Today" replace />} />
+      <Route path="/Boundaries" element={<Navigate to="/Today" replace />} />
+      <Route path="/Relationships" element={<Navigate to="/People" replace />} />
+      <Route path="/Constellation" element={<Navigate to="/People" replace />} />
+      <Route path="/TarotReading" element={<Navigate to="/Practice" replace />} />
+      <Route path="/HealingBoard" element={<Navigate to="/Practice?tab=healing" replace />} />
+      <Route path="/CosmicWisdom" element={<Navigate to="/Analytics?tab=wisdom" replace />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

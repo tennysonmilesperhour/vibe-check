@@ -47,28 +47,24 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Dashboard from './pages/Dashboard';
-import DailyLog from './pages/DailyLog';
+import Today from './pages/Today';
 import Analytics from './pages/Analytics';
-import Relationships from './pages/Relationships';
-import HealingBoard from './pages/HealingBoard';
-import Boundaries from './pages/Boundaries';
+import People from './pages/People';
+import Practice from './pages/Practice';
 import CosmicAddons from './pages/CosmicAddons';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "DailyLog": DailyLog,
+    "Today": Today,
     "Analytics": Analytics,
-    "Relationships": Relationships,
-    "HealingBoard": HealingBoard,
-    "Boundaries": Boundaries,
+    "People": People,
+    "Practice": Practice,
     "CosmicAddons": CosmicAddons,
 }
 
 export const pagesConfig = {
-    mainPage: "Dashboard",
+    mainPage: "Today",
     Pages: PAGES,
     Layout: __Layout,
 };

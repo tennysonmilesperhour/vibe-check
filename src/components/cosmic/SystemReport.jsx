@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
-import { SYSTEM_CORRESPONDENCES } from "./correspondences";
 
 // ── Per-system detail renderers ─────────────────────────────────────────────
 
@@ -19,7 +18,7 @@ function DataRow({ label, value }) {
 function Section({ title, children }) {
   return (
     <div className="mb-5">
-      <h4 className="text-xs font-bold uppercase tracking-widest mb-3 pb-1" style={{ color: 'rgba(138,114,184,0.7)', borderBottom: '1px solid rgba(138,114,184,0.15)' }}>{title}</h4>
+      <h4 className="text-xs font-bold uppercase tracking-widest mb-3 pb-1" style={{ color: 'rgba(194,80,60,0.7)', borderBottom: '1px solid rgba(194,80,60,0.15)' }}>{title}</h4>
       {children}
     </div>
   );
@@ -43,20 +42,20 @@ function AstrologyDetail({ data }) {
       {PLANETS.map(p => data?.[p.key] && (
         <div key={p.key} className="flex items-start gap-3 py-2.5" style={{ borderBottom: '1px solid rgba(61,52,80,0.06)' }}>
           <div className="w-28 shrink-0">
-            <p className="text-sm font-semibold" style={{ color: 'rgba(194,94,143,0.9)' }}>{p.label}</p>
+            <p className="text-sm font-semibold" style={{ color: 'rgba(217,92,80,0.9)' }}>{p.label}</p>
             <p className="text-xs" style={{ color: 'rgba(105,95,128,0.5)' }}>{p.desc}</p>
           </div>
           <div className="flex-1">
             <span className="px-2.5 py-1 rounded-full text-sm font-medium"
-              style={{ background: 'rgba(194,94,143,0.1)', color: 'rgba(194,94,143,0.85)', border: '1px solid rgba(194,94,143,0.2)' }}>
+              style={{ background: 'rgba(217,92,80,0.1)', color: 'rgba(217,92,80,0.85)', border: '1px solid rgba(217,92,80,0.2)' }}>
               {data[p.key]}
             </span>
           </div>
         </div>
       ))}
       {data?.custom_notes && (
-        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(194,94,143,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(194,94,143,0.12)' }}>
-          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(194,94,143,0.5)' }}>Personal Notes</span>
+        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(217,92,80,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(217,92,80,0.12)' }}>
+          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(217,92,80,0.5)' }}>Personal Notes</span>
           {data.custom_notes}
         </div>
       )}
@@ -78,7 +77,7 @@ function HumanDesignDetail({ data }) {
       <Section title="9 Centers Overview">
         <div className="grid grid-cols-3 gap-2">
           {HD_CENTERS.map(c => (
-            <div key={c} className="p-2 rounded-lg text-center text-xs" style={{ background: 'rgba(138,114,184,0.05)', border: '1px solid rgba(138,114,184,0.1)', color: 'rgba(82,72,104,0.7)' }}>
+            <div key={c} className="p-2 rounded-lg text-center text-xs" style={{ background: 'rgba(194,80,60,0.05)', border: '1px solid rgba(194,80,60,0.1)', color: 'rgba(82,72,104,0.7)' }}>
               {c}
             </div>
           ))}
@@ -86,8 +85,8 @@ function HumanDesignDetail({ data }) {
         <p className="text-xs mt-2" style={{ color: 'rgba(105,95,128,0.5)' }}>Centers defined/undefined based on your full chart — consult the oracle reading below for a deeper analysis</p>
       </Section>
       {data?.custom_notes && (
-        <div className="p-3 rounded-xl text-sm" style={{ background: 'rgba(138,114,184,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(138,114,184,0.12)' }}>
-          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(138,114,184,0.5)' }}>Personal Notes</span>
+        <div className="p-3 rounded-xl text-sm" style={{ background: 'rgba(194,80,60,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(194,80,60,0.12)' }}>
+          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(194,80,60,0.5)' }}>Personal Notes</span>
           {data.custom_notes}
         </div>
       )}
@@ -117,7 +116,7 @@ function GeneKeysDetail({ data }) {
           {seq.keys.map(k => data?.[k.key] && (
             <div key={k.key} className="flex items-center gap-3 py-2" style={{ borderBottom: '1px solid rgba(61,52,80,0.06)' }}>
               <span className="text-xs w-44 shrink-0" style={{ color: 'rgba(105,95,128,0.6)' }}>{k.label}</span>
-              <span className="px-2.5 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(107,149,200,0.1)', color: '#6B95C8', border: '1px solid rgba(107,149,200,0.2)' }}>
+              <span className="px-2.5 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(242,149,46,0.1)', color: '#F2952E', border: '1px solid rgba(242,149,46,0.2)' }}>
                 Key {data[k.key]}
               </span>
             </div>
@@ -133,7 +132,7 @@ function GenericDetail({ data, fields }) {
     <Section title="Profile Data">
       {fields.map(f => <DataRow key={f.key} label={f.label} value={data?.[f.key]} />)}
       {data?.custom_notes && (
-        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(138,114,184,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(138,114,184,0.12)' }}>
+        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(194,80,60,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(194,80,60,0.12)' }}>
           {data.custom_notes}
         </div>
       )}
@@ -249,9 +248,9 @@ async function exportToPDF(systemLabel, reportText, profileData) {
 // ── Main Component ───────────────────────────────────────────────────────────
 
 const SYSTEM_META = {
-  astrology:       { label: "Astrology",       color: "#C25E8F", emoji: "♈", Detail: AstrologyDetail },
-  human_design:    { label: "Human Design",    color: "#8A72B8", emoji: "⬡", Detail: HumanDesignDetail },
-  gene_keys:       { label: "Gene Keys",       color: "#6B95C8", emoji: "🧬", Detail: GeneKeysDetail },
+  astrology:       { label: "Astrology",       color: "#D95C50", emoji: "♈", Detail: AstrologyDetail },
+  human_design:    { label: "Human Design",    color: "#C2503C", emoji: "⬡", Detail: HumanDesignDetail },
+  gene_keys:       { label: "Gene Keys",       color: "#F2952E", emoji: "🧬", Detail: GeneKeysDetail },
   numerology:      { label: "Numerology",      color: "#C9834B", emoji: "∞",
     Detail: ({ data }) => <GenericDetail data={data} fields={[
       { key: 'life_path', label: 'Life Path' }, { key: 'expression', label: 'Expression' },
@@ -266,7 +265,7 @@ const SYSTEM_META = {
       { key: 'type', label: 'Type' }, { key: 'wing', label: 'Wing' },
       { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Tritype' },
     ]} /> },
-  chakras:         { label: "Chakras",         color: "#9179C9", emoji: "◎",
+  chakras:         { label: "Chakras",         color: "#E4517E", emoji: "◎",
     Detail: ({ data }) => <GenericDetail data={data} fields={[
       { key: 'dominant_center', label: 'Dominant Center' },
     ]} /> },
@@ -356,7 +355,7 @@ export default function SystemReports({ enabledSystems, profile, cosmicProfile }
   if (enabledSystems.length === 0) {
     return (
       <div className="glass-card p-12 text-center">
-        <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(138,114,184,0.4)' }} />
+        <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(194,80,60,0.4)' }} />
         <p className="font-medium mb-1" style={{ color: 'rgba(82,72,104,0.8)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems enabled</p>
         <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>Enable at least one system on the Systems tab.</p>
       </div>

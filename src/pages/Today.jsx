@@ -15,6 +15,7 @@ import TodaySummary from "@/features/today/TodaySummary";
 import AlertInline from "@/features/today/AlertInline";
 import CosmicWisdomCard from "@/components/cosmic/CosmicWisdomCard";
 import MiniLoom from "@/features/loom/MiniLoom";
+import WeatherLine from "@/features/today/WeatherLine";
 import { createPageUrl } from "@/utils";
 
 /**
@@ -122,6 +123,8 @@ export default function Today() {
         </header>
 
         <AlertInline alerts={alerts} onAcknowledged={(id) => setAlerts((a) => a.filter((x) => x.id !== id))} />
+
+        <WeatherLine />
 
         {entry && <TodaySummary entry={entry} onEdit={() => setMode("ceremony")} />}
 

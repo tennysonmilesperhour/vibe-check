@@ -1,429 +1,252 @@
-import React, { useState, useEffect } from "react";
-import { DailyCheckIn, Relationship } from "@/entities/all";
-import { base44 } from "@/api/base44Client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { DailyCheckIn, Person } from "@/entities/all";
 import { InvokeLLM } from "@/integrations/Core";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { format, subDays, parseISO } from "date-fns";
-import { TrendingUp, Sparkles, Calendar, Users, Target } from "lucide-react";
-import CosmicContextBar from "@/components/cosmic/CosmicContextBar";
-import { SYSTEM_CORRESPONDENCES } from "@/components/cosmic/correspondences";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { format } from "date-fns";
+import { parseLocalDate, addDaysKey, todayKey } from "@/lib/dates";
+import { personCheckInStats } from "@/lib/people";
+import { useSearchParamState } from "@/lib/deeplink";
+import PageTransition from "@/features/shell/PageTransition";
+import CorrelationCards from "@/features/patterns/CorrelationCards";
+import WeekInReview from "@/features/patterns/WeekInReview";
+import CosmicWisdomCard from "@/components/cosmic/CosmicWisdomCard";
+import { createPageUrl } from "@/utils";
 
+const RANGES = { "30": 30, "60": 60, "90": 90 };
+
+/** Patterns: reflection over time. Charts, computed insights, wisdom archive. */
 export default function Analytics() {
-    const [checkIns, setCheckIns] = useState([]);
-    const [relationships, setRelationships] = useState([]);
-    const [dateRange, setDateRange] = useState("30");
-    const [selectedRelationship, setSelectedRelationship] = useState("all");
-    const [insights, setInsights] = useState(null);
-    const [isLoadingInsights, setIsLoadingInsights] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [cosmicProfile, setCosmicProfile] = useState(null);
+  const [checkIns, setCheckIns] = useState([]);
+  const [people, setPeople] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useSearchParamState("tab", "patterns");
+  const [range, setRange] = useSearchParamState("range", "30");
+  const [personId, setPersonId] = useSearchParamState("person", "");
+  const [review] = useSearchParamState("review", "");
+  const [oracle, setOracle] = useState(null);
+  const [oracleBusy, setOracleBusy] = useState(false);
+  const [oracleError, setOracleError] = useState(null);
 
-    useEffect(() => {
-        loadData();
-        base44.auth.me().then(user => {
-            if (user?.cosmic_profile) setCosmicProfile(user.cosmic_profile);
-        }).catch(() => {});
-    }, []);
-
-    useEffect(() => {
-        setInsights(null);
-    }, [dateRange, selectedRelationship]);
-
-    const loadData = async () => {
-        setIsLoading(true);
-        const [checkInsData, relationshipsData] = await Promise.all([
-            DailyCheckIn.list('-date', 90),
-            Relationship.list()
+  useEffect(() => {
+    (async () => {
+      try {
+        const [ci, ppl] = await Promise.all([
+          DailyCheckIn.list("-date", 120),
+          Person.list().catch(() => []),
         ]);
-        setCheckIns(checkInsData);
-        setRelationships(relationshipsData);
-        setIsLoading(false);
-    };
+        setCheckIns(ci);
+        setPeople(ppl);
+      } catch {
+        // empty state below covers it
+      }
+      setLoading(false);
+    })();
+  }, []);
 
-    const getFilteredData = () => {
-        const days = parseInt(dateRange);
-        const cutoffDate = subDays(new Date(), days);
-        
-        let filtered = checkIns.filter(checkIn => 
-            parseISO(checkIn.date) >= cutoffDate
-        );
+  const days = RANGES[range] || 30;
 
-        if (selectedRelationship !== "all") {
-            filtered = filtered.filter(checkIn => {
-                const highInvolves = checkIn.high_moment?.who_involved?.toLowerCase().includes(selectedRelationship.toLowerCase());
-                const lowInvolves = checkIn.low_moment?.who_involved?.toLowerCase().includes(selectedRelationship.toLowerCase());
-                return highInvolves || lowInvolves;
-            });
-        }
-
-        return filtered.sort((a, b) => parseISO(a.date) - parseISO(b.date));
-    };
-
-    const generateInsights = async () => {
-        if (checkIns.length === 0) return;
-        
-        setIsLoadingInsights(true);
-        const filteredData = getFilteredData();
-        
-        try {
-            // Build cosmic context string
-            let cosmicContext = "";
-            if (cosmicProfile?.enabled_systems?.length > 0) {
-                const enabled = cosmicProfile.enabled_systems;
-                const parts = [];
-                if (enabled.includes("astrology") && cosmicProfile.astrology) {
-                    const a = cosmicProfile.astrology;
-                    const items = [a.sun_sign && `Sun in ${a.sun_sign}`, a.moon_sign && `Moon in ${a.moon_sign}`, a.rising_sign && `${a.rising_sign} Rising`, a.north_node && `North Node in ${a.north_node}`].filter(Boolean);
-                    if (items.length) parts.push(`ASTROLOGY: ${items.join(", ")}${a.custom_notes ? ". Notes: " + a.custom_notes : ""}`);
-                }
-                if (enabled.includes("human_design") && cosmicProfile.human_design) {
-                    const h = cosmicProfile.human_design;
-                    const items = [h.type, h.authority && `${h.authority} Authority`, h.profile && `Profile ${h.profile}`, h.incarnation_cross].filter(Boolean);
-                    if (items.length) parts.push(`HUMAN DESIGN: ${items.join(", ")}${h.custom_notes ? ". Notes: " + h.custom_notes : ""}`);
-                }
-                if (enabled.includes("gene_keys") && cosmicProfile.gene_keys) {
-                    const g = cosmicProfile.gene_keys;
-                    const items = [g.life_work && `Life's Work Key ${g.life_work}`, g.purpose && `Purpose Key ${g.purpose}`, g.evolution && `Evolution Key ${g.evolution}`].filter(Boolean);
-                    if (items.length) parts.push(`GENE KEYS: ${items.join(", ")}${g.custom_notes ? ". Notes: " + g.custom_notes : ""}`);
-                }
-                if (enabled.includes("numerology") && cosmicProfile.numerology) {
-                    const n = cosmicProfile.numerology;
-                    const items = [n.life_path && `Life Path ${n.life_path}`, n.personal_year && `Personal Year ${n.personal_year}`].filter(Boolean);
-                    if (items.length) parts.push(`NUMEROLOGY: ${items.join(", ")}`);
-                }
-                if (enabled.includes("tarot_archetype") && cosmicProfile.tarot_archetype) {
-                    const t = cosmicProfile.tarot_archetype;
-                    const items = [t.birth_card && `Birth Card ${t.birth_card}`, t.shadow_card && `Shadow Card ${t.shadow_card}`].filter(Boolean);
-                    if (items.length) parts.push(`TAROT: ${items.join(", ")}`);
-                }
-                if (enabled.includes("chakras") && cosmicProfile.chakras) {
-                    const c = cosmicProfile.chakras;
-                    if (c.dominant_center) parts.push(`CHAKRA FOCUS: ${c.dominant_center}`);
-                }
-
-                // Add active cross-system correspondences
-                const CORR_PAIRS = [
-                    { systems: ["astrology", "human_design"], key: "astrology_human_design" },
-                    { systems: ["astrology", "gene_keys"], key: "astrology_gene_keys" },
-                    { systems: ["human_design", "gene_keys"], key: "human_design_gene_keys" },
-                    { systems: ["human_design", "chakras"], key: "human_design_chakras" },
-                    { systems: ["numerology", "tarot_archetype"], key: "numerology_tarot" },
-                ];
-                const activeCorr = CORR_PAIRS.filter(p => p.systems.every(s => enabled.includes(s)))
-                    .map(p => SYSTEM_CORRESPONDENCES[p.key]);
-
-                if (parts.length > 0) {
-                    cosmicContext = `\n\nCOSMIC PROFILE CONTEXT (use these archetypal lenses to add depth, not predictions):\n${parts.join("\n")}`;
-                    if (activeCorr.length > 0) {
-                        cosmicContext += `\n\nCROSS-SYSTEM CORRESPONDENCES TO DRAW FROM:\n${activeCorr.join("\n")}`;
-                    }
-                }
-            }
-
-            const prompt = `As a wise oracle and compassionate guide (not a medical professional), read this emotional data and offer gentle, illuminating insights. 
-
-Data summary:
-- Total entries: ${filteredData.length}
-- Date range: Last ${dateRange} days
-- Average mood: ${(filteredData.reduce((sum, entry) => sum + entry.mood_score, 0) / filteredData.length).toFixed(1)}
-- Relationship focus: ${selectedRelationship === "all" ? "All relationships" : selectedRelationship}
-
-Recent entries: ${JSON.stringify(filteredData.slice(-5).map(entry => ({
-    date: entry.date,
-    mood: entry.mood_score,
-    high: entry.high_moment?.description,
-    low: entry.low_moment?.description,
-    people: {
-        high: entry.high_moment?.who_involved,
-        low: entry.low_moment?.who_involved
+  const filtered = useMemo(() => {
+    const cutoff = addDaysKey(todayKey(), -days);
+    let rows = checkIns.filter((c) => c.date >= cutoff);
+    if (personId) {
+      const person = people.find((p) => p.id === personId);
+      if (person) {
+        rows = rows.filter((c) => c.person_ids?.includes(person.id) || personCheckInStats(person, [c]).mentions > 0);
+      }
     }
-})))}${cosmicContext}
+    return rows;
+  }, [checkIns, people, days, personId]);
 
-Please provide supportive insights about patterns, relationships, and gentle suggestions for reflection. ${cosmicContext ? "Where relevant, weave in the cosmic profile context as an additional lens — connecting emotional patterns to archetypes from the active systems. Keep it grounded and personal, not generic." : ""} Keep it encouraging and remind me these are just observations for reflection, not medical advice.`;
+  const chartData = useMemo(
+    () => [...filtered].reverse().map((entry) => ({
+      date: format(parseLocalDate(entry.date), "MMM d"),
+      mood: entry.mood_score,
+      energy: entry.energy_level,
+      sleep: entry.sleep_quality,
+    })),
+    [filtered]
+  );
 
-            const result = await InvokeLLM({
-                prompt,
-                response_json_schema: {
-                    type: "object",
-                    properties: {
-                        key_patterns: {
-                            type: "array",
-                            items: { type: "string" }
-                        },
-                        relationship_insights: {
-                            type: "array", 
-                            items: { type: "string" }
-                        },
-                        encouraging_notes: {
-                            type: "array",
-                            items: { type: "string" }
-                        },
-                        gentle_suggestions: {
-                            type: "array",
-                            items: { type: "string" }
-                        }
-                    }
-                }
-            });
-            
-            setInsights(result);
-        } catch (error) {
-            console.error("Error generating insights:", error);
-        }
-        
-        setIsLoadingInsights(false);
-    };
+  const moonData = useMemo(() => {
+    const groups = {};
+    for (const c of filtered) {
+      if (c.moon_phase && c.mood_score != null) (groups[c.moon_phase] ||= []).push(c.mood_score);
+    }
+    return Object.entries(groups)
+      .filter(([, moods]) => moods.length >= 2)
+      .map(([phase, moods]) => ({ phase: phase.replace(" Moon", ""), avg: +(moods.reduce((a, b) => a + b, 0) / moods.length).toFixed(1) }));
+  }, [filtered]);
 
-    const getRelationshipStats = () => {
-        const stats = {};
-        
-        checkIns.forEach(checkIn => {
-            [checkIn.high_moment, checkIn.low_moment].forEach((moment, isLow) => {
-                if (moment?.who_involved) {
-                    const person = moment.who_involved;
-                    if (!stats[person]) {
-                        stats[person] = { highs: 0, lows: 0, total: 0 };
-                    }
-                    if (isLow) stats[person].lows++;
-                    else stats[person].highs++;
-                    stats[person].total++;
-                }
-            });
-        });
+  const stats = useMemo(() => {
+    const moods = filtered.map((c) => c.mood_score).filter((m) => m != null);
+    const avg = moods.length ? (moods.reduce((a, b) => a + b, 0) / moods.length).toFixed(1) : "–";
+    const best = moods.length ? Math.max(...moods) : "–";
+    return { entries: filtered.length, avg, best };
+  }, [filtered]);
 
-        return Object.entries(stats)
-            .map(([person, data]) => ({
-                person,
-                ...data,
-                ratio: data.total > 0 ? (data.highs / data.total * 100).toFixed(1) : 0
-            }))
-            .sort((a, b) => b.total - a.total);
-    };
+  const askOracle = async () => {
+    const cacheKey = `oracle:${range}:${personId}:${todayKey()}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) { setOracle(JSON.parse(cached)); return; }
+    setOracleBusy(true);
+    setOracleError(null);
+    try {
+      const sample = filtered.slice(0, 30).map((c) => ({ d: c.date, m: c.mood_score, e: c.energy_level, s: c.sleep_quality, emo: c.emotions, moon: c.moon_phase }));
+      const text = await InvokeLLM({
+        prompt: `You are a perceptive, warm pattern-reader. Here are ${sample.length} recent daily check-ins (JSON): ${JSON.stringify(sample)}.
+Name the two or three deepest patterns you see, speak to the person directly, and end with one practical experiment for the coming week. Specific and grounded. No lists of numbers, no generic wellness advice, no em dashes. 3 short paragraphs.`,
+      });
+      const result = typeof text === "string" ? text : text?.response || "";
+      setOracle(result);
+      sessionStorage.setItem(cacheKey, JSON.stringify(result));
+    } catch (e) {
+      setOracleError(e?.message || "The oracle is quiet right now. Try again in a moment.");
+    }
+    setOracleBusy(false);
+  };
 
-    const chartData = getFilteredData().map(entry => ({
-        date: format(parseISO(entry.date), 'MMM d'),
-        mood: entry.mood_score,
-        high: entry.high_moment?.intensity || 0,
-        low: entry.low_moment?.intensity || 0
-    }));
+  if (loading) return <div className="min-h-[60vh] field-wash" aria-busy="true" />;
 
+  if (checkIns.length === 0) {
     return (
-        <div className="p-4 space-y-5 min-h-screen relative">
-            <div className="orb-purple" style={{ top: '-60px', left: '20%' }} />
-            <div className="max-w-7xl mx-auto relative z-10">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'rgba(138,114,184,0.7)' }}>✦ Your Data</p>
-                        <h1 className="text-4xl font-bold gradient-text mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                            Patterns & Insights
-                        </h1>
-                        <p className="text-base" style={{color: 'rgba(105,95,128,0.75)'}}>
-                            Discover the rhythms within your story
-                        </p>
-                    </div>
-                    
-                    <div className="flex gap-3">
-                        <Select value={dateRange} onValueChange={setDateRange}>
-                            <SelectTrigger className="w-32">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="7">Last 7 days</SelectItem>
-                                <SelectItem value="30">Last 30 days</SelectItem>
-                                <SelectItem value="90">Last 3 months</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        
-                        <Select value={selectedRelationship} onValueChange={setSelectedRelationship}>
-                            <SelectTrigger className="w-40">
-                                <SelectValue placeholder="All relationships" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All relationships</SelectItem>
-                                {relationships.map(rel => (
-                                    <SelectItem key={rel.id} value={rel.name}>{rel.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                {/* Stats Overview */}
-                <div className="grid md:grid-cols-4 gap-3 mb-5">
-                    {[
-                        { label: 'Avg Mood', icon: Target, value: getFilteredData().length > 0 ? (getFilteredData().reduce((s,e)=>s+e.mood_score,0)/getFilteredData().length).toFixed(1)+'/10' : '—', color: '#8A72B8' },
-                        { label: 'Entries', icon: Calendar, value: getFilteredData().length, color: '#6B95C8' },
-                        { label: 'Best Day', icon: TrendingUp, value: getFilteredData().length > 0 ? Math.max(...getFilteredData().map(e=>e.mood_score))+'/10' : '—', color: '#C9834B' },
-                        { label: 'People', icon: Users, value: getRelationshipStats().length, color: '#C25E8F' },
-                    ].map(({ label, icon: Icon, value, color }) => (
-                        <div key={label} className="glass-card p-5">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: `${color}99` }}>{label}</span>
-                                <Icon className="w-4 h-4" style={{ color }} />
-                            </div>
-                            <div className="text-2xl font-bold" style={{ color: 'rgba(61,52,80,0.95)', fontFamily: 'Space Grotesk, sans-serif' }}>{value}</div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Cosmic Context */}
-                <CosmicContextBar />
-
-                {/* Empty state */}
-                {!isLoading && checkIns.length === 0 && (
-                    <div className="glass-card p-16 text-center mb-8">
-                        <div className="text-5xl mb-4">✦</div>
-                        <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(82,72,104,0.9)' }}>No data yet</h3>
-                        <p className="text-sm" style={{ color: 'rgba(122,112,144,0.65)' }}>
-                            Start logging daily check-ins and your trends will appear here.
-                        </p>
-                    </div>
-                )}
-
-                {/* Charts */}
-                <div className="grid lg:grid-cols-2 gap-4 mb-5">
-                    <div className="glass-card p-6">
-                        <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Mood Trend</h3>
-                        <div className="h-64">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--sage-200)" />
-                                        <XAxis dataKey="date" stroke="var(--warm-gray-500)" />
-                                        <YAxis domain={[1, 10]} stroke="var(--warm-gray-500)" />
-                                        <Tooltip 
-                                            contentStyle={{
-                                                backgroundColor: 'white',
-                                                border: `1px solid var(--sage-200)`,
-                                                borderRadius: '8px'
-                                            }}
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="mood"
-                                            stroke="#8A72B8"
-                                            strokeWidth={3}
-                                            dot={{ fill: '#8A72B8', strokeWidth: 2, r: 4 }}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-                    </div>
-
-                    <div className="glass-card p-6">
-                        <h3 className="text-base font-bold mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>High vs Low Intensity</h3>
-                        <div className="h-64">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--sage-200)" />
-                                        <XAxis dataKey="date" stroke="var(--warm-gray-500)" />
-                                        <YAxis stroke="var(--warm-gray-500)" />
-                                        <Tooltip 
-                                            contentStyle={{
-                                                backgroundColor: 'white',
-                                                border: `1px solid var(--sage-200)`,
-                                                borderRadius: '8px'
-                                            }}
-                                        />
-                                        <Bar dataKey="high" fill="#8A72B8" name="High Moments" />
-                                        <Bar dataKey="low" fill="#6B95C8" name="Low Moments" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                    </div>
-                </div>
-
-                {/* Relationship Analysis */}
-                <div className="glass-card p-4 mb-5">
-                    <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Relationship Impact</h3>
-                    <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>How different people appear in your highs and lows</p>
-                    <div>
-                        {getRelationshipStats().length === 0 ? (
-                            <div className="text-center py-8">
-                                <Users className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(105,95,128,0.4)' }} />
-                                <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>
-                                    Log check-ins with "who was involved" to see relationship impact here.
-                                </p>
-                            </div>
-                        ) : (
-                        <div className="space-y-3">{
-                            getRelationshipStats().slice(0, 6).map((stat) => (
-                                <div key={stat.person} className="flex items-center justify-between p-4 rounded-xl"
-                                    style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(61,52,80,0.08)' }}>
-                                    <div className="flex-1">
-                                        <h4 className="font-semibold text-sm" style={{ color: 'rgba(61,52,80,0.9)' }}>{stat.person}</h4>
-                                        <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>
-                                            {stat.highs} highs · {stat.lows} lows · {stat.total} mentions
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-lg font-bold" style={{ color: 'rgba(61,52,80,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>{stat.ratio}%</span>
-                                        <Badge className="text-xs" style={{
-                                            background: parseFloat(stat.ratio) >= 60 ? 'rgba(201,131,75,0.15)' : parseFloat(stat.ratio) >= 40 ? 'rgba(184,144,47,0.15)' : 'rgba(194,94,143,0.15)',
-                                            color: parseFloat(stat.ratio) >= 60 ? '#C9834B' : parseFloat(stat.ratio) >= 40 ? '#B8902F' : '#C25E8F',
-                                            border: 'none'
-                                        }}>
-                                            {parseFloat(stat.ratio) >= 60 ? 'Positive' : parseFloat(stat.ratio) >= 40 ? 'Balanced' : 'Challenging'}
-                                        </Badge>
-                                    </div>
-                                </div>
-                            ))
-                        }</div>
-                        )}
-                    </div>
-                </div>
-
-                {/* AI Insights */}
-                <div className="glass-card-glow p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Sparkles className="w-5 h-5" style={{ color: '#8A72B8' }} />
-                        <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Oracle Insights</h3>
-                    </div>
-                    <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>
-                        Supportive observations from your data (not medical advice)
-                    </p>
-                    <div>
-                        {isLoadingInsights ? (
-                            <div className="flex items-center gap-3 py-8">
-                                <div className="animate-spin rounded-full h-6 w-6"
-                                    style={{ border: '2px solid rgba(138,114,184,0.2)', borderTopColor: '#8A72B8' }} />
-                                <span style={{ color: 'rgba(105,95,128,0.8)' }}>Weaving your cosmic insights...</span>
-                            </div>
-                        ) : insights ? (
-                            <div className="space-y-5">
-                                {[
-                                    { key: 'key_patterns', label: 'Key Patterns', color: '#8A72B8' },
-                                    { key: 'relationship_insights', label: 'Relationship Insights', color: '#6B95C8' },
-                                    { key: 'encouraging_notes', label: 'Encouraging Notes', color: '#C9834B' },
-                                    { key: 'gentle_suggestions', label: 'Gentle Suggestions', color: '#C25E8F' },
-                                ].map(({ key, label, color }) => insights[key]?.length > 0 && (
-                                    <div key={key}>
-                                        <h4 className="text-sm font-semibold mb-2" style={{ color, fontFamily: 'Space Grotesk, sans-serif' }}>{label}</h4>
-                                        <div className="space-y-2">
-                                            {insights[key].map((item, i) => (
-                                                <div key={i} className="p-3 rounded-xl text-sm"
-                                                    style={{ background: `${color}0a`, border: `1px solid ${color}20`, color: 'rgba(70,60,92,0.8)' }}>
-                                                    {item}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <Button onClick={generateInsights} className="btn-cosmic rounded-xl">
-                                                    <Sparkles className="w-4 h-4 mr-2" />
-                                                     Consult the Oracle
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div className="field-wash min-h-screen">
+        <PageTransition className="max-w-3xl mx-auto px-6 py-20 text-center">
+          <h1 className="text-4xl" style={{ color: "var(--gh-ink)" }}>Patterns need days to grow from</h1>
+          <p className="mt-3 text-sm" style={{ color: "var(--gh-ink-muted)" }}>
+            After a few evenings of checking in, this page starts telling you things you did not consciously know.
+          </p>
+          <Link to={createPageUrl("Today")} className="ink-button inline-block mt-6">Begin tonight's check-in</Link>
+        </PageTransition>
+      </div>
     );
+  }
+
+  return (
+    <div className="field-wash min-h-screen">
+      <PageTransition className="max-w-4xl mx-auto px-6 py-10 space-y-10">
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-4xl" style={{ color: "var(--gh-ink)" }}>Patterns</h1>
+            <p className="text-sm mt-1" style={{ color: "var(--gh-ink-muted)" }}>What your days keep telling you</p>
+          </div>
+          <nav className="flex gap-1 text-sm font-medium" aria-label="Patterns sections">
+            {[["patterns", "Patterns"], ["wisdom", "Wisdom archive"]].map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTab(id)}
+                aria-current={tab === id ? "page" : undefined}
+                className="px-4 py-2"
+                style={tab === id
+                  ? { background: "var(--gh-ink)", color: "var(--gh-field)" }
+                  : { color: "var(--gh-ink-soft)", border: "1px solid hsl(var(--border))" }}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+        </header>
+
+        {tab === "wisdom" ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            {["daily", "weekly", "monthly", "yearly"].map((p) => <CosmicWisdomCard key={p} periodType={p} />)}
+          </div>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="flex gap-1" role="group" aria-label="Date range">
+                {Object.keys(RANGES).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setRange(r)}
+                    aria-pressed={range === r}
+                    className="px-3 py-1.5 text-sm"
+                    style={range === r
+                      ? { background: "var(--gh-ink)", color: "var(--gh-field)" }
+                      : { color: "var(--gh-ink-soft)", border: "1px solid hsl(var(--border))" }}
+                  >
+                    {r} days
+                  </button>
+                ))}
+              </div>
+              {people.length > 0 && (
+                <select
+                  value={personId}
+                  onChange={(e) => setPersonId(e.target.value)}
+                  aria-label="Filter by person"
+                  className="px-3 py-1.5 text-sm bg-transparent"
+                  style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }}
+                >
+                  <option value="">Everyone</option>
+                  {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              )}
+            </div>
+
+            <div className="flex">
+              {[["ENTRIES", stats.entries], ["AVERAGE MOOD", stats.avg], ["BRIGHTEST", stats.best]].map(([label, value], i) => (
+                <div key={label} className={`flex-1 hairline pt-3 ${i > 0 ? "pl-4" : ""}`}>
+                  <div className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>{label}</div>
+                  <div className="font-display text-3xl" style={{ color: "var(--gh-ink)" }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            <WeekInReview checkIns={checkIns} people={people} forceShow={review === "last"} />
+
+            {chartData.length > 1 && (
+              <section aria-label="Mood, energy and sleep over time">
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -22 }}>
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={{ stroke: "rgba(90,36,48,0.25)" }} />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ background: "var(--gh-cream)", border: "1px solid rgba(90,36,48,0.2)", borderRadius: 0, fontSize: 12 }} />
+                    <Line type="monotone" dataKey="mood" stroke="var(--gh-accent)" strokeWidth={2} dot={false} name="Mood" />
+                    <Line type="monotone" dataKey="energy" stroke="var(--gh-amber)" strokeWidth={1.5} dot={false} name="Energy" />
+                    <Line type="monotone" dataKey="sleep" stroke="var(--gh-rose)" strokeWidth={1.5} dot={false} name="Sleep" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </section>
+            )}
+
+            {moonData.length >= 3 && (
+              <section aria-label="Mood by moon phase">
+                <h2 className="text-2xl mb-3" style={{ color: "var(--gh-ink)" }}>Mood under each moon</h2>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={moonData} margin={{ top: 8, right: 8, bottom: 0, left: -22 }}>
+                    <XAxis dataKey="phase" tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={{ stroke: "rgba(90,36,48,0.25)" }} />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={{ background: "var(--gh-cream)", border: "1px solid rgba(90,36,48,0.2)", borderRadius: 0, fontSize: 12 }} />
+                    <Bar dataKey="avg" fill="var(--gh-amber)" maxBarSize={42} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </section>
+            )}
+
+            <CorrelationCards checkIns={filtered} people={people} />
+
+            <section aria-labelledby="oracle-heading" className="hairline pt-6">
+              <div className="flex items-center justify-between">
+                <h2 id="oracle-heading" className="text-2xl" style={{ color: "var(--gh-ink)" }}>Ask the oracle</h2>
+                <button type="button" className="ink-button text-sm py-2" onClick={askOracle} disabled={oracleBusy || filtered.length < 5}>
+                  {oracleBusy ? "Reading the threads…" : oracle ? "Read again" : "Read my patterns"}
+                </button>
+              </div>
+              {filtered.length < 5 && (
+                <p className="text-sm mt-2" style={{ color: "var(--gh-ink-muted)" }}>The oracle wants at least 5 entries in range before speaking.</p>
+              )}
+              {oracleError && <p className="text-sm mt-2" style={{ color: "hsl(var(--destructive))" }}>{oracleError}</p>}
+              {oracle && (
+                <div className="mt-4 p-5 whitespace-pre-line text-sm max-w-prose" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", color: "var(--gh-ink)" }}>
+                  {oracle}
+                </div>
+              )}
+            </section>
+          </>
+        )}
+      </PageTransition>
+    </div>
+  );
 }

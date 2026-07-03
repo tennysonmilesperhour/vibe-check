@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import Today from './pages/Today';
 import Dashboard from './pages/Dashboard';
 import DailyLog from './pages/DailyLog';
 import Analytics from './pages/Analytics';
@@ -61,6 +62,7 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "Today": Today,
     "Dashboard": Dashboard,
     "DailyLog": DailyLog,
     "Analytics": Analytics,
@@ -74,7 +76,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Dashboard",
+    mainPage: "Today",
     Pages: PAGES,
     Layout: __Layout,
 };

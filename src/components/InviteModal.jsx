@@ -25,10 +25,14 @@ export default function InviteModal({ open, onClose }) {
   const handleSendInvite = async () => {
     if (!email.trim()) return;
     setSending(true);
-    await base44.users.inviteUser(email.trim(), "user");
+    try {
+      await base44.users.inviteUser(email.trim(), "user");
+      setEmail("");
+      toast({ title: "✦ Invitation sent", description: `${email} has been invited to join your constellation.` });
+    } catch (e) {
+      toast({ title: "Copy the link instead", description: e?.message || "Email invites are not available yet.", variant: "destructive" });
+    }
     setSending(false);
-    setEmail("");
-    toast({ title: "✦ Invitation sent", description: `${email} has been invited to join your constellation.` });
   };
 
   return (

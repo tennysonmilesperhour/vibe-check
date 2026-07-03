@@ -2,31 +2,26 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-    Heart,
-    BarChart3,
+    Sun,
+    ChartLine,
     Users,
-    Sparkles,
-    Calendar,
-    Shield,
+    Layers,
+    Sparkle,
     Menu,
     X,
-    Stars,
     UserPlus,
-    Layers
+    Settings2
 } from "lucide-react";
 import InviteModal from "@/components/InviteModal";
+import SettingsSheet from "@/features/shell/SettingsSheet";
 
+// Five surfaces, five jobs, five distinct icons.
 const navigationItems = [
-    { title: "Dashboard", url: createPageUrl("Dashboard"), icon: Heart, description: "Overview & check-ins" },
-    { title: "Daily Log", url: createPageUrl("DailyLog"), icon: Calendar, description: "Log your highs & lows" },
-    { title: "Patterns", url: createPageUrl("Analytics"), icon: BarChart3, description: "Insights & trends" },
-    { title: "Relationships", url: createPageUrl("Relationships"), icon: Users, description: "Your connections" },
-    { title: "Constellation", url: "/Constellation", icon: Stars, description: "Synergy readings" },
-    { title: "Tarot & Oracle", url: "/TarotReading", icon: Layers, description: "Tarot spreads & oracle pulls" },
-    { title: "Healing Board", url: createPageUrl("HealingBoard"), icon: Sparkles, description: "Track your growth" },
-    { title: "Boundaries", url: createPageUrl("Boundaries"), icon: Shield, description: "Alerts & thresholds" },
-    { title: "Cosmic Add-ons", url: createPageUrl("CosmicAddons"), icon: Sparkles, description: "Astrology, HD, Gene Keys" },
-    { title: "Cosmic Wisdom", url: "/CosmicWisdom", icon: Sparkles, description: "Daily · Weekly · Monthly · Yearly" },
+    { title: "Today", url: createPageUrl("Today"), icon: Sun, description: "The daily ritual" },
+    { title: "Patterns", url: createPageUrl("Analytics"), icon: ChartLine, description: "Reflection over time" },
+    { title: "People", url: createPageUrl("People"), icon: Users, description: "Everyone in orbit" },
+    { title: "Practice", url: createPageUrl("Practice"), icon: Layers, description: "Tarot, oracle, healing work" },
+    { title: "Cosmos", url: createPageUrl("CosmicAddons"), icon: Sparkle, description: "Your Loom and systems" },
 ];
 
 function NavLinks({ location, onNavigate }) {
@@ -120,6 +115,7 @@ export default function Layout({ children }) {
     const location = useLocation();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [inviteOpen, setInviteOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
     // Close on route change
     useEffect(() => { setMobileOpen(false); }, [location.pathname]);
@@ -141,12 +137,18 @@ export default function Layout({ children }) {
                 }}>
                 <SidebarHeader />
                 <NavLinks location={location} onNavigate={() => {}} />
-                <div className="px-3 pb-2">
+                <div className="px-3 pb-2 space-y-1">
                     <button onClick={() => setInviteOpen(true)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-                        style={{ background: 'rgba(138,114,184,0.1)', border: '1px solid rgba(138,114,184,0.2)', color: '#8A72B8' }}>
-                        <UserPlus className="w-4 h-4" />
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
+                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)' }}>
+                        <UserPlus className="w-4 h-4" aria-hidden="true" />
                         Invite a Friend
+                    </button>
+                    <button onClick={() => setSettingsOpen(true)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
+                        style={{ color: 'var(--gh-ink-muted)' }}>
+                        <Settings2 className="w-4 h-4" aria-hidden="true" />
+                        Settings
                     </button>
                 </div>
                 <SidebarFooterContent />
@@ -237,6 +239,7 @@ export default function Layout({ children }) {
                     {children}
                 </div>
             <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+            <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
             </main>
         </div>
     );

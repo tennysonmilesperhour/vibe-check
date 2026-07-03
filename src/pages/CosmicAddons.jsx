@@ -11,9 +11,12 @@ import {
     AstrologyForm, HumanDesignForm, GeneKeysForm,
     NumerologyForm, TarotForm, ChakraForm, EnneagramForm
 } from "@/components/cosmic/ProfileForm";
-import CosmicBlueprint from "@/components/cosmic/CosmicBlueprint";
 import SystemReports from "@/components/cosmic/SystemReport";
 import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";
+import Loom from "@/features/loom/Loom";
+import ConflictNotice from "@/features/cosmos/ConflictNotice";
+import SkyField from "@/features/shell/SkyField";
+import { useSearchParamState } from "@/lib/deeplink";
 
 const EMPTY_PROFILE = {
     first_name: "",
@@ -47,12 +50,13 @@ const CORRESPONDENCE_PAIRS = [
 export default function CosmicAddons() {
     const { toast } = useToast();
     const [profile, setProfile] = useState(EMPTY_PROFILE);
+    const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify(EMPTY_PROFILE));
     const [isSaving, setIsSaving] = useState(false);
     const [isCalculating, setIsCalculating] = useState(false);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const defaultTab = urlParams.get('tab') || 'systems';
-    const [activeTab, setActiveTab] = useState(defaultTab);
+    // Two-way URL sync: back button and refresh keep your place.
+    const [activeTab, setActiveTab] = useSearchParamState('tab', 'systems');
+    const isDirty = JSON.stringify(profile) !== savedSnapshot;
 
     useEffect(() => { loadProfile(); }, []);
 
@@ -60,16 +64,29 @@ export default function CosmicAddons() {
         try {
             const user = await base44.auth.me();
             if (user?.cosmic_profile) {
-                setProfile({ ...EMPTY_PROFILE, ...user.cosmic_profile });
+                const merged = { ...EMPTY_PROFILE, ...user.cosmic_profile };
+                setProfile(merged);
+                setSavedSnapshot(JSON.stringify(merged));
             }
         } catch (e) {}
     };
 
     const saveProfile = async () => {
         setIsSaving(true);
-        await base44.auth.updateMe({ cosmic_profile: profile });
+        try {
+            await base44.auth.updateMe({ cosmic_profile: profile });
+            setSavedSnapshot(JSON.stringify(profile));
+            toast({ title: "Cosmic profile saved", description: "Your systems are active and will inform AI insights." });
+        } catch (e) {
+            toast({ title: "Could not save", description: e?.message, variant: "destructive" });
+        }
         setIsSaving(false);
-        toast({ title: "Cosmic profile saved", description: "Your systems are active and will inform AI insights." });
+    };
+
+    /** One-tap fix from ConflictNotice: adopt the computed value. */
+    const useComputed = (conflict) => {
+        const [systemKey, field] = conflict.field.split('.');
+        setProfile(prev => ({ ...prev, [systemKey]: { ...(prev[systemKey] || {}), [field]: String(conflict.computed) } }));
     };
 
     const toggleSystem = (systemId) => {
@@ -197,22 +214,31 @@ Return this JSON:
             <div className="max-w-4xl mx-auto relative z-10">
 
                 {/* Header */}
-                <div className="text-center mb-10">
-                    <div className="flex items-center justify-center gap-3 mb-4">
-                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl pulse-glow"
-                            style={{ background: 'linear-gradient(135deg, #C4699A 0%, #C98A4E 50%, #8FA8D8 100%)' }}>
-                            ✨
-                        </div>
-                        <div className="text-left">
-                            <h1 className="text-3xl font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Cosmic Add-ons</h1>
-                            <p className="text-sm" style={{ color: 'rgba(138,114,184,0.7)' }}>Astrology · Human Design · Gene Keys · and more</p>
-                        </div>
+                {/* ── The Loom: hero of the cosmos ── */}
+                <SkyField className="mb-10" showSun={false} veilIntensity={0.5}>
+                    <div className="max-w-lg mx-auto px-6 py-8">
+                        <h1 className="text-4xl text-center" style={{ color: 'var(--gh-cream)' }}>Your Loom</h1>
+                        <p className="text-sm text-center mt-1 mb-6" style={{ color: 'rgba(255,253,246,0.85)' }}>
+                            Seven systems, one map. Tap a point or a thread.
+                        </p>
+                        <Loom profile={profile} onDeepDive={() => setActiveTab('deepdive')} />
                     </div>
-                    <p className="text-base max-w-2xl mx-auto" style={{ color: 'rgba(105,95,128,0.75)' }}>
-                        Layer your unique cosmic blueprint onto your emotional data. Toggle on the systems you work with,
-                        enter your profile details, and the AI will weave them together for richer, more personalised insights.
-                    </p>
+                </SkyField>
+
+                <div className="mb-6">
+                    <ConflictNotice profile={profile} onUseComputed={useComputed} />
                 </div>
+
+                {isDirty && (
+                    <div className="sticky top-2 z-30 mb-6 flex items-center justify-between p-3"
+                        style={{ background: 'var(--gh-ink)', color: 'var(--gh-field)' }}>
+                        <span className="text-sm">Unsaved changes to your cosmos.</span>
+                        <Button onClick={saveProfile} disabled={isSaving} size="sm"
+                            style={{ background: 'var(--gh-gold)', color: 'var(--gh-ink)', borderRadius: 0 }}>
+                            <Save className="w-4 h-4 mr-1" /> {isSaving ? 'Saving…' : 'Save profile'}
+                        </Button>
+                    </div>
+                )}
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="mb-6 w-full grid grid-cols-4"
@@ -315,7 +341,6 @@ Return this JSON:
                                     <p className="text-xs" style={{ color: 'rgba(105,95,128,0.55)' }}>💡 Add your birth date and city in the <strong style={{color:'rgba(138,114,184,0.7)'}}>Systems tab</strong> to unlock AI birth chart calculation.</p>
                                 </div>
                             )}
-                            <CosmicBlueprint enabledSystems={enabledSystems} profile={profile} />
                         </div>
 
                         {enabledSystems.length === 0 ? (

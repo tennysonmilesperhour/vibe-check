@@ -17,6 +17,9 @@ import CosmicWisdomCard from "@/components/cosmic/CosmicWisdomCard";
 import MiniLoom from "@/features/loom/MiniLoom";
 import WeatherLine from "@/features/today/WeatherLine";
 import { createPageUrl } from "@/utils";
+import { useSearchParamState } from "@/lib/deeplink";
+
+const DATE_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * State-adaptive landing:
@@ -31,6 +34,17 @@ export default function Today() {
   const [lastEntryAt, setLastEntryAt] = useState(null);
   const [mode, setMode] = useState("landing"); // landing | ceremony | peek
   const [profile, setProfile] = useState(null);
+  // ?date=yyyy-MM-dd lets you write a past day (never a future one).
+  const [dateParam, setDateParam] = useSearchParamState("date", "");
+  const targetDate = DATE_SHAPE.test(dateParam) && dateParam <= todayKey() ? dateParam : todayKey();
+  const isBackfill = targetDate !== todayKey();
+  const [backfillEntry, setBackfillEntry] = useState(null);
+
+  useEffect(() => {
+    if (!isBackfill) { setBackfillEntry(null); return; }
+    DailyCheckIn.filter({ date: targetDate }).then(([e]) => setBackfillEntry(e || null)).catch(() => {});
+    setMode("ceremony");
+  }, [targetDate, isBackfill]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,9 +77,10 @@ export default function Today() {
   if (mode === "ceremony") {
     return (
       <CheckInCeremony
-        existing={entry}
-        onDone={() => { setMode("landing"); load(); }}
-        onCancel={() => setMode("landing")}
+        dateKey={targetDate}
+        existing={isBackfill ? backfillEntry : entry}
+        onDone={() => { setMode("landing"); setDateParam(""); load(); }}
+        onCancel={() => { setMode("landing"); setDateParam(""); }}
       />
     );
   }

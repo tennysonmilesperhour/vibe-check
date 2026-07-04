@@ -68,25 +68,16 @@ function NavLinks({ location, onNavigate }) {
 function SidebarHeader() {
     return (
         <div className="p-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(194,80,60,0.1)' }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                    background: 'linear-gradient(135deg, #C4699A 0%, #C98A4E 50%, #8FA8D8 100%)',
-                    boxShadow: '0 0 16px rgba(186,124,164,0.5)'
-                }}>
-                <Heart className="w-4 h-4 text-white" />
+            <div className="w-9 h-9 flex items-center justify-center shrink-0"
+                style={{ background: 'linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-gold) 100%)' }}>
+                <Sun className="w-4 h-4" style={{ color: 'var(--gh-cream)' }} aria-hidden="true" />
             </div>
             <div>
-                <h2 className="font-bold text-base leading-tight"
-                    style={{
-                        background: 'linear-gradient(135deg, #C2503C 0%, #7E85C8 50%, #F2952E 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        fontFamily: 'Space Grotesk, sans-serif'
-                    }}>
-                    Vibe Check
+                <h2 className="font-display text-lg leading-tight" style={{ color: 'var(--gh-ink)' }}>
+                    vibe check
                 </h2>
-                <p className="text-xs tracking-widest uppercase" style={{ color: 'rgba(194,80,60,0.7)' }}>
-                    Cosmic Wellness
+                <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--gh-ink-muted)' }}>
+                    Golden Hour
                 </p>
             </div>
         </div>
@@ -179,21 +170,15 @@ export default function Layout({ children }) {
                 {/* Drawer header with close button */}
                 <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(194,80,60,0.1)' }}>
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                            style={{ background: 'linear-gradient(135deg, #C4699A, #8FA8D8)', boxShadow: '0 0 14px rgba(186,124,164,0.45)' }}>
-                            <Heart className="w-4 h-4 text-white" />
+                        <div className="w-8 h-8 flex items-center justify-center"
+                            style={{ background: 'linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-gold) 100%)' }}>
+                            <Sun className="w-4 h-4" style={{ color: 'var(--gh-cream)' }} aria-hidden="true" />
                         </div>
                         <div>
-                            <h2 className="font-bold text-sm leading-tight"
-                                style={{
-                                    background: 'linear-gradient(135deg, #C2503C 0%, #7E85C8 50%, #F2952E 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    fontFamily: 'Space Grotesk, sans-serif'
-                                }}>
-                                Vibe Check
+                            <h2 className="font-display text-base leading-tight" style={{ color: 'var(--gh-ink)' }}>
+                                vibe check
                             </h2>
-                            <p className="text-xs tracking-widest uppercase" style={{ color: 'rgba(194,80,60,1)' }}>Cosmic Wellness</p>
+                            <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--gh-ink-muted)' }}>Golden Hour</p>
                         </div>
                     </div>
                     <button

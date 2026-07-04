@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Slider } from "@/components/ui/slider";
 import { Sparkles, Plus, Edit, Heart, Shield, Gift, Star, TrendingUp, Trash2, X } from "lucide-react";
-import { todayKey } from "@/lib/dates";
+import { todayKey, parseLocalDate } from "@/lib/dates";
+import { format } from "date-fns";
 
 const categoryInfo = {
     devotions: {
@@ -257,7 +258,7 @@ export default function HealingBoard() {
                                                 <TrendingUp className="w-3 h-3 mt-0.5 shrink-0" style={{ color: '#C9834B' }} />
                                                 <div>
                                                     <div style={{ color: 'rgba(82,72,104,0.9)' }}>{milestone.milestone}</div>
-                                                    <div style={{ color: 'rgba(122,112,144,0.55)' }}>{format(new Date(milestone.date), "MMM d, yyyy")}</div>
+                                                    <div style={{ color: 'rgba(122,112,144,0.55)' }}>{format(parseLocalDate(milestone.date), "MMM d, yyyy")}</div>
                                                 </div>
                                             </div>
                                         ))}

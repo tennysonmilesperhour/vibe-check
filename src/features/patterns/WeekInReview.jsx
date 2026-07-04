@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { parseLocalDate, addDaysKey, todayKey, dateKey } from "@/lib/dates";
+import { parseLocalDate, addDaysKey, todayKey } from "@/lib/dates";
 import { format } from "date-fns";
 import { EMOTIONS } from "@/features/today/vocab";
 

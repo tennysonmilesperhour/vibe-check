@@ -70,7 +70,9 @@ export default function CosmicAddons() {
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
             }
-        } catch (e) {}
+        } catch {
+            // unauthenticated mount: the gate handles it
+        }
     };
 
     const saveProfile = async () => {
@@ -226,7 +228,7 @@ Return this JSON:
                         <Loom profile={profile} onDeepDive={() => setActiveTab('deepdive')} />
                         <div className="text-center mt-4" data-html2canvas-ignore="true">
                             <button type="button" className="ghost-cream-button text-xs py-2"
-                                onClick={async () => { try { await shareNodeAsImage(loomRef.current, 'my-loom.png'); } catch (e) {} }}>
+                                onClick={async () => { try { await shareNodeAsImage(loomRef.current, 'my-loom.png'); } catch { /* capture is best-effort */ } }}>
                                 Save your Loom as an image
                             </button>
                         </div>

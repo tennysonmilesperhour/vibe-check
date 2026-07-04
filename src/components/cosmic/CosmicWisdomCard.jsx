@@ -78,7 +78,9 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
             try {
                 await base44.entities.CosmicWisdom.update(wisdom.id, { is_read: true });
                 setWisdom(prev => ({ ...prev, is_read: true }));
-            } catch (e) {}
+            } catch {
+                // read receipt is best-effort
+            }
         }
         setExpanded(e => !e);
     };

@@ -104,6 +104,17 @@
   em, i {
     font-style: normal;
   }
+
+  /* Form fields always write in ink, even inside cream-text sky surfaces
+     (otherwise password dots on a white input are invisible). Inline styles
+     still win where a register needs something else (e.g. the dusk table). */
+  input, textarea, select {
+    color: var(--gh-ink);
+    caret-color: var(--gh-accent);
+  }
+  input::placeholder, textarea::placeholder {
+    color: var(--gh-ink-muted);
+  }
 }
 
 @layer components {

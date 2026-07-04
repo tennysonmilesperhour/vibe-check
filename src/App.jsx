@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AuthGate from '@/features/shell/AuthGate';
 import AppErrorBoundary from '@/components/AppErrorBoundary';
+import UpdateToast from '@/features/shell/UpdateToast';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -83,6 +84,7 @@ function App() {
             <AuthenticatedApp />
           </Router>
           <Toaster />
+          <UpdateToast />
         </QueryClientProvider>
       </AuthProvider>
     </AppErrorBoundary>

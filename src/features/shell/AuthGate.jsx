@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { supabase } from "@/api/supabase";
+import { supabase, isSupabaseConfigured } from "@/api/supabase";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SkyField from "./SkyField";
@@ -57,6 +57,15 @@ export default function AuthGate() {
         <p className="mt-3 text-sm" style={{ color: "rgba(255,253,246,0.9)" }}>
           One honest check-in each evening.
         </p>
+
+        {!isSupabaseConfigured && (
+          <div className="mt-6 p-4 text-sm" role="alert"
+            style={{ background: "rgba(90,36,48,0.55)", color: "var(--gh-cream)", border: "1px solid rgba(255,253,246,0.4)" }}>
+            This build is missing its database configuration. If you are the
+            owner: add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel's
+            Environment Variables, then redeploy. Sign-in cannot work until then.
+          </div>
+        )}
 
         <form onSubmit={submit} className="mt-10 space-y-4">
           {mode === "signup" && (

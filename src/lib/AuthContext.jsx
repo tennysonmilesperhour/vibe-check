@@ -41,7 +41,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     checkUserAuth();
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) checkUserAuth();
+      // Never call supabase from inside this callback: it runs while the
+      // client holds its auth lock, and further auth calls deadlock the app
+      // (the post-login blank screen). Defer to the next tick instead.
+      if (session) setTimeout(() => { checkUserAuth(); }, 0);
       else {
         setUser(null);
         setIsAuthenticated(false);

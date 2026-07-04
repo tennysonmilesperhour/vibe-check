@@ -64,6 +64,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         try {
             const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: force, resonance_summary: buildResonanceSummary(me) });
             if (res?.data?.wisdom) setWisdom(res.data.wisdom);
+            else if (res?.data?.stub) setError('AI is not configured yet. Add the ANTHROPIC_API_KEY secret in Supabase to enable wisdom.');
         } catch (e) {
             const msg = e?.response?.data?.error || e?.message || 'Generation failed';
             setError(msg);

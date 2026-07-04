@@ -5,6 +5,7 @@ import { SYSTEMS } from "@/lib/resonance/tables";
 import { todayKey } from "@/lib/dates";
 import { useLoomLayout } from "./useLoomLayout";
 import { WheelRings, ProgressiveGeometry, DrawPath } from "./LoomGeometry";
+import MoonGlyph from "./MoonGlyph";
 
 const SYSTEM_LABEL = Object.fromEntries(SYSTEMS.map((s) => [s.id, s.label]));
 
@@ -106,10 +107,13 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
 
       {/* today line */}
       {graph.today?.moonPhase && (
-        <p className="text-center text-sm mt-2" style={{ color: "rgba(255,253,246,0.85)" }}>
-          {graph.today.moonPhase.emoji} {graph.today.moonPhase.name}
-          {graph.today.personalDay ? ` · Personal Day ${graph.today.personalDay}` : ""}
-          {graph.edges.some((e) => e.isActiveToday) ? " · a thread is lit today" : ""}
+        <p className="text-center text-sm mt-2 inline-flex items-center gap-1.5 w-full justify-center" style={{ color: "rgba(255,253,246,0.85)" }}>
+          <MoonGlyph name={graph.today.moonPhase.name} illumination={graph.today.moonPhase.illumination} color="var(--gh-cream)" />
+          <span>
+            {graph.today.moonPhase.name}
+            {graph.today.personalDay ? ` · Personal Day ${graph.today.personalDay}` : ""}
+            {graph.edges.some((e) => e.isActiveToday) ? " · a thread is lit today" : ""}
+          </span>
         </p>
       )}
 

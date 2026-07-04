@@ -25,6 +25,42 @@ describe('deriveAll', () => {
     expect(values.tarot_archetype.birth_card).toBe('The Hierophant');
   });
 
+  it('derives the Sun sign and its fixed attributes from the birth date', () => {
+    const { values } = deriveAll(profile, '2026-07-02');
+    expect(values.astrology.sun_sign).toBe('Cancer');
+    expect(values.astrology.element).toBe('Water');
+    expect(values.astrology.ruler).toBe('Moon');
+  });
+
+  it('computes the full numerology set (personality, birthday, maturity, cycles)', () => {
+    const { values } = deriveAll(profile, '2026-07-02');
+    const n = values.numerology;
+    expect(n.personality).toBeGreaterThan(0);
+    expect(n.birthday).toBe(6); // 15 -> 6
+    expect(n.maturity).toBeGreaterThan(0);
+    expect(n.personal_month).not.toBeNull();
+    expect(n.personal_day).not.toBeNull();
+    expect(Array.isArray(n.karmic_debts)).toBe(true);
+  });
+
+  it('adds the personal-year tarot card', () => {
+    const { values } = deriveAll(profile, '2026-07-02');
+    // personal year 4 -> The Emperor
+    expect(values.tarot_archetype.personal_year_card).toBe('The Emperor');
+  });
+
+  it('flags an astrology conflict when the entered Sun sign contradicts the date', () => {
+    const { conflicts } = deriveAll({ ...profile, astrology: { sun_sign: 'Leo' } }, '2026-07-02');
+    const c = conflicts.find((x) => x.field === 'astrology.sun_sign');
+    expect(c).toBeTruthy();
+    expect(c.computed).toBe('Cancer');
+  });
+
+  it('does not flag a tarot conflict for the "N – Name" option format', () => {
+    const { conflicts } = deriveAll({ ...profile, tarot_archetype: { birth_card: '5 – The Hierophant' } }, '2026-07-02');
+    expect(conflicts.filter((c) => c.field === 'tarot_archetype.birth_card')).toEqual([]);
+  });
+
   it('carries the Gene Key <-> HD gate identity (Life Work = Conscious Sun)', () => {
     const { values } = deriveAll(profile, '2026-07-02');
     expect(values.gene_keys.life_work).toBe('14');

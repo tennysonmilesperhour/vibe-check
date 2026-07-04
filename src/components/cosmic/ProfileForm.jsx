@@ -1,91 +1,4 @@
 import React, { useEffect } from "react";
-
-// ── Shared auto-calculation helpers ──
-
-const PYTHAGOREAN = {
-  a:1,b:2,c:3,d:4,e:5,f:6,g:7,h:8,i:9,
-  j:1,k:2,l:3,m:4,n:5,o:6,p:7,q:8,r:9,
-  s:1,t:2,u:3,v:4,w:5,x:6,y:7,z:8
-};
-const VOWELS = new Set(['a','e','i','o','u']);
-
-function reduceNum(n, keepMaster = true) {
-  if (keepMaster && (n === 11 || n === 22 || n === 33)) return n;
-  if (n < 10) return n;
-  const s = String(n).split('').reduce((a, d) => a + parseInt(d), 0);
-  return reduceNum(s, keepMaster);
-}
-
-function sumDigits(str) {
-  return String(str).replace(/\D/g, '').split('').reduce((a, d) => a + parseInt(d), 0);
-}
-
-function calcLifePath(birthDate) {
-  if (!birthDate) return null;
-  const d = new Date(birthDate);
-  const month = d.getUTCMonth() + 1;
-  const day = d.getUTCDate();
-  const year = d.getUTCFullYear();
-  const total = sumDigits(month) + sumDigits(day) + sumDigits(year);
-  return String(reduceNum(total));
-}
-
-function calcPersonalYear(birthDate) {
-  if (!birthDate) return null;
-  const d = new Date(birthDate);
-  const month = d.getUTCMonth() + 1;
-  const day = d.getUTCDate();
-  const year = new Date().getFullYear();
-  const total = sumDigits(month) + sumDigits(day) + sumDigits(year);
-  return String(reduceNum(total));
-}
-
-function nameToNumbers(name, vowelsOnly = false) {
-  return (name || '').toLowerCase().split('').reduce((sum, ch) => {
-    if (!PYTHAGOREAN[ch]) return sum;
-    if (vowelsOnly && !VOWELS.has(ch)) return sum;
-    return sum + PYTHAGOREAN[ch];
-  }, 0);
-}
-
-function calcExpression(firstName, lastName) {
-  if (!firstName && !lastName) return null;
-  const total = nameToNumbers(firstName) + nameToNumbers(lastName);
-  if (total === 0) return null;
-  return String(reduceNum(total));
-}
-
-function calcSoulUrge(firstName, lastName) {
-  if (!firstName && !lastName) return null;
-  const total = nameToNumbers(firstName, true) + nameToNumbers(lastName, true);
-  if (total === 0) return null;
-  return String(reduceNum(total));
-}
-
-function calcTarotBirthCard(birthDate) {
-  if (!birthDate) return null;
-  const d = new Date(birthDate);
-  const month = d.getUTCMonth() + 1;
-  const day = d.getUTCDate();
-  const year = d.getUTCFullYear();
-  let total = month + day + year;
-  // reduce until <= 21
-  while (total > 21) {
-    total = String(total).split('').reduce((a, x) => a + parseInt(x), 0);
-  }
-  return total;
-}
-
-const TAROT_BY_NUM = {
-  0: "0 – The Fool", 1: "1 – The Magician", 2: "2 – The High Priestess",
-  3: "3 – The Empress", 4: "4 – The Emperor", 5: "5 – The Hierophant",
-  6: "6 – The Lovers", 7: "7 – The Chariot", 8: "8 – Strength",
-  9: "9 – The Hermit", 10: "10 – Wheel of Fortune", 11: "11 – Justice",
-  12: "12 – The Hanged Man", 13: "13 – Death", 14: "14 – Temperance",
-  15: "15 – The Devil", 16: "16 – The Tower", 17: "17 – The Star",
-  18: "18 – The Moon", 19: "19 – The Sun", 20: "20 – Judgement",
-  21: "21 – The World"
-};
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -95,6 +8,41 @@ import {
     GENE_KEY_NUMBERS, LIFE_PATH_NUMBERS, TAROT_MAJOR_ARCANA, CHAKRA_CENTERS,
     ENNEAGRAM_TYPES, ENNEAGRAM_WINGS, ENNEAGRAM_INSTINCTS
 } from "./correspondences";
+// One source of truth for every derivation — the resonance engine. The forms
+// used to carry their own copies of this math, which quietly drifted from the
+// engine that feeds the Loom (e.g. two different Life Path methods). Importing
+// the engine keeps the "auto" badges honest and the Loom in agreement.
+import {
+    lifePath, expression, soulUrge, personality, birthdayNumber, maturity,
+    personalYear, personalMonth, personalDay, karmicDebts,
+} from "@/lib/resonance/numerology";
+import { deriveAstrology } from "@/lib/resonance/astrology";
+import { arcanaForLifePath, arcanaName } from "@/lib/resonance/tables";
+import { todayKey } from "@/lib/dates";
+
+const str = (n) => (n == null ? null : String(n));
+const digitSum = (n) => String(n).split('').reduce((a, d) => a + Number(d), 0);
+
+// Tarot cards render as "N – Name" to match the select option strings.
+const cardLabel = (id) => (id == null ? null : `${id} – ${arcanaName(id)}`);
+const birthCard = (birthDate) => {
+    const lp = lifePath(birthDate);
+    return lp !== null ? arcanaForLifePath(lp) : null;
+};
+function birthCardLabel(birthDate) {
+    const card = birthCard(birthDate);
+    return card ? cardLabel(card.id) : null;
+}
+function shadowCardLabel(birthDate) {
+    const card = birthCard(birthDate);
+    if (!card || card.id <= 9) return null;
+    return cardLabel(digitSum(card.id));
+}
+function yearCardLabel(birthDate) {
+    const py = birthDate ? personalYear(birthDate, todayKey()) : null;
+    const card = py !== null ? arcanaForLifePath(py) : null;
+    return card ? cardLabel(card.id) : null;
+}
 
 function Field({ label, hint, children }) {
     return (
@@ -102,6 +50,27 @@ function Field({ label, hint, children }) {
             <Label className="text-sm font-medium" style={{color: 'var(--warm-gray-700)'}}>{label}</Label>
             {hint && <p className="text-xs" style={{color: 'var(--warm-gray-400)'}}>{hint}</p>}
             {children}
+        </div>
+    );
+}
+
+/** Small amber pill used to flag a value the app computed for you. */
+function AutoBadge() {
+    return (
+        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
+            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>
+            auto
+        </span>
+    );
+}
+
+/** A read-only chip showing something we derived from the birth date/name. */
+function DerivedChip({ label, value }) {
+    if (!value) return null;
+    return (
+        <div className="flex flex-col gap-0.5 px-3 py-2 rounded-xl" style={{ background: 'rgba(201,131,75,0.08)', border: '1px solid rgba(201,131,75,0.2)' }}>
+            <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(201,131,75,0.85)' }}>{label}</span>
+            <span className="text-sm font-medium" style={{ color: 'rgba(61,52,80,0.9)' }}>{value}</span>
         </div>
     );
 }
@@ -121,57 +90,58 @@ function SimpleSelect({ value, onChange, options, placeholder }) {
     );
 }
 
-function getSunSign(birthDate) {
-    if (!birthDate) return null;
-    const d = new Date(birthDate);
-    const month = d.getUTCMonth() + 1;
-    const day = d.getUTCDate();
-    if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return "Aries";
-    if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return "Taurus";
-    if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return "Gemini";
-    if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return "Cancer";
-    if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return "Leo";
-    if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return "Virgo";
-    if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return "Libra";
-    if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return "Scorpio";
-    if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return "Sagittarius";
-    if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return "Capricorn";
-    if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return "Aquarius";
-    return "Pisces";
-}
+const ORDINAL = { 1: '1st', 2: '2nd', 3: '3rd' };
 
 export function AstrologyForm({ data, onChange, birthDate }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
+    const derived = deriveAstrology(birthDate);
+    const autoSign = derived.sun_sign;
 
+    // Fill the Sun sign and stash the sign's fixed attributes so the AI and the
+    // deep-dive reports can reference them. Only writes empty fields.
     useEffect(() => {
-        const autoSign = getSunSign(birthDate);
-        if (autoSign && !data?.sun_sign) {
-            onChange({ ...data, sun_sign: autoSign });
+        if (!autoSign) return;
+        const updates = {};
+        if (!data?.sun_sign) updates.sun_sign = autoSign;
+        for (const k of ['element', 'modality', 'polarity', 'ruler', 'decan', 'decan_ruler']) {
+            if (derived[k] != null && data?.[k] == null) updates[k] = str(derived[k]);
         }
-    }, [birthDate]);
+        if (Object.keys(updates).length) onChange({ ...data, ...updates });
+    }, [birthDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="grid md:grid-cols-2 gap-5">
             <Field label="Sun Sign" hint="Your core identity and conscious self">
                 <div className="relative">
                     <SimpleSelect value={data?.sun_sign} onChange={v => set('sun_sign', v)} options={ZODIAC_SIGNS} />
-                    {birthDate && getSunSign(birthDate) === data?.sun_sign && (
-                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>
-                            auto
-                        </span>
-                    )}
+                    {autoSign && autoSign === data?.sun_sign && <AutoBadge />}
                 </div>
             </Field>
-            <Field label="Moon Sign" hint="Your emotional nature and inner world">
+            <Field label="Moon Sign" hint="Your emotional nature and inner world (needs birth time)">
                 <SimpleSelect value={data?.moon_sign} onChange={v => set('moon_sign', v)} options={ZODIAC_SIGNS} />
             </Field>
-            <Field label="Rising / Ascendant" hint="How others see you; your outer mask (requires birth time)">
+            <Field label="Rising / Ascendant" hint="How others see you; your outer mask (needs birth time & place)">
                 <SimpleSelect value={data?.rising_sign} onChange={v => set('rising_sign', v)} options={ZODIAC_SIGNS} />
             </Field>
-            <Field label="North Node Sign" hint="Your soul's evolutionary direction in this lifetime">
+            <Field label="North Node Sign" hint="Your soul's evolutionary direction (needs birth time)">
                 <SimpleSelect value={data?.north_node} onChange={v => set('north_node', v)} options={ZODIAC_SIGNS} />
             </Field>
+
+            {autoSign && (
+                <div className="md:col-span-2">
+                    <p className="text-xs mb-2" style={{ color: 'rgba(105,95,128,0.65)' }}>
+                        Derived from your Sun in {autoSign} — no birth time needed:
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <DerivedChip label="Element" value={derived.element} />
+                        <DerivedChip label="Modality" value={derived.modality} />
+                        <DerivedChip label="Polarity" value={derived.polarity} />
+                        <DerivedChip label="Ruling Planet" value={derived.ruler} />
+                        <DerivedChip label="Decan" value={derived.decan ? `${ORDINAL[derived.decan]} · ${derived.decan_ruler}` : null} />
+                    </div>
+                </div>
+            )}
+
             <div className="md:col-span-2">
                 <Field label="Personal Notes" hint="Anything else about your chart you want the AI to reference">
                     <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="e.g. Venus in Scorpio, Saturn return, stellium in 8th house..." />
@@ -244,58 +214,66 @@ export function GeneKeysForm({ data, onChange }) {
 
 export function NumerologyForm({ data, onChange, birthDate, firstName, lastName }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
+    const fullName = [firstName, lastName].filter(Boolean).join(' ');
 
-    const autoLifePath = calcLifePath(birthDate);
-    const autoPersonalYear = calcPersonalYear(birthDate);
-    const autoExpression = calcExpression(firstName, lastName);
-    const autoSoulUrge = calcSoulUrge(firstName, lastName);
+    const autos = {
+        life_path: str(lifePath(birthDate)),
+        expression: fullName ? str(expression(fullName)) : null,
+        soul_urge: fullName ? str(soulUrge(fullName)) : null,
+        personality: fullName ? str(personality(fullName)) : null,
+        birthday: str(birthdayNumber(birthDate)),
+        maturity: fullName ? str(maturity(birthDate, fullName)) : null,
+        personal_year: birthDate ? str(personalYear(birthDate, todayKey())) : null,
+    };
+
+    // Read-only cycles + karmic debts (informational, not stored form fields).
+    const pMonth = birthDate ? personalMonth(birthDate, todayKey()) : null;
+    const pDay = birthDate ? personalDay(birthDate, todayKey()) : null;
+    const debts = karmicDebts(birthDate, fullName);
 
     useEffect(() => {
         const updates = {};
-        if (autoLifePath && !data?.life_path) updates.life_path = autoLifePath;
-        if (autoPersonalYear && !data?.personal_year) updates.personal_year = autoPersonalYear;
-        if (autoExpression && !data?.expression) updates.expression = autoExpression;
-        if (autoSoulUrge && !data?.soul_urge) updates.soul_urge = autoSoulUrge;
+        for (const [key, val] of Object.entries(autos)) {
+            if (val && !data?.[key]) updates[key] = val;
+        }
         if (Object.keys(updates).length > 0) onChange({ ...data, ...updates });
-    }, [birthDate, firstName, lastName]);
+    }, [birthDate, firstName, lastName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const fields = [
+        { key: 'life_path', label: 'Life Path Number', hint: 'The path itself — from your birth date' },
+        { key: 'expression', label: 'Expression Number', hint: 'Your gifts & destiny — from your full name' },
+        { key: 'soul_urge', label: 'Soul Urge Number', hint: "Your heart's desire — from the vowels in your name" },
+        { key: 'personality', label: 'Personality Number', hint: 'Your outer self — from the consonants in your name' },
+        { key: 'birthday', label: 'Birthday Number', hint: 'A special gift — from the day you were born' },
+        { key: 'maturity', label: 'Maturity Number', hint: 'Who you grow into — Life Path + Expression' },
+        { key: 'personal_year', label: 'Personal Year Number', hint: 'This year’s theme — birth date + current year' },
+    ];
+
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Life Path Number" hint="Calculated from your birth date">
-                <div className="relative">
-                    <SimpleSelect value={data?.life_path} onChange={v => set('life_path', v)} options={LIFE_PATH_NUMBERS} />
-                    {autoLifePath && data?.life_path === autoLifePath && (
-                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
+            {fields.map(({ key, label, hint }) => (
+                <Field key={key} label={label} hint={hint}>
+                    <div className="relative">
+                        <SimpleSelect value={data?.[key]} onChange={v => set(key, v)} options={LIFE_PATH_NUMBERS} />
+                        {autos[key] && data?.[key] === autos[key] && <AutoBadge />}
+                    </div>
+                </Field>
+            ))}
+
+            {(pMonth != null || pDay != null || debts.length > 0) && (
+                <div className="md:col-span-2 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <DerivedChip label="Personal Month" value={pMonth != null ? str(pMonth) : null} />
+                        <DerivedChip label="Personal Day" value={pDay != null ? str(pDay) : null} />
+                    </div>
+                    {debts.length > 0 && (
+                        <p className="text-xs" style={{ color: 'rgba(105,95,128,0.7)' }}>
+                            Karmic debt: {debts.map(d => `${d.number} (${d.source})`).join(', ')}
+                        </p>
                     )}
                 </div>
-            </Field>
-            <Field label="Expression Number" hint="Calculated from your full name">
-                <div className="relative">
-                    <SimpleSelect value={data?.expression} onChange={v => set('expression', v)} options={LIFE_PATH_NUMBERS} />
-                    {autoExpression && data?.expression === autoExpression && (
-                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
-                    )}
-                </div>
-            </Field>
-            <Field label="Soul Urge Number" hint="Calculated from vowels in your name">
-                <div className="relative">
-                    <SimpleSelect value={data?.soul_urge} onChange={v => set('soul_urge', v)} options={LIFE_PATH_NUMBERS} />
-                    {autoSoulUrge && data?.soul_urge === autoSoulUrge && (
-                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
-                    )}
-                </div>
-            </Field>
-            <Field label="Personal Year Number" hint="Calculated from birth date + current year">
-                <div className="relative">
-                    <SimpleSelect value={data?.personal_year} onChange={v => set('personal_year', v)} options={LIFE_PATH_NUMBERS} />
-                    {autoPersonalYear && data?.personal_year === autoPersonalYear && (
-                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
-                    )}
-                </div>
-            </Field>
+            )}
+
             <div className="md:col-span-2">
                 <Field label="Personal Notes">
                     <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="Any other numbers or calculations you want referenced..." />
@@ -308,38 +286,39 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
 export function TarotForm({ data, onChange, birthDate }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
 
-    const birthCardNum = calcTarotBirthCard(birthDate);
-    const autoBirthCard = birthCardNum !== null ? TAROT_BY_NUM[birthCardNum] : null;
-    // Shadow card = reduce birth card number to single digit if > 9
-    const shadowCardNum = birthCardNum !== null ? (birthCardNum > 9 ? String(birthCardNum).split('').reduce((a,x)=>a+parseInt(x),0) : birthCardNum) : null;
-    const autoShadowCard = shadowCardNum !== null && shadowCardNum !== birthCardNum ? TAROT_BY_NUM[shadowCardNum] : null;
+    const autoBirthCard = birthCardLabel(birthDate);
+    const autoShadowCard = shadowCardLabel(birthDate);
+    const autoYearCard = yearCardLabel(birthDate);
 
     useEffect(() => {
         const updates = {};
         if (autoBirthCard && !data?.birth_card) updates.birth_card = autoBirthCard;
         if (autoShadowCard && !data?.shadow_card) updates.shadow_card = autoShadowCard;
         if (Object.keys(updates).length > 0) onChange({ ...data, ...updates });
-    }, [birthDate]);
+    }, [birthDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Birth Card" hint="Calculated from your birth date">
+            <Field label="Birth Card" hint="Your soul archetype — from your birth date">
                 <div className="relative">
                     <SimpleSelect value={data?.birth_card} onChange={v => set('birth_card', v)} options={TAROT_MAJOR_ARCANA} />
-                    {autoBirthCard && data?.birth_card === autoBirthCard && (
-                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
-                    )}
+                    {autoBirthCard && data?.birth_card === autoBirthCard && <AutoBadge />}
                 </div>
             </Field>
             <Field label="Shadow / Teacher Card" hint="The complementary archetype (reduced digit of birth card)">
                 <div className="relative">
                     <SimpleSelect value={data?.shadow_card} onChange={v => set('shadow_card', v)} options={TAROT_MAJOR_ARCANA} />
-                    {autoShadowCard && data?.shadow_card === autoShadowCard && (
-                        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-                            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>auto</span>
-                    )}
+                    {autoShadowCard && data?.shadow_card === autoShadowCard && <AutoBadge />}
                 </div>
             </Field>
+
+            {autoYearCard && (
+                <div className="md:col-span-2">
+                    <p className="text-xs mb-2" style={{ color: 'rgba(105,95,128,0.65)' }}>The card walking with you this personal year:</p>
+                    <DerivedChip label="Personal Year Card" value={autoYearCard} />
+                </div>
+            )}
+
             <div className="md:col-span-2">
                 <Field label="Personal Notes">
                     <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="Suit affinities, spread patterns, anything else..." />

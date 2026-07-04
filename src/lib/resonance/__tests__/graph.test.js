@@ -52,4 +52,15 @@ describe('resonanceGraph', () => {
   it('is serializable (no functions, no cycles)', () => {
     expect(() => JSON.stringify(graph)).not.toThrow();
   });
+
+  it('plots the Sun from the birth date alone, before the astrology form is filled', () => {
+    const bare = resonanceGraph(
+      { birth_date: '1990-07-15', enabled_systems: ['astrology'], astrology: {} },
+      '2026-07-02'
+    );
+    const sun = bare.nodes.find((n) => n.id === 'astrology.sun');
+    expect(sun).toBeTruthy();
+    expect(sun.label).toBe('Sun in Cancer'); // derived, not entered
+    expect(sun.wheelDeg).toBeGreaterThanOrEqual(90);
+  });
 });

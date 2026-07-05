@@ -13,13 +13,11 @@ const signMidDegree = (sign) => {
 };
 
 function arcanaIdByName(name) {
-  for (const [lpNum, id] of Object.entries(LIFE_PATH_CARD)) {
-    void lpNum;
-    if (arcanaName(id)?.toLowerCase() === String(name || '').toLowerCase()) return id;
-  }
-  // fall back to scanning all 22
+  // Accept both the bare name ("The Hierophant") and the "N – Name" option
+  // format the profile form stores.
+  const bare = String(name || '').replace(/^\s*\d+\s*[–-]\s*/, '').toLowerCase();
   for (let id = 0; id < 22; id++) {
-    if (arcanaName(id)?.toLowerCase() === String(name || '').toLowerCase()) return id;
+    if (arcanaName(id)?.toLowerCase() === bare) return id;
   }
   return null;
 }
@@ -41,7 +39,11 @@ export function resonanceGraph(profile = {}, dateKey) {
   // ── astrology placements at their sign midpoints ──
   if (enabled.has('astrology')) {
     const a = profile.astrology || {};
-    addNode('astrology.sun', 'astrology', a.sun_sign && `Sun in ${a.sun_sign}`, a.sun_sign ? signMidDegree(a.sun_sign) : null, { sign: a.sun_sign });
+    // The Sun sign is computable from the birth date alone, so plot it even
+    // before the user opens the astrology form. Moon/Rising/Node still need a
+    // birth time, so they stay whatever the user (or the AI calc) filled in.
+    const sunSign = a.sun_sign || values.astrology?.sun_sign || null;
+    addNode('astrology.sun', 'astrology', sunSign && `Sun in ${sunSign}`, sunSign ? signMidDegree(sunSign) : null, { sign: sunSign });
     addNode('astrology.moon', 'astrology', a.moon_sign && `Moon in ${a.moon_sign}`, a.moon_sign ? signMidDegree(a.moon_sign) : null, { sign: a.moon_sign });
     addNode('astrology.rising', 'astrology', a.rising_sign && `${a.rising_sign} Rising`, a.rising_sign ? signMidDegree(a.rising_sign) : null, { sign: a.rising_sign });
     addNode('astrology.north_node', 'astrology', a.north_node && `North Node in ${a.north_node}`, a.north_node ? signMidDegree(a.north_node) : null, { sign: a.north_node });

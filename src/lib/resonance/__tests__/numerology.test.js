@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { lifePath, expression, soulUrge, personalYear, personalMonth, personalDay, reduceKeepMasters, reduceSingle } from '../numerology.js';
+import { lifePath, expression, soulUrge, personality, birthdayNumber, maturity, karmicDebts, personalYear, personalMonth, personalDay, reduceKeepMasters, reduceSingle } from '../numerology.js';
 
 describe('reducers', () => {
   it('reduceKeepMasters preserves 11/22/33', () => {
@@ -39,6 +39,29 @@ describe('name numbers (Pythagorean)', () => {
   });
   it('empty name is null', () => {
     expect(expression('')).toBeNull();
+  });
+  it('personality sums consonants only: "Ann" consonants = N+N = 5+5 = 10 -> 1', () => {
+    expect(personality('Ann')).toBe(1);
+  });
+});
+
+describe('birthday, maturity & karmic debt', () => {
+  it('birthday number reduces the day, keeping masters', () => {
+    expect(birthdayNumber('1990-07-15')).toBe(6);  // 15 -> 6
+    expect(birthdayNumber('1990-07-29')).toBe(11); // 29 -> 11 master
+  });
+  it('maturity = Life Path + Expression, reduced', () => {
+    // 1990-07-15 life path 5, "Ann Lee" expression -> sum then reduce
+    const m = maturity('1990-07-15', 'Ann Lee');
+    expect(m).toBe(reduceKeepMasters(lifePath('1990-07-15') + expression('Ann Lee')));
+  });
+  it('flags a karmic debt when a total passes through 13/14/16/19', () => {
+    // born on the 13th -> Birthday karmic debt 13
+    const debts = karmicDebts('1990-07-13', '');
+    expect(debts.some(d => d.number === 13 && d.source === 'Birthday')).toBe(true);
+  });
+  it('returns an empty list when there is nothing to compute', () => {
+    expect(karmicDebts(null, '')).toEqual([]);
   });
 });
 

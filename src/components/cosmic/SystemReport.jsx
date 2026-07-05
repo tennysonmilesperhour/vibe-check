@@ -36,8 +36,17 @@ const HD_CENTERS = [
   "Solar Plexus", "Sacral", "Spleen", "Root"
 ];
 
+const SIGN_SIGNATURE = [
+  { label: "Element", key: "element" },
+  { label: "Modality", key: "modality" },
+  { label: "Polarity", key: "polarity" },
+  { label: "Ruling Planet", key: "ruler" },
+];
+
 function AstrologyDetail({ data }) {
+  const hasSignature = SIGN_SIGNATURE.some(s => data?.[s.key]) || data?.decan;
   return (
+    <>
     <Section title="Planetary Placements">
       {PLANETS.map(p => data?.[p.key] && (
         <div key={p.key} className="flex items-start gap-3 py-2.5" style={{ borderBottom: '1px solid rgba(61,52,80,0.06)' }}>
@@ -60,6 +69,13 @@ function AstrologyDetail({ data }) {
         </div>
       )}
     </Section>
+    {hasSignature && (
+      <Section title="Sign Signature">
+        {SIGN_SIGNATURE.map(s => <DataRow key={s.key} label={s.label} value={data?.[s.key]} />)}
+        {data?.decan && <DataRow label="Decan" value={data.decan_ruler ? `${data.decan} · ${data.decan_ruler}` : String(data.decan)} />}
+      </Section>
+    )}
+    </>
   );
 }
 

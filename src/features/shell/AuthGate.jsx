@@ -4,6 +4,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SkyField from "./SkyField";
 
+/** Turn Supabase's terse auth errors into something a beta tester can act on. */
+function friendlyAuthError(err) {
+  const raw = err?.message || "";
+  const msg = raw.toLowerCase();
+  if (msg.includes("email not confirmed")) {
+    return "This email hasn't been confirmed yet. Check your inbox for the confirmation link, or use \"Email me a magic link instead\" below.";
+  }
+  if (msg.includes("invalid login credentials")) {
+    return "Email or password is incorrect. If you just signed up, confirm your email first (or use a magic link).";
+  }
+  if (msg.includes("rate limit") || msg.includes("after")) {
+    return "Too many attempts in a row. Wait a minute and try again.";
+  }
+  return raw || "That did not work. Try again.";
+}
+
 /**
  * The front door: email + password sign in / sign up, or a magic link.
  * Rendered inline whenever there is no session.
@@ -26,24 +42,41 @@ export default function AuthGate() {
       if (mode === "magic") {
         const { error: err } = await supabase.auth.signInWithOtp({
           email,
+          // Come back to whatever origin the person is actually using, not the
+          // project's configured Site URL (which may be a dev localhost).
           options: { emailRedirectTo: window.location.origin },
         });
         if (err) throw err;
         setNotice("Check your email. The link signs you straight in.");
       } else if (mode === "signup") {
-        const { error: err } = await supabase.auth.signUp({
+        const { data, error: err } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: name.trim() || undefined } },
+          options: {
+            data: { full_name: name.trim() || undefined },
+            // Without this, the confirmation email's link falls back to the
+            // project Site URL and can bounce testers to a dead localhost page.
+            emailRedirectTo: window.location.origin,
+          },
         });
         if (err) throw err;
-        setNotice("Account created. If confirmation is on, check your email first.");
+        // Supabase returns a user with an empty `identities` array when the
+        // email already exists (it hides this to prevent account enumeration).
+        if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          setError("An account with this email already exists. Try signing in instead.");
+        } else if (data?.session) {
+          // Confirmation is off: the signup already signed us in. The auth
+          // listener will pick up the session and render the app.
+          setNotice("You're in. One moment…");
+        } else {
+          setNotice("Account created. Check your email to confirm, then come back and sign in.");
+        }
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
       }
     } catch (err) {
-      setError(err?.message || "That did not work. Try again.");
+      setError(friendlyAuthError(err));
     }
     setBusy(false);
   };

@@ -100,7 +100,7 @@ export default function Today() {
             {lastEntryAt ? ` · ${hoursSince(lastEntryAt)} hours since your last entry` : ""}
           </p>
           <h1 className="mt-4 text-5xl md:text-7xl" style={{ color: "var(--gh-cream)", maxWidth: "12ch", lineHeight: 0.98 }}>
-            {isFirstRun ? "Welcome to the golden hour" : "How did today actually feel?"}
+            {isFirstRun ? "Welcome to the golden hour" : "How did today feel for you?"}
           </h1>
           {isFirstRun && (
             <p className="mt-5 text-base max-w-md" style={{ color: "rgba(255,253,246,0.9)" }}>

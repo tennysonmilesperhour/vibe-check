@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
@@ -287,11 +287,25 @@ const SYSTEM_META = {
     ]} /> },
 };
 
-function SystemCard({ systemId, profile, cosmicProfile }) {
+function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
   const meta = SYSTEM_META[systemId];
   const [expanded, setExpanded] = useState(false);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  const cardRef = useRef(null);
+
+  // When the Loom sends the reader here ("Deep dive into X"), open this card
+  // and bring it into view. Keyed on openNonce so tapping the same system
+  // again re-scrolls even though `autoOpen` never changes.
+  useEffect(() => {
+    if (!autoOpen) return;
+    setExpanded(true);
+    const t = setTimeout(() => {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen, openNonce]);
 
   if (!meta) return null;
   const { label, color, emoji, Detail } = meta;
@@ -308,7 +322,7 @@ function SystemCard({ systemId, profile, cosmicProfile }) {
   };
 
   return (
-    <div className="glass-card overflow-hidden" style={{ border: `1px solid ${color}30` }}>
+    <div ref={cardRef} className="glass-card overflow-hidden" style={{ border: `1px solid ${color}30`, scrollMarginTop: "1rem" }}>
       <button className="w-full p-5 flex items-center justify-between text-left"
         onClick={() => setExpanded(e => !e)}>
         <div className="flex items-center gap-3">
@@ -367,7 +381,7 @@ function SystemCard({ systemId, profile, cosmicProfile }) {
   );
 }
 
-export default function SystemReports({ enabledSystems, profile, cosmicProfile }) {
+export default function SystemReports({ enabledSystems, profile, cosmicProfile, openSystem, openNonce }) {
   if (enabledSystems.length === 0) {
     return (
       <div className="glass-card p-12 text-center">
@@ -380,7 +394,8 @@ export default function SystemReports({ enabledSystems, profile, cosmicProfile }
   return (
     <div className="space-y-4">
       {enabledSystems.map(id => (
-        <SystemCard key={id} systemId={id} profile={profile} cosmicProfile={cosmicProfile} />
+        <SystemCard key={id} systemId={id} profile={profile} cosmicProfile={cosmicProfile}
+          autoOpen={openSystem === id} openNonce={openNonce} />
       ))}
     </div>
   );

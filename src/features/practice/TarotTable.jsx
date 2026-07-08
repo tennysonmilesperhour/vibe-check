@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Reading, DailyCheckIn } from "@/entities/all";
 import { InvokeLLM } from "@/integrations/Core";
 import { base44 } from "@/api/base44Client";
@@ -13,6 +13,22 @@ import { Shuffle, Eye, BookOpen, RotateCcw } from "lucide-react";
 
 const duskInk = "var(--gh-dusk-ink)";
 const duskInkSoft = "rgba(245,229,216,0.7)";
+
+/** Track a CSS media query so we can lean the card up big on desktop. */
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const mql = window.matchMedia(query);
+    const onChange = (e) => setMatches(e.matches);
+    setMatches(mql.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, [query]);
+  return matches;
+}
 
 function mulberry32(seed) {
   let a = seed >>> 0;
@@ -57,6 +73,21 @@ export default function TarotTable() {
   const spread = useMemo(() => SPREADS.find((s) => s.id === spreadId) || SPREADS[0], [spreadId]);
   const availableSpreads = deckId === "oracle" ? SPREADS.filter((s) => s.positions.length <= 3) : SPREADS;
   const allFlipped = drawn && drawn.every((_, i) => flipped[i]);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  // Cards were tiny on desktop. Give the single daily draw a real presence and
+  // enlarge the three-card spread too; leave the dense spreads alone so their
+  // percentage-positioned cards don't collide.
+  const cardCount = spread ? spread.positions.length : 1;
+  const cardSize = cardCount > 5 ? "sm"
+    : cardCount > 3 ? "md"
+    : cardCount > 1 ? (isDesktop ? "lg" : "md")
+    : (isDesktop ? "xxl" : "lg");
+  const tableHeight = cardCount > 5 ? 560
+    : cardCount > 3 ? 420
+    : cardCount > 1 ? (isDesktop ? 460 : 420)
+    : (isDesktop ? 640 : 380);
+  const tableMaxWidth = cardCount > 1 ? 720 : (isDesktop ? 420 : 320);
 
   const deal = async () => {
     const cards = drawSpread(deckId, spread, seed.trim() || null);
@@ -182,7 +213,7 @@ Read the spread as one story, woven with their real week where it genuinely conn
 
         {drawn && (
           <>
-            <div className="relative mx-auto mt-8" style={{ height: spread.positions.length > 5 ? 560 : spread.positions.length > 1 ? 420 : 320, maxWidth: 720 }}>
+            <div className="relative mx-auto mt-8" style={{ height: tableHeight, maxWidth: tableMaxWidth }}>
               {drawn.map((item, i) => {
                 const pos = spread.positions[i];
                 return (
@@ -199,7 +230,7 @@ Read the spread as one story, woven with their real week where it genuinely conn
                     <TarotCard
                       card={item.card}
                       reversed={item.reversed}
-                      size={spread.positions.length > 5 ? "sm" : "md"}
+                      size={cardSize}
                       flipped={!!flipped[i]}
                       onClick={() => setFlipped((f) => ({ ...f, [i]: true }))}
                       label={pos.label}

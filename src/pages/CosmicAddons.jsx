@@ -58,7 +58,16 @@ export default function CosmicAddons() {
 
     // Two-way URL sync: back button and refresh keep your place.
     const [activeTab, setActiveTab] = useSearchParamState('tab', 'systems');
+    // Deep-dive target from the Loom: which system to open + a nonce so repeat
+    // taps on the same system re-trigger the expand-and-scroll.
+    const [deepDive, setDeepDive] = useState({ system: null, nonce: 0 });
     const isDirty = JSON.stringify(profile) !== savedSnapshot;
+
+    // Loom "Deep dive into X" → jump to the Deep Dive tab, open that system.
+    const openDeepDive = (system) => {
+        setActiveTab('deepdive');
+        setDeepDive((d) => ({ system, nonce: d.nonce + 1 }));
+    };
 
     useEffect(() => { loadProfile(); }, []);
 
@@ -225,7 +234,7 @@ Return this JSON:
                         <p className="text-sm text-center mt-1 mb-6" style={{ color: 'rgba(255,253,246,0.85)' }}>
                             Seven systems, one map. Tap a point or a thread.
                         </p>
-                        <Loom profile={profile} onDeepDive={() => setActiveTab('deepdive')} />
+                        <Loom profile={profile} onDeepDive={openDeepDive} />
                         <div className="text-center mt-4" data-html2canvas-ignore="true">
                             <button type="button" className="ghost-cream-button text-xs py-2"
                                 onClick={async () => { try { await shareNodeAsImage(loomRef.current, 'my-loom.png'); } catch { /* capture is best-effort */ } }}>
@@ -402,7 +411,8 @@ Return this JSON:
                                 Each system below has a full structured breakdown + an AI-generated deep reading. Expand any system to generate your personalized report. Each can be exported as a PDF.
                             </p>
                         </div>
-                        <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile} />
+                        <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile}
+                            openSystem={deepDive.system} openNonce={deepDive.nonce} />
                     </TabsContent>
                 </Tabs>
             </div>

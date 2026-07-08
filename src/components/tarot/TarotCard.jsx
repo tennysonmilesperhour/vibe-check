@@ -141,6 +141,7 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
     md: { w: 80,  h: 133 },
     lg: { w: 110, h: 183 },
     xl: { w: 140, h: 233 },
+    xxl: { w: 340, h: 567 },
   };
   const { w, h } = sizes[size] || sizes.md;
 

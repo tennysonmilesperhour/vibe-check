@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { integratedReading } from "@/lib/wisdom/readings";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Download, Loader2, BookOpen } from "lucide-react";
@@ -89,33 +89,10 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
   const activePairs = PAIRS.filter(p => p.systems.every(s => enabledSystems.includes(s)));
   const inactivePairs = PAIRS.filter(p => !p.systems.every(s => enabledSystems.includes(s)));
 
-  const generateDeepMap = async () => {
+  const generateDeepMap = () => {
+    // Synthesized locally across your active systems — no API, no credits.
     setLoading(true);
-    const enabledDetails = enabledSystems.map(s => {
-      const d = profile[s];
-      if (!d) return null;
-      const entries = Object.entries(d).filter(([k, v]) => v && k !== 'custom_notes').map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`).join(', ');
-      return entries ? `${s.toUpperCase().replace(/_/g, ' ')}: ${entries}` : null;
-    }).filter(Boolean).join('\n');
-
-    const prompt = `You are a master of multiple wisdom traditions. Generate a comprehensive, integrated cosmic correspondence map for a person with this profile:
-
-${enabledDetails || "Profile data not yet entered"}
-
-Name: ${profile.first_name || ''} ${profile.last_name || ''}
-Birth: ${profile.birth_date || 'unknown'}
-
-Create a deeply personal integrated reading that:
-1. Identifies the core thread running through ALL their active systems — the single theme their entire blueprint points to
-2. Maps how each system mirrors and amplifies the others (find the resonances, not just list them)
-3. Highlights where systems appear to contradict — and what that creative tension is asking of them
-4. Gives a synthesis: what is this person's unique cosmic signature — the irreducible truth of who they are as revealed by their blueprint?
-5. Offers a practical integration practice that honors all systems at once
-
-Be profound but grounded. Specific but not pedantic. This should feel like a coherent portrait, not a list.`;
-
-    const result = await base44.integrations.Core.InvokeLLM({ prompt, model: "claude_sonnet_4_6" });
-    setDeepReport(result);
+    setDeepReport(integratedReading(enabledSystems, profile));
     setLoading(false);
   };
 
@@ -197,7 +174,7 @@ Be profound but grounded. Specific but not pedantic. This should feel like a coh
           </div>
         ) : (
           <div className="text-center py-6">
-            <p className="text-xs mb-3" style={{ color: 'rgba(105,95,128,0.5)' }}>The oracle weaves a deep synthesis across all your active systems — uses a small amount of credits</p>
+            <p className="text-xs mb-3" style={{ color: 'rgba(105,95,128,0.5)' }}>A deep synthesis woven across all your active systems — always free</p>
             <Button onClick={generateDeepMap} disabled={enabledSystems.length === 0} className="btn-cosmic rounded-xl">
               <Sparkles className="w-4 h-4 mr-2" /> Generate Integrated Reading
             </Button>

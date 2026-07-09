@@ -1,0 +1,86 @@
+// The 64 Gene Keys for the local wisdom engine. Each key is a spectrum of
+// consciousness: the Shadow (the unconscious pattern under pressure), the Gift
+// (its awakened, creative expression), and the Siddhi (its highest, transcendent
+// flowering). This is the canonical Gene Keys spectrum, used to compose readings
+// for the Activation, Venus, and Pearl sequence positions.
+
+export const GENE_KEYS = {
+  1:  { shadow: "Entropy",         gift: "Freshness",      siddhi: "Beauty",         essence: "creative renewal that keeps life from going stale" },
+  2:  { shadow: "Dislocation",     gift: "Orientation",    siddhi: "Unity",          essence: "finding your true direction by receptivity, not force" },
+  3:  { shadow: "Chaos",           gift: "Innovation",     siddhi: "Innocence",      essence: "turning disorder into new beginnings" },
+  4:  { shadow: "Intolerance",     gift: "Understanding",  siddhi: "Forgiveness",    essence: "the mind that seeks answers, softened into real understanding" },
+  5:  { shadow: "Impatience",      gift: "Patience",       siddhi: "Timelessness",   essence: "trusting natural timing and rhythm" },
+  6:  { shadow: "Conflict",        gift: "Diplomacy",      siddhi: "Peace",          essence: "emotional intelligence that turns friction into connection" },
+  7:  { shadow: "Division",        gift: "Guidance",       siddhi: "Virtue",         essence: "leadership through the future good rather than power" },
+  8:  { shadow: "Mediocrity",      gift: "Style",          siddhi: "Exquisiteness",  essence: "contributing your unique creative signature" },
+  9:  { shadow: "Inertia",         gift: "Determination",  siddhi: "Invincibility",  essence: "focused energy applied to the details that matter" },
+  10: { shadow: "Self-Obsession",  gift: "Naturalness",    siddhi: "Being",          essence: "self-love that lets you simply be yourself" },
+  11: { shadow: "Obscurity",       gift: "Idealism",       siddhi: "Light",          essence: "the idealist whose inner light illuminates meaning" },
+  12: { shadow: "Vanity",          gift: "Discrimination", siddhi: "Purity",         essence: "pure self-expression free of the need to impress" },
+  13: { shadow: "Discord",         gift: "Discernment",    siddhi: "Empathy",        essence: "the listener who holds others' stories with love" },
+  14: { shadow: "Compromise",      gift: "Competence",     siddhi: "Bounteousness",  essence: "skillful work that generates abundance" },
+  15: { shadow: "Dullness",        gift: "Magnetism",      siddhi: "Florescence",    essence: "an magnetic aliveness that embraces life's extremes" },
+  16: { shadow: "Indifference",    gift: "Versatility",    siddhi: "Mastery",        essence: "enthusiasm refined into true skill" },
+  17: { shadow: "Opinion",         gift: "Far-sightedness",siddhi: "Omniscience",    essence: "the eye that sees patterns and possibilities ahead" },
+  18: { shadow: "Judgement",       gift: "Integrity",      siddhi: "Perfection",     essence: "the healthy urge to improve, freed from criticism" },
+  19: { shadow: "Co-dependence",   gift: "Sensitivity",    siddhi: "Sacrifice",      essence: "attunement to others' and the earth's needs" },
+  20: { shadow: "Superficiality",  gift: "Self-Assurance", siddhi: "Presence",       essence: "being fully present in the eternal now" },
+  21: { shadow: "Control",         gift: "Authority",      siddhi: "Valour",         essence: "self-command that no longer needs to control others" },
+  22: { shadow: "Dishonour",       gift: "Graciousness",   siddhi: "Grace",          essence: "emotional grace that transforms suffering into wisdom" },
+  23: { shadow: "Complexity",      gift: "Simplicity",     siddhi: "Quintessence",   essence: "distilling the complex into elegant simplicity" },
+  24: { shadow: "Addiction",       gift: "Invention",      siddhi: "Silence",        essence: "the mind that returns, again and again, to stillness" },
+  25: { shadow: "Constriction",    gift: "Acceptance",     siddhi: "Universal Love", essence: "the open heart that loves without condition" },
+  26: { shadow: "Pride",           gift: "Artfulness",     siddhi: "Invisibility",   essence: "integrity of the will, influence without ego" },
+  27: { shadow: "Selfishness",     gift: "Altruism",       siddhi: "Selflessness",   essence: "caring for the whole as you care for yourself" },
+  28: { shadow: "Purposelessness", gift: "Totality",       siddhi: "Immortality",    essence: "embracing risk and challenge to find meaning" },
+  29: { shadow: "Half-heartedness",gift: "Commitment",     siddhi: "Devotion",       essence: "wholehearted yes that becomes devotion" },
+  30: { shadow: "Desire",          gift: "Lightness",      siddhi: "Rapture",        essence: "feeling deeply without being consumed by craving" },
+  31: { shadow: "Arrogance",       gift: "Leadership",     siddhi: "Humility",       essence: "the voice that leads by speaking for others" },
+  32: { shadow: "Failure",         gift: "Preservation",   siddhi: "Veneration",     essence: "valuing what endures and is worth preserving" },
+  33: { shadow: "Forgetting",      gift: "Mindfulness",    siddhi: "Revelation",     essence: "retreat and reflection that reveal hidden truth" },
+  34: { shadow: "Force",           gift: "Strength",       siddhi: "Majesty",        essence: "power expressed as authentic, dignified strength" },
+  35: { shadow: "Hunger",          gift: "Adventure",      siddhi: "Boundlessness",  essence: "the appetite for experience that expands life" },
+  36: { shadow: "Turbulence",      gift: "Humanity",       siddhi: "Compassion",     essence: "emotional crisis alchemized into compassion" },
+  37: { shadow: "Weakness",        gift: "Equality",       siddhi: "Tenderness",     essence: "warmth and family that bind people in equality" },
+  38: { shadow: "Struggle",        gift: "Perseverance",   siddhi: "Honour",         essence: "the fighter who knows what is worth fighting for" },
+  39: { shadow: "Provocation",     gift: "Dynamism",       siddhi: "Liberation",     essence: "the tension that provokes others toward freedom" },
+  40: { shadow: "Exhaustion",      gift: "Resolve",        siddhi: "Divine Will",    essence: "healthy boundaries between work and rest" },
+  41: { shadow: "Fantasy",         gift: "Anticipation",   siddhi: "Emanation",      essence: "the seed of new experience; imagination grounded" },
+  42: { shadow: "Expectation",     gift: "Detachment",     siddhi: "Celebration",    essence: "completing cycles and letting go with grace" },
+  43: { shadow: "Deafness",        gift: "Insight",        siddhi: "Epiphany",       essence: "inner knowing that breaks through as breakthrough" },
+  44: { shadow: "Interference",    gift: "Teamwork",       siddhi: "Synarchy",       essence: "instinct for people that builds the right team" },
+  45: { shadow: "Dominance",       gift: "Synergy",        siddhi: "Communion",      essence: "gathering community toward a shared abundance" },
+  46: { shadow: "Seriousness",     gift: "Delight",        siddhi: "Ecstasy",        essence: "embodied joy; loving being in a body" },
+  47: { shadow: "Oppression",      gift: "Transmutation",  siddhi: "Transfiguration",essence: "transforming mental oppression into insight" },
+  48: { shadow: "Inadequacy",      gift: "Resourcefulness",siddhi: "Wisdom",         essence: "the depth that fears it is not enough, and is" },
+  49: { shadow: "Reaction",        gift: "Revolution",     siddhi: "Rebirth",        essence: "principled change from the inside out" },
+  50: { shadow: "Corruption",      gift: "Equilibrium",    siddhi: "Harmony",        essence: "values and responsibility that keep the whole in balance" },
+  51: { shadow: "Agitation",       gift: "Initiative",     siddhi: "Awakening",      essence: "shock and courage that catalyze awakening" },
+  52: { shadow: "Stress",          gift: "Restraint",      siddhi: "Stillness",      essence: "the concentrated stillness beneath pressure" },
+  53: { shadow: "Immaturity",      gift: "Expansion",      siddhi: "Superabundance", essence: "beginning new cycles of growth and development" },
+  54: { shadow: "Greed",           gift: "Aspiration",     siddhi: "Ascension",      essence: "ambition transmuted into spiritual aspiration" },
+  55: { shadow: "Victimisation",   gift: "Freedom",        siddhi: "Freedom",        essence: "emotional freedom; the end of victimhood" },
+  56: { shadow: "Distraction",     gift: "Enrichment",     siddhi: "Intoxication",   essence: "the storyteller who enriches through experience" },
+  57: { shadow: "Unease",          gift: "Intuition",      siddhi: "Clarity",        essence: "penetrating intuition in the present moment" },
+  58: { shadow: "Dissatisfaction", gift: "Vitality",       siddhi: "Bliss",          essence: "the joy of improvement and aliveness" },
+  59: { shadow: "Dishonesty",      gift: "Intimacy",       siddhi: "Transparency",   essence: "the openness that creates true intimacy" },
+  60: { shadow: "Limitation",      gift: "Realism",        siddhi: "Justice",        essence: "accepting limits as the doorway to breakthrough" },
+  61: { shadow: "Psychosis",       gift: "Inspiration",    siddhi: "Sanctity",       essence: "the mystery at the heart of inner truth" },
+  62: { shadow: "Intellect",       gift: "Precision",      siddhi: "Impeccability",  essence: "clear, precise expression of the facts" },
+  63: { shadow: "Doubt",           gift: "Inquiry",        siddhi: "Truth",          essence: "doubt matured into rigorous, honest inquiry" },
+  64: { shadow: "Confusion",       gift: "Imagination",    siddhi: "Illumination",   essence: "the mind's chaos resolving into illumination" },
+};
+
+export const GK_SEQUENCE_META = {
+  life_work:  { label: "Life's Work", sphere: "your outer purpose, how you are meant to shine and contribute in the world (your Conscious Sun)" },
+  evolution:  { label: "Evolution",   sphere: "your core life challenge, the pressure that drives your growth (your Conscious Earth)" },
+  radiance:   { label: "Radiance",    sphere: "your health and vitality, how your energy shines when you are aligned (your Conscious Moon)" },
+  purpose:    { label: "Purpose",     sphere: "your deeper relational purpose and the love you are here to give (your Conscious Node)" },
+  attraction: { label: "Attraction",  sphere: "what you draw to you and the pattern of your closest bonds (your Unconscious Sun)" },
+  iq:         { label: "IQ",          sphere: "your natural genius and how you are gifted to prosper and work (your Unconscious Node)" },
+};
+
+export function resolveKey(value) {
+  const n = Number(String(value || "").match(/\d+/)?.[0]);
+  return GENE_KEYS[n] ? { number: n, ...GENE_KEYS[n] } : null;
+}

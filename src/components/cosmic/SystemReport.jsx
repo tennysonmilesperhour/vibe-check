@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { systemReading } from "@/lib/wisdom/engine";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Sparkles, Download, ChevronDown, ChevronUp } from "lucide-react";
 
 // ── Per-system detail renderers ─────────────────────────────────────────────
 
@@ -156,53 +156,6 @@ function GenericDetail({ data, fields }) {
   );
 }
 
-// ── Prompt builders ──────────────────────────────────────────────────────────
-
-function buildPrompt(systemId, profile, cosmicProfile) {
-  const birthInfo = [
-    cosmicProfile.first_name && `Name: ${cosmicProfile.first_name} ${cosmicProfile.last_name || ''}`.trim(),
-    cosmicProfile.birth_date && `Birth Date: ${cosmicProfile.birth_date}`,
-    cosmicProfile.birth_time && `Birth Time: ${cosmicProfile.birth_time}`,
-    cosmicProfile.birth_location && `Birth Location: ${cosmicProfile.birth_location}`,
-  ].filter(Boolean).join(", ");
-
-  const prompts = {
-    astrology: `You are a thoughtful, grounded astrologer. Generate a comprehensive yet accessible natal chart interpretation for: ${birthInfo}.
-Profile data: Sun in ${profile.sun_sign || '?'}, Moon in ${profile.moon_sign || '?'}, Rising ${profile.rising_sign || '?'}, North Node in ${profile.north_node || '?'}.
-${profile.custom_notes ? `Additional notes: ${profile.custom_notes}` : ''}
-Cover: (1) Core personality synthesis of the major placements, (2) The interplay between Sun/Moon/Rising — how these energies harmonize or create tension, (3) North Node evolutionary path and what it asks of this person, (4) Karmic themes and growth edges, (5) Practical life guidance. Be specific, poetic but not vague, and deeply personal.`,
-
-    human_design: `You are a Human Design analyst. Generate a comprehensive report for: ${birthInfo}.
-Type: ${profile.type || '?'}, Authority: ${profile.authority || '?'}, Profile: ${profile.profile || '?'}, Definition: ${profile.definition || '?'}, Strategy: ${profile.strategy || '?'}, Incarnation Cross: ${profile.incarnation_cross || '?'}.
-${profile.custom_notes ? `Additional notes: ${profile.custom_notes}` : ''}
-Cover: (1) Type strategy and how to use energy correctly, (2) Authority — the decision-making process in depth, (3) Profile lines — the archetypal role and karmic themes, (4) Incarnation Cross — the overarching life purpose, (5) Definition — how energy moves through their chart, (6) Practical guidance for aligned living.`,
-
-    gene_keys: `You are a Gene Keys guide. Generate a comprehensive hologenetic profile reading for: ${birthInfo}.
-Life's Work Key: ${profile.life_work || '?'}, Evolution Key: ${profile.evolution || '?'}, Radiance Key: ${profile.radiance || '?'}, Purpose Key: ${profile.purpose || '?'}, Attraction Key: ${profile.attraction || '?'}, IQ Key: ${profile.iq || '?'}.
-Cover: (1) Activation Sequence — the physical wellbeing path (Life's Work + Evolution), (2) Venus Sequence — emotional intelligence and relationships (Radiance + Purpose), (3) Pearl Sequence — vocation and prosperity (Attraction + IQ), (4) The overarching Golden Path and how these sequences interweave, (5) Shadow patterns to transcend and Gifts to cultivate.`,
-
-    numerology: `You are a numerologist. Generate a comprehensive reading for: ${birthInfo}.
-Life Path: ${profile.life_path || '?'}, Expression: ${profile.expression || '?'}, Soul Urge: ${profile.soul_urge || '?'}, Personal Year: ${profile.personal_year || '?'}.
-Cover: (1) Life Path — the core soul lesson and life theme in depth, (2) Expression Number — natural talents and how purpose manifests outwardly, (3) Soul Urge — the deep inner motivation and heart's desire, (4) Personal Year — the current cycle energy and what it asks, (5) How all four numbers interact and the story they tell together.`,
-
-    tarot_archetype: `You are a Tarot archetypal reader. Generate a comprehensive soul archetype reading for: ${birthInfo}.
-Birth Card: ${profile.birth_card || '?'}, Shadow/Teacher Card: ${profile.shadow_card || '?'}.
-Cover: (1) Birth Card archetype — the soul's primary lens and gifts, (2) Shadow/Teacher Card — what challenges and initiates this person, (3) The dynamic interplay between the two cards and how they create a complete picture, (4) How this archetype shows up in relationships, vocation, and personal growth, (5) Practices and contemplations aligned with this archetypal path.`,
-
-    enneagram: `You are a wise, psychologically grounded Enneagram teacher. Generate a comprehensive type reading for: ${birthInfo}.
-Type: ${profile.type || '?'}, Wing: ${profile.wing || '?'}, Instinctual Variant: ${profile.instinct || '?'}${profile.tritype ? `, Tritype: ${profile.tritype}` : ''}.
-${profile.custom_notes ? `Additional notes: ${profile.custom_notes}` : ''}
-Cover: (1) The core type — its basic fear, basic desire, and the passion/fixation that runs the pattern, (2) How the wing flavors the type's expression, (3) The instinctual variant — how the survival drive shapes daily behavior and relationships, (4) Lines of integration (growth) and disintegration (stress) — what health and stress look like for this type, (5) A practical growth path: practices, reframes, and what waking up from the pattern feels like.`,
-
-    chakras: `You are an energy healing and chakra guide. Generate a comprehensive chakra analysis for: ${birthInfo}.
-Dominant/Focus Center: ${profile.dominant_center || '?'}.
-${profile.custom_notes ? `Additional notes: ${profile.custom_notes}` : ''}
-Cover: (1) The dominant center's gifts and how they express, (2) How this center relates to all 7 chakras and which may be over/under-active in relation, (3) Emotional and physical patterns associated with this focus, (4) Balancing practices — movement, breathwork, sound, color, affirmation, (5) Integration guidance for wholeness.`,
-  };
-
-  return prompts[systemId] || `Generate a comprehensive reading for the ${systemId} system based on: ${JSON.stringify(profile)}`;
-}
-
 // ── PDF Export ───────────────────────────────────────────────────────────────
 
 async function exportToPDF(systemLabel, reportText, profileData) {
@@ -291,7 +244,6 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
   const meta = SYSTEM_META[systemId];
   const [expanded, setExpanded] = useState(false);
   const [report, setReport] = useState(null);
-  const [loading, setLoading] = useState(false);
   const cardRef = useRef(null);
 
   // When the Loom sends the reader here ("Deep dive into X"), open this card
@@ -300,25 +252,20 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
   useEffect(() => {
     if (!autoOpen) return;
     setExpanded(true);
+    setReport((r) => r || systemReading(systemId, profile[systemId] || {}, cosmicProfile));
     const t = setTimeout(() => {
       cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpen, openNonce]);
 
   if (!meta) return null;
   const { label, color, emoji, Detail } = meta;
   const data = profile[systemId];
 
-  const generate = async () => {
-    setLoading(true);
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: buildPrompt(systemId, data || {}, cosmicProfile),
-      model: "claude_sonnet_4_6",
-    });
-    setReport(result);
-    setLoading(false);
+  const generate = () => {
+    // Composed locally from the wisdom engine — no API, no credits, instant.
+    setReport(systemReading(systemId, data || {}, cosmicProfile));
   };
 
   return (
@@ -355,20 +302,15 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
               )}
             </div>
 
-            {loading ? (
-              <div className="flex items-center gap-3 py-6">
-                <Loader2 className="w-5 h-5 animate-spin" style={{ color }} />
-                <span className="text-sm" style={{ color: 'rgba(105,95,128,0.7)' }}>Generating your {label} reading…</span>
-              </div>
-            ) : report ? (
+            {report ? (
               <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(70,60,92,0.85)' }}>
                 {report}
               </div>
             ) : (
               <div className="text-center py-4">
                 <p className="text-xs mb-3" style={{ color: 'rgba(105,95,128,0.55)' }}>
-                                  Each oracle reading channels from the cosmic well — uses a small amount of credits
-                                </p>
+                  A full, personalized reading composed from your profile — always free
+                </p>
                 <Button onClick={generate} className="btn-cosmic rounded-xl text-sm">
                   <Sparkles className="w-4 h-4 mr-2" /> Generate Full Reading
                 </Button>

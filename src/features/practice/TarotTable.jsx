@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Reading, DailyCheckIn } from "@/entities/all";
-import { InvokeLLM } from "@/integrations/Core";
+import { tarotReading } from "@/lib/wisdom/readings";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
@@ -118,19 +118,16 @@ export default function TarotTable() {
       const resonance = me?.cosmic_profile ? summarizeGraph(resonanceGraph(me.cosmic_profile, todayKey())) : "";
       const recent = await DailyCheckIn.list("-date", 7).catch(() => []);
       const week = recent.map((c) => `${c.date}: mood ${c.mood_score}${c.emotions?.length ? `, felt ${c.emotions.join("/")}` : ""}`).join("; ");
-      const cardsText = drawn.map((c) => `${c.position}: ${c.card.name}${c.reversed ? " (reversed)" : ""} [${c.card.keywords.join(", ")}]`).join("\n");
 
-      const text = await InvokeLLM({
-        prompt: `You are a wise, plainspoken tarot reader. Spread: ${spread.name}.${question.trim() ? ` The question held: "${question.trim()}".` : ""}
-
-Cards drawn:
-${cardsText}
-${week ? `\nTheir actual week: ${week}` : ""}
-${resonance ? `\nTheir chart resonances:\n${resonance}` : ""}
-
-Read the spread as one story, woven with their real week where it genuinely connects. Speak directly to them. Grounded, specific, kind but honest. No em dashes. 3-4 short paragraphs, then one closing line beginning "Carry this:".`,
+      // Woven locally from the cards, your week, and your chart — no API.
+      const result = tarotReading({
+        spreadName: spread.name,
+        deck: deckId,
+        cards: drawn,
+        question: question.trim(),
+        week,
+        resonanceSummary: resonance,
       });
-      const result = typeof text === "string" ? text : text?.response || "";
       setInterpretation(result);
       if (savedReading?.id) {
         await Reading.update(savedReading.id, { interpretation: result, linked_checkin_date: todayKey() }).catch(() => {});

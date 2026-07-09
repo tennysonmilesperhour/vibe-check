@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { DailyCheckIn, Person } from "@/entities/all";
-import { InvokeLLM } from "@/integrations/Core";
+import { patternReading } from "@/lib/wisdom/readings";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { format } from "date-fns";
 import { parseLocalDate, addDaysKey, todayKey } from "@/lib/dates";
@@ -92,12 +92,8 @@ export default function Analytics() {
     setOracleBusy(true);
     setOracleError(null);
     try {
-      const sample = filtered.slice(0, 30).map((c) => ({ d: c.date, m: c.mood_score, e: c.energy_level, s: c.sleep_quality, emo: c.emotions, moon: c.moon_phase }));
-      const text = await InvokeLLM({
-        prompt: `You are a perceptive, warm pattern-reader. Here are ${sample.length} recent daily check-ins (JSON): ${JSON.stringify(sample)}.
-Name the two or three deepest patterns you see, speak to the person directly, and end with one practical experiment for the coming week. Specific and grounded. No lists of numbers, no generic wellness advice, no em dashes. 3 short paragraphs.`,
-      });
-      const result = typeof text === "string" ? text : text?.response || "";
+      // Read locally from your actual check-in data — no API.
+      const result = patternReading(filtered.slice(0, 60));
       setOracle(result);
       sessionStorage.setItem(cacheKey, JSON.stringify(result));
     } catch (e) {

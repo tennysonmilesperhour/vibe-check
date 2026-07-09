@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Person, Relationship, Connection, DailyCheckIn, User } from "@/entities/all";
-import { InvokeLLM } from "@/integrations/Core";
+import { synergyReading } from "@/lib/wisdom/readings";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -106,15 +106,8 @@ export default function People() {
         }
       }
       const me = await base44.auth.me();
-      const text = await InvokeLLM({
-        prompt: `You are a relational astrologer and systems reader. Compare these two cosmic profiles and describe the synergy: where these two people naturally feed each other, and where friction is structural rather than personal.
-
-PERSON A (the reader): ${JSON.stringify(me?.cosmic_profile || {})}
-PERSON B (${person.name}): ${JSON.stringify(snapshot || { note: "profile unknown; speak to what a connection needs when one chart is a mystery" })}
-
-Warm, specific, honest. No em dashes. 2-3 short paragraphs.`,
-      });
-      const reading = typeof text === "string" ? text : text?.response || "";
+      // Composed locally by comparing both blueprints — no API.
+      const reading = synergyReading(me?.cosmic_profile || {}, snapshot, person.name);
       const updated = await Person.update(person.id, { synergy_reading: reading, synergy_generated_at: new Date().toISOString() });
       setDetail({ ...person, ...updated, synergy_reading: reading });
       load();

@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { generateCosmicWisdom } from "@/functions/generateCosmicWisdom";
+import { periodWisdom } from "@/lib/wisdom/readings";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { getPeriodKey, todayKey } from "@/lib/dates";
-import { resonanceGraph, summarizeGraph } from "@/lib/resonance/graph";
+import { resonanceGraph } from "@/lib/resonance/graph";
 
-const buildResonanceSummary = (user) => {
-    try {
-        return summarizeGraph(resonanceGraph(user?.cosmic_profile || {}, todayKey()));
-    } catch {
-        return "";
-    }
+// Read receipts live client-side now that wisdom is generated locally.
+const readKey = (periodType, periodKey) => `cosmic_wisdom_read:${periodType}:${periodKey}`;
+const isReadLocal = (periodType, periodKey) => {
+    try { return localStorage.getItem(readKey(periodType, periodKey)) === "1"; } catch { return false; }
+};
+const composeWisdom = (profile, periodType) => {
+    const graph = (() => { try { return resonanceGraph(profile || {}, todayKey()); } catch { return null; } })();
+    return periodWisdom(periodType, profile || {}, graph);
 };
 
 const PERIOD_CONFIG = {
@@ -41,15 +43,14 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         try {
             const user = await base44.auth.me();
             setMe(user);
-            const enabled = user?.cosmic_profile?.enabled_systems || [];
+            const profile = user?.cosmic_profile || {};
+            const enabled = profile.enabled_systems || [];
             if (enabled.length === 0) { setLoading(false); return; }
             setHasProfile(true);
 
-            // Try to load existing via the function (it checks cache first)
-            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: false, resonance_summary: buildResonanceSummary(user) });
-            if (res?.data?.wisdom) {
-                setWisdom(res.data.wisdom);
-            }
+            // Composed locally from the profile and today's sky — no API.
+            const w = composeWisdom(profile, periodType);
+            setWisdom({ ...w, is_read: isReadLocal(periodType, getPeriodKey(periodType)) });
         } catch (e) {
             const msg = e?.response?.data?.error || e?.message || 'Something went wrong';
             setError(msg);
@@ -58,29 +59,23 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         setLoading(false);
     };
 
-    const generate = async (force = false) => {
+    const generate = () => {
         setGenerating(true);
         setError(null);
         try {
-            const res = await generateCosmicWisdom({ period_type: periodType, period_key: getPeriodKey(periodType), force_regenerate: force, resonance_summary: buildResonanceSummary(me) });
-            if (res?.data?.wisdom) setWisdom(res.data.wisdom);
-            else if (res?.data?.stub) setError('AI is not configured yet. Add the ANTHROPIC_API_KEY secret in Supabase to enable wisdom.');
+            const w = composeWisdom(me?.cosmic_profile || {}, periodType);
+            setWisdom({ ...w, is_read: false });
         } catch (e) {
-            const msg = e?.response?.data?.error || e?.message || 'Generation failed';
-            setError(msg);
+            setError(e?.message || 'Generation failed');
             console.error(e);
         }
         setGenerating(false);
     };
 
-    const markRead = async () => {
+    const markRead = () => {
         if (wisdom && !wisdom.is_read) {
-            try {
-                await base44.entities.CosmicWisdom.update(wisdom.id, { is_read: true });
-                setWisdom(prev => ({ ...prev, is_read: true }));
-            } catch {
-                // read receipt is best-effort
-            }
+            try { localStorage.setItem(readKey(periodType, getPeriodKey(periodType)), "1"); } catch { /* best-effort */ }
+            setWisdom(prev => ({ ...prev, is_read: true }));
         }
         setExpanded(e => !e);
     };

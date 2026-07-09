@@ -4,10 +4,25 @@ import { resonanceGraph } from "@/lib/resonance/graph";
 import { SYSTEMS } from "@/lib/resonance/tables";
 import { todayKey } from "@/lib/dates";
 import { useLoomLayout } from "./useLoomLayout";
-import { WheelRings, ProgressiveGeometry, DrawPath } from "./LoomGeometry";
+import { WheelRings, LoomFigure, DrawPath } from "./LoomGeometry";
 import MoonGlyph from "./MoonGlyph";
 
 const SYSTEM_LABEL = Object.fromEntries(SYSTEMS.map((s) => [s.id, s.label]));
+
+// Selectable sacred-geometry styles for the wheel's backdrop.
+const GEOMETRY_STYLES = [
+  { id: "hexagram", label: "Hexagram" },
+  { id: "dodecagram", label: "Dodecagram" },
+  { id: "metatron", label: "Metatron" },
+  { id: "aspects", label: "Aspect Web" },
+];
+const GEOMETRY_KEY = "loom.geometry";
+const DEFAULT_GEOMETRY = "hexagram";
+const readGeometry = () => {
+  if (typeof window === "undefined") return DEFAULT_GEOMETRY;
+  const saved = window.localStorage.getItem(GEOMETRY_KEY);
+  return GEOMETRY_STYLES.some((s) => s.id === saved) ? saved : DEFAULT_GEOMETRY;
+};
 
 /**
  * The Loom — the app's signature visualization. Your placements plotted on
@@ -18,6 +33,12 @@ const SYSTEM_LABEL = Object.fromEntries(SYSTEMS.map((s) => [s.id, s.label]));
 export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeepDive }) {
   const reduced = useReducedMotion();
   const [selected, setSelected] = useState(null); // {type:'node'|'thread', data}
+  const [geoStyle, setGeoStyle] = useState(readGeometry);
+
+  const chooseGeometry = (id) => {
+    setGeoStyle(id);
+    try { window.localStorage.setItem(GEOMETRY_KEY, id); } catch { /* private mode */ }
+  };
 
   const graph = useMemo(() => resonanceGraph(profile || {}, dateKey), [profile, dateKey]);
   const layout = useLoomLayout(graph, size);
@@ -46,7 +67,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
         style={{ width: "100%", height: "auto", display: "block" }}
       >
         <WheelRings cx={layout.cx} cy={layout.cy} rZodiac={layout.rZodiac} rGates={layout.rGates} highlightGates={highlightGates} />
-        <ProgressiveGeometry cx={layout.cx} cy={layout.cy} r={layout.rPlaced} completedCount={completedCount} />
+        <LoomFigure style={geoStyle} cx={layout.cx} cy={layout.cy} size={size} nodes={layout.nodes} />
 
         {/* resonance threads */}
         {layout.threads.map((thread, i) => (
@@ -116,6 +137,30 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
           </span>
         </p>
       )}
+
+      {/* geometry style picker */}
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5" role="group" aria-label="Sacred geometry style">
+        {GEOMETRY_STYLES.map((s) => {
+          const on = s.id === geoStyle;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => chooseGeometry(s.id)}
+              aria-pressed={on}
+              className="text-xs px-3 py-1.5 rounded-full transition"
+              style={{
+                border: `1px solid ${on ? "var(--gh-gold)" : "rgba(255,253,246,0.4)"}`,
+                background: on ? "rgba(253,201,78,0.9)" : "rgba(255,253,246,0.12)",
+                color: on ? "var(--gh-ink)" : "var(--gh-cream)",
+                fontWeight: on ? 600 : 400,
+              }}
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* detail panel: accessible alternative to floating tooltips */}
       {selected && (

@@ -19,9 +19,13 @@ const GEOMETRY_STYLES = [
 const GEOMETRY_KEY = "loom.geometry";
 const DEFAULT_GEOMETRY = "hexagram";
 const readGeometry = () => {
-  if (typeof window === "undefined") return DEFAULT_GEOMETRY;
-  const saved = window.localStorage.getItem(GEOMETRY_KEY);
-  return GEOMETRY_STYLES.some((s) => s.id === saved) ? saved : DEFAULT_GEOMETRY;
+  try {
+    const saved = window.localStorage.getItem(GEOMETRY_KEY);
+    return GEOMETRY_STYLES.some((s) => s.id === saved) ? saved : DEFAULT_GEOMETRY;
+  } catch {
+    // no window, or storage blocked (sandboxed iframe / cookies disabled)
+    return DEFAULT_GEOMETRY;
+  }
 };
 
 /**

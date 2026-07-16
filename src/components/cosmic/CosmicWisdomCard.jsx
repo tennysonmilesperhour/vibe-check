@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { periodWisdom } from "@/lib/wisdom/readings";
-import { Button } from "@/components/ui/button";
-import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { getPeriodKey, todayKey } from "@/lib/dates";
 import { resonanceGraph } from "@/lib/resonance/graph";
+import { createPageUrl } from "@/utils";
+import { tint } from "./systemMeta";
 
-// Read receipts live client-side now that wisdom is generated locally.
+// Read receipts live client-side now that wisdom is composed locally.
 const readKey = (periodType, periodKey) => `cosmic_wisdom_read:${periodType}:${periodKey}`;
 const isReadLocal = (periodType, periodKey) => {
     try { return localStorage.getItem(readKey(periodType, periodKey)) === "1"; } catch { return false; }
@@ -16,61 +18,39 @@ const composeWisdom = (profile, periodType) => {
     return periodWisdom(periodType, profile || {}, graph);
 };
 
-const PERIOD_CONFIG = {
-    daily:   { label: "Today",      emoji: "☀️",  color: "var(--gh-gold)",   glow: "rgba(253,201,78,0.35)" },
-    weekly:  { label: "This Week",  emoji: "🌙",  color: "var(--gh-rose)",   glow: "rgba(244,140,160,0.35)" },
-    monthly: { label: "This Month", emoji: "🌊",  color: "var(--gh-peach)",  glow: "rgba(247,158,126,0.35)" },
-    yearly:  { label: "This Year",  emoji: "⭐",  color: "var(--gh-amber)",  glow: "rgba(250,176,94,0.35)" },
+const PERIOD_LABEL = {
+    daily: "Today's wisdom",
+    weekly: "This week",
+    monthly: "This month",
+    yearly: "This year",
 };
 
 export default function CosmicWisdomCard({ periodType = "daily" }) {
-    const cfg = PERIOD_CONFIG[periodType];
+    const label = PERIOD_LABEL[periodType] || PERIOD_LABEL.daily;
     const [wisdom, setWisdom] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [generating, setGenerating] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [hasProfile, setHasProfile] = useState(false);
-    const [error, setError] = useState(null);
-    const [me, setMe] = useState(null);
 
     useEffect(() => {
-        checkAndLoad();
+        let cancelled = false;
+        (async () => {
+            setLoading(true);
+            try {
+                const user = await base44.auth.me();
+                const profile = user?.cosmic_profile || {};
+                if (cancelled) return;
+                if ((profile.enabled_systems || []).length === 0) { setLoading(false); return; }
+                setHasProfile(true);
+                const w = composeWisdom(profile, periodType);
+                setWisdom({ ...w, is_read: isReadLocal(periodType, getPeriodKey(periodType)) });
+            } catch {
+                // unauthenticated mount: the gate handles it
+            }
+            if (!cancelled) setLoading(false);
+        })();
+        return () => { cancelled = true; };
     }, [periodType]);
-
-    const checkAndLoad = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const user = await base44.auth.me();
-            setMe(user);
-            const profile = user?.cosmic_profile || {};
-            const enabled = profile.enabled_systems || [];
-            if (enabled.length === 0) { setLoading(false); return; }
-            setHasProfile(true);
-
-            // Composed locally from the profile and today's sky — no API.
-            const w = composeWisdom(profile, periodType);
-            setWisdom({ ...w, is_read: isReadLocal(periodType, getPeriodKey(periodType)) });
-        } catch (e) {
-            const msg = e?.response?.data?.error || e?.message || 'Something went wrong';
-            setError(msg);
-            console.error('CosmicWisdom error:', msg);
-        }
-        setLoading(false);
-    };
-
-    const generate = () => {
-        setGenerating(true);
-        setError(null);
-        try {
-            const w = composeWisdom(me?.cosmic_profile || {}, periodType);
-            setWisdom({ ...w, is_read: false });
-        } catch (e) {
-            setError(e?.message || 'Generation failed');
-            console.error(e);
-        }
-        setGenerating(false);
-    };
 
     const markRead = () => {
         if (wisdom && !wisdom.is_read) {
@@ -82,110 +62,78 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
 
     const isUnread = wisdom && !wisdom.is_read;
 
-    if (!hasProfile && !loading) return null;
+    if (loading) {
+        return <div className="p-5" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }} aria-busy="true" />;
+    }
+
+    // The inviting blank state: no systems woven yet.
+    if (!hasProfile) {
+        return (
+            <div className="p-5" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}>
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--gh-ink-muted)" }}>{label}</p>
+                <p className="font-display text-xl mt-2" style={{ color: "var(--gh-ink)" }}>
+                    Weave your cosmos to receive daily wisdom
+                </p>
+                <p className="text-sm mt-1" style={{ color: "var(--gh-ink-soft)" }}>
+                    Add your birth date and the systems you work with; every reading is computed from them.
+                </p>
+                <Link to={createPageUrl("CosmicAddons")} className="ink-button inline-block text-sm mt-4">
+                    Weave your cosmos
+                </Link>
+            </div>
+        );
+    }
+
+    if (!wisdom) return null;
 
     return (
         <div
-            className="rounded-2xl p-5 transition-all duration-500 cursor-pointer"
-            onClick={!wisdom ? undefined : markRead}
+            className="p-5 cursor-pointer transition-colors duration-300"
+            onClick={markRead}
             style={{
-                background: isUnread
-                    ? `linear-gradient(135deg, rgba(253,251,247,0.95), rgba(255,255,255,0.95))`
-                    : 'rgba(255,255,255,0.5)',
-                border: `1px solid ${isUnread ? cfg.color : 'rgba(61,52,80,0.1)'}`,
-                boxShadow: isUnread ? `0 0 30px ${cfg.glow}, 0 0 60px ${cfg.glow}40` : 'none',
-                animation: isUnread ? 'pulse-border 2.5s ease-in-out infinite' : 'none',
+                background: isUnread ? tint("--gh-gold", 10) : "var(--gh-cream)",
+                border: isUnread ? "1px solid var(--gh-gold)" : "1px solid hsl(var(--border))",
             }}
         >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                    <span className="text-xl">{cfg.emoji}</span>
-                    <div>
-                        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: cfg.color }}>
-                            {cfg.label}
+            <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--gh-ink-muted)" }}>
+                    {label}
+                    {isUnread && (
+                        <span className="ml-2 px-1.5 py-0.5 text-xs font-semibold normal-case tracking-normal rounded-sm"
+                            style={{ background: tint("--gh-gold", 25), color: "var(--gh-ink-soft)" }}>
+                            new
                         </span>
-                        {isUnread && (
-                            <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full font-semibold animate-pulse"
-                                style={{ background: `${cfg.color}25`, color: cfg.color }}>
-                                New ✦
-                            </span>
-                        )}
-                    </div>
-                </div>
-                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    {wisdom && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
-                            disabled={generating}
-                            onClick={() => generate(true)}
-                            style={{ color: 'rgba(105,95,128,0.5)' }}>
-                            <RefreshCw className={`w-3 h-3 ${generating ? 'animate-spin' : ''}`} />
-                        </Button>
                     )}
-                    {wisdom && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={markRead}
-                            style={{ color: 'rgba(105,95,128,0.6)' }}>
-                            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </Button>
-                    )}
-                </div>
+                </p>
+                <button type="button" onClick={(e) => { e.stopPropagation(); markRead(); }}
+                    aria-label={expanded ? "Collapse wisdom" : "Expand wisdom"}
+                    style={{ color: "var(--gh-ink-muted)" }}>
+                    {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
             </div>
 
-            {/* Content */}
-            {(loading || generating) ? (
-                <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 shrink-0"
-                        style={{ border: `2px solid ${cfg.color}30`, borderTopColor: cfg.color }} />
-                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>
-                        {generating ? "Channeling your cosmic wisdom..." : "Loading..."}
-                    </p>
-                </div>
-            ) : error ? (
-                <div className="flex items-center justify-between gap-3" onClick={e => e.stopPropagation()}>
-                    <p className="text-xs" style={{ color: 'rgba(217,92,80,0.7)' }}>{error}</p>
-                    <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg shrink-0"
-                        style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
-                        <RefreshCw className="w-3 h-3 mr-1" /> Retry
-                    </Button>
-                </div>
-            ) : !hasProfile ? null : !wisdom ? (
-                <div className="flex items-center justify-between" onClick={e => e.stopPropagation()}>
-                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>No wisdom generated yet</p>
-                    <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg"
-                        style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
-                        <Sparkles className="w-3 h-3 mr-1" /> Generate
-                    </Button>
-                </div>
+            {wisdom.theme && (
+                <p className="font-display text-xl mb-1" style={{ color: "var(--gh-ink)" }}>
+                    {wisdom.theme}
+                </p>
+            )}
+            {!expanded ? (
+                <p className="text-sm leading-relaxed line-clamp-2" style={{ color: "var(--gh-ink-soft)" }}>
+                    {wisdom.wisdom}
+                </p>
             ) : (
-                <div>
-                    {wisdom.theme && (
-                        <p className="text-sm font-semibold mb-2" style={{ color: 'rgba(61,52,80,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>
-                            {wisdom.theme}
-                        </p>
-                    )}
-                    {/* Preview line always visible */}
-                    {!expanded && (
-                        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgba(105,95,128,0.75)' }}>
-                            {wisdom.wisdom}
-                        </p>
-                    )}
-                    {/* Full content when expanded */}
-                    {expanded && (
-                        <div className="space-y-3 mt-1">
-                            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'rgba(70,60,92,0.85)' }}>
-                                {wisdom.wisdom}
+                <div className="space-y-3">
+                    <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "var(--gh-ink-soft)" }}>
+                        {wisdom.wisdom}
+                    </p>
+                    {wisdom.contemplation && (
+                        <div className="p-3" style={{ background: tint("--gh-gold", 12), borderLeft: "2px solid var(--gh-gold)" }}>
+                            <p className="text-xs font-semibold mb-1 uppercase tracking-widest" style={{ color: "var(--gh-ink-muted)" }}>
+                                Contemplation
                             </p>
-                            {wisdom.contemplation && (
-                                <div className="p-3 rounded-xl mt-2"
-                                    style={{ background: `${cfg.color}0d`, border: `1px solid ${cfg.color}25` }}>
-                                    <p className="text-xs font-semibold mb-1 uppercase tracking-widest" style={{ color: cfg.color }}>
-                                        Contemplation
-                                    </p>
-                                    <p className="text-sm leading-relaxed" style={{ color: 'var(--gh-ink-soft)' }}>
-                                        {wisdom.contemplation}
-                                    </p>
-                                </div>
-                            )}
+                            <p className="text-sm leading-relaxed" style={{ color: "var(--gh-ink-soft)" }}>
+                                {wisdom.contemplation}
+                            </p>
                         </div>
                     )}
                 </div>

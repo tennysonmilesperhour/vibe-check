@@ -18,7 +18,7 @@ const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
  * tarotReading({ spreadName, deck, cards, question, week, resonanceSummary })
  * cards: [{ card, position, reversed }]. Weaves the spread into one story.
  */
-export function tarotReading({ spreadName, deck = "tarot", cards = [], question = "", week = "", resonanceSummary = "" } = {}) {
+export function tarotReading({ spreadName = "spread", deck = "tarot", cards = [], question = "", week = "", resonanceSummary = "" } = {}) {
   if (!cards.length) return "";
   const paras = [];
 

@@ -1,85 +1,74 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Copy, Mail, Check } from "lucide-react";
+import { Copy, Check, Share2 } from "lucide-react";
 
+/**
+ * Share the app link. Email invites need server-side sending that does not
+ * exist yet, so this offers only what actually works: copy, or the native
+ * share sheet where the browser has one.
+ */
 export default function InviteModal({ open, onClose }) {
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const inviteUrl = window.location.origin;
+  const canNativeShare = typeof navigator !== "undefined" && !!navigator.share;
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(inviteUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Link copied!", description: "Share it with your friend." });
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: "Link copied", description: "Send it to your friend." });
+    } catch {
+      toast({ title: "Could not copy", description: "Select the link and copy it by hand.", variant: "destructive" });
+    }
   };
 
-  const handleSendInvite = async () => {
-    if (!email.trim()) return;
-    setSending(true);
+  const handleNativeShare = async () => {
     try {
-      await base44.users.inviteUser(email.trim(), "user");
-      setEmail("");
-      toast({ title: "✦ Invitation sent", description: `${email} has been invited to join your constellation.` });
-    } catch (e) {
-      toast({ title: "Copy the link instead", description: e?.message || "Email invites are not available yet.", variant: "destructive" });
+      await navigator.share({
+        title: "Vibe Check",
+        text: "One honest check-in each evening. Weave your chart with mine.",
+        url: inviteUrl,
+      });
+    } catch {
+      // person closed the share sheet; nothing to do
     }
-    setSending(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(194,80,60,0.25)', maxWidth: 420 }}>
+      <DialogContent className="rounded-none" style={{ background: "var(--gh-field)", border: "1px solid hsl(var(--border))", maxWidth: 420 }}>
         <DialogHeader>
-          <DialogTitle className="gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 18 }}>
-            ✦ Invite to Your Constellation
+          <DialogTitle className="font-display text-xl" style={{ color: "var(--gh-ink)" }}>
+            Invite a friend
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.7)' }}>
-          Invite a friend to join Vibe Check. Once they create their cosmic profile, you can add them to your constellation for synergy readings.
+        <p className="text-sm mb-4" style={{ color: "var(--gh-ink-soft)" }}>
+          Once they weave their own cosmos, you can add them to your people and
+          read the synergy between your charts.
         </p>
 
-        {/* Copy link */}
-        <div className="mb-5">
-          <Label className="text-xs mb-2 block" style={{ color: 'rgba(82,72,104,0.7)' }}>Share your invite link</Label>
-          <div className="flex gap-2">
-            <div className="flex-1 px-3 py-2 rounded-lg text-xs truncate"
-              style={{ background: 'rgba(255,255,255,0.64)', border: '1px solid rgba(61,52,80,0.12)', color: 'rgba(105,95,128,0.8)' }}>
-              {inviteUrl}
-            </div>
-            <Button onClick={handleCopyLink} size="sm" variant="outline"
-              style={{ border: '1px solid rgba(194,80,60,0.3)', color: copied ? '#C9834B' : '#C2503C', background: 'rgba(194,80,60,0.08)' }}>
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            </Button>
+        <div className="flex gap-2">
+          <div className="flex-1 px-3 py-2 text-xs truncate flex items-center"
+            style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }}>
+            {inviteUrl}
           </div>
+          <button type="button" onClick={handleCopyLink} aria-label="Copy invite link"
+            className="px-3 flex items-center transition-colors"
+            style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-accent)", background: "transparent" }}>
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          </button>
         </div>
 
-        {/* Email invite */}
-        <div>
-          <Label className="text-xs mb-2 block" style={{ color: 'rgba(82,72,104,0.7)' }}>Or send an email invitation</Label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="friend@example.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSendInvite()}
-              className="flex-1"
-            />
-            <Button onClick={handleSendInvite} disabled={!email.trim() || sending} className="btn-cosmic rounded-lg px-4">
-              <Mail className="w-4 h-4 mr-1.5" />
-              {sending ? "Sending..." : "Invite"}
-            </Button>
-          </div>
-        </div>
+        {canNativeShare && (
+          <button type="button" onClick={handleNativeShare} className="ink-button w-full text-sm mt-3 inline-flex items-center justify-center gap-2">
+            <Share2 className="w-4 h-4" /> Share the link
+          </button>
+        )}
       </DialogContent>
     </Dialog>
   );

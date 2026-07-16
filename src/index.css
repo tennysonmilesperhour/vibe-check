@@ -182,34 +182,6 @@
   .ghost-cream-button:hover { background: rgba(255, 253, 246, 0.12); }
 }
 
-/* ── Legacy-class mapping ──────────────────────────────────────
-   Older components (SystemToggle, ProfileForm, SystemReport,
-   CorrespondenceMap, InviteModal, HealingBoard) still use these
-   class names. They resolve to Golden Hour flat surfaces:
-   solid ink, real borders, no blur, no gradient text. */
-.glass-card,
-.glass-card-glow {
-  background: var(--gh-cream);
-  border: 1px solid hsl(var(--border));
-  box-shadow: 0 1px 2px rgba(90, 36, 48, 0.05), 0 6px 20px rgba(90, 36, 48, 0.06);
-}
-
-.gradient-text,
-.gradient-text-gold {
-  color: var(--gh-accent);
-}
-
-.btn-cosmic {
-  background: var(--gh-ink);
-  color: var(--gh-field);
-  border: none;
-  transition: background-color 150ms ease-out;
-}
-.btn-cosmic:hover { background: var(--gh-ink-soft); }
-
-.orb-purple, .orb-blue { display: none; }
-.shimmer, .pulse-glow { animation: none; }
-/* ── end transitional block ── */
 
 /* Reduced motion: every animation collapses to (near-)instant. */
 @media (prefers-reduced-motion: reduce) {

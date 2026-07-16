@@ -1,41 +1,69 @@
-# vibe-check
+# Vibe Check
 
-**Welcome to your Base44 project** 
+One honest check-in each evening, woven into your cosmic map.
 
-**About**
+Vibe Check is a daily wellness ritual with computed truth at its core: a
+multi-step evening check-in, seven wisdom systems (astrology, Human Design,
+Gene Keys, numerology, tarot archetypes, Enneagram, chakras) connected by a
+deterministic resonance engine, and a living mandala — the Loom — that
+genuinely changes with the sky. Readings are composed from local content
+tables and your own data, never improvised: the app can always answer
+"why am I seeing this?"
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+## Stack
 
-This project contains everything you need to run your app locally.
+- **Frontend:** Vite + React 18, Tailwind + shadcn/ui (vendored in
+  `src/components/ui/`), framer-motion, recharts.
+- **Backend:** Supabase — Postgres with row-level security on every table,
+  auth (email/password + magic link). Schema lives in `supabase/migrations/`.
+- **Hosting:** Vercel (SPA rewrite + security headers in `vercel.json`).
 
-**Edit the code in your local development environment**
+## Local development
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
-
-**Prerequisites:** 
-
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
-
-```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+```sh
+npm install
+npm run dev
 ```
 
-Run the app: `npm run dev`
+Create `.env.local` with the Supabase project credentials:
 
-**Publish your changes**
+```
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon key>
+```
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+Without these the app boots to a loud misconfiguration notice on the sign-in
+screen.
 
-**Docs & Support**
+## Scripts
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Vite dev server |
+| `npm run build` | Production build into `dist/` (also emits `/version.json` for the update toast) |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | ESLint over the repo |
+| `npm test` | Vitest unit suites (the resonance/wisdom engines are exhaustively tested) |
+| `npm run typecheck` | `tsc` over `jsconfig.json` |
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+## Project layout
+
+- `src/lib/` — pure logic: dates, streaks, boundaries, correlations, crypto
+  export, and the resonance + wisdom engines (`src/lib/resonance/`,
+  `src/lib/wisdom/`). Keep this layer pure and unit-tested.
+- `src/features/` — feature UI grouped by surface (today, loom, practice,
+  patterns, people, shell).
+- `src/pages/` + `src/pages.config.js` — routed pages.
+- `src/api/` — thin Supabase adapters (`supabase.js`, `entities.js`, and the
+  Base44-compatibility facade `base44Client.js`).
+- `supabase/migrations/` — schema, applied via the Supabase CLI or MCP
+  (`supabase db push` / `apply_migration`).
+- `docs/` — specs, plans, and roadmaps (see
+  `docs/roadmap/2026-07-16-function-and-beauty-plan.md` for current state).
+
+## Design language
+
+Golden Hour: one palette, three registers (sky, field, dusk), Instrument
+Serif display type, square corners, no dark purple, no italics. Tokens live
+in `src/index.css` — components use `--gh-*` custom properties and the mapped
+Tailwind semantic classes, not raw hex.

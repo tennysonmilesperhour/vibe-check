@@ -1,0 +1,14 @@
+{
+  "name": "Vibe Check",
+  "short_name": "Vibe Check",
+  "description": "One honest check-in each evening, woven into your cosmic map.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFDFA",
+  "theme_color": "#FDC94E",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

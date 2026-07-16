@@ -12,19 +12,22 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Scrapers need absolute URLs; update these when a custom domain lands. -->
+    <!-- Scrapers need absolute URLs; update these when a custom domain lands.
+         Must be the public production origin (keep in sync with
+         CANONICAL_ORIGIN in src/features/shell/UpdateToast.jsx) — the other
+         vercel.app aliases sit behind Vercel SSO, which scrapers can't pass. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Vibe Check" />
     <meta property="og:title" content="Vibe Check" />
     <meta property="og:description" content="One honest check-in each evening, woven into your cosmic map." />
-    <meta property="og:url" content="https://vibe-check-tennysonmilesperhour.vercel.app/" />
-    <meta property="og:image" content="https://vibe-check-tennysonmilesperhour.vercel.app/og.png" />
+    <meta property="og:url" content="https://vibe-check-flame-nu.vercel.app/" />
+    <meta property="og:image" content="https://vibe-check-flame-nu.vercel.app/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Vibe Check" />
     <meta name="twitter:description" content="One honest check-in each evening, woven into your cosmic map." />
-    <meta name="twitter:image" content="https://vibe-check-tennysonmilesperhour.vercel.app/og.png" />
+    <meta name="twitter:image" content="https://vibe-check-flame-nu.vercel.app/og.png" />
   </head>
   <body>
     <div id="root"></div>

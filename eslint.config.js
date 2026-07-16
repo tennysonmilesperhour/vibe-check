@@ -18,7 +18,11 @@ export default [
     files: ["src/**/*.{js,mjs,cjs,jsx}"],
     ignores: ["src/components/ui/**/*", "src/test/**/*"],
     languageOptions: {
-      globals: { ...globals.browser, __BUILD_ID__: "readonly" },
+      globals: {
+        ...globals.browser,
+        __BUILD_ID__: "readonly",
+        __IS_PRODUCTION_BUILD__: "readonly",
+      },
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: "module",

@@ -3,28 +3,30 @@ import React, { useEffect, useState } from "react";
 const POLL_MS = 3 * 60 * 1000;
 
 // The public production origin — keep in sync with the og: URLs in index.html,
-// and update both when a custom domain lands. Polling must be absolute: every
-// other alias of this app (vibe-check-tennysonmilesperhour.vercel.app, the
-// git-main alias, per-deployment URLs) sits behind Vercel Deployment
-// Protection, where a background fetch of /version.json gets a 302 to the SSO
-// login and dies on CORS. This origin serves version.json publicly with
-// Access-Control-Allow-Origin: *, so the check works from any origin.
+// and update both when a custom domain lands. Polling must be absolute: the
+// production deployment is also reachable at aliases behind Vercel Deployment
+// Protection (vibe-check-tennysonmilesperhour.vercel.app, the git-main alias),
+// where a same-origin fetch of /version.json gets a 302 to the SSO login and
+// dies. This origin serves version.json publicly (Access-Control-Allow-Origin
+// pinned in vercel.json), so the check works from any production alias.
 const CANONICAL_ORIGIN = "https://vibe-check-flame-nu.vercel.app";
 
 /**
  * Notices when a newer deployment exists (by polling version.json on the
  * public production origin, which every build stamps) and offers a one-tap
- * reload. Checks on an interval and whenever the tab regains focus. Dev
- * builds and local previews of production builds skip it.
+ * reload. Checks on an interval and whenever the tab regains focus. Runs only
+ * on the production deployment — preview/local builds carry a one-off stamp
+ * that can never match production, so they'd nag forever.
  */
 export default function UpdateToast() {
   const [stale, setStale] = useState(false);
 
   useEffect(() => {
-    if (typeof __BUILD_ID__ === "undefined" || import.meta.env.DEV) return;
-    // `vite preview` runs a production build whose stamp never matches the
-    // deployed one; don't nag about updates there.
-    if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return;
+    // Gate on the build-time flag, not the current hostname: the production
+    // build is served from several aliases (public origin + SSO-gated ones),
+    // while every origin that would false-nag (preview deploys, `vite preview`
+    // on any host, forks) is a non-production build.
+    if (typeof __BUILD_ID__ === "undefined" || !__IS_PRODUCTION_BUILD__) return;
 
     let cancelled = false;
     const check = async () => {

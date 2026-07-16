@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -48,6 +49,7 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <Suspense fallback={<div className="min-h-screen field-wash" aria-busy="true" />}>
     <Routes>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
@@ -76,6 +78,7 @@ const AuthenticatedApp = () => {
       <Route path="/CosmicWisdom" element={<Navigate to="/Analytics?tab=wisdom" replace />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 

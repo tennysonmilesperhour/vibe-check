@@ -25,7 +25,7 @@ function friendlyAuthError(err) {
  * Rendered inline whenever there is no session.
  */
 export default function AuthGate() {
-  const [mode, setMode] = useState("signin"); // signin | signup | magic
+  const [mode, setMode] = useState("signin"); // signin | signup | magic | reset
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -39,7 +39,15 @@ export default function AuthGate() {
     setError(null);
     setNotice(null);
     try {
-      if (mode === "magic") {
+      if (mode === "reset") {
+        const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+          // Come back to this origin; the app shows the new-password screen
+          // when it detects the recovery session.
+          redirectTo: window.location.origin,
+        });
+        if (err) throw err;
+        setNotice("Check your email. The link brings you back here to set a new password.");
+      } else if (mode === "magic") {
         const { error: err } = await supabase.auth.signInWithOtp({
           email,
           // Come back to whatever origin the person is actually using, not the
@@ -113,7 +121,7 @@ export default function AuthGate() {
             <Input id="auth-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               autoComplete="email" className="mt-1 bg-white/95" />
           </div>
-          {mode !== "magic" && (
+          {mode !== "magic" && mode !== "reset" && (
             <div>
               <Label htmlFor="auth-password" style={{ color: "var(--gh-cream)" }}>Password</Label>
               <Input id="auth-password" type="password" required minLength={8} value={password}
@@ -126,11 +134,20 @@ export default function AuthGate() {
           {notice && <p className="text-sm" style={{ color: "var(--gh-cream)", background: "rgba(255,253,246,0.18)", padding: "8px 10px" }}>{notice}</p>}
 
           <button type="submit" className="cream-button w-full" disabled={busy}>
-            {busy ? "One moment…" : mode === "signup" ? "Create account" : mode === "magic" ? "Send magic link" : "Sign in"}
+            {busy ? "One moment…"
+              : mode === "signup" ? "Create account"
+              : mode === "magic" ? "Send magic link"
+              : mode === "reset" ? "Send the reset link"
+              : "Sign in"}
           </button>
         </form>
 
         <div className="mt-6 flex flex-col gap-2 text-sm" style={{ color: "rgba(255,253,246,0.9)" }}>
+          {mode === "signin" && (
+            <button type="button" className="underline underline-offset-4 text-left" onClick={() => setMode("reset")}>
+              Forgot your password?
+            </button>
+          )}
           {mode !== "signin" && (
             <button type="button" className="underline underline-offset-4 text-left" onClick={() => setMode("signin")}>
               Sign in with a password

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
@@ -24,6 +24,13 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const reduced = useReducedMotion();
   const [stepIndex, setStepIndex] = useState(0);
   const [saving, setSaving] = useState(false);
+  const stepRegionRef = useRef(null);
+
+  // Keyboard and screen-reader users track progress: each step change moves
+  // focus to the new step's region (which carries the question heading).
+  useEffect(() => {
+    stepRegionRef.current?.focus();
+  }, [stepIndex]);
   const [form, setForm] = useState(() => ({
     mood_score: existing?.mood_score ?? null,
     energy_level: existing?.energy_level ?? null,
@@ -147,11 +154,15 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
           <AnimatePresence mode="wait">
             <motion.div
               key={stepId}
+              ref={stepRegionRef}
+              tabIndex={-1}
+              role="group"
+              aria-label={`Step ${stepIndex + 1} of ${STEP_IDS.length}`}
               initial={{ opacity: 0, x: reduced ? 0 : 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: reduced ? 0 : -24 }}
               transition={{ duration: reduced ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full"
+              className="w-full outline-none"
             >
               {steps[stepId]}
             </motion.div>

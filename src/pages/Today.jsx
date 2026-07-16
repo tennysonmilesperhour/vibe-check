@@ -71,6 +71,12 @@ export default function Today() {
     migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
   }, [load]);
 
+  // Ambient tab title: a quiet nudge while today is unwritten.
+  useEffect(() => {
+    document.title = !loading && !entry ? "Vibe Check — your evening awaits" : "Vibe Check";
+    return () => { document.title = "Vibe Check"; };
+  }, [loading, entry]);
+
   const moon = moonPhase(todayKey());
   const dateLine = format(parseLocalDate(todayKey()), "EEEE, MMMM d");
 
@@ -169,7 +175,7 @@ export default function Today() {
 
         <nav aria-label="Continue" className="flex flex-wrap gap-4 hairline pt-6 text-sm font-medium">
           <Link to={createPageUrl("Analytics")} style={{ color: "var(--gh-accent)" }}>See your patterns</Link>
-          <Link to={createPageUrl("TarotReading")} style={{ color: "var(--gh-accent)" }}>Pull a card</Link>
+          <Link to={createPageUrl("Practice")} style={{ color: "var(--gh-accent)" }}>Pull a card</Link>
           <Link to={createPageUrl("CosmicAddons")} style={{ color: "var(--gh-accent)" }}>Visit your cosmos</Link>
         </nav>
       </PageTransition>

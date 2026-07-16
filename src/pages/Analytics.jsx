@@ -107,8 +107,17 @@ export default function Analytics() {
   if (checkIns.length === 0) {
     return (
       <div className="field-wash min-h-screen">
-        <PageTransition className="max-w-3xl mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl" style={{ color: "var(--gh-ink)" }}>Patterns need days to grow from</h1>
+        <PageTransition className="max-w-3xl mx-auto px-6 py-20 text-center relative">
+          <svg viewBox="0 0 200 200" aria-hidden="true"
+            className="absolute inset-x-0 top-6 mx-auto w-64 h-64" style={{ opacity: 0.1 }}>
+            <circle cx="100" cy="100" r="86" fill="none" stroke="var(--gh-ink)" strokeWidth="1" />
+            <circle cx="100" cy="100" r="64" fill="none" stroke="var(--gh-ink)" strokeWidth="0.6" strokeDasharray="2 5" />
+            {Array.from({ length: 12 }, (_, i) => {
+              const a = (i * 30 - 90) * (Math.PI / 180);
+              return <circle key={i} cx={100 + 86 * Math.cos(a)} cy={100 + 86 * Math.sin(a)} r="1.6" fill="var(--gh-ink)" />;
+            })}
+          </svg>
+          <h1 className="text-4xl relative" style={{ color: "var(--gh-ink)" }}>Patterns need days to grow from</h1>
           <p className="mt-3 text-sm" style={{ color: "var(--gh-ink-muted)" }}>
             After a few evenings of checking in, this page starts telling you things you did not consciously know.
           </p>

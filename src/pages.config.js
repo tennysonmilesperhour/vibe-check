@@ -47,12 +47,17 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import { lazy } from 'react';
 import Today from './pages/Today';
-import Analytics from './pages/Analytics';
-import People from './pages/People';
-import Practice from './pages/Practice';
-import CosmicAddons from './pages/CosmicAddons';
 import __Layout from './Layout.jsx';
+
+// Route-level code splitting: Today ships in the main bundle (it is the
+// landing surface); every other page loads on navigation. App.jsx provides
+// the Suspense fallback (a plain field wash, no spinner theater).
+const Analytics = lazy(() => import('./pages/Analytics'));
+const People = lazy(() => import('./pages/People'));
+const Practice = lazy(() => import('./pages/Practice'));
+const CosmicAddons = lazy(() => import('./pages/CosmicAddons'));
 
 
 export const PAGES = {

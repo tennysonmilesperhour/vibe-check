@@ -47,8 +47,8 @@ function yearCardLabel(birthDate) {
 function Field({ label, hint, children }) {
     return (
         <div className="space-y-1">
-            <Label className="text-sm font-medium" style={{color: 'var(--warm-gray-700)'}}>{label}</Label>
-            {hint && <p className="text-xs" style={{color: 'var(--warm-gray-400)'}}>{hint}</p>}
+            <Label className="text-sm font-medium" style={{ color: 'var(--gh-ink-soft)' }}>{label}</Label>
+            {hint && <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{hint}</p>}
             {children}
         </div>
     );
@@ -57,9 +57,9 @@ function Field({ label, hint, children }) {
 /** Small amber pill used to flag a value the app computed for you. */
 function AutoBadge() {
     return (
-        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-full pointer-events-none"
-            style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>
-            auto
+        <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs px-1.5 py-0.5 rounded-sm pointer-events-none"
+            style={{ background: 'color-mix(in srgb, var(--gh-gold) 22%, transparent)', color: 'var(--gh-ink-soft)', border: '1px solid color-mix(in srgb, var(--gh-gold) 45%, transparent)' }}>
+            computed
         </span>
     );
 }
@@ -68,9 +68,9 @@ function AutoBadge() {
 function DerivedChip({ label, value }) {
     if (!value) return null;
     return (
-        <div className="flex flex-col gap-0.5 px-3 py-2 rounded-xl" style={{ background: 'rgba(201,131,75,0.08)', border: '1px solid rgba(201,131,75,0.2)' }}>
-            <span className="text-[10px] uppercase tracking-widest" style={{ color: 'rgba(201,131,75,0.85)' }}>{label}</span>
-            <span className="text-sm font-medium" style={{ color: 'rgba(61,52,80,0.9)' }}>{value}</span>
+        <div className="flex flex-col gap-0.5 px-3 py-2" style={{ background: 'color-mix(in srgb, var(--gh-gold) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--gh-gold) 35%, transparent)' }}>
+            <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--gh-ink-muted)' }}>{label}</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--gh-ink)' }}>{value}</span>
         </div>
     );
 }
@@ -129,7 +129,7 @@ export function AstrologyForm({ data, onChange, birthDate }) {
 
             {autoSign && (
                 <div className="md:col-span-2">
-                    <p className="text-xs mb-2" style={{ color: 'rgba(105,95,128,0.65)' }}>
+                    <p className="text-xs mb-2" style={{ color: 'var(--gh-ink-muted)' }}>
                         Derived from your Sun in {autoSign} — no birth time needed:
                     </p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -267,7 +267,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                         <DerivedChip label="Personal Day" value={pDay != null ? str(pDay) : null} />
                     </div>
                     {debts.length > 0 && (
-                        <p className="text-xs" style={{ color: 'rgba(105,95,128,0.7)' }}>
+                        <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>
                             Karmic debt: {debts.map(d => `${d.number} (${d.source})`).join(', ')}
                         </p>
                     )}
@@ -314,7 +314,7 @@ export function TarotForm({ data, onChange, birthDate }) {
 
             {autoYearCard && (
                 <div className="md:col-span-2">
-                    <p className="text-xs mb-2" style={{ color: 'rgba(105,95,128,0.65)' }}>The card walking with you this personal year:</p>
+                    <p className="text-xs mb-2" style={{ color: 'var(--gh-ink-muted)' }}>The card walking with you this personal year:</p>
                     <DerivedChip label="Personal Year Card" value={autoYearCard} />
                 </div>
             )}
@@ -392,11 +392,11 @@ export function ChakraForm({ data, onChange }) {
                             const short = area.split(' – ')[0];
                             return (
                                 <button key={area} type="button" onClick={() => toggleFocus(area)}
-                                    className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                                    className="px-3 py-1.5 rounded-sm text-xs font-medium transition-all"
                                     style={{
-                                        background: active ? 'rgba(194,80,60,0.25)' : 'rgba(255,255,255,0.64)',
-                                        border: active ? '1px solid rgba(194,80,60,0.5)' : '1px solid rgba(61,52,80,0.12)',
-                                        color: active ? '#C2503C' : 'rgba(105,95,128,0.7)',
+                                        background: active ? 'color-mix(in srgb, var(--gh-accent) 16%, transparent)' : 'var(--gh-cream)',
+                                        border: active ? '1px solid var(--gh-accent)' : '1px solid hsl(var(--border))',
+                                        color: active ? 'var(--gh-accent)' : 'var(--gh-ink-muted)',
                                     }}>
                                     {short}
                                 </button>

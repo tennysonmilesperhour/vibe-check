@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Sparkles, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import SystemToggle, { SYSTEMS } from "@/components/cosmic/SystemToggle";
 import {
     AstrologyForm, HumanDesignForm, GeneKeysForm,
@@ -129,7 +129,6 @@ export default function CosmicAddons() {
 
     return (
         <div className="p-6 space-y-8 min-h-screen relative">
-            <div className="orb-purple" style={{ top: '-40px', right: '10%' }} />
             <div className="max-w-4xl mx-auto relative z-10">
 
                 {/* Header */}
@@ -166,8 +165,8 @@ export default function CosmicAddons() {
                 )}
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="mb-6 w-full grid grid-cols-4"
-                        style={{ background: 'rgba(255,255,255,0.68)', border: '1px solid rgba(61,52,80,0.1)' }}>
+                    <TabsList className="mb-6 w-full grid grid-cols-4 rounded-none"
+                        style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
                         <TabsTrigger value="systems">Systems</TabsTrigger>
                         <TabsTrigger value="profile">My Profile</TabsTrigger>
                         <TabsTrigger value="correspondences">Connections</TabsTrigger>
@@ -176,40 +175,40 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 1: Toggle Systems ── */}
                     <TabsContent value="systems" className="space-y-6">
-                        <div className="glass-card p-6">
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Choose Your Systems</h3>
-                            <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>
-                                Toggle on the wisdom frameworks you resonate with. Enabled systems weave into your loom, readings, and daily weather.
+                        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Choose your systems</h3>
+                            <p className="text-sm mb-2" style={{ color: 'var(--gh-ink-muted)' }}>
+                                Turn on the wisdom frameworks you resonate with. Enabled systems weave into your loom, readings, and daily weather.
                             </p>
                             <SystemToggle enabledSystems={enabledSystems} onToggle={toggleSystem} />
                         </div>
 
                         {/* Birth Data */}
-                        <div className="glass-card p-6">
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Name & Birth Data</h3>
-                            <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>
-                                Your name is used for numerology calculations (expression number, soul urge, life path). Birth data helps calculate or verify your charts.
+                        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth data</h3>
+                            <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
+                                Your name feeds the numerology (expression, soul urge, life path). Your birth date computes everything derivable exactly.
                             </p>
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>First Name</Label>
+                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>First Name</Label>
                                     <Input className="mt-1" placeholder="Your first name" value={profile.first_name}
                                         onChange={e => setProfile(prev => ({ ...prev, first_name: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Last Name</Label>
+                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Last Name</Label>
                                     <Input className="mt-1" placeholder="Your last name" value={profile.last_name}
                                         onChange={e => setProfile(prev => ({ ...prev, last_name: e.target.value }))} />
                                 </div>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
                                 <div>
-                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Date of Birth</Label>
+                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Date of Birth</Label>
                                     <Input type="date" className="mt-1" value={profile.birth_date}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_date: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Time of Birth <span className="text-xs opacity-60">(optional)</span></Label>
+                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Time of Birth <span className="text-xs opacity-60">(optional)</span></Label>
                                     <Input type="time" className="mt-1" value={profile.birth_time}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_time: e.target.value }))} />
                                 </div>
@@ -217,17 +216,17 @@ export default function CosmicAddons() {
                             </div>
                             <div className="grid md:grid-cols-3 gap-4 mt-4">
                                 <div>
-                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>City of Birth</Label>
+                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>City of Birth</Label>
                                     <Input className="mt-1" placeholder="e.g. Denver" value={profile.birth_city || ''}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_city: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>State / Region <span className="text-xs opacity-60">(optional)</span></Label>
+                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>State / Region <span className="text-xs opacity-60">(optional)</span></Label>
                                     <Input className="mt-1" placeholder="e.g. Colorado" value={profile.birth_state || ''}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_state: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'rgba(82,72,104,0.8)' }}>Country of Birth</Label>
+                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Country of Birth</Label>
                                     <Input className="mt-1" placeholder="e.g. United States" value={profile.birth_country || ''}
                                         onChange={e => setProfile(prev => ({ ...prev, birth_country: e.target.value }))} />
                                 </div>
@@ -235,22 +234,22 @@ export default function CosmicAddons() {
                         </div>
 
                         <div className="flex justify-end">
-                            <Button onClick={saveProfile} disabled={isSaving} className="btn-cosmic rounded-xl">
+                            <button type="button" onClick={saveProfile} disabled={isSaving} className="ink-button text-sm inline-flex items-center disabled:opacity-60">
                                 <Save className="w-4 h-4 mr-2" />
-                                {isSaving ? 'Saving...' : 'Save Settings'}
-                            </Button>
+                                {isSaving ? 'Saving…' : 'Save your cosmos'}
+                            </button>
                         </div>
                     </TabsContent>
 
                     {/* ── Tab 2: Profile Detail Forms ── */}
                     <TabsContent value="profile" className="space-y-6">
                         {/* Sacred Geometry Blueprint */}
-                        <div className="glass-card p-6 flex flex-col items-center" style={{ border: '1px solid rgba(194,80,60,0.2)' }}>
-                            <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Your Cosmic Blueprint</h3>
-                            <p className="text-sm mb-3 w-full" style={{ color: 'rgba(105,95,128,0.65)' }}>Systems light up as you fill in your profile data</p>
-                            <div className="w-full mb-4 p-4 rounded-xl" style={{ background: 'rgba(194,80,60,0.08)', border: '1px solid rgba(194,80,60,0.25)' }}>
-                                <p className="text-sm font-medium mb-1" style={{ color: 'rgba(61,52,80,0.9)' }}>Computed, not generated</p>
-                                <p className="text-xs" style={{ color: 'rgba(105,95,128,0.65)' }}>
+                        <div className="p-6 flex flex-col items-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                            <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Your cosmic blueprint</h3>
+                            <p className="text-sm mb-3 w-full" style={{ color: 'var(--gh-ink-muted)' }}>Systems light up as you fill in your profile data</p>
+                            <div className="w-full mb-4 p-4" style={{ background: 'color-mix(in srgb, var(--gh-gold) 10%, transparent)', borderLeft: '2px solid var(--gh-gold)' }}>
+                                <p className="text-sm font-medium mb-1" style={{ color: 'var(--gh-ink)' }}>Computed, not generated</p>
+                                <p className="text-xs" style={{ color: 'var(--gh-ink-soft)' }}>
                                     Everything derivable from your name and birth date — Sun sign, decan, every core
                                     numerology number, your birth and shadow cards — is calculated exactly, in-app, and
                                     fills itself in below. Moon, Rising, North Node, Human Design and Gene Keys need
@@ -261,10 +260,9 @@ export default function CosmicAddons() {
                         </div>
 
                         {enabledSystems.length === 0 ? (
-                            <div className="glass-card p-12 text-center">
-                                <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(194,80,60,0.4)' }} />
-                                <p className="font-medium mb-1" style={{ color: 'rgba(82,72,104,0.8)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems enabled</p>
-                                <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>
+                            <div className="p-12 text-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                                <p className="font-medium mb-1" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems woven yet</p>
+                                <p className="text-sm" style={{ color: 'var(--gh-ink-muted)' }}>
                                     Go to the Systems tab and toggle on at least one system to enter your profile.
                                 </p>
                             </div>
@@ -273,13 +271,13 @@ export default function CosmicAddons() {
                                 const system = SYSTEMS.find(s => s.id === systemId);
                                 if (!system) return null;
                                 return (
-                                    <div key={systemId} className="glass-card p-6"
-                                        style={{ border: '1px solid rgba(194,80,60,0.2)' }}>
+                                    <div key={systemId} className="p-6"
+                                        style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
                                         <div className="flex items-center gap-3 mb-5">
-                                            <span className="text-2xl">{system.emoji}</span>
+                                            <system.Icon className="w-6 h-6 shrink-0" style={{ color: 'var(--gh-accent)' }} aria-hidden="true" />
                                             <div>
-                                                <h3 className="font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>{system.label}</h3>
-                                                <p className="text-xs mt-0.5" style={{ color: 'rgba(105,95,128,0.6)' }}>{system.description}</p>
+                                                <h3 className="font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>{system.label}</h3>
+                                                <p className="text-xs mt-0.5" style={{ color: 'var(--gh-ink-muted)' }}>{system.description}</p>
                                             </div>
                                         </div>
                                         {systemForms[systemId]}
@@ -289,10 +287,10 @@ export default function CosmicAddons() {
                         )}
                         {enabledSystems.length > 0 && (
                             <div className="flex justify-end">
-                                <Button onClick={saveProfile} disabled={isSaving} className="btn-cosmic rounded-xl">
+                                <button type="button" onClick={saveProfile} disabled={isSaving} className="ink-button text-sm inline-flex items-center disabled:opacity-60">
                                     <Save className="w-4 h-4 mr-2" />
-                                    {isSaving ? 'Saving...' : 'Save Profile'}
-                                </Button>
+                                    {isSaving ? 'Saving…' : 'Save your cosmos'}
+                                </button>
                             </div>
                         )}
                     </TabsContent>
@@ -304,8 +302,8 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 4: Deep Dive ── */}
                     <TabsContent value="deepdive" className="space-y-6">
-                        <div className="glass-card p-5">
-                            <p className="text-sm" style={{ color: 'rgba(105,95,128,0.7)' }}>
+                        <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                            <p className="text-sm" style={{ color: 'var(--gh-ink-soft)' }}>
                                 Each system below has a full structured breakdown and a deep reading composed from your profile — computed from content tables, never generated. Each can be exported as a PDF.
                             </p>
                         </div>

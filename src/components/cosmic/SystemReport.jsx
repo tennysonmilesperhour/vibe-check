@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { systemReading } from "@/lib/wisdom/engine";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { systemMeta, tint } from "./systemMeta";
 
 // ── Per-system detail renderers ─────────────────────────────────────────────
 
 function DataRow({ label, value }) {
   if (!value) return null;
   return (
-    <div className="flex flex-wrap items-baseline gap-2 py-1.5 border-b" style={{ borderColor: 'rgba(61,52,80,0.08)' }}>
-      <span className="text-xs uppercase tracking-widest w-36 shrink-0" style={{ color: 'rgba(105,95,128,0.6)' }}>{label}</span>
-      <span className="text-sm font-medium" style={{ color: 'rgba(61,52,80,0.9)' }}>{value}</span>
+    <div className="flex flex-wrap items-baseline gap-2 py-1.5" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
+      <span className="text-xs uppercase tracking-widest w-36 shrink-0" style={{ color: 'var(--gh-ink-muted)' }}>{label}</span>
+      <span className="text-sm font-medium" style={{ color: 'var(--gh-ink)' }}>{value}</span>
     </div>
   );
 }
@@ -18,7 +19,17 @@ function DataRow({ label, value }) {
 function Section({ title, children }) {
   return (
     <div className="mb-5">
-      <h4 className="text-xs font-bold uppercase tracking-widest mb-3 pb-1" style={{ color: 'rgba(194,80,60,0.7)', borderBottom: '1px solid rgba(194,80,60,0.15)' }}>{title}</h4>
+      <h4 className="text-xs font-bold uppercase tracking-widest mb-3 pb-1" style={{ color: 'var(--gh-accent)', borderBottom: '1px solid hsl(var(--border))' }}>{title}</h4>
+      {children}
+    </div>
+  );
+}
+
+function NotesBlock({ children }) {
+  if (!children) return null;
+  return (
+    <div className="mt-3 p-3 text-sm" style={{ background: tint('--gh-gold', 10), border: '1px solid hsl(var(--border))', color: 'var(--gh-ink-soft)' }}>
+      <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'var(--gh-ink-muted)' }}>Personal Notes</span>
       {children}
     </div>
   );
@@ -49,25 +60,20 @@ function AstrologyDetail({ data }) {
     <>
     <Section title="Planetary Placements">
       {PLANETS.map(p => data?.[p.key] && (
-        <div key={p.key} className="flex items-start gap-3 py-2.5" style={{ borderBottom: '1px solid rgba(61,52,80,0.06)' }}>
+        <div key={p.key} className="flex items-start gap-3 py-2.5" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
           <div className="w-28 shrink-0">
-            <p className="text-sm font-semibold" style={{ color: 'rgba(217,92,80,0.9)' }}>{p.label}</p>
-            <p className="text-xs" style={{ color: 'rgba(105,95,128,0.5)' }}>{p.desc}</p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--gh-accent)' }}>{p.label}</p>
+            <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{p.desc}</p>
           </div>
           <div className="flex-1">
-            <span className="px-2.5 py-1 rounded-full text-sm font-medium"
-              style={{ background: 'rgba(217,92,80,0.1)', color: 'rgba(217,92,80,0.85)', border: '1px solid rgba(217,92,80,0.2)' }}>
+            <span className="px-2.5 py-1 rounded-sm text-sm font-medium"
+              style={{ background: tint('--gh-accent', 10), color: 'var(--gh-accent)', border: `1px solid ${tint('--gh-accent', 30)}` }}>
               {data[p.key]}
             </span>
           </div>
         </div>
       ))}
-      {data?.custom_notes && (
-        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(217,92,80,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(217,92,80,0.12)' }}>
-          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(217,92,80,0.5)' }}>Personal Notes</span>
-          {data.custom_notes}
-        </div>
-      )}
+      <NotesBlock>{data?.custom_notes}</NotesBlock>
     </Section>
     {hasSignature && (
       <Section title="Sign Signature">
@@ -93,19 +99,14 @@ function HumanDesignDetail({ data }) {
       <Section title="9 Centers Overview">
         <div className="grid grid-cols-3 gap-2">
           {HD_CENTERS.map(c => (
-            <div key={c} className="p-2 rounded-lg text-center text-xs" style={{ background: 'rgba(194,80,60,0.05)', border: '1px solid rgba(194,80,60,0.1)', color: 'rgba(82,72,104,0.7)' }}>
+            <div key={c} className="p-2 text-center text-xs" style={{ background: tint('--gh-accent', 6), border: '1px solid hsl(var(--border))', color: 'var(--gh-ink-soft)' }}>
               {c}
             </div>
           ))}
         </div>
-        <p className="text-xs mt-2" style={{ color: 'rgba(105,95,128,0.5)' }}>Centers defined/undefined based on your full chart — consult the oracle reading below for a deeper analysis</p>
+        <p className="text-xs mt-2" style={{ color: 'var(--gh-ink-muted)' }}>Centers defined/undefined come from your full chart — the deep reading below goes further</p>
       </Section>
-      {data?.custom_notes && (
-        <div className="p-3 rounded-xl text-sm" style={{ background: 'rgba(194,80,60,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(194,80,60,0.12)' }}>
-          <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'rgba(194,80,60,0.5)' }}>Personal Notes</span>
-          {data.custom_notes}
-        </div>
-      )}
+      <NotesBlock>{data?.custom_notes}</NotesBlock>
     </>
   );
 }
@@ -130,9 +131,9 @@ function GeneKeysDetail({ data }) {
       {sequences.map(seq => (
         <Section key={seq.group} title={seq.group}>
           {seq.keys.map(k => data?.[k.key] && (
-            <div key={k.key} className="flex items-center gap-3 py-2" style={{ borderBottom: '1px solid rgba(61,52,80,0.06)' }}>
-              <span className="text-xs w-44 shrink-0" style={{ color: 'rgba(105,95,128,0.6)' }}>{k.label}</span>
-              <span className="px-2.5 py-1 rounded-full text-sm font-bold" style={{ background: 'rgba(242,149,46,0.1)', color: '#F2952E', border: '1px solid rgba(242,149,46,0.2)' }}>
+            <div key={k.key} className="flex items-center gap-3 py-2" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
+              <span className="text-xs w-44 shrink-0" style={{ color: 'var(--gh-ink-muted)' }}>{k.label}</span>
+              <span className="px-2.5 py-1 rounded-sm text-sm font-bold" style={{ background: tint('--gh-gold', 16), color: 'var(--gh-ink)', border: `1px solid ${tint('--gh-gold', 40)}` }}>
                 Key {data[k.key]}
               </span>
             </div>
@@ -147,16 +148,17 @@ function GenericDetail({ data, fields }) {
   return (
     <Section title="Profile Data">
       {fields.map(f => <DataRow key={f.key} label={f.label} value={data?.[f.key]} />)}
-      {data?.custom_notes && (
-        <div className="mt-3 p-3 rounded-xl text-sm" style={{ background: 'rgba(194,80,60,0.06)', color: 'rgba(82,72,104,0.85)', border: '1px solid rgba(194,80,60,0.12)' }}>
-          {data.custom_notes}
-        </div>
-      )}
+      <NotesBlock>{data?.custom_notes}</NotesBlock>
     </Section>
   );
 }
 
 // ── PDF Export ───────────────────────────────────────────────────────────────
+
+// Golden Hour ink on paper: ink #5A2430, accent #C2503C, muted #A6606E.
+const PDF_INK = [90, 36, 48];
+const PDF_ACCENT = [194, 80, 60];
+const PDF_MUTED = [166, 96, 110];
 
 async function exportToPDF(systemLabel, reportText, profileData) {
   const { jsPDF } = await import("jspdf");
@@ -168,23 +170,23 @@ async function exportToPDF(systemLabel, reportText, profileData) {
 
   // Header
   doc.setFontSize(20);
-  doc.setTextColor(120, 60, 220);
+  doc.setTextColor(...PDF_ACCENT);
   doc.text(`${systemLabel} — Full Report`, margin, y);
   y += 8;
 
   doc.setFontSize(9);
-  doc.setTextColor(140, 130, 170);
-  doc.text(`Generated ${new Date().toLocaleDateString()}`, margin, y);
+  doc.setTextColor(...PDF_MUTED);
+  doc.text(`Composed ${new Date().toLocaleDateString()} · Vibe Check`, margin, y);
   y += 10;
 
   // Profile summary
   if (profileData) {
     doc.setFontSize(10);
-    doc.setTextColor(80, 60, 120);
+    doc.setTextColor(...PDF_ACCENT);
     doc.text("Profile Data", margin, y);
     y += 5;
     doc.setFontSize(8.5);
-    doc.setTextColor(60, 50, 80);
+    doc.setTextColor(...PDF_INK);
     Object.entries(profileData).forEach(([k, v]) => {
       if (v && k !== 'custom_notes' && typeof v === 'string') {
         const line = `${k.replace(/_/g, ' ')}: ${v}`;
@@ -198,12 +200,12 @@ async function exportToPDF(systemLabel, reportText, profileData) {
 
   // Report body
   doc.setFontSize(10);
-  doc.setTextColor(80, 60, 120);
+  doc.setTextColor(...PDF_ACCENT);
   doc.text("Full Reading", margin, y);
   y += 6;
 
   doc.setFontSize(9);
-  doc.setTextColor(30, 20, 50);
+  doc.setTextColor(...PDF_INK);
   const lines = doc.splitTextToSize(reportText, maxW);
   lines.forEach(line => {
     if (y > 275) { doc.addPage(); y = margin; }
@@ -216,32 +218,29 @@ async function exportToPDF(systemLabel, reportText, profileData) {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-const SYSTEM_META = {
-  astrology:       { label: "Astrology",       color: "#D95C50", emoji: "♈", Detail: AstrologyDetail },
-  human_design:    { label: "Human Design",    color: "#C2503C", emoji: "⬡", Detail: HumanDesignDetail },
-  gene_keys:       { label: "Gene Keys",       color: "#F2952E", emoji: "🧬", Detail: GeneKeysDetail },
-  numerology:      { label: "Numerology",      color: "#C9834B", emoji: "∞",
-    Detail: ({ data }) => <GenericDetail data={data} fields={[
-      { key: 'life_path', label: 'Life Path' }, { key: 'expression', label: 'Expression' },
-      { key: 'soul_urge', label: 'Soul Urge' }, { key: 'personal_year', label: 'Personal Year' },
-    ]} /> },
-  tarot_archetype: { label: "Tarot Archetype", color: "#B8902F", emoji: "✦",
-    Detail: ({ data }) => <GenericDetail data={data} fields={[
-      { key: 'birth_card', label: 'Birth Card' }, { key: 'shadow_card', label: 'Shadow Card' },
-    ]} /> },
-  enneagram:       { label: "Enneagram",       color: "#C07A3E", emoji: "🎭",
-    Detail: ({ data }) => <GenericDetail data={data} fields={[
-      { key: 'type', label: 'Type' }, { key: 'wing', label: 'Wing' },
-      { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Tritype' },
-    ]} /> },
-  chakras:         { label: "Chakras",         color: "#E4517E", emoji: "◎",
-    Detail: ({ data }) => <GenericDetail data={data} fields={[
-      { key: 'dominant_center', label: 'Dominant Center' },
-    ]} /> },
+const SYSTEM_DETAILS = {
+  astrology: AstrologyDetail,
+  human_design: HumanDesignDetail,
+  gene_keys: GeneKeysDetail,
+  numerology: ({ data }) => <GenericDetail data={data} fields={[
+    { key: 'life_path', label: 'Life Path' }, { key: 'expression', label: 'Expression' },
+    { key: 'soul_urge', label: 'Soul Urge' }, { key: 'personal_year', label: 'Personal Year' },
+  ]} />,
+  tarot_archetype: ({ data }) => <GenericDetail data={data} fields={[
+    { key: 'birth_card', label: 'Birth Card' }, { key: 'shadow_card', label: 'Shadow Card' },
+  ]} />,
+  enneagram: ({ data }) => <GenericDetail data={data} fields={[
+    { key: 'type', label: 'Type' }, { key: 'wing', label: 'Wing' },
+    { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Tritype' },
+  ]} />,
+  chakras: ({ data }) => <GenericDetail data={data} fields={[
+    { key: 'dominant_center', label: 'Dominant Center' },
+  ]} />,
 };
 
 function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
-  const meta = SYSTEM_META[systemId];
+  const meta = systemMeta(systemId);
+  const Detail = SYSTEM_DETAILS[systemId];
   const [expanded, setExpanded] = useState(false);
   const [report, setReport] = useState(null);
   const cardRef = useRef(null);
@@ -259,27 +258,27 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
     return () => clearTimeout(t);
   }, [autoOpen, openNonce]);
 
-  if (!meta) return null;
-  const { label, color, emoji, Detail } = meta;
+  if (!meta || !Detail) return null;
+  const { label, Icon } = meta;
   const data = profile[systemId];
 
-  const generate = () => {
-    // Composed locally from the wisdom engine — no API, no credits, instant.
+  const compose = () => {
+    // Composed from the wisdom engine's content tables — exact, instant, local.
     setReport(systemReading(systemId, data || {}, cosmicProfile));
   };
 
   return (
-    <div ref={cardRef} className="glass-card overflow-hidden" style={{ border: `1px solid ${color}30`, scrollMarginTop: "1rem" }}>
+    <div ref={cardRef} className="overflow-hidden" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', scrollMarginTop: "1rem" }}>
       <button className="w-full p-5 flex items-center justify-between text-left"
         onClick={() => setExpanded(e => !e)}>
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{emoji}</span>
+          <Icon className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} aria-hidden="true" />
           <div>
-            <h3 className="font-bold text-base" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.95)' }}>{label}</h3>
-            <p className="text-xs mt-0.5" style={{ color: 'rgba(105,95,128,0.6)' }}>Full system report</p>
+            <h3 className="font-bold text-base" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>{label}</h3>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--gh-ink-muted)' }}>Full system report</p>
           </div>
         </div>
-        {expanded ? <ChevronUp className="w-4 h-4" style={{ color }} /> : <ChevronDown className="w-4 h-4" style={{ color }} />}
+        {expanded ? <ChevronUp className="w-4 h-4" style={{ color: 'var(--gh-accent)' }} /> : <ChevronDown className="w-4 h-4" style={{ color: 'var(--gh-accent)' }} />}
       </button>
 
       {expanded && (
@@ -288,32 +287,32 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
           <Detail data={data} />
 
           {/* Composed deep reading */}
-          <div className="mt-4 p-4 rounded-xl" style={{ background: `${color}08`, border: `1px solid ${color}20` }}>
+          <div className="mt-4 p-4" style={{ background: tint('--gh-gold', 8), border: '1px solid hsl(var(--border))' }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4" style={{ color }} />
-                <span className="text-sm font-semibold" style={{ color, fontFamily: 'Space Grotesk, sans-serif' }}>Deep Dive Reading</span>
+                <BookOpen className="w-4 h-4" style={{ color: 'var(--gh-accent)' }} />
+                <span className="text-sm font-semibold" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>Deep reading</span>
               </div>
               {report && (
                 <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, data)}
-                  className="text-xs gap-1.5" style={{ borderColor: `${color}30`, color, background: 'transparent' }}>
-                  <Download className="w-3 h-3" /> Export PDF
+                  className="text-xs gap-1.5 rounded-none" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
+                  <Download className="w-3 h-3" /> Save as PDF
                 </Button>
               )}
             </div>
 
             {report ? (
-              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(70,60,92,0.85)' }}>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--gh-ink-soft)' }}>
                 {report}
               </div>
             ) : (
               <div className="text-center py-4">
-                <p className="text-xs mb-3" style={{ color: 'rgba(105,95,128,0.55)' }}>
-                  A full, personalized reading composed from your profile — always free
+                <p className="text-xs mb-3" style={{ color: 'var(--gh-ink-muted)' }}>
+                  Composed exactly from your profile and the engine's content tables — nothing generated
                 </p>
-                <Button onClick={generate} className="btn-cosmic rounded-xl text-sm">
-                  <Sparkles className="w-4 h-4 mr-2" /> Generate Full Reading
-                </Button>
+                <button type="button" onClick={compose} className="ink-button text-sm">
+                  Compose your reading
+                </button>
               </div>
             )}
           </div>
@@ -326,10 +325,9 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
 export default function SystemReports({ enabledSystems, profile, cosmicProfile, openSystem, openNonce }) {
   if (enabledSystems.length === 0) {
     return (
-      <div className="glass-card p-12 text-center">
-        <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(194,80,60,0.4)' }} />
-        <p className="font-medium mb-1" style={{ color: 'rgba(82,72,104,0.8)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems enabled</p>
-        <p className="text-sm" style={{ color: 'rgba(122,112,144,0.6)' }}>Enable at least one system on the Systems tab.</p>
+      <div className="p-12 text-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+        <p className="font-medium mb-1" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems woven yet</p>
+        <p className="text-sm" style={{ color: 'var(--gh-ink-muted)' }}>Turn on at least one system on the Systems tab.</p>
       </div>
     );
   }

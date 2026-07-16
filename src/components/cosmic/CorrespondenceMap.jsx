@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { integratedReading } from "@/lib/wisdom/readings";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, Download, Loader2, BookOpen } from "lucide-react";
+import { Download, Loader2, BookOpen, Combine } from "lucide-react";
 import { SYSTEM_CORRESPONDENCES } from "./correspondences";
 import CosmicInsightBadge from "./CosmicInsightBadge";
+import { tint } from "./systemMeta";
 
 const PAIRS = [
   { systems: ["astrology", "human_design"],    key: "astrology_human_design" },
@@ -29,18 +29,18 @@ async function exportMapPDF(profile, deepReport) {
   let y = margin;
 
   doc.setFontSize(20);
-  doc.setTextColor(120, 60, 220);
+  doc.setTextColor(194, 80, 60);
   doc.text("Cosmic Correspondence Map", margin, y);
   y += 8;
 
   doc.setFontSize(9);
-  doc.setTextColor(140, 130, 170);
-  doc.text(`Generated ${new Date().toLocaleDateString()}`, margin, y);
+  doc.setTextColor(166, 96, 110);
+  doc.text(`Composed ${new Date().toLocaleDateString()} · Vibe Check`, margin, y);
   y += 10;
 
   // Static correspondences
   doc.setFontSize(11);
-  doc.setTextColor(80, 60, 120);
+  doc.setTextColor(194, 80, 60);
   doc.text("Cross-System Correspondences", margin, y);
   y += 7;
 
@@ -49,11 +49,11 @@ async function exportMapPDF(profile, deepReport) {
     if (!text) return;
     if (y > 250) { doc.addPage(); y = margin; }
     doc.setFontSize(9.5);
-    doc.setTextColor(100, 60, 160);
+    doc.setTextColor(166, 96, 110);
     doc.text(pair.systems.join(" × ").toUpperCase().replace(/_/g, ' '), margin, y);
     y += 5;
     doc.setFontSize(8.5);
-    doc.setTextColor(40, 30, 60);
+    doc.setTextColor(90, 36, 48);
     const lines = doc.splitTextToSize(text, maxW);
     lines.forEach(l => {
       if (y > 275) { doc.addPage(); y = margin; }
@@ -66,11 +66,11 @@ async function exportMapPDF(profile, deepReport) {
   if (deepReport) {
     doc.addPage(); y = margin;
     doc.setFontSize(13);
-    doc.setTextColor(80, 60, 120);
+    doc.setTextColor(194, 80, 60);
     doc.text("Comprehensive Integration Reading", margin, y);
     y += 8;
     doc.setFontSize(9);
-    doc.setTextColor(30, 20, 50);
+    doc.setTextColor(90, 36, 48);
     const lines = doc.splitTextToSize(deepReport, maxW);
     lines.forEach(l => {
       if (y > 275) { doc.addPage(); y = margin; }
@@ -100,23 +100,20 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
     <div className="space-y-6">
       {/* Active correspondences */}
       {activePairs.length > 0 && (
-        <div className="glass-card p-6">
+        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
           <div className="flex items-center gap-2 mb-1">
-            <BookOpen className="w-5 h-5" style={{ color: '#C2503C' }} />
-            <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Active Connections</h3>
+            <BookOpen className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} />
+            <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Active connections</h3>
           </div>
-          <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.6)' }}>Live cross-system resonances from your enabled blueprint</p>
-          <div className="space-y-4">
-            {activePairs.map(pair => (
-              <div key={pair.key} className="p-5 rounded-xl"
-                style={{ background: 'rgba(194,80,60,0.08)', border: '1px solid rgba(194,80,60,0.25)' }}>
+          <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>Live cross-system resonances from your enabled blueprint</p>
+          <div>
+            {activePairs.map((pair, i) => (
+              <div key={pair.key} className="py-4"
+                style={{ borderTop: i === 0 ? 'none' : '1px solid hsl(var(--border))' }}>
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   {pair.systems.map(s => <CosmicInsightBadge key={s} systemId={s} />)}
-                  <Badge className="text-xs" style={{ background: 'rgba(201,131,75,0.15)', color: '#C9834B', border: '1px solid rgba(201,131,75,0.25)' }}>
-                    ✦ Active
-                  </Badge>
                 </div>
-                <p className="text-sm leading-relaxed" style={{ color: 'rgba(70,60,92,0.8)' }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--gh-ink-soft)' }}>
                   {SYSTEM_CORRESPONDENCES[pair.key]?.trim()}
                 </p>
               </div>
@@ -127,16 +124,16 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
 
       {/* Inactive pairs */}
       {inactivePairs.length > 0 && (
-        <div className="glass-card p-6">
-          <h3 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: 'rgba(105,95,128,0.55)' }}>Unlock by enabling both systems</h3>
-          <div className="space-y-3">
-            {inactivePairs.map(pair => (
-              <div key={pair.key} className="p-4 rounded-xl opacity-45"
-                style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(61,52,80,0.08)' }}>
+        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+          <h3 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: 'var(--gh-ink-muted)' }}>Weave both systems to unlock</h3>
+          <div className="opacity-60">
+            {inactivePairs.map((pair, i) => (
+              <div key={pair.key} className="py-3"
+                style={{ borderTop: i === 0 ? 'none' : '1px solid hsl(var(--border))' }}>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   {pair.systems.map(s => <CosmicInsightBadge key={s} systemId={s} />)}
                 </div>
-                <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>
+                <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>
                   {SYSTEM_CORRESPONDENCES[pair.key]?.trim().slice(0, 80)}…
                 </p>
               </div>
@@ -146,38 +143,38 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
       )}
 
       {/* Deep Integration Report */}
-      <div className="glass-card-glow p-6">
+      <div className="p-6" style={{ background: tint('--gh-gold', 8), border: '1px solid hsl(var(--border))' }}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5" style={{ color: '#C2503C' }} />
-            <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Integrated Blueprint Reading</h3>
+            <Combine className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} />
+            <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Integrated blueprint reading</h3>
           </div>
           {deepReport && (
             <Button size="sm" variant="outline" onClick={() => exportMapPDF(profile, deepReport)}
-              className="gap-1.5 text-xs" style={{ borderColor: 'rgba(194,80,60,0.3)', color: '#C2503C', background: 'transparent' }}>
-              <Download className="w-3 h-3" /> Export Full PDF
+              className="gap-1.5 text-xs rounded-none" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
+              <Download className="w-3 h-3" /> Save as PDF
             </Button>
           )}
         </div>
-        <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.6)' }}>
+        <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
           A synthesized reading across all your active systems — the unified story they tell together
         </p>
 
         {loading ? (
           <div className="flex items-center gap-3 py-8">
-            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#C2503C' }} />
-            <span className="text-sm" style={{ color: 'rgba(105,95,128,0.7)' }}>Weaving your integrated blueprint…</span>
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--gh-accent)' }} />
+            <span className="text-sm" style={{ color: 'var(--gh-ink-muted)' }}>Weaving your integrated blueprint…</span>
           </div>
         ) : deepReport ? (
-          <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(70,60,92,0.85)' }}>
+          <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--gh-ink-soft)' }}>
             {deepReport}
           </div>
         ) : (
           <div className="text-center py-6">
-            <p className="text-xs mb-3" style={{ color: 'rgba(105,95,128,0.5)' }}>A deep synthesis woven across all your active systems — always free</p>
-            <Button onClick={generateDeepMap} disabled={enabledSystems.length === 0} className="btn-cosmic rounded-xl">
-              <Sparkles className="w-4 h-4 mr-2" /> Generate Integrated Reading
-            </Button>
+            <p className="text-xs mb-3" style={{ color: 'var(--gh-ink-muted)' }}>Composed exactly across your active systems — the story they tell together</p>
+            <button type="button" onClick={generateDeepMap} disabled={enabledSystems.length === 0} className="ink-button text-sm disabled:opacity-50">
+              Weave the integrated reading
+            </button>
           </div>
         )}
       </div>
@@ -186,8 +183,8 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
       {!deepReport && activePairs.length > 0 && (
         <div className="flex justify-end">
           <Button variant="outline" onClick={() => exportMapPDF(profile, null)}
-            className="gap-2 text-sm" style={{ borderColor: 'rgba(194,80,60,0.3)', color: '#C2503C', background: 'rgba(194,80,60,0.05)' }}>
-            <Download className="w-4 h-4" /> Export Correspondence Map PDF
+            className="gap-2 text-sm rounded-none" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
+            <Download className="w-4 h-4" /> Save the map as PDF
           </Button>
         </div>
       )}

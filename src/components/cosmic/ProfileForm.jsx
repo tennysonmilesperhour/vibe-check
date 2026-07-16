@@ -97,7 +97,7 @@ export function AstrologyForm({ data, onChange, birthDate }) {
     const derived = deriveAstrology(birthDate);
     const autoSign = derived.sun_sign;
 
-    // Fill the Sun sign and stash the sign's fixed attributes so the AI and the
+    // Fill the Sun sign and stash the sign's fixed attributes so the engine and the
     // deep-dive reports can reference them. Only writes empty fields.
     useEffect(() => {
         if (!autoSign) return;
@@ -143,7 +143,7 @@ export function AstrologyForm({ data, onChange, birthDate }) {
             )}
 
             <div className="md:col-span-2">
-                <Field label="Personal Notes" hint="Anything else about your chart you want the AI to reference">
+                <Field label="Personal Notes" hint="Anything else about your chart worth keeping alongside it">
                     <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="e.g. Venus in Scorpio, Saturn return, stellium in 8th house..." />
                 </Field>
             </div>

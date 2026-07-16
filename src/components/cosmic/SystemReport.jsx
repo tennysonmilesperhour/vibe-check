@@ -287,7 +287,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
           {/* Profile data */}
           <Detail data={data} />
 
-          {/* AI Report */}
+          {/* Composed deep reading */}
           <div className="mt-4 p-4 rounded-xl" style={{ background: `${color}08`, border: `1px solid ${color}20` }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">

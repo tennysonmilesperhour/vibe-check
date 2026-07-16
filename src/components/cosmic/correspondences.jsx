@@ -76,7 +76,7 @@ export const CHAKRA_CENTERS = [
     "Crown (Sahasrara) – Consciousness & unity"
 ];
 
-// Qualitative cross-system mapping for AI context enrichment
+// Qualitative cross-system mapping used by the correspondence surfaces
 export const SYSTEM_CORRESPONDENCES = {
     astrology_human_design: `
 Astrology and Human Design share roots: HD uses the I Ching's 64 hexagrams mapped to the zodiac wheel and planetary gates. Sun sign themes often resonate with one's Incarnation Cross. Moon sign qualities tend to mirror emotional authority patterns.`,

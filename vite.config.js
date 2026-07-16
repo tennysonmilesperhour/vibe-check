@@ -27,9 +27,6 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@/entities/all', replacement: path.resolve(__dirname, 'src/api/entities.js') },
-      { find: '@/functions/generateCosmicWisdom', replacement: path.resolve(__dirname, 'src/api/functions.js') },
-      { find: '@/functions/generateDailyWeather', replacement: path.resolve(__dirname, 'src/api/functions.js') },
-      { find: '@/integrations/Core', replacement: path.resolve(__dirname, 'src/api/integrations.js') },
       { find: '@', replacement: path.resolve(__dirname, 'src') },
     ],
   },

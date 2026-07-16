@@ -33,9 +33,9 @@ export function ScaleStep({ field, question, value, onChange }) {
             onClick={() => onChange(n)}
             className="h-12 text-sm font-bold transition-transform"
             style={{
-              background: value === n ? cream : "rgba(255,253,246,0.18)",
+              background: value === n ? cream : "rgba(255,253,246,0.24)",
               color: value === n ? "var(--gh-accent)" : cream,
-              border: `1px solid ${value != null && n <= value ? creamSoft : "rgba(255,253,246,0.3)"}`,
+              border: `1px solid ${value != null && n <= value ? cream : "rgba(255,253,246,0.45)"}`,
               transform: value === n ? "translateY(-3px)" : "none",
             }}
           >
@@ -116,9 +116,9 @@ export function MomentStep({ kind, question, value, onChange }) {
                 onClick={() => update({ intensity: n })}
                 className="h-8 text-xs font-bold"
                 style={{
-                  background: value?.intensity === n ? cream : "rgba(255,253,246,0.18)",
+                  background: value?.intensity === n ? cream : "rgba(255,253,246,0.24)",
                   color: value?.intensity === n ? "var(--gh-accent)" : cream,
-                  border: "1px solid rgba(255,253,246,0.3)",
+                  border: "1px solid rgba(255,253,246,0.45)",
                 }}
               >
                 {n}

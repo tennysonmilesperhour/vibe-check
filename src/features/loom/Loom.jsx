@@ -53,11 +53,23 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
 
   if (graph.nodes.length === 0) {
     return (
-      <div className="text-center py-10">
-        <p className="text-lg" style={{ color: "var(--gh-cream)" }}>The Loom is unwoven.</p>
-        <p className="text-sm mt-1" style={{ color: "rgba(255,253,246,0.8)" }}>
-          Add birth details and turn on a system or two, and your map begins to draw itself.
-        </p>
+      <div className="relative text-center py-16">
+        {/* A faint hint of the wheel to come: the ring geometry, unlit. */}
+        <svg viewBox="0 0 200 200" aria-hidden="true"
+          className="absolute inset-0 mx-auto h-full" style={{ opacity: 0.28 }}>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="var(--gh-cream)" strokeWidth="1" />
+          <circle cx="100" cy="100" r="64" fill="none" stroke="var(--gh-cream)" strokeWidth="0.6" strokeDasharray="2 5" />
+          {Array.from({ length: 12 }, (_, i) => {
+            const a = (i * 30 - 90) * (Math.PI / 180);
+            return <circle key={i} cx={100 + 86 * Math.cos(a)} cy={100 + 86 * Math.sin(a)} r="1.6" fill="var(--gh-cream)" />;
+          })}
+        </svg>
+        <div className="relative">
+          <p className="text-lg" style={{ color: "var(--gh-cream)" }}>The Loom is unwoven.</p>
+          <p className="text-sm mt-1" style={{ color: "rgba(255,253,246,0.8)" }}>
+            Add birth details and turn on a system or two, and your map begins to draw itself.
+          </p>
+        </div>
       </div>
     );
   }

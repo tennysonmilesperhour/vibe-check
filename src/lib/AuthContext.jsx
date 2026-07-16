@@ -14,6 +14,9 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
   const [authError, setAuthError] = useState(null);
+  // True while the session came from a password-reset email link; the app
+  // shows the new-password screen until it's cleared.
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   const checkUserAuth = useCallback(async () => {
     setIsLoadingAuth(true);
@@ -40,10 +43,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkUserAuth();
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       // Never call supabase from inside this callback: it runs while the
       // client holds its auth lock, and further auth calls deadlock the app
       // (the post-login blank screen). Defer to the next tick instead.
+      if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
       if (session) setTimeout(() => { checkUserAuth(); }, 0);
       else {
         setUser(null);
@@ -79,6 +83,8 @@ export const AuthProvider = ({ children }) => {
         navigateToLogin,
         checkAppState: checkUserAuth,
         checkUserAuth,
+        isPasswordRecovery,
+        clearPasswordRecovery: () => setIsPasswordRecovery(false),
       }}
     >
       {children}

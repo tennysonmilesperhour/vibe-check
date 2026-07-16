@@ -70,9 +70,9 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         person_ids: personIds,
       };
 
-      const saved = existing?.id
-        ? await DailyCheckIn.update(existing.id, payload)
-        : await DailyCheckIn.create(payload);
+      // Single atomic write on (user_id, date): a second tab or a re-entered
+      // ceremony can't race a read-then-create into a unique violation.
+      const saved = await DailyCheckIn.upsert(payload);
 
       // Automatic boundary pass — the old app made you press a button on another page.
       let newAlerts = [];

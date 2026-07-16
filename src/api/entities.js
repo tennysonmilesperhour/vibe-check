@@ -55,6 +55,21 @@ function makeEntity(table) {
       return (data || []).map(outbound);
     },
 
+    /**
+     * Insert-or-update on a uniqueness key (default: one row per user+date).
+     * Fixes the read-then-write race two tabs could hit on daily check-ins.
+     */
+    async upsert(data, onConflict = 'user_id,date') {
+      const user_id = await currentUserId();
+      const { data: row, error } = await supabase
+        .from(table)
+        .upsert({ ...inbound(data), user_id }, { onConflict })
+        .select()
+        .single();
+      if (error) throw error;
+      return outbound(row);
+    },
+
     async create(data) {
       const user_id = await currentUserId();
       const { data: row, error } = await supabase

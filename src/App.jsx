@@ -7,6 +7,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AuthGate from '@/features/shell/AuthGate';
+import PasswordReset from '@/features/shell/PasswordReset';
 import AppErrorBoundary from '@/components/AppErrorBoundary';
 import UpdateToast from '@/features/shell/UpdateToast';
 
@@ -19,7 +20,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, isPasswordRecovery, clearPasswordRecovery } = useAuth();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -28,6 +29,11 @@ const AuthenticatedApp = () => {
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
       </div>
     );
+  }
+
+  // The reset-link session: one job before anything else — set a new password.
+  if (isPasswordRecovery) {
+    return <PasswordReset onDone={clearPasswordRecovery} />;
   }
 
   // Handle authentication errors

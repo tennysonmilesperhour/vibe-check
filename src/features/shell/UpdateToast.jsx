@@ -2,21 +2,36 @@ import React, { useEffect, useState } from "react";
 
 const POLL_MS = 3 * 60 * 1000;
 
+// The public production origin — keep in sync with the og: URLs in index.html,
+// and update both when a custom domain lands. Polling must be absolute: every
+// other alias of this app (vibe-check-tennysonmilesperhour.vercel.app, the
+// git-main alias, per-deployment URLs) sits behind Vercel Deployment
+// Protection, where a background fetch of /version.json gets a 302 to the SSO
+// login and dies on CORS. This origin serves version.json publicly with
+// Access-Control-Allow-Origin: *, so the check works from any origin.
+const CANONICAL_ORIGIN = "https://vibe-check-flame-nu.vercel.app";
+
 /**
- * Notices when a newer deployment exists (by polling /version.json, which
- * every build stamps) and offers a one-tap reload. Checks on an interval
- * and whenever the tab regains focus. Dev builds skip it.
+ * Notices when a newer deployment exists (by polling version.json on the
+ * public production origin, which every build stamps) and offers a one-tap
+ * reload. Checks on an interval and whenever the tab regains focus. Dev
+ * builds and local previews of production builds skip it.
  */
 export default function UpdateToast() {
   const [stale, setStale] = useState(false);
 
   useEffect(() => {
     if (typeof __BUILD_ID__ === "undefined" || import.meta.env.DEV) return;
+    // `vite preview` runs a production build whose stamp never matches the
+    // deployed one; don't nag about updates there.
+    if (["localhost", "127.0.0.1"].includes(window.location.hostname)) return;
 
     let cancelled = false;
     const check = async () => {
       try {
-        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" });
+        const res = await fetch(`${CANONICAL_ORIGIN}/version.json?t=${Date.now()}`, {
+          cache: "no-store",
+        });
         if (!res.ok) return;
         const { build } = await res.json();
         if (!cancelled && build && build !== __BUILD_ID__) setStale(true);

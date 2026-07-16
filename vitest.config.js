@@ -9,8 +9,6 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: '@/entities/all', replacement: path.resolve(__dirname, 'src/test/mocks/entities.js') },
-      { find: '@/functions', replacement: path.resolve(__dirname, 'src/test/mocks/functions.js') },
-      { find: '@/integrations/Core', replacement: path.resolve(__dirname, 'src/test/mocks/integrations.js') },
       { find: '@', replacement: path.resolve(__dirname, 'src') },
     ],
   },

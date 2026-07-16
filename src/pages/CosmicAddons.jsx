@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Sparkles, Save, Wand2 } from "lucide-react";
+import { Sparkles, Save } from "lucide-react";
 import SystemToggle, { SYSTEMS } from "@/components/cosmic/SystemToggle";
 import {
     AstrologyForm, HumanDesignForm, GeneKeysForm,
@@ -53,7 +53,6 @@ export default function CosmicAddons() {
     const [profile, setProfile] = useState(EMPTY_PROFILE);
     const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify(EMPTY_PROFILE));
     const [isSaving, setIsSaving] = useState(false);
-    const [isCalculating, setIsCalculating] = useState(false);
     const loomRef = useRef(null);
 
     // Two-way URL sync: back button and refresh keep your place.
@@ -89,7 +88,7 @@ export default function CosmicAddons() {
         try {
             await base44.auth.updateMe({ cosmic_profile: profile });
             setSavedSnapshot(JSON.stringify(profile));
-            toast({ title: "Cosmic profile saved", description: "Your systems are active and will inform AI insights." });
+            toast({ title: "Cosmic profile saved", description: "Your loom and readings now weave from these systems." });
         } catch (e) {
             toast({ title: "Could not save", description: e?.message, variant: "destructive" });
         }
@@ -114,99 +113,6 @@ export default function CosmicAddons() {
 
     const setSystemData = (systemKey, data) => {
         setProfile(prev => ({ ...prev, [systemKey]: data }));
-    };
-
-    const canCalculate = profile.birth_date && (profile.birth_city || profile.birth_country);
-
-    const aiCalculate = async () => {
-        if (!canCalculate) return;
-        setIsCalculating(true);
-        const location = [profile.birth_city, profile.birth_state, profile.birth_country].filter(Boolean).join(', ');
-        const prompt = `You are a master astrologer, Human Design analyst, and Gene Keys reader with access to precise ephemeris data.
-
-Calculate everything for: Born ${profile.birth_date}${profile.birth_time ? ' at ' + profile.birth_time : ''}, in ${location}.
-
-IMPORTANT: You MUST return actual calculated values for ALL fields. Do not return null unless genuinely impossible.
-
-For Gene Keys: Use the I Ching hexagram gates from the Human Design bodygraph. The Conscious Sun gate = Life's Work key number (1-64).
-
-Return this JSON:
-{
-  "moon_sign": "<zodiac sign, e.g. Scorpio>",
-  "rising_sign": "<zodiac sign, requires birth time>",
-  "north_node": "<zodiac sign of North Node>",
-  "hd_type": "<one of: Manifestor, Generator, Manifesting Generator, Projector, Reflector>",
-  "hd_authority": "<e.g. Emotional / Solar Plexus>",
-  "hd_profile": "<e.g. 3/5>",
-  "hd_strategy": "<e.g. To Respond>",
-  "hd_definition": "<one of: Single Definition, Split Definition, Triple Split, Quadruple Split>",
-  "hd_incarnation_cross": "<e.g. Right Angle Cross of the Sphinx>",
-  "gk_life_work": "<number 1-64>",
-  "gk_evolution": "<number 1-64>",
-  "gk_radiance": "<number 1-64>",
-  "gk_purpose": "<number 1-64>",
-  "gk_attraction": "<number 1-64>",
-  "gk_iq": "<number 1-64>",
-  "chakra_dominant": "<one of: Root (Muladhara) \u2013 Safety & grounding, Sacral (Svadhisthana) \u2013 Creativity & pleasure, Solar Plexus (Manipura) \u2013 Power & will, Heart (Anahata) \u2013 Love & connection, Throat (Vishuddha) \u2013 Expression & truth, Third Eye (Ajna) \u2013 Intuition & insight, Crown (Sahasrara) \u2013 Consciousness & unity>"
-}`;
-
-        const result = await base44.integrations.Core.InvokeLLM({
-            prompt,
-            add_context_from_internet: true,
-            model: 'gemini_3_1_pro',
-            response_json_schema: {
-                type: 'object',
-                properties: {
-                    moon_sign: { type: 'string' }, rising_sign: { type: 'string' },
-                    north_node: { type: 'string' },
-                    hd_type: { type: 'string' }, hd_authority: { type: 'string' },
-                    hd_profile: { type: 'string' }, hd_strategy: { type: 'string' },
-                    hd_definition: { type: 'string' }, hd_incarnation_cross: { type: 'string' },
-                    gk_life_work: { type: 'string' }, gk_evolution: { type: 'string' },
-                    gk_radiance: { type: 'string' }, gk_purpose: { type: 'string' },
-                    gk_attraction: { type: 'string' }, gk_iq: { type: 'string' },
-                    chakra_dominant: { type: 'string' }
-                }
-            }
-        });
-
-        const newProfile = {
-            ...profile,
-            astrology: {
-                ...profile.astrology,
-                ...(result.moon_sign ? { moon_sign: result.moon_sign } : {}),
-                ...(result.rising_sign ? { rising_sign: result.rising_sign } : {}),
-                ...(result.north_node ? { north_node: result.north_node } : {}),
-            },
-            human_design: {
-                ...profile.human_design,
-                ...(result.hd_type ? { type: result.hd_type } : {}),
-                ...(result.hd_authority ? { authority: result.hd_authority } : {}),
-                ...(result.hd_profile ? { profile: result.hd_profile } : {}),
-                ...(result.hd_strategy ? { strategy: result.hd_strategy } : {}),
-                ...(result.hd_definition ? { definition: result.hd_definition } : {}),
-                ...(result.hd_incarnation_cross ? { incarnation_cross: result.hd_incarnation_cross } : {}),
-            },
-            gene_keys: {
-                ...profile.gene_keys,
-                ...(result.gk_life_work ? { life_work: result.gk_life_work } : {}),
-                ...(result.gk_evolution ? { evolution: result.gk_evolution } : {}),
-                ...(result.gk_radiance ? { radiance: result.gk_radiance } : {}),
-                ...(result.gk_purpose ? { purpose: result.gk_purpose } : {}),
-                ...(result.gk_attraction ? { attraction: result.gk_attraction } : {}),
-                ...(result.gk_iq ? { iq: result.gk_iq } : {}),
-            },
-            chakras: {
-                ...profile.chakras,
-                ...(result.chakra_dominant ? { dominant_center: result.chakra_dominant } : {}),
-            }
-        };
-
-        setProfile(newProfile);
-        // Auto-save so changes persist
-        await base44.auth.updateMe({ cosmic_profile: newProfile });
-        setIsCalculating(false);
-        toast({ title: "✦ Birth chart calculated & saved", description: "Human Design, Gene Keys, Moon sign, and more have been filled in. Review and adjust anything that looks off." });
     };
 
     const enabledSystems = profile.enabled_systems || [];
@@ -273,7 +179,7 @@ Return this JSON:
                         <div className="glass-card p-6">
                             <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Choose Your Systems</h3>
                             <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.65)' }}>
-                                Toggle on the wisdom frameworks you resonate with. Only enabled systems appear in your AI insights.
+                                Toggle on the wisdom frameworks you resonate with. Enabled systems weave into your loom, readings, and daily weather.
                             </p>
                             <SystemToggle enabledSystems={enabledSystems} onToggle={toggleSystem} />
                         </div>
@@ -342,24 +248,16 @@ Return this JSON:
                         <div className="glass-card p-6 flex flex-col items-center" style={{ border: '1px solid rgba(194,80,60,0.2)' }}>
                             <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'rgba(61,52,80,0.9)' }}>Your Cosmic Blueprint</h3>
                             <p className="text-sm mb-3 w-full" style={{ color: 'rgba(105,95,128,0.65)' }}>Systems light up as you fill in your profile data</p>
-                            {canCalculate ? (
-                                <div className="w-full mb-4 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(194,80,60,0.08)', border: '1px solid rgba(194,80,60,0.25)' }}>
-                                    <Wand2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#C2503C' }} />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium mb-1" style={{ color: 'rgba(61,52,80,0.9)' }}>Oracle Birth Chart Calculator</p>
-                                        <p className="text-xs mb-2" style={{ color: 'rgba(105,95,128,0.65)' }}>Channels your birth date, time &amp; location to reveal your Moon sign, Rising, North Node, Human Design type/authority/profile, all 6 Gene Keys, and Chakra center. Only fills empty fields.</p>
-                                        <p className="text-xs mb-3" style={{ color: 'rgba(184,144,47,0.75)' }}>A note on accuracy: your Sun sign, numerology, and Tarot birth card are calculated exactly in-app from your birth data. Moon, Rising, Human Design and Gene Keys need precise ephemeris math — the oracle's estimates are usually right but not guaranteed, so cross-check them against a trusted chart and edit anything that's off.</p>
-                                        <Button onClick={aiCalculate} disabled={isCalculating} size="sm" className="btn-cosmic rounded-lg">
-                                            <Wand2 className="w-3.5 h-3.5 mr-1.5" />
-                                            {isCalculating ? 'Calculating...' : 'Calculate from Birth Data'}
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="w-full mb-4 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(61,52,80,0.1)' }}>
-                                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.55)' }}>💡 Add your birth date and city in the <strong style={{color:'rgba(194,80,60,0.7)'}}>Systems tab</strong> to unlock AI birth chart calculation.</p>
-                                </div>
-                            )}
+                            <div className="w-full mb-4 p-4 rounded-xl" style={{ background: 'rgba(194,80,60,0.08)', border: '1px solid rgba(194,80,60,0.25)' }}>
+                                <p className="text-sm font-medium mb-1" style={{ color: 'rgba(61,52,80,0.9)' }}>Computed, not generated</p>
+                                <p className="text-xs" style={{ color: 'rgba(105,95,128,0.65)' }}>
+                                    Everything derivable from your name and birth date — Sun sign, decan, every core
+                                    numerology number, your birth and shadow cards — is calculated exactly, in-app, and
+                                    fills itself in below. Moon, Rising, North Node, Human Design and Gene Keys need
+                                    precise ephemeris math this app doesn&apos;t do yet: pull them once from a chart
+                                    service you trust and enter them here. Nothing on your loom is ever guessed.
+                                </p>
+                            </div>
                         </div>
 
                         {enabledSystems.length === 0 ? (
@@ -408,7 +306,7 @@ Return this JSON:
                     <TabsContent value="deepdive" className="space-y-6">
                         <div className="glass-card p-5">
                             <p className="text-sm" style={{ color: 'rgba(105,95,128,0.7)' }}>
-                                Each system below has a full structured breakdown + an AI-generated deep reading. Expand any system to generate your personalized report. Each can be exported as a PDF.
+                                Each system below has a full structured breakdown and a deep reading composed from your profile — computed from content tables, never generated. Each can be exported as a PDF.
                             </p>
                         </div>
                         <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile}

@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 import InviteModal from "@/components/InviteModal";
 import SettingsSheet from "@/features/shell/SettingsSheet";
+import MoonGlyph from "@/features/loom/MoonGlyph";
+import { DailyCheckIn } from "@/entities/all";
+import { todayKey } from "@/lib/dates";
+import { moonPhase } from "@/lib/resonance/moon";
+import { computeStreak, streakLabel } from "@/lib/streaks";
 
 // Five surfaces, five jobs, five distinct icons.
 const navigationItems = [
@@ -34,30 +39,21 @@ function NavLinks({ location, onNavigate }) {
                         key={item.title}
                         to={item.url}
                         onClick={onNavigate}
-                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200"
+                        className="flex items-center gap-3 px-3 py-2.5 transition-colors duration-200"
                         style={{
-                            background: isActive
-                                ? 'linear-gradient(135deg, rgba(186,124,164,0.25) 0%, rgba(201,138,78,0.2) 50%, rgba(143,168,216,0.15) 100%)'
-                                : 'transparent',
-                            border: isActive
-                                ? '1px solid rgba(194,80,60,0.3)'
-                                : '1px solid transparent',
-                            boxShadow: isActive ? '0 0 15px rgba(186,124,164,0.15)' : 'none',
+                            background: isActive ? 'color-mix(in srgb, var(--gh-gold) 14%, transparent)' : 'transparent',
+                            borderLeft: isActive ? '2px solid var(--gh-accent)' : '2px solid transparent',
                         }}>
-                        <item.icon className="w-4 h-4 shrink-0" style={{ color: isActive ? '#C2503C' : 'rgba(61,52,80,1)' }} />
+                        <item.icon className="w-4 h-4 shrink-0" style={{ color: isActive ? 'var(--gh-accent)' : 'var(--gh-ink)' }} />
                         <div className="flex-1 min-w-0">
                             <span className="text-sm font-medium block"
-                                style={{ color: isActive ? '#C2503C' : 'rgba(61,52,80,1)' }}>
+                                style={{ color: isActive ? 'var(--gh-accent)' : 'var(--gh-ink)' }}>
                                 {item.title}
                             </span>
-                            <span className="text-xs block" style={{ color: 'rgba(82,72,104,1)' }}>
+                            <span className="text-xs block" style={{ color: 'var(--gh-ink-muted)' }}>
                                 {item.description}
                             </span>
                         </div>
-                        {isActive && (
-                            <div className="w-1 h-5 rounded-full shrink-0"
-                                style={{ background: 'linear-gradient(180deg, #C2503C, #F2952E)' }} />
-                        )}
                     </Link>
                 );
             })}
@@ -67,7 +63,7 @@ function NavLinks({ location, onNavigate }) {
 
 function SidebarHeader() {
     return (
-        <div className="p-4 flex items-center gap-3" style={{ borderBottom: '1px solid rgba(194,80,60,0.1)' }}>
+        <div className="p-4 flex items-center gap-3" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
             <div className="w-9 h-9 flex items-center justify-center shrink-0"
                 style={{ background: 'linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-gold) 100%)' }}>
                 <Sun className="w-4 h-4" style={{ color: 'var(--gh-cream)' }} aria-hidden="true" />
@@ -84,18 +80,22 @@ function SidebarHeader() {
     );
 }
 
-function SidebarFooterContent() {
+function SidebarFooterContent({ streak }) {
+    // Something true instead of a placeholder: tonight's actual moon and the
+    // real streak. streak === null means the check-ins have not loaded (yet).
+    const moon = moonPhase(todayKey());
     return (
-        <div className="p-3" style={{ borderTop: '1px solid rgba(194,80,60,0.1)' }}>
-            <div className="flex items-center gap-3 p-2.5 rounded-xl"
-                style={{ background: 'rgba(194,80,60,0.08)', border: '1px solid rgba(194,80,60,0.12)' }}>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #C4699A, #8FA8D8)' }}>
-                    <span className="text-xs font-bold text-white">✦</span>
-                </div>
+        <div className="p-3" style={{ borderTop: '1px solid hsl(var(--border))' }}>
+            <div className="flex items-center gap-3 p-2.5"
+                style={{ background: 'color-mix(in srgb, var(--gh-gold) 10%, transparent)', border: '1px solid hsl(var(--border))' }}>
+                <MoonGlyph name={moon.name} illumination={moon.illumination} size={22} color="var(--gh-ink-soft)" />
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium" style={{ color: 'rgba(61,52,80,1)' }}>Your Journey</p>
-                    <p className="text-xs" style={{ color: 'rgba(194,80,60,1)' }}>Aligned & expanding</p>
+                    <p className="text-xs font-medium" style={{ color: 'var(--gh-ink)' }}>{moon.name}</p>
+                    {streak !== null && (
+                        <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>
+                            {streak > 0 ? `${streakLabel(streak)} kept` : 'Begin tonight'}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
@@ -107,6 +107,17 @@ export default function Layout({ children }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [streak, setStreak] = useState(null);
+
+    // The footer shows the real run. Re-check when the route changes so a
+    // just-saved check-in is reflected without a reload.
+    useEffect(() => {
+        let cancelled = false;
+        DailyCheckIn.list("-date", 120)
+            .then((checkIns) => { if (!cancelled) setStreak(computeStreak(checkIns, todayKey())); })
+            .catch(() => { if (!cancelled) setStreak(null); });
+        return () => { cancelled = true; };
+    }, [location.pathname]);
 
     // Close on route change
     useEffect(() => { setMobileOpen(false); }, [location.pathname]);
@@ -123,8 +134,8 @@ export default function Layout({ children }) {
             {/* ── Desktop sidebar ── */}
             <aside className="hidden md:flex flex-col w-60 shrink-0 relative z-20"
                 style={{
-                    background: 'linear-gradient(180deg, rgba(253,251,247,0.98) 0%, rgba(251,248,243,0.99) 100%)',
-                    borderRight: '1px solid rgba(194,80,60,0.12)'
+                    background: 'var(--gh-cream)',
+                    borderRight: '1px solid hsl(var(--border))'
                 }}>
                 <SidebarHeader />
                 <NavLinks location={location} onNavigate={() => {}} />
@@ -142,14 +153,14 @@ export default function Layout({ children }) {
                         Settings
                     </button>
                 </div>
-                <SidebarFooterContent />
+                <SidebarFooterContent streak={streak} />
             </aside>
 
             {/* ── Mobile overlay backdrop ── */}
             {mobileOpen && (
                 <div
                     className="fixed inset-0 z-30 md:hidden"
-                    style={{ background: 'rgba(61,52,80,0.3)', backdropFilter: 'blur(2px)' }}
+                    style={{ background: 'color-mix(in srgb, var(--gh-ink) 30%, transparent)', backdropFilter: 'blur(2px)' }}
                     onClick={() => setMobileOpen(false)}
                 />
             )}
@@ -161,14 +172,12 @@ export default function Layout({ children }) {
                     width: '72vw',
                     maxWidth: '280px',
                     transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
-                    background: 'rgba(253,251,247,0.92)',
-                    backdropFilter: 'blur(3px)',
-                    WebkitBackdropFilter: 'blur(3px)',
-                    borderRight: '1px solid rgba(194,80,60,0.2)',
-                    boxShadow: mobileOpen ? '4px 0 40px rgba(186,124,164,0.2)' : 'none',
+                    background: 'var(--gh-cream)',
+                    borderRight: '1px solid hsl(var(--border))',
+                    boxShadow: mobileOpen ? '4px 0 40px color-mix(in srgb, var(--gh-ink) 15%, transparent)' : 'none',
                 }}>
                 {/* Drawer header with close button */}
-                <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(194,80,60,0.1)' }}>
+                <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 flex items-center justify-center"
                             style={{ background: 'linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-gold) 100%)' }}>
@@ -183,21 +192,21 @@ export default function Layout({ children }) {
                     </div>
                     <button
                         onClick={() => setMobileOpen(false)}
-                        className="p-1.5 rounded-lg transition-colors"
-                        style={{ color: 'rgba(61,52,80,1)', background: 'rgba(61,52,80,0.1)' }}>
+                        className="p-1.5 transition-colors" aria-label="Close menu"
+                        style={{ color: 'var(--gh-ink)', background: 'color-mix(in srgb, var(--gh-ink) 8%, transparent)' }}>
                         <X className="w-4 h-4" />
                     </button>
                 </div>
                 <NavLinks location={location} onNavigate={() => setMobileOpen(false)} />
                 <div className="px-3 pb-2">
                     <button onClick={() => { setMobileOpen(false); setInviteOpen(true); }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-                        style={{ background: 'rgba(194,80,60,0.1)', border: '1px solid rgba(194,80,60,0.2)', color: '#C2503C' }}>
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
+                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)' }}>
                         <UserPlus className="w-4 h-4" />
                         Invite a Friend
                     </button>
                 </div>
-                <SidebarFooterContent />
+                <SidebarFooterContent streak={streak} />
             </aside>
 
             {/* ── Main content ── */}
@@ -205,18 +214,18 @@ export default function Layout({ children }) {
                 {/* Mobile top bar */}
                 <header className="md:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-20"
                     style={{
-                        background: 'rgba(253,251,247,0.92)',
+                        background: 'color-mix(in srgb, var(--gh-cream) 92%, transparent)',
                         backdropFilter: 'blur(16px)',
-                        borderBottom: '1px solid rgba(194,80,60,0.12)'
+                        borderBottom: '1px solid hsl(var(--border))'
                     }}>
                     <button
                         onClick={() => setMobileOpen(true)}
-                        className="p-2 rounded-xl transition-colors"
-                        style={{ background: 'rgba(194,80,60,0.1)', border: '1px solid rgba(194,80,60,0.2)', color: '#C2503C' }}>
+                        className="p-2 transition-colors" aria-label="Open menu"
+                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)' }}>
                         <Menu className="w-4 h-4" />
                     </button>
-                    <span className="text-base font-bold gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-                        Vibe Check
+                    <span className="font-display text-lg" style={{ color: 'var(--gh-ink)' }}>
+                        vibe check
                     </span>
                 </header>
 

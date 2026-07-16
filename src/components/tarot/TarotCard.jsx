@@ -37,7 +37,7 @@ function CardBack() {
         const a2 = ((i*30)+15) * Math.PI/180;
         const x1=60+42*Math.cos(a), y1=100+42*Math.sin(a);
         const x2=60+48*Math.cos(a2), y2=100+48*Math.sin(a2);
-        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#38bdf8" strokeWidth="0.6" opacity="0.35"/>;
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#FDC94E" strokeWidth="0.6" opacity="0.35"/>;
       })}
       {/* 6-pointed star (Star of David) */}
       <polygon points="60,62 70.4,79.5 49.6,79.5" fill="none" stroke="#FDC94E" strokeWidth="0.8" opacity="0.5"/>
@@ -109,7 +109,7 @@ function CardFront({ card, reversed }) {
         {card.keywords.slice(0,2).join('  ·  ')}
       </text>
       {reversed && (
-        <text x="60" y="184" textAnchor="middle" fontSize="5.5" fill="#f472b6" opacity="0.65"
+        <text x="60" y="184" textAnchor="middle" fontSize="5.5" fill="#F48CA0" opacity="0.65"
           fontFamily="serif" letterSpacing="1">▽ REVERSED</text>
       )}
       {/* Corner marks */}

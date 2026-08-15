@@ -16,10 +16,10 @@ export default function Practice() {
             type="button"
             onClick={() => setTab(id)}
             aria-current={tab === id ? "page" : undefined}
-            className="px-4 py-2 text-sm font-bold"
+            className="px-4 py-2 text-sm font-bold transition-all duration-200"
             style={tab === id
-              ? { background: tab === "tarot" ? "var(--gh-gold)" : "var(--gh-ink)", color: tab === "tarot" ? "var(--gh-dusk-deep)" : "var(--gh-field)" }
-              : { border: "1px solid", borderColor: tab === "tarot" ? "rgba(245,229,216,0.35)" : "hsl(var(--border))", color: tab === "tarot" ? "var(--gh-dusk-ink)" : "var(--gh-ink-soft)" }}
+              ? { background: tab === "tarot" ? "var(--gh-gold)" : "var(--gh-ink)", color: tab === "tarot" ? "var(--gh-dusk-deep)" : "var(--gh-field)", borderRadius: "calc(var(--radius) - 3px)", boxShadow: "var(--shadow-soft)" }
+              : { border: "1px solid", borderColor: tab === "tarot" ? "rgba(245,229,216,0.35)" : "hsl(var(--border))", color: tab === "tarot" ? "var(--gh-dusk-ink)" : "var(--gh-ink-soft)", borderRadius: "calc(var(--radius) - 3px)" }}
           >
             {label}
           </button>

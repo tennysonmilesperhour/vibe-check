@@ -11,12 +11,19 @@
 
 @layer base {
   :root {
-    /* ── Golden Hour ─────────────────────────────────────────────
-       One palette, three registers:
-       sky   — ritual surfaces: the full rose→gold gradient
-       field — working surfaces: near-white ground, drifting washes
-       dusk  — tarot table only: warm umber-burgundy, gold accents
-       Ink is warm rose-brown. No black. No dark purple. Ever. */
+    /* ── Golden Hour, after the sun goes down ────────────────────
+       The palette now runs the whole arc of an evening: the gold of
+       the last light, the plum the sky turns twenty minutes later,
+       and the first stars over it.
+
+       Four registers:
+       sky      — ritual surfaces: twilight plum → rose → gold, stars above
+       field    — working surfaces: warm near-white, drifting washes
+       dusk     — tarot table: deep aubergine, gold accents
+       twilight — the mystical register: plum and lilac, luminous
+
+       Ink stays warm rose-brown; every dark tone is warm-shifted
+       (aubergine and mulberry, never cold indigo or flat black). */
 
     /* shadcn variable remap (HSL triplets) */
     --background: 40 45% 98%;            /* --gh-field #FFFDFA */
@@ -35,8 +42,9 @@
     --accent-foreground: 348 43% 28%;
     --destructive: 0 65% 45%;
     --destructive-foreground: 43 90% 97%;
-    --border: 348 22% 88%;
-    --input: 348 22% 90%;
+    /* Hairlines sit lighter than before: edges should suggest, not cut. */
+    --border: 344 30% 92%;
+    --input: 344 28% 91%;
     --ring: 9 51% 50%;
 
     --chart-1: 348 81% 75%;              /* rose */
@@ -45,7 +53,8 @@
     --chart-4: 20 88% 73%;               /* peach */
     --chart-5: 343 40% 36%;              /* ink-soft */
 
-    --radius: 0rem;                      /* square corners; circles are for suns and moons */
+    /* Softer edges. Not pill-shaped — just enough that nothing cuts. */
+    --radius: 0.875rem;
 
     --sidebar-background: 40 45% 98%;
     --sidebar-foreground: 348 43% 25%;
@@ -72,6 +81,37 @@
     --gh-dusk-deep: #2E1418;
     --gh-dusk: #4A1E28;
     --gh-dusk-ink: #F5E5D8;
+
+    /* twilight register: what the sky does after the gold burns off.
+       Warm-shifted plums, so it reads as late evening and not as night. */
+    --gh-twilight: #8A4A6E;
+    --gh-mulberry: #5E2E51;
+    --gh-nocturne: #35182F;
+    --gh-lilac: #D3A2CE;
+    --gh-starlight: #FFF4E2;
+
+    /* Light that things give off, rather than light falling on them. */
+    --gh-halo: rgba(255, 236, 199, 0.55);
+    --gh-glow-rose: rgba(244, 140, 160, 0.35);
+    --gh-glow-lilac: rgba(211, 162, 206, 0.30);
+
+    /* The sky ramp itself, so the small surfaces that paint it inline
+       (the sidebar mark, MiniLoom, Week in Review) stay in step with
+       the full-page sky instead of drifting into their own variants. */
+    --gradient-sky: linear-gradient(
+      168deg,
+      var(--gh-twilight) 0%,
+      #C4657F 17%,
+      var(--gh-rose) 35%,
+      var(--gh-peach) 56%,
+      var(--gh-amber) 78%,
+      var(--gh-gold) 100%
+    );
+
+    /* Elevation, warm-tinted — a shadow here is dusk pooling, never grey. */
+    --shadow-soft: 0 1px 2px rgba(90, 36, 48, 0.04), 0 4px 14px rgba(90, 36, 48, 0.06);
+    --shadow-lift: 0 2px 6px rgba(90, 36, 48, 0.05), 0 14px 34px rgba(90, 36, 48, 0.10);
+    --shadow-halo: 0 10px 40px rgba(194, 80, 60, 0.16);
 
     /* semantic z-scale */
     --z-dropdown: 20;
@@ -123,68 +163,168 @@
 }
 
 @layer components {
-  /* ── sky register: the surface is the sunset ── */
+  /* ── sky register: the sunset, and the twenty minutes after it ──
+     Six stops rather than four. The plum at the top is the sky once the
+     sun is already gone; the gold at the bottom is the light still
+     leaving. Two radial glows sit over the ramp so the surface has an
+     actual light source instead of reading as a flat gradient. */
   .sky-surface {
-    background: linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-peach) 34%, var(--gh-amber) 62%, var(--gh-gold) 100%);
+    position: relative;
+    background:
+      radial-gradient(ellipse 75% 55% at 82% 74%, rgba(255, 243, 214, 0.5) 0%, transparent 60%),
+      radial-gradient(ellipse 65% 45% at 4% 2%, var(--gh-glow-lilac) 0%, transparent 62%),
+      var(--gradient-sky);
     color: var(--gh-cream);
   }
 
-  /* deeper stops for later ceremony steps: data-depth 1..4 */
-  .sky-surface[data-depth="2"] {
-    background: linear-gradient(165deg, #EF7E95 0%, #F49373 34%, #F8A854 62%, #FCC244 100%);
+  /* The ceremony deepens as it goes. Each step pulls more night across
+     the same sky, instead of swapping in a hand-darkened gradient —
+     so the depths stay in step with the palette automatically. */
+  .sky-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(168deg, var(--gh-nocturne) 0%, var(--gh-mulberry) 48%, transparent 88%);
+    opacity: var(--sky-deepen, 0);
+    transition: opacity 800ms ease-out;
   }
-  .sky-surface[data-depth="3"] {
-    background: linear-gradient(165deg, #E76F88 0%, #F08767 34%, #F59E4A 62%, #FABA3B 100%);
+  .sky-surface[data-depth="2"] { --sky-deepen: 0.20; }
+  .sky-surface[data-depth="3"] { --sky-deepen: 0.38; }
+  .sky-surface[data-depth="4"] { --sky-deepen: 0.56; }
+
+  /* ── stars: the first few out, before the sky has finished turning ──
+     Decorative layer, absolutely positioned by whoever mounts it. */
+  .starfield {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-repeat: no-repeat;
+    background-image:
+      radial-gradient(1.7px 1.7px at 9% 11%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.2px 1.2px at 17% 26%, var(--gh-starlight), transparent 60%),
+      radial-gradient(2px 2px at 24% 7%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.1px 1.1px at 33% 19%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.5px 1.5px at 41% 5%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.2px 1.2px at 48% 23%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.9px 1.9px at 56% 12%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.1px 1.1px at 63% 30%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.4px 1.4px at 71% 8%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.2px 1.2px at 78% 21%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.8px 1.8px at 86% 14%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.1px 1.1px at 93% 28%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.3px 1.3px at 13% 38%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.1px 1.1px at 29% 44%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.5px 1.5px at 52% 40%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.1px 1.1px at 68% 47%, var(--gh-starlight), transparent 60%),
+      radial-gradient(1.3px 1.3px at 88% 42%, var(--gh-starlight), transparent 60%);
+    opacity: 0.72;
+    animation: star-breathe 7s ease-in-out infinite alternate;
   }
-  .sky-surface[data-depth="4"] {
-    background: linear-gradient(165deg, #DE607B 0%, #EB7A5C 34%, #F19341 62%, #F7B133 100%);
+  /* Stars fade out toward the bright bottom of the sky, where there is
+     still too much daylight left to see them. */
+  .starfield--fade {
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 78%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 78%);
   }
 
-  /* ── field register: near-white ground, color drifts like weather ── */
+  /* ── grain: a little tooth, so large washes are not perfectly smooth ──
+     Positioned layer; the parent must establish a stacking context. */
+  .grain-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+
+  /* ── field register: near-white ground, color drifts like weather ──
+     A fourth wash in lilac keeps the mystical register present even on
+     the working surfaces, without touching legibility. */
   .field-wash {
     background:
-      radial-gradient(ellipse 60% 45% at 18% 8%, rgba(244, 140, 160, 0.16) 0%, transparent 60%),
-      radial-gradient(ellipse 55% 50% at 88% 18%, rgba(250, 176, 94, 0.14) 0%, transparent 60%),
-      radial-gradient(ellipse 70% 55% at 55% 105%, rgba(247, 158, 126, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 45% at 18% 8%, var(--gh-glow-rose) 0%, transparent 60%),
+      radial-gradient(ellipse 55% 50% at 88% 18%, rgba(250, 176, 94, 0.16) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 42% at 96% 74%, var(--gh-glow-lilac) 0%, transparent 62%),
+      radial-gradient(ellipse 70% 55% at 55% 105%, rgba(247, 158, 126, 0.14) 0%, transparent 60%),
       var(--gh-field);
   }
 
   /* ── dusk register: the tarot table ── */
   .dusk-surface {
-    background: linear-gradient(170deg, var(--gh-dusk-deep) 0%, var(--gh-dusk) 100%);
+    background:
+      radial-gradient(ellipse 65% 45% at 50% -5%, rgba(138, 74, 110, 0.5) 0%, transparent 68%),
+      radial-gradient(ellipse 80% 60% at 50% 108%, rgba(94, 46, 81, 0.45) 0%, transparent 62%),
+      linear-gradient(170deg, var(--gh-dusk-deep) 0%, var(--gh-nocturne) 42%, var(--gh-dusk) 100%);
     color: var(--gh-dusk-ink);
   }
 
+  /* A rule that fades out at both ends instead of stopping dead. */
   .hairline {
-    border-top: 1px solid rgba(90, 36, 48, 0.3);
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--gh-ink) 22%, transparent) 15%,
+        color-mix(in srgb, var(--gh-ink) 22%, transparent) 85%,
+        transparent 100%
+      )
+      1;
+  }
+
+  /* ── the card recipe, in one place ──
+     Cream panel, soft edge, warm shadow. Replaces the hand-rolled
+     `background: cream + 1px border` that was repeated across features. */
+  .veil-card {
+    background:
+      linear-gradient(168deg, color-mix(in srgb, var(--gh-cream) 94%, var(--gh-rose)) 0%, var(--gh-cream) 58%);
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
   }
 
   .ink-button {
-    background: var(--gh-ink);
+    background: linear-gradient(168deg, var(--gh-ink-soft) 0%, var(--gh-ink) 100%);
     color: var(--gh-field);
     font-weight: 700;
     padding: 0.8rem 1.4rem;
-    transition: background-color 150ms ease-out;
+    border-radius: calc(var(--radius) - 3px);
+    box-shadow: var(--shadow-soft);
+    transition: box-shadow 200ms ease-out, transform 200ms ease-out, filter 200ms ease-out;
   }
-  .ink-button:hover { background: var(--gh-ink-soft); }
-  .ink-button:active { background: var(--gh-accent); }
+  .ink-button:hover { filter: brightness(1.12); box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+  .ink-button:active { transform: translateY(0); filter: brightness(0.98); }
 
   .cream-button {
-    background: var(--gh-cream);
+    background: linear-gradient(168deg, var(--gh-cream) 0%, color-mix(in srgb, var(--gh-cream) 92%, var(--gh-amber)) 100%);
     color: var(--gh-accent);
     font-weight: 700;
     padding: 0.8rem 1.4rem;
-    transition: transform 150ms ease-out, box-shadow 150ms ease-out;
+    border-radius: calc(var(--radius) - 3px);
+    box-shadow: var(--shadow-soft);
+    transition: transform 200ms ease-out, box-shadow 200ms ease-out;
   }
-  .cream-button:hover { box-shadow: 0 2px 18px rgba(90, 36, 48, 0.18); }
+  .cream-button:hover { box-shadow: var(--shadow-halo); transform: translateY(-1px); }
+  .cream-button:active { transform: translateY(0); }
 
   .ghost-cream-button {
-    border: 1px solid rgba(255, 253, 246, 0.65);
+    border: 1px solid color-mix(in srgb, var(--gh-cream) 55%, transparent);
     color: var(--gh-cream);
     padding: 0.75rem 1.4rem;
-    transition: background-color 150ms ease-out;
+    border-radius: calc(var(--radius) - 3px);
+    backdrop-filter: blur(6px);
+    transition: background-color 200ms ease-out, border-color 200ms ease-out;
   }
-  .ghost-cream-button:hover { background: rgba(255, 253, 246, 0.12); }
+  .ghost-cream-button:hover {
+    background: color-mix(in srgb, var(--gh-cream) 14%, transparent);
+    border-color: color-mix(in srgb, var(--gh-cream) 80%, transparent);
+  }
+}
+
+@keyframes star-breathe {
+  from { opacity: 0.5; }
+  to { opacity: 0.85; }
 }
 
 

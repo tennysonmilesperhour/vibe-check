@@ -39,12 +39,27 @@ function NavLinks({ location, onNavigate }) {
                         key={item.title}
                         to={item.url}
                         onClick={onNavigate}
-                        className="flex items-center gap-3 px-3 py-2.5 transition-colors duration-200"
+                        className="group relative flex items-center gap-3 px-3 py-2.5 transition-all duration-200"
                         style={{
-                            background: isActive ? 'color-mix(in srgb, var(--gh-gold) 14%, transparent)' : 'transparent',
-                            borderLeft: isActive ? '2px solid var(--gh-accent)' : '2px solid transparent',
+                            // The active surface is lit rather than outlined: a warm
+                            // wash with a hairline of gold around it.
+                            background: isActive
+                                ? 'linear-gradient(100deg, color-mix(in srgb, var(--gh-gold) 22%, transparent) 0%, color-mix(in srgb, var(--gh-rose) 13%, transparent) 100%)'
+                                : 'transparent',
+                            borderRadius: 'calc(var(--radius) - 3px)',
+                            boxShadow: isActive
+                                ? 'inset 0 0 0 1px color-mix(in srgb, var(--gh-gold) 38%, transparent), var(--shadow-soft)'
+                                : 'none',
                         }}>
-                        <item.icon className="w-4 h-4 shrink-0" style={{ color: isActive ? 'var(--gh-accent)' : 'var(--gh-ink)' }} />
+                        {/* A short rounded stroke instead of a full-height square rule. */}
+                        <span aria-hidden="true"
+                            style={{
+                                position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                                width: '3px', height: isActive ? '22px' : '0px', borderRadius: '999px',
+                                background: 'var(--gh-accent)',
+                                transition: 'height 220ms ease-out',
+                            }} />
+                        <item.icon className="w-4 h-4 shrink-0 transition-colors" style={{ color: isActive ? 'var(--gh-accent)' : 'var(--gh-ink)' }} />
                         <div className="flex-1 min-w-0">
                             <span className="text-sm font-medium block"
                                 style={{ color: isActive ? 'var(--gh-accent)' : 'var(--gh-ink)' }}>
@@ -65,7 +80,11 @@ function SidebarHeader() {
     return (
         <div className="p-4 flex items-center gap-3" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
             <div className="w-9 h-9 flex items-center justify-center shrink-0"
-                style={{ background: 'linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-gold) 100%)' }}>
+                style={{
+                    background: 'var(--gradient-sky)',
+                    borderRadius: 'calc(var(--radius) - 4px)',
+                    boxShadow: 'var(--shadow-soft), inset 0 1px 0 color-mix(in srgb, var(--gh-cream) 45%, transparent)',
+                }}>
                 <Sun className="w-4 h-4" style={{ color: 'var(--gh-cream)' }} aria-hidden="true" />
             </div>
             <div>
@@ -86,8 +105,8 @@ function SidebarFooterContent({ streak }) {
     const moon = moonPhase(todayKey());
     return (
         <div className="p-3" style={{ borderTop: '1px solid hsl(var(--border))' }}>
-            <div className="flex items-center gap-3 p-2.5"
-                style={{ background: 'color-mix(in srgb, var(--gh-gold) 10%, transparent)', border: '1px solid hsl(var(--border))' }}>
+            <div className="veil-card flex items-center gap-3 p-2.5"
+                style={{ background: 'linear-gradient(150deg, color-mix(in srgb, var(--gh-gold) 16%, transparent) 0%, color-mix(in srgb, var(--gh-lilac) 14%, transparent) 100%)' }}>
                 <MoonGlyph name={moon.name} illumination={moon.illumination} size={22} color="var(--gh-ink-soft)" />
                 <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium" style={{ color: 'var(--gh-ink)' }}>{moon.name}</p>
@@ -134,21 +153,24 @@ export default function Layout({ children }) {
             {/* ── Desktop sidebar ── */}
             <aside className="hidden md:flex flex-col w-60 shrink-0 relative z-20"
                 style={{
-                    background: 'var(--gh-cream)',
-                    borderRight: '1px solid hsl(var(--border))'
+                    // Not a flat panel: the cream cools toward lilac at the foot,
+                    // so the rail reads as part of the same evening as the page.
+                    background: 'linear-gradient(185deg, var(--gh-cream) 0%, var(--gh-cream) 55%, color-mix(in srgb, var(--gh-lilac) 13%, var(--gh-cream)) 100%)',
+                    borderRight: '1px solid hsl(var(--border))',
+                    boxShadow: '1px 0 26px color-mix(in srgb, var(--gh-ink) 5%, transparent)',
                 }}>
                 <SidebarHeader />
                 <NavLinks location={location} onNavigate={() => {}} />
                 <div className="px-3 pb-2 space-y-1">
                     <button onClick={() => setInviteOpen(true)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
-                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)' }}>
+                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
                         <UserPlus className="w-4 h-4" aria-hidden="true" />
                         Invite a Friend
                     </button>
                     <button onClick={() => setSettingsOpen(true)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
-                        style={{ color: 'var(--gh-ink-muted)' }}>
+                        style={{ color: 'var(--gh-ink-muted)', borderRadius: 'calc(var(--radius) - 3px)' }}>
                         <Settings2 className="w-4 h-4" aria-hidden="true" />
                         Settings
                     </button>
@@ -172,7 +194,7 @@ export default function Layout({ children }) {
                     width: '72vw',
                     maxWidth: '280px',
                     transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
-                    background: 'var(--gh-cream)',
+                    background: 'linear-gradient(185deg, var(--gh-cream) 0%, var(--gh-cream) 55%, color-mix(in srgb, var(--gh-lilac) 13%, var(--gh-cream)) 100%)',
                     borderRight: '1px solid hsl(var(--border))',
                     boxShadow: mobileOpen ? '4px 0 40px color-mix(in srgb, var(--gh-ink) 15%, transparent)' : 'none',
                 }}>
@@ -180,7 +202,11 @@ export default function Layout({ children }) {
                 <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 flex items-center justify-center"
-                            style={{ background: 'linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-gold) 100%)' }}>
+                            style={{
+                                background: 'var(--gradient-sky)',
+                                borderRadius: 'calc(var(--radius) - 4px)',
+                                boxShadow: 'var(--shadow-soft)',
+                            }}>
                             <Sun className="w-4 h-4" style={{ color: 'var(--gh-cream)' }} aria-hidden="true" />
                         </div>
                         <div>
@@ -193,7 +219,7 @@ export default function Layout({ children }) {
                     <button
                         onClick={() => setMobileOpen(false)}
                         className="p-1.5 transition-colors" aria-label="Close menu"
-                        style={{ color: 'var(--gh-ink)', background: 'color-mix(in srgb, var(--gh-ink) 8%, transparent)' }}>
+                        style={{ color: 'var(--gh-ink)', background: 'color-mix(in srgb, var(--gh-ink) 8%, transparent)', borderRadius: 'calc(var(--radius) - 5px)' }}>
                         <X className="w-4 h-4" />
                     </button>
                 </div>
@@ -201,7 +227,7 @@ export default function Layout({ children }) {
                 <div className="px-3 pb-2">
                     <button onClick={() => { setMobileOpen(false); setInviteOpen(true); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
-                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)' }}>
+                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
                         <UserPlus className="w-4 h-4" />
                         Invite a Friend
                     </button>
@@ -221,7 +247,7 @@ export default function Layout({ children }) {
                     <button
                         onClick={() => setMobileOpen(true)}
                         className="p-2 transition-colors" aria-label="Open menu"
-                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)' }}>
+                        style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
                         <Menu className="w-4 h-4" />
                     </button>
                     <span className="font-display text-lg" style={{ color: 'var(--gh-ink)' }}>

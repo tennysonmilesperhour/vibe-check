@@ -133,7 +133,7 @@ export default function CosmicAddons() {
 
                 {/* Header */}
                 {/* ── The Loom: hero of the cosmos ── */}
-                <SkyField className="mb-10" showSun={false} veilIntensity={0.5}>
+                <SkyField className="mb-10 rounded-[var(--radius)]" showSun={false} veilIntensity={0.5}>
                     <div className="max-w-lg mx-auto px-6 py-8" ref={loomRef}>
                         <h1 className="text-4xl text-center" style={{ color: 'var(--gh-cream)' }}>Your Loom</h1>
                         <p className="text-sm text-center mt-1 mb-6" style={{ color: 'rgba(255,253,246,0.85)' }}>
@@ -158,15 +158,15 @@ export default function CosmicAddons() {
                         style={{ background: 'var(--gh-ink)', color: 'var(--gh-field)' }}>
                         <span className="text-sm">Unsaved changes to your cosmos.</span>
                         <Button onClick={saveProfile} disabled={isSaving} size="sm"
-                            style={{ background: 'var(--gh-gold)', color: 'var(--gh-ink)', borderRadius: 0 }}>
+                            style={{ background: 'var(--gh-gold)', color: 'var(--gh-ink)' }}>
                             <Save className="w-4 h-4 mr-1" /> {isSaving ? 'Saving…' : 'Save profile'}
                         </Button>
                     </div>
                 )}
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="mb-6 w-full grid grid-cols-4 rounded-none"
-                        style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                    <TabsList className="mb-6 w-full grid grid-cols-4"
+                        style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                         <TabsTrigger value="systems">Systems</TabsTrigger>
                         <TabsTrigger value="profile">My Profile</TabsTrigger>
                         <TabsTrigger value="correspondences">Connections</TabsTrigger>
@@ -175,7 +175,7 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 1: Toggle Systems ── */}
                     <TabsContent value="systems" className="space-y-6">
-                        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Choose your systems</h3>
                             <p className="text-sm mb-2" style={{ color: 'var(--gh-ink-muted)' }}>
                                 Turn on the wisdom frameworks you resonate with. Enabled systems weave into your loom, readings, and daily weather.
@@ -184,7 +184,7 @@ export default function CosmicAddons() {
                         </div>
 
                         {/* Birth Data */}
-                        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth data</h3>
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
                                 Your name feeds the numerology (expression, soul urge, life path). Your birth date computes everything derivable exactly.
@@ -244,7 +244,7 @@ export default function CosmicAddons() {
                     {/* ── Tab 2: Profile Detail Forms ── */}
                     <TabsContent value="profile" className="space-y-6">
                         {/* Sacred Geometry Blueprint */}
-                        <div className="p-6 flex flex-col items-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                        <div className="p-6 flex flex-col items-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Your cosmic blueprint</h3>
                             <p className="text-sm mb-3 w-full" style={{ color: 'var(--gh-ink-muted)' }}>Systems light up as you fill in your profile data</p>
                             <div className="w-full mb-4 p-4" style={{ background: 'color-mix(in srgb, var(--gh-gold) 10%, transparent)', borderLeft: '2px solid var(--gh-gold)' }}>
@@ -260,7 +260,7 @@ export default function CosmicAddons() {
                         </div>
 
                         {enabledSystems.length === 0 ? (
-                            <div className="p-12 text-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                            <div className="p-12 text-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                                 <p className="font-medium mb-1" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems woven yet</p>
                                 <p className="text-sm" style={{ color: 'var(--gh-ink-muted)' }}>
                                     Go to the Systems tab and toggle on at least one system to enter your profile.
@@ -272,7 +272,7 @@ export default function CosmicAddons() {
                                 if (!system) return null;
                                 return (
                                     <div key={systemId} className="p-6"
-                                        style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                                        style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                                         <div className="flex items-center gap-3 mb-5">
                                             <system.Icon className="w-6 h-6 shrink-0" style={{ color: 'var(--gh-accent)' }} aria-hidden="true" />
                                             <div>
@@ -302,7 +302,7 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 4: Deep Dive ── */}
                     <TabsContent value="deepdive" className="space-y-6">
-                        <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+                        <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <p className="text-sm" style={{ color: 'var(--gh-ink-soft)' }}>
                                 Each system below has a full structured breakdown and a deep reading composed from your profile — computed from content tables, never generated. Each can be exported as a PDF.
                             </p>

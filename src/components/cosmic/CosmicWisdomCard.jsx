@@ -63,13 +63,13 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
     const isUnread = wisdom && !wisdom.is_read;
 
     if (loading) {
-        return <div className="p-5" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }} aria-busy="true" />;
+        return <div className="p-5" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }} aria-busy="true" />;
     }
 
     // The inviting blank state: no systems woven yet.
     if (!hasProfile) {
         return (
-            <div className="p-5" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}>
+            <div className="p-5" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}>
                 <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--gh-ink-muted)" }}>{label}</p>
                 <p className="font-display text-xl mt-2" style={{ color: "var(--gh-ink)" }}>
                     Weave your cosmos to receive daily wisdom

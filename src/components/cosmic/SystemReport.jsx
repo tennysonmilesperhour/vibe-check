@@ -28,7 +28,7 @@ function Section({ title, children }) {
 function NotesBlock({ children }) {
   if (!children) return null;
   return (
-    <div className="mt-3 p-3 text-sm" style={{ background: tint('--gh-gold', 10), border: '1px solid hsl(var(--border))', color: 'var(--gh-ink-soft)' }}>
+    <div className="mt-3 p-3 text-sm" style={{ background: tint('--gh-gold', 10), border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)', color: 'var(--gh-ink-soft)' }}>
       <span className="text-xs uppercase tracking-widest block mb-1" style={{ color: 'var(--gh-ink-muted)' }}>Personal Notes</span>
       {children}
     </div>
@@ -99,7 +99,7 @@ function HumanDesignDetail({ data }) {
       <Section title="9 Centers Overview">
         <div className="grid grid-cols-3 gap-2">
           {HD_CENTERS.map(c => (
-            <div key={c} className="p-2 text-center text-xs" style={{ background: tint('--gh-accent', 6), border: '1px solid hsl(var(--border))', color: 'var(--gh-ink-soft)' }}>
+            <div key={c} className="p-2 text-center text-xs" style={{ background: tint('--gh-accent', 6), border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)', color: 'var(--gh-ink-soft)' }}>
               {c}
             </div>
           ))}
@@ -268,7 +268,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
   };
 
   return (
-    <div ref={cardRef} className="overflow-hidden" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', scrollMarginTop: "1rem" }}>
+    <div ref={cardRef} className="overflow-hidden" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)', scrollMarginTop: "1rem" }}>
       <button className="w-full p-5 flex items-center justify-between text-left"
         onClick={() => setExpanded(e => !e)}>
         <div className="flex items-center gap-3">
@@ -287,7 +287,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
           <Detail data={data} />
 
           {/* Composed deep reading */}
-          <div className="mt-4 p-4" style={{ background: tint('--gh-gold', 8), border: '1px solid hsl(var(--border))' }}>
+          <div className="mt-4 p-4" style={{ background: tint('--gh-gold', 8), border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4" style={{ color: 'var(--gh-accent)' }} />
@@ -295,7 +295,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
               </div>
               {report && (
                 <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, data)}
-                  className="text-xs gap-1.5 rounded-none" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
+                  className="text-xs gap-1.5" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
                   <Download className="w-3 h-3" /> Save as PDF
                 </Button>
               )}
@@ -325,7 +325,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
 export default function SystemReports({ enabledSystems, profile, cosmicProfile, openSystem, openNonce }) {
   if (enabledSystems.length === 0) {
     return (
-      <div className="p-12 text-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+      <div className="p-12 text-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
         <p className="font-medium mb-1" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>No systems woven yet</p>
         <p className="text-sm" style={{ color: 'var(--gh-ink-muted)' }}>Turn on at least one system on the Systems tab.</p>
       </div>

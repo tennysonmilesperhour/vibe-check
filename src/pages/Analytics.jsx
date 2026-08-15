@@ -145,7 +145,7 @@ export default function Analytics() {
                 className="px-4 py-2"
                 style={tab === id
                   ? { background: "var(--gh-ink)", color: "var(--gh-field)" }
-                  : { color: "var(--gh-ink-soft)", border: "1px solid hsl(var(--border))" }}
+                  : { color: "var(--gh-ink-soft)", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)" }}
               >
                 {label}
               </button>
@@ -170,7 +170,7 @@ export default function Analytics() {
                     className="px-3 py-1.5 text-sm"
                     style={range === r
                       ? { background: "var(--gh-ink)", color: "var(--gh-field)" }
-                      : { color: "var(--gh-ink-soft)", border: "1px solid hsl(var(--border))" }}
+                      : { color: "var(--gh-ink-soft)", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)" }}
                   >
                     {r} days
                   </button>
@@ -182,7 +182,7 @@ export default function Analytics() {
                   onChange={(e) => setPersonId(e.target.value)}
                   aria-label="Filter by person"
                   className="px-3 py-1.5 text-sm bg-transparent"
-                  style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }}
+                  style={{ border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)", color: "var(--gh-ink-soft)" }}
                 >
                   <option value="">Everyone</option>
                   {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -207,7 +207,7 @@ export default function Analytics() {
                   <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -22 }}>
                     <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={{ stroke: "rgba(90,36,48,0.25)" }} />
                     <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ background: "var(--gh-cream)", border: "1px solid rgba(90,36,48,0.2)", borderRadius: 0, fontSize: 12 }} />
+                    <Tooltip contentStyle={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "var(--shadow-lift)", fontSize: 12 }} />
                     <Line type="monotone" dataKey="mood" stroke="var(--gh-accent)" strokeWidth={2} dot={false} name="Mood" />
                     <Line type="monotone" dataKey="energy" stroke="var(--gh-amber)" strokeWidth={1.5} dot={false} name="Energy" />
                     <Line type="monotone" dataKey="sleep" stroke="var(--gh-rose)" strokeWidth={1.5} dot={false} name="Sleep" />
@@ -223,7 +223,7 @@ export default function Analytics() {
                   <BarChart data={moonData} margin={{ top: 8, right: 8, bottom: 0, left: -22 }}>
                     <XAxis dataKey="phase" tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={{ stroke: "rgba(90,36,48,0.25)" }} />
                     <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={{ background: "var(--gh-cream)", border: "1px solid rgba(90,36,48,0.2)", borderRadius: 0, fontSize: 12 }} />
+                    <Tooltip contentStyle={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "var(--shadow-lift)", fontSize: 12 }} />
                     <Bar dataKey="avg" fill="var(--gh-amber)" maxBarSize={42} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -244,7 +244,7 @@ export default function Analytics() {
               )}
               {oracleError && <p className="text-sm mt-2" style={{ color: "hsl(var(--destructive))" }}>{oracleError}</p>}
               {oracle && (
-                <div className="mt-4 p-5 whitespace-pre-line text-sm max-w-prose" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", color: "var(--gh-ink)" }}>
+                <div className="mt-4 p-5 whitespace-pre-line text-sm max-w-prose" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)", color: "var(--gh-ink)" }}>
                   {oracle}
                 </div>
               )}

@@ -27,7 +27,7 @@ export default class AppErrorBoundary extends React.Component {
           <p className="mt-3 text-sm" style={{ color: "var(--gh-ink-soft)" }}>
             The app hit an error it could not recover from. Reloading usually clears it.
           </p>
-          <p className="mt-3 text-xs font-mono px-3 py-2 inline-block" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", color: "var(--gh-ink-muted)" }}>
+          <p className="mt-3 text-xs font-mono px-3 py-2 inline-block" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)", color: "var(--gh-ink-muted)" }}>
             {String(this.state.error?.message || this.state.error)}
           </p>
           <div className="mt-6">

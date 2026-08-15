@@ -64,7 +64,7 @@ export default function TodaySummary({ entry, onEdit }) {
       {entry.emotions?.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-1.5">
           {entry.emotions.map((label) => (
-            <span key={label} className="px-2.5 py-1 text-xs font-medium" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)", color: "var(--gh-ink-soft)" }}>
+            <span key={label} className="px-2.5 py-1 text-xs font-medium" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 6px)", color: "var(--gh-ink-soft)" }}>
               <span aria-hidden="true">{emojiFor(label)}</span> {label}
             </span>
           ))}

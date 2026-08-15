@@ -145,7 +145,7 @@ export default function HealingBoard() {
                 </div>
 
                 {/* Overall Progress */}
-                <div className="p-8 text-center mb-8" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
+                <div className="p-8 text-center mb-8" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 6px)' }}>
                     <h3 className="text-2xl mb-1" style={{ color: 'var(--gh-ink)' }}>
                         Your unique essence
                     </h3>
@@ -319,7 +319,7 @@ export default function HealingBoard() {
                                     <div className="space-y-2 max-h-32 overflow-y-auto mt-2">
                                         {formData.milestones.map((milestone, i) => (
                                             <div key={i} className="flex items-center justify-between p-2 text-sm"
-                                                style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
+                                                style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 6px)' }}>
                                                 <div>
                                                     <div style={{ color: 'var(--gh-ink)' }}>{milestone.milestone}</div>
                                                     <div className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{milestone.date}</div>

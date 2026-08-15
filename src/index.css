@@ -42,9 +42,12 @@
     --accent-foreground: 348 43% 28%;
     --destructive: 0 65% 45%;
     --destructive-foreground: 43 90% 97%;
-    /* Hairlines sit lighter than before: edges should suggest, not cut. */
-    --border: 344 30% 92%;
-    --input: 344 28% 91%;
+    /* Hairlines sit a little lighter than before: edges should suggest, not
+       cut. Held at 90% rather than going lighter still — on transparent
+       controls (the range chips, the person select) this border is the only
+       thing marking the control's bounds. */
+    --border: 346 26% 90%;
+    --input: 346 26% 89%;
     --ring: 9 51% 50%;
 
     --chart-1: 348 81% 75%;              /* rose */
@@ -91,9 +94,13 @@
     --gh-starlight: #FFF4E2;
 
     /* Light that things give off, rather than light falling on them. */
-    --gh-halo: rgba(255, 236, 199, 0.55);
-    --gh-glow-rose: rgba(244, 140, 160, 0.35);
+    /* The sky register paints these over deep plum, so they can be strong.
+       The field register paints them under body copy, so it uses the faint
+       pair — a heavy wash there drags --gh-ink-muted under the 4.5:1 the
+       subtitles need. */
+    --gh-glow-rose: rgba(244, 140, 160, 0.18);
     --gh-glow-lilac: rgba(211, 162, 206, 0.30);
+    --gh-glow-lilac-faint: rgba(211, 162, 206, 0.15);
 
     /* The sky ramp itself, so the small surfaces that paint it inline
        (the sidebar mark, MiniLoom, Week in Review) stay in step with
@@ -106,6 +113,15 @@
       var(--gh-peach) 56%,
       var(--gh-amber) 78%,
       var(--gh-gold) 100%
+    );
+
+    /* The nav rail, shared by the desktop sidebar and the mobile drawer so
+       the two cannot drift apart. */
+    --gradient-rail: linear-gradient(
+      185deg,
+      var(--gh-cream) 0%,
+      var(--gh-cream) 55%,
+      color-mix(in srgb, var(--gh-lilac) 13%, var(--gh-cream)) 100%
     );
 
     /* Elevation, warm-tinted — a shadow here is dusk pooling, never grey. */
@@ -170,6 +186,10 @@
      actual light source instead of reading as a flat gradient. */
   .sky-surface {
     position: relative;
+    /* Own stacking context: .grain-layer blends with mix-blend-mode, and
+       without this it would composite against whatever is behind the
+       surface (the page, for a hero card) instead of against the sky. */
+    isolation: isolate;
     background:
       radial-gradient(ellipse 75% 55% at 82% 74%, rgba(255, 243, 214, 0.5) 0%, transparent 60%),
       radial-gradient(ellipse 65% 45% at 4% 2%, var(--gh-glow-lilac) 0%, transparent 62%),
@@ -246,7 +266,7 @@
     background:
       radial-gradient(ellipse 60% 45% at 18% 8%, var(--gh-glow-rose) 0%, transparent 60%),
       radial-gradient(ellipse 55% 50% at 88% 18%, rgba(250, 176, 94, 0.16) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 42% at 96% 74%, var(--gh-glow-lilac) 0%, transparent 62%),
+      radial-gradient(ellipse 50% 42% at 96% 74%, var(--gh-glow-lilac-faint) 0%, transparent 62%),
       radial-gradient(ellipse 70% 55% at 55% 105%, rgba(247, 158, 126, 0.14) 0%, transparent 60%),
       var(--gh-field);
   }
@@ -273,9 +293,9 @@
       1;
   }
 
-  /* ── the card recipe, in one place ──
-     Cream panel, soft edge, warm shadow. Replaces the hand-rolled
-     `background: cream + 1px border` that was repeated across features. */
+  /* Cream panel, soft edge, warm shadow — for panels that want the card
+     treatment from a class rather than an inline style. Callers may override
+     the background and keep the edge and elevation. */
   .veil-card {
     background:
       linear-gradient(168deg, color-mix(in srgb, var(--gh-cream) 94%, var(--gh-rose)) 0%, var(--gh-cream) 58%);

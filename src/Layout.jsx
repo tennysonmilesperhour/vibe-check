@@ -39,7 +39,7 @@ function NavLinks({ location, onNavigate }) {
                         key={item.title}
                         to={item.url}
                         onClick={onNavigate}
-                        className="group relative flex items-center gap-3 px-3 py-2.5 transition-all duration-200"
+                        className="relative flex items-center gap-3 px-3 py-2.5 transition-all duration-200"
                         style={{
                             // The active surface is lit rather than outlined: a warm
                             // wash with a hairline of gold around it.
@@ -155,7 +155,7 @@ export default function Layout({ children }) {
                 style={{
                     // Not a flat panel: the cream cools toward lilac at the foot,
                     // so the rail reads as part of the same evening as the page.
-                    background: 'linear-gradient(185deg, var(--gh-cream) 0%, var(--gh-cream) 55%, color-mix(in srgb, var(--gh-lilac) 13%, var(--gh-cream)) 100%)',
+                    background: 'var(--gradient-rail)',
                     borderRight: '1px solid hsl(var(--border))',
                     boxShadow: '1px 0 26px color-mix(in srgb, var(--gh-ink) 5%, transparent)',
                 }}>
@@ -194,7 +194,7 @@ export default function Layout({ children }) {
                     width: '72vw',
                     maxWidth: '280px',
                     transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
-                    background: 'linear-gradient(185deg, var(--gh-cream) 0%, var(--gh-cream) 55%, color-mix(in srgb, var(--gh-lilac) 13%, var(--gh-cream)) 100%)',
+                    background: 'var(--gradient-rail)',
                     borderRight: '1px solid hsl(var(--border))',
                     boxShadow: mobileOpen ? '4px 0 40px color-mix(in srgb, var(--gh-ink) 15%, transparent)' : 'none',
                 }}>

@@ -117,7 +117,7 @@ export default function CosmicAddons() {
                     <div className="max-w-2xl mx-auto px-5 sm:px-8 py-8" ref={loomRef}>
                         <h1 className="text-4xl text-center" style={{ color: 'var(--gh-cream)' }}>Your Loom</h1>
                         <p className="text-sm text-center mt-1 mb-6" style={{ color: 'rgba(255,253,246,0.85)' }}>
-                            Seven systems, one map. Tap an emblem or an exact connection.
+                            Seven systems set within one mandala. Tap a placement or a connecting chord.
                         </p>
                         <Loom profile={profile} onDeepDive={() => setActiveTab('deepdive')} />
                         <nav className="loom-system-key" aria-label="Cosmos systems">
@@ -137,8 +137,8 @@ export default function CosmicAddons() {
                             })}
                         </nav>
                         <div className="loom-provenance" aria-label="Loom information key">
-                            <span><i data-kind="wheel" />Wheel-placed</span>
-                            <span><i data-kind="inner" />Inner profile</span>
+                            <span><i data-kind="wheel" />True wheel position</span>
+                            <span><i data-kind="inner" />Sevenfold vertex</span>
                             <span><i data-kind="today" />Active today</span>
                         </div>
                         <div className="text-center mt-4" data-html2canvas-ignore="true">

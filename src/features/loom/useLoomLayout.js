@@ -10,13 +10,26 @@ export const THREAD_COLORS = {
   center: 'var(--gh-amber)',
 };
 
+// The seven seats are stable across profiles. Two systems usually express on
+// the outer wheel, so their unoccupied vertices remain visible as part of the
+// sevenfold construction instead of causing the other placements to jump.
+const SYSTEM_SEAT = {
+  astrology: 0,
+  human_design: 1,
+  numerology: 2,
+  tarot_archetype: 3,
+  gene_keys: 4,
+  enneagram: 5,
+  chakras: 6,
+};
+
 export function buildLoomLayout(graph, size = 400) {
   const cx = size / 2;
   const cy = size / 2;
   const rZodiac = size * 0.462;
   const rGates = size * 0.42;
   const rPlaced = size * 0.35;
-  const rInner = size * 0.19;
+  const rInner = size * 0.218;
   const wheelNodes = graph.nodes.filter((node) => node.wheelDeg != null);
   const innerNodes = graph.nodes.filter((node) => node.wheelDeg == null);
   const clusters = new Map();
@@ -37,7 +50,7 @@ export function buildLoomLayout(graph, size = 400) {
     const angleRad = ((angle - 90) * Math.PI) / 180;
     const tangentX = -Math.sin(angleRad);
     const tangentY = Math.cos(angleRad);
-    const spacing = size * 0.065;
+    const spacing = size * 0.075;
 
     cluster.forEach((node, index) => {
       const offset = (index - (cluster.length - 1) / 2) * spacing;
@@ -54,15 +67,14 @@ export function buildLoomLayout(graph, size = 400) {
   }
 
   const positionedInner = innerNodes.map((node, index) => {
-    const angle = (index * 360) / Math.max(innerNodes.length, 1);
+    const seat = SYSTEM_SEAT[node.system] ?? index;
+    const angle = (seat * 360) / 7;
     const [x, y] = polar(cx, cy, rInner, angle);
     return { ...node, x, y, anchorX: x, anchorY: y, angle, ring: 'inner' };
   });
 
   const positioned = [...positionedWheel, ...positionedInner];
   const byId = Object.fromEntries(positioned.map((node) => [node.id, node]));
-  const bendDirection = { hexagram: 1, number: -1, astro: 1, center: -1 };
-
   const threads = graph.edges
     .filter((edge) => byId[edge.a] && byId[edge.b])
     .map((edge) => {
@@ -71,23 +83,24 @@ export function buildLoomLayout(graph, size = 400) {
       const dx = b.x - a.x;
       const dy = b.y - a.y;
       const length = Math.hypot(dx, dy);
-      const sameAnchor = Math.hypot(b.anchorX - a.anchorX, b.anchorY - a.anchorY) < 0.5;
-      let d = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+      const nodeRadius = size * 0.028;
+      const trim = Math.min(nodeRadius, Math.max(0, length / 2 - size * 0.005));
+      const ux = length ? dx / length : 0;
+      const uy = length ? dy / length : 0;
+      const x1 = a.x + ux * trim;
+      const y1 = a.y + uy * trim;
+      const x2 = b.x - ux * trim;
+      const y2 = b.y - uy * trim;
 
-      // Short links make shared positions read as a cluster. Longer links take
-      // a shallow side bend, avoiding the false visual hub at the wheel center.
-      if (!sameAnchor && length > size * 0.08) {
-        const normalX = -dy / length;
-        const normalY = dx / length;
-        const bend = Math.min(size * 0.055, length * 0.12) * (bendDirection[edge.kind] || 1);
-        const controlX = (a.x + b.x) / 2 + normalX * bend;
-        const controlY = (a.y + b.y) / 2 + normalY * bend;
-        d = `M ${a.x} ${a.y} Q ${controlX} ${controlY} ${b.x} ${b.y}`;
-      }
+      // A correspondence is a literal chord between its two placements. The
+      // geometry supplies the structure, so there is no arbitrary curve or hub.
+      const d = `M ${x1} ${y1} L ${x2} ${y2}`;
 
       return {
         ...edge,
         d,
+        midX: (a.x + b.x) / 2,
+        midY: (a.y + b.y) / 2,
         color: THREAD_COLORS[edge.kind] || 'var(--gh-cream)',
       };
     });

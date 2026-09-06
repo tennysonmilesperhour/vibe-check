@@ -82,6 +82,37 @@ export function WheelRings({ cx, cy, rZodiac, rGates, highlightGates = [] }) {
 }
 
 /**
+ * A single sevenfold construction for the seven systems. The outer heptagon,
+ * {7/2} star, and seven-circle rosette all share the same rotational axis.
+ * Inner profile placements use the seven star vertices as stable seats.
+ */
+export function SevenfoldGeometry({ cx, cy, r }) {
+  const vertices = ringPoints(cx, cy, r, 7, 0);
+  const starOrder = [0, 2, 4, 6, 1, 3, 5].map((index) => vertices[index]);
+  const petalRadius = r * 0.43;
+  const petalCenters = ringPoints(cx, cy, petalRadius, 7, 0);
+
+  return (
+    <g aria-hidden="true">
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={cream(0.2)} strokeWidth="0.7" />
+      <polygon points={pts(vertices)} fill="none" stroke={cream(0.18)} strokeWidth="0.65" />
+      <polygon points={pts(starOrder)} fill="none" stroke={cream(0.34)} strokeWidth="0.85" />
+
+      <circle cx={cx} cy={cy} r={petalRadius} fill="none" stroke={cream(0.2)} strokeWidth="0.65" />
+      {petalCenters.map(([x, y], index) => (
+        <circle key={index} cx={x} cy={y} r={petalRadius} fill="none" stroke={cream(0.14)} strokeWidth="0.6" />
+      ))}
+
+      {vertices.map(([x, y], index) => (
+        <circle key={index} cx={x} cy={y} r="2.1" fill="var(--gh-ink)" stroke={cream(0.52)} strokeWidth="0.7" />
+      ))}
+      <circle cx={cx} cy={cy} r="3" fill="var(--gh-gold)" opacity="0.72" />
+      <circle cx={cx} cy={cy} r="6.5" fill="none" stroke={cream(0.28)} strokeWidth="0.7" />
+    </g>
+  );
+}
+
+/**
  * Progressive sacred geometry, carried over from CosmicBlueprint:
  * tiers unlock with the number of systems that hold data.
  * 2+ petals · 3+ interlocking triangles · 5+ hexagon · 7 flower of life.

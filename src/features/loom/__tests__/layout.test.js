@@ -19,7 +19,7 @@ describe('buildLoomLayout', () => {
     expect(layout.threads[0].d).toContain(' L ');
   });
 
-  it('uses a shallow local curve instead of pulling connections through the center', () => {
+  it('uses a straight geometric chord between connected placements', () => {
     const layout = buildLoomLayout({
       nodes: [
         { id: 'outer', system: 'astrology', label: 'Sun', wheelDeg: 15 },
@@ -28,8 +28,27 @@ describe('buildLoomLayout', () => {
       edges: [{ a: 'outer', b: 'inner', kind: 'number', why: 'Exact match', strength: 2 }],
     });
 
-    expect(layout.threads[0].d).toContain(' Q ');
-    expect(layout.threads[0].d).not.toContain(` Q ${layout.cx} ${layout.cy} `);
+    expect(layout.threads[0].d).toContain(' L ');
+    expect(layout.threads[0].d).not.toContain(' Q ');
     expect(layout.threads[0].d).not.toContain('NaN');
+  });
+
+  it('keeps inner system placements on stable sevenfold vertices', () => {
+    const complete = buildLoomLayout({
+      nodes: [
+        { id: 'hd', system: 'human_design', label: 'Projector', wheelDeg: null },
+        { id: 'number', system: 'numerology', label: 'Life Path 8', wheelDeg: null },
+      ],
+      edges: [],
+    });
+    const partial = buildLoomLayout({
+      nodes: [{ id: 'number', system: 'numerology', label: 'Life Path 8', wheelDeg: null }],
+      edges: [],
+    });
+
+    const completeNumber = complete.nodes.find((node) => node.id === 'number');
+    const partialNumber = partial.nodes.find((node) => node.id === 'number');
+    expect(partialNumber.x).toBeCloseTo(completeNumber.x);
+    expect(partialNumber.y).toBeCloseTo(completeNumber.y);
   });
 });

@@ -4,7 +4,7 @@ import { resonanceGraph } from "@/lib/resonance/graph";
 import { SYSTEMS } from "@/lib/resonance/tables";
 import { todayKey } from "@/lib/dates";
 import { useLoomLayout } from "./useLoomLayout";
-import { WheelRings, DrawPath } from "./LoomGeometry";
+import { WheelRings, SevenfoldGeometry, DrawPath } from "./LoomGeometry";
 
 const SYSTEM_LABEL = Object.fromEntries(SYSTEMS.map((s) => [s.id, s.label]));
 const SYSTEM_COLORS = {
@@ -91,20 +91,22 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
         style={{ width: "100%", height: "auto", display: "block" }}
       >
         <WheelRings cx={layout.cx} cy={layout.cy} rZodiac={layout.rZodiac} rGates={layout.rGates} highlightGates={highlightGates} />
+        <SevenfoldGeometry cx={layout.cx} cy={layout.cy} r={layout.rInner} />
 
         {/* shared wheel positions keep one true anchor, with nearby readable emblems */}
         {layout.nodes.filter((node) => Math.hypot(node.x - node.anchorX, node.y - node.anchorY) > 1).map((node) => (
-          <line
-            key={`anchor-${node.id}`}
-            x1={node.anchorX}
-            y1={node.anchorY}
-            x2={node.x}
-            y2={node.y}
-            stroke={SYSTEM_COLORS[node.system] || "var(--gh-cream)"}
-            strokeWidth="0.75"
-            opacity={selected && !focusedNodeIds.has(node.id) ? 0.12 : 0.38}
-            aria-hidden="true"
-          />
+          <g key={`anchor-${node.id}`} aria-hidden="true">
+            <line
+              x1={node.anchorX}
+              y1={node.anchorY}
+              x2={node.x}
+              y2={node.y}
+              stroke={SYSTEM_COLORS[node.system] || "var(--gh-cream)"}
+              strokeWidth="0.65"
+              opacity={selected && !focusedNodeIds.has(node.id) ? 0.1 : 0.3}
+            />
+            <circle cx={node.anchorX} cy={node.anchorY} r="1.6" fill={SYSTEM_COLORS[node.system] || "var(--gh-cream)"} opacity="0.72" />
+          </g>
         ))}
 
         {/* exact cross-system correspondences */}
@@ -129,6 +131,22 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
                   setSelected({ type: "thread", data: thread });
                 }
               }}
+            />
+            <rect
+              x={thread.midX - 2.6}
+              y={thread.midY - 2.6}
+              width="5.2"
+              height="5.2"
+              rx="0.7"
+              fill="var(--gh-ink)"
+              stroke={thread.color}
+              strokeWidth="1"
+              transform={`rotate(45 ${thread.midX} ${thread.midY})`}
+              opacity={selected
+                ? (focusedNodeIds.has(thread.a) && focusedNodeIds.has(thread.b) ? 1 : 0.12)
+                : 0.95}
+              pointerEvents="none"
+              aria-hidden="true"
             />
             {thread.isActiveToday && !reduced && (
               <motion.path
@@ -204,7 +222,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
       <div className="mt-1 text-center" style={{ color: "rgba(255,253,246,0.86)" }}>
         {graph.edges.length > 0 ? (
           <>
-            <p className="text-xs tracking-[0.16em] uppercase">Only exact correspondences are connected</p>
+            <p className="text-sm">Straight chords mark verified correspondences</p>
             <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
               {[...new Set(layout.threads.map((thread) => thread.kind))].map((kind) => (
                 <span key={kind} className="inline-flex items-center gap-1.5">
@@ -216,7 +234,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
           </>
         ) : (
           <p className="mx-auto max-w-sm text-sm leading-relaxed">
-            No exact cross-system matches yet. Your placements stay visible; a line appears only when two systems share a verified correspondence.
+            The sevenfold mandala holds your placements. A straight chord appears when two systems share a verified correspondence.
           </p>
         )}
       </div>

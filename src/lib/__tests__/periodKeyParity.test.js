@@ -4,7 +4,7 @@ import { getPeriodKey as clientKey, parseLocalDate, addDaysKey, dateKey } from '
 import { getPeriodKey as serverKey } from '../../../base44/functions/shared/periodKey.ts';
 
 const SAMPLES = [
-  // ISO year boundaries — the classic drift zone
+  // ISO year boundaries: the classic drift zone
   '2025-12-28', '2025-12-29', '2025-12-30', '2025-12-31',
   '2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04', '2026-01-05',
   '2026-12-28', '2026-12-31', '2027-01-01', '2027-01-04',

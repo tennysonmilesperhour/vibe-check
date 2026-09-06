@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Vibe Check sunset icon">
+  <rect width="512" height="512" fill="#5A2430"/>
+  <circle cx="256" cy="278" r="118" fill="#FDC94E"/>
+  <path d="M96 308h320v108H96z" fill="#7A3040"/>
+  <path d="M96 308c54-38 107-38 160 0 53 38 106 38 160 0" fill="none" stroke="#FFFDF6" stroke-width="26" stroke-linecap="round"/>
+</svg>

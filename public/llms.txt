@@ -1,0 +1,19 @@
+# Vibe Check: Golden Hour
+
+> Vibe Check is a private one-minute evening mood journal for recording real days and noticing personal patterns over time.
+
+## Official product information
+
+- [Product overview](/product.md)
+- [Privacy policy](/privacy)
+- [Terms of use](/terms)
+- [Support](/support)
+
+## Key facts
+
+- The core journal records mood, energy, sleep, feelings, activities, and optional reflections.
+- Pattern views summarize a user's own saved history.
+- Tarot, astrology, numerology, and AI material are optional reflection and entertainment tools, not medical advice or factual prediction.
+- Specialist chart values are user-provided or deterministically calculated where supported. Vibe Check does not use AI to invent precise chart values.
+- Users can export their history and permanently delete their account in the app.
+- Vibe Check does not sell personal data or use it for advertising.

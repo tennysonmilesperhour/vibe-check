@@ -3,7 +3,6 @@
 -- Conventions: snake_case, uuid PKs, user_id -> auth.users, timestamptz audit columns.
 
 create extension if not exists "pgcrypto";
-
 -- ── profiles: the former Base44 user object's app-owned fields ──
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
@@ -14,7 +13,6 @@ create table public.profiles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 -- ── daily_check_ins ──
 create table public.daily_check_ins (
   id uuid primary key default gen_random_uuid(),
@@ -36,7 +34,6 @@ create table public.daily_check_ins (
   updated_at timestamptz not null default now(),
   unique (user_id, date)
 );
-
 -- ── people (merged Relationship + Connection) ──
 create table public.people (
   id uuid primary key default gen_random_uuid(),
@@ -55,7 +52,6 @@ create table public.people (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 -- ── readings (tarot / oracle) ──
 create table public.readings (
   id uuid primary key default gen_random_uuid(),
@@ -70,7 +66,6 @@ create table public.readings (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 -- ── boundary_alerts ──
 create table public.boundary_alerts (
   id uuid primary key default gen_random_uuid(),
@@ -83,7 +78,6 @@ create table public.boundary_alerts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 -- ── healing_progress ──
 create table public.healing_progress (
   id uuid primary key default gen_random_uuid(),
@@ -97,7 +91,6 @@ create table public.healing_progress (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
 -- ── cosmic_wisdom (AI wisdom + weather cache) ──
 create table public.cosmic_wisdom (
   id uuid primary key default gen_random_uuid(),
@@ -113,7 +106,6 @@ create table public.cosmic_wisdom (
   updated_at timestamptz not null default now(),
   unique (user_id, period_type, period_key, systems_key)
 );
-
 -- ── indexes for the app's access patterns ──
 create index daily_check_ins_user_date on public.daily_check_ins (user_id, date desc);
 create index people_user on public.people (user_id);
@@ -121,7 +113,6 @@ create index readings_user_date on public.readings (user_id, date desc);
 create index boundary_alerts_user_created on public.boundary_alerts (user_id, created_at desc);
 create index healing_progress_user on public.healing_progress (user_id);
 create index cosmic_wisdom_lookup on public.cosmic_wisdom (user_id, period_type, period_key);
-
 -- ── updated_at maintenance ──
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -129,7 +120,6 @@ begin
   new.updated_at = now();
   return new;
 end $$;
-
 do $$
 declare t text;
 begin
@@ -138,7 +128,6 @@ begin
     execute format('create trigger set_updated_at before update on public.%I for each row execute function public.set_updated_at()', t);
   end loop;
 end $$;
-
 -- ── auto-create a profile row on signup ──
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -148,11 +137,9 @@ begin
   on conflict (id) do nothing;
   return new;
 end $$;
-
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
-
 -- ── row-level security: every row belongs to its user ──
 do $$
 declare t text;
@@ -166,7 +153,6 @@ begin
     execute format('create policy "own rows delete" on public.%I for delete using (auth.uid() = user_id)', t);
   end loop;
 end $$;
-
 alter table public.profiles enable row level security;
 create policy "own profile select" on public.profiles for select using (auth.uid() = id);
 create policy "own profile update" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);

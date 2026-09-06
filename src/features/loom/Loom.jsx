@@ -9,7 +9,7 @@ import { WheelRings, ProgressiveGeometry, DrawPath } from "./LoomGeometry";
 const SYSTEM_LABEL = Object.fromEntries(SYSTEMS.map((s) => [s.id, s.label]));
 
 /**
- * The Loom — the app's signature visualization. Your placements plotted on
+ * The Loom: the app's signature visualization. Your placements plotted on
  * the real zodiac wheel with the 64-gate ring; resonance threads drawn
  * between points that share a hexagram, a number, or a sign. The today
  * layer pulses what the current moon and personal day touch.
@@ -57,7 +57,16 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
               strokeWidth={thread.isActiveToday ? 2.4 : thread.strength === 2 ? 1.6 : 1}
               opacity={thread.isActiveToday ? 1 : 0.75}
               style={{ cursor: "pointer" }}
+              role="button"
+              tabIndex="0"
+              aria-label={`Open resonance thread: ${thread.why}`}
               onClick={() => setSelected({ type: "thread", data: thread })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelected({ type: "thread", data: thread });
+                }
+              }}
             />
             {thread.isActiveToday && !reduced && (
               <motion.path
@@ -79,7 +88,14 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
           const isActive = activeIds.has(node.id);
           const r = node.ring === "wheel" ? 6 : 5;
           return (
-            <g key={node.id} style={{ cursor: "pointer" }} onClick={() => setSelected({ type: "node", data: node })}>
+            <g key={node.id} role="button" tabIndex="0" aria-label={`Open ${node.label}`}
+              style={{ cursor: "pointer" }} onClick={() => setSelected({ type: "node", data: node })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelected({ type: "node", data: node });
+                }
+              }}>
               {isActive && !reduced && (
                 <motion.circle
                   cx={node.x} cy={node.y} r={r + 5}
@@ -104,6 +120,36 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
         })}
       </svg>
 
+      <details className="mt-3 text-sm" style={{ color: "var(--gh-cream)" }}>
+        <summary className="min-h-11 cursor-pointer py-3 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gh-gold)]">
+          Explore Loom details
+        </summary>
+        <div className="flex flex-wrap gap-2 pb-2">
+          {layout.nodes.map((node) => (
+            <button
+              key={`detail-${node.id}`}
+              type="button"
+              className="min-h-11 px-3 py-2 text-sm"
+              style={{ border: "1px solid rgba(255,253,246,0.4)" }}
+              onClick={() => setSelected({ type: "node", data: node })}
+            >
+              {node.label}
+            </button>
+          ))}
+          {layout.threads.map((thread) => (
+            <button
+              key={`detail-${thread.a}-${thread.b}`}
+              type="button"
+              className="min-h-11 px-3 py-2 text-sm"
+              style={{ border: "1px solid rgba(255,253,246,0.4)" }}
+              onClick={() => setSelected({ type: "thread", data: thread })}
+            >
+              {thread.why}
+            </button>
+          ))}
+        </div>
+      </details>
+
       {/* today line */}
       {graph.today?.moonPhase && (
         <p className="text-center text-sm mt-2" style={{ color: "rgba(255,253,246,0.85)" }}>
@@ -125,7 +171,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
             <>
               <div className="flex items-center justify-between">
                 <h3 className="text-xl" style={{ color: "var(--gh-ink)" }}>{selected.data.label}</h3>
-                <button type="button" className="text-sm underline underline-offset-4" style={{ color: "var(--gh-ink-muted)" }} onClick={() => setSelected(null)}>Close</button>
+                <button type="button" className="min-h-11 px-3 text-sm underline underline-offset-4" style={{ color: "var(--gh-ink-muted)" }} onClick={() => setSelected(null)}>Close</button>
               </div>
               <p className="text-sm mt-1" style={{ color: "var(--gh-ink-soft)" }}>
                 {SYSTEM_LABEL[selected.data.system]} placement
@@ -141,7 +187,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
             <>
               <div className="flex items-center justify-between">
                 <h3 className="text-xl" style={{ color: "var(--gh-ink)" }}>A resonance thread</h3>
-                <button type="button" className="text-sm underline underline-offset-4" style={{ color: "var(--gh-ink-muted)" }} onClick={() => setSelected(null)}>Close</button>
+                <button type="button" className="min-h-11 px-3 text-sm underline underline-offset-4" style={{ color: "var(--gh-ink-muted)" }} onClick={() => setSelected(null)}>Close</button>
               </div>
               <p className="text-sm mt-2 max-w-prose" style={{ color: "var(--gh-ink-soft)" }}>{selected.data.why}</p>
             </>

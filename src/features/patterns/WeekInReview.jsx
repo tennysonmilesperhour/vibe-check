@@ -2,6 +2,9 @@ import React, { useMemo } from "react";
 import { parseLocalDate, addDaysKey, todayKey } from "@/lib/dates";
 import { format } from "date-fns";
 import { EMOTIONS } from "@/features/today/vocab";
+import SkyField from "@/features/shell/SkyField";
+import WeatherWeekStrip from "@/features/today/WeatherWeekStrip";
+import { weatherForScore } from "@/features/today/weather";
 
 const emojiFor = (label) => EMOTIONS.find((e) => e.label === label)?.emoji || "";
 
@@ -41,53 +44,32 @@ export default function WeekInReview({ checkIns, people = [], forceShow = false 
 
   if ((!isSunday && !forceShow) || !week) return null;
 
-  const maxMood = 10;
+  const averageWeather = weatherForScore(week.avg);
 
   return (
-    <section
-      aria-labelledby="week-review-heading"
-      className="p-6"
-      style={{ background: "linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-peach) 55%, var(--gh-gold) 100%)" }}
-    >
-      <p className="text-xs font-bold tracking-wide" style={{ color: "rgba(255,253,246,0.9)" }}>WEEK IN REVIEW</p>
-      <h2 id="week-review-heading" className="text-3xl mt-1" style={{ color: "var(--gh-cream)" }}>
-        The week, woven
-      </h2>
+    <SkyField moodScore={week.avg} showSun={false} veilIntensity={0.35} className="rounded-surface">
+      <section aria-labelledby="week-review-heading" className="p-6 sm:p-8">
+        <p className="text-sm" style={{ color: "rgba(255,253,246,0.76)" }}>Your seven-day weather</p>
+        <h2 id="week-review-heading" className="text-3xl mt-1" style={{ color: "var(--gh-cream)" }}>
+          Mostly {averageWeather.label.toLowerCase()}, with movement
+        </h2>
 
-      {/* mood arc as bars on the sky */}
-      <div className="flex items-end gap-1.5 mt-5 h-20" role="img" aria-label={`Mood across the week, averaging ${week.avg.toFixed(1)}`}>
-        {week.days.map((d) => {
-          const entry = week.entries.find((e) => e.date === d);
-          const h = entry?.mood_score ? (entry.mood_score / maxMood) * 100 : 6;
-          return (
-            <div key={d} className="flex-1 flex flex-col items-center gap-1">
-              <div
-                style={{
-                  width: "100%",
-                  height: `${h}%`,
-                  background: entry ? "var(--gh-cream)" : "rgba(255,253,246,0.25)",
-                  minHeight: 4,
-                }}
-              />
-              <span className="text-[10px]" style={{ color: "rgba(255,253,246,0.85)" }}>
-                {format(parseLocalDate(d), "EEEEE")}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+        <div className="mt-7">
+          <WeatherWeekStrip checkIns={week.entries} />
+        </div>
 
-      <div className="mt-5 space-y-1.5 text-sm" style={{ color: "var(--gh-cream)" }}>
-        <p>Average mood {week.avg.toFixed(1)}. Brightest day {format(parseLocalDate(week.best.date), "EEEE")} at {week.best.mood_score}.</p>
-        {week.topEmotions.length > 0 && (
-          <p>The week felt {week.topEmotions.map((e) => `${emojiFor(e)} ${e.toLowerCase()}`).join(", ")}.</p>
-        )}
-        {week.topPeople.length > 0 && <p>Most present: {week.topPeople.join(" and ")}.</p>}
-      </div>
+        <div className="mt-6 space-y-1.5 text-sm" style={{ color: "var(--gh-cream)" }}>
+          <p>Brightest on {format(parseLocalDate(week.best.date), "EEEE")}.</p>
+          {week.topEmotions.length > 0 && (
+            <p>Often present: {week.topEmotions.map((e) => `${emojiFor(e)} ${e.toLowerCase()}`).join(", ")}.</p>
+          )}
+          {week.topPeople.length > 0 && <p>Most present: {week.topPeople.join(" and ")}.</p>}
+        </div>
 
-      <p className="mt-4 text-sm" style={{ color: "rgba(255,253,246,0.9)" }}>
-        One question to carry: what does next week deserve more of?
-      </p>
-    </section>
+        <p className="mt-5 pt-5 text-sm" style={{ color: "rgba(255,253,246,0.88)", borderTop: "1px solid rgba(255,253,246,0.28)" }}>
+          What does next week deserve more of?
+        </p>
+      </section>
+    </SkyField>
   );
 }

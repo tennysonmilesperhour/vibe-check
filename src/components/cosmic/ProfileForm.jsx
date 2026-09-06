@@ -87,7 +87,6 @@ const TAROT_BY_NUM = {
   21: "21 – The World"
 };
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -96,20 +95,26 @@ import {
     ENNEAGRAM_TYPES, ENNEAGRAM_WINGS, ENNEAGRAM_INSTINCTS
 } from "./correspondences";
 
+const FieldLabelContext = React.createContext("");
+
 function Field({ label, hint, children }) {
+    const labelledChild = React.isValidElement(children)
+        ? React.cloneElement(children, { "aria-label": children.props["aria-label"] || label })
+        : children;
     return (
-        <div className="space-y-1">
-            <Label className="text-sm font-medium" style={{color: 'var(--warm-gray-700)'}}>{label}</Label>
-            {hint && <p className="text-xs" style={{color: 'var(--warm-gray-400)'}}>{hint}</p>}
-            {children}
-        </div>
+        <fieldset className="min-w-0 space-y-1">
+            <legend className="text-sm font-medium" style={{color: 'var(--gh-ink)'}}>{label}</legend>
+            {hint && <p className="text-xs" style={{color: 'var(--gh-ink-muted)'}}>{hint}</p>}
+            <FieldLabelContext.Provider value={label}>{labelledChild}</FieldLabelContext.Provider>
+        </fieldset>
     );
 }
 
 function SimpleSelect({ value, onChange, options, placeholder }) {
+    const fieldLabel = React.useContext(FieldLabelContext);
     return (
         <Select value={value || ""} onValueChange={onChange}>
-            <SelectTrigger className="mt-1">
+            <SelectTrigger className="mt-1" aria-label={fieldLabel}>
                 <SelectValue placeholder={placeholder || "Select..."} />
             </SelectTrigger>
             <SelectContent>
@@ -219,7 +224,7 @@ export function HumanDesignForm({ data, onChange }) {
 export function GeneKeysForm({ data, onChange }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
     const keyFields = [
-        { key: 'life_work', label: "Life's Work (Conscious Sun)", hint: "What you're here to do — your most visible gift" },
+        { key: 'life_work', label: "Life's Work (Conscious Sun)", hint: "What you're here to do: your most visible gift" },
         { key: 'evolution', label: "Evolution (Conscious Earth)", hint: "What grounds your life's work" },
         { key: 'radiance', label: "Radiance (Conscious Moon)", hint: "Your subconscious gift that naturally shines" },
         { key: 'purpose', label: "Purpose (Conscious Node)", hint: "Your soul's higher evolutionary direction" },
@@ -360,7 +365,7 @@ export function EnneagramForm({ data, onChange }) {
 
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Type" hint="Your core motivation — the fear you avoid and the desire that drives you">
+            <Field label="Type" hint="Your core motivation: the fear you avoid and the desire that drives you">
                 <SimpleSelect value={data?.type} onChange={v => set('type', v)} options={ENNEAGRAM_TYPES} />
             </Field>
             <Field label="Wing" hint="The neighboring type that flavors how your core type expresses">
@@ -369,7 +374,7 @@ export function EnneagramForm({ data, onChange }) {
             <Field label="Instinctual Variant" hint="Which survival drive leads: self-preservation, social, or one-to-one">
                 <SimpleSelect value={data?.instinct} onChange={v => set('instinct', v)} options={ENNEAGRAM_INSTINCTS} />
             </Field>
-            <Field label="Tritype" hint="Optional — your dominant type in each center, e.g. 469 or 358">
+            <Field label="Tritype" hint="Optional: your dominant type in each center, e.g. 469 or 358">
                 <Input className="mt-1" value={data?.tritype || ''} onChange={e => set('tritype', e.target.value)} placeholder="e.g. 469" />
             </Field>
             <div className="md:col-span-2">
@@ -412,12 +417,12 @@ export function ChakraForm({ data, onChange }) {
                             const active = focusAreas.includes(area);
                             const short = area.split(' – ')[0];
                             return (
-                                <button key={area} type="button" onClick={() => toggleFocus(area)}
-                                    className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                                <button key={area} type="button" aria-pressed={active} onClick={() => toggleFocus(area)}
+                                    className="min-h-11 px-3 py-2 rounded-full text-xs font-medium transition-colors"
                                     style={{
-                                        background: active ? 'rgba(194,80,60,0.25)' : 'rgba(255,255,255,0.64)',
-                                        border: active ? '1px solid rgba(194,80,60,0.5)' : '1px solid rgba(61,52,80,0.12)',
-                                        color: active ? '#C2503C' : 'rgba(105,95,128,0.7)',
+                                        background: active ? 'rgba(194,80,60,0.14)' : 'var(--gh-field)',
+                                        border: active ? '1px solid var(--gh-accent)' : '1px solid hsl(var(--border))',
+                                        color: active ? 'var(--gh-accent)' : 'var(--gh-ink-soft)',
                                     }}>
                                     {short}
                                 </button>

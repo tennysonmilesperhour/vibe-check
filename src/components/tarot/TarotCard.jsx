@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import CardGeometry from "./CardGeometry";
 
-// ── Card Back — original cosmic SVG design ───────────────────────────────────
+// ── Card Back: original cosmic SVG design ───────────────────────────────────
 function CardBack() {
   return (
     <svg viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -22,7 +22,7 @@ function CardBack() {
       <rect x="6" y="6" width="108" height="188" rx="4" fill="none" stroke="#E8975A" strokeWidth="0.5" opacity="0.4"/>
       {/* Glow orb */}
       <circle cx="60" cy="100" r="52" fill="url(#glow-center)"/>
-      {/* Flower of Life — 7 overlapping circles */}
+      {/* Flower of Life: 7 overlapping circles */}
       {[
         [60,100],[60,79],[79,89.5],[79,110.5],[60,121],[41,110.5],[41,89.5]
       ].map(([cx,cy],i) => (
@@ -61,7 +61,7 @@ function CardBack() {
   );
 }
 
-// ── Card Front — geometry-based SVG art ─────────────────────────────────────
+// ── Card Front: geometry-based SVG art ─────────────────────────────────────
 function CardFront({ card, reversed }) {
   const c = card.color;
   const isMajor = card.id < 22;
@@ -91,9 +91,9 @@ function CardFront({ card, reversed }) {
       <line x1="15" y1="24" x2="105" y2="24" stroke={c} strokeWidth="0.5" opacity="0.25"/>
       {/* Glow */}
       <circle cx="60" cy="100" r="46" fill={`url(#glow-${card.id})`}/>
-      {/* Sacred geometry — rendered via CardGeometry as foreignObject */}
+      {/* Sacred geometry: rendered via CardGeometry as foreignObject */}
       <foreignObject x="12" y="30" width="96" height="110">
-        <div xmlns="http://www.w3.org/1999/xhtml"
+        <div
           style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <CardGeometry type={card.geoType} color={c} size={88}/>
         </div>
@@ -129,7 +129,7 @@ function CardFront({ card, reversed }) {
 
 // ── The Flipping Card ────────────────────────────────────────────────────────
 // Controlled when a `flipped` prop is provided (lets "Reveal all" actually
-// flip the faces — the old internal-only state could not be driven from
+// flip the faces: the old internal-only state could not be driven from
 // outside); falls back to self-managed flipping when uncontrolled.
 export default function TarotCard({ card, reversed = false, size = "md", onClick, disabled = false, label, flipped: flippedProp }) {
   const [flippedSelf, setFlippedSelf] = useState(false);
@@ -154,8 +154,12 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
 
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <div
+      <button
+        type="button"
         onClick={handleClick}
+        disabled={disabled || flipped}
+        aria-label={flipped ? `${card.name}${reversed ? ", reversed" : ""}, revealed` : `Reveal ${label || "card"}`}
+        className="tarot-card-button"
         style={{
           width: w, height: h,
           cursor: disabled ? 'default' : flipped ? 'default' : 'pointer',
@@ -167,7 +171,7 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
           width: '100%', height: '100%',
           position: 'relative',
           transformStyle: 'preserve-3d',
-          transition: 'transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)',
           transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
         }}>
           {/* Back face */}
@@ -175,7 +179,7 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
             position: 'absolute', width: '100%', height: '100%',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
-            borderRadius: 7,
+            borderRadius: 10,
             overflow: 'hidden',
             boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
           }}>
@@ -183,7 +187,7 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%',
                 background: 'linear-gradient(to top, rgba(253,201,78,0.15), transparent)',
-                pointerEvents: 'none', borderRadius: '0 0 7px 7px',
+                pointerEvents: 'none', borderRadius: '0 0 10px 10px',
               }}/>
             )}
             <CardBack />
@@ -194,14 +198,14 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
-            borderRadius: 7,
+            borderRadius: 10,
             overflow: 'hidden',
             boxShadow: `0 4px 28px rgba(0,0,0,0.6), 0 0 20px ${card?.color || '#D96A45'}30`,
           }}>
             <CardFront card={card} reversed={reversed} />
           </div>
         </div>
-      </div>
+      </button>
       {label && (
         <span style={{ fontSize: 10, color: 'rgba(245,229,216,0.55)', textAlign: 'center', maxWidth: w, fontFamily: 'Space Grotesk, sans-serif' }}>
           {label}

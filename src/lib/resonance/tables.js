@@ -1,4 +1,4 @@
-// The resonance engine's domain tables — the single source of truth for
+// The resonance engine's domain tables: the single source of truth for
 // cross-system structure. The prose descriptions live in
 // components/cosmic/correspondences.jsx (SYSTEM_CORRESPONDENCES); these are
 // the machine-readable counterparts.
@@ -92,7 +92,7 @@ export const CENTER_CHAKRA = {
  * The Human Design mandala: 64 gates in wheel order, clockwise through the
  * zodiac, starting from the gate that opens 0° Aries. Each gate spans 5.625°.
  * The wheel is globally offset -1.875° (gate 25 begins at 28.125° Pisces),
- * which anchors gate 41 at 2° Aquarius — the start of the HD solar year.
+ * which anchors gate 41 at 2° Aquarius: the start of the HD solar year.
  * Visualization-grade: used for Loom placement, never for chart calculation.
  */
 export const GATE_WHEEL = [
@@ -115,7 +115,7 @@ export function gateWheelDegree(gate) {
 /** Machine-readable correspondence pair index (prose lives in SYSTEM_CORRESPONDENCES). */
 export const CORRESPONDENCE_PAIRS = Object.keys(SYSTEM_CORRESPONDENCES).map((key) => {
   const [a, ...rest] = key.split('_');
-  // keys are like 'astrology_human_design' — split on known system names
+  // keys are like 'astrology_human_design': split on known system names
   return { key, text: SYSTEM_CORRESPONDENCES[key] };
 });
 

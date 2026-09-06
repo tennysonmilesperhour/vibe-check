@@ -3,11 +3,16 @@ import { EMOTIONS } from "./vocab";
 import { Pencil, ImageDown } from "lucide-react";
 import { shareNodeAsImage } from "@/lib/share";
 import { todayKey } from "@/lib/dates";
+import { format } from "date-fns";
+import SkyField from "@/features/shell/SkyField";
+import WeatherWeekStrip from "./WeatherWeekStrip";
+import { weatherForScore } from "./weather";
+import DailySigil from "./DailySigil";
 
 const emojiFor = (label) => EMOTIONS.find((e) => e.label === label)?.emoji || "";
 
 /** Field-register summary of today's saved entry. */
-export default function TodaySummary({ entry, onEdit }) {
+export default function TodaySummary({ entry, checkIns = [], onEdit }) {
   const cardRef = useRef(null);
   const [sharing, setSharing] = useState(false);
 
@@ -20,24 +25,25 @@ export default function TodaySummary({ entry, onEdit }) {
     }
     setSharing(false);
   };
-  const scores = [
-    { label: "MOOD", value: entry.mood_score },
-    { label: "ENERGY", value: entry.energy_level },
-    { label: "SLEEP", value: entry.sleep_quality },
-  ];
+  const weather = weatherForScore(entry.mood_score);
+  const allCheckIns = checkIns.some((item) => item.id === entry.id || item.date === entry.date)
+    ? checkIns
+    : [entry, ...checkIns];
+
   return (
-    <section aria-labelledby="today-summary-heading" ref={cardRef} className="field-wash p-1">
-      <div className="flex items-end justify-between">
-        <h2 id="today-summary-heading" className="text-3xl" style={{ color: "var(--gh-ink)" }}>
-          Today, kept
-        </h2>
-        <span className="flex gap-3" data-html2canvas-ignore="true">
+    <SkyField
+      moodScore={entry.mood_score}
+      veilIntensity={0.45}
+      className="weather-summary"
+    >
+      <section aria-labelledby="today-summary-heading" ref={cardRef} className="weather-summary__content">
+        <span className="weather-summary__actions flex flex-wrap justify-end gap-x-4 gap-y-1" data-html2canvas-ignore="true">
           <button
             type="button"
             onClick={share}
             disabled={sharing}
             className="inline-flex items-center gap-1.5 text-sm font-medium"
-            style={{ color: "var(--gh-ink-muted)" }}
+            style={{ color: "rgba(255,253,246,0.82)" }}
           >
             <ImageDown className="w-3.5 h-3.5" aria-hidden="true" /> {sharing ? "Capturing…" : "Share as image"}
           </button>
@@ -45,37 +51,37 @@ export default function TodaySummary({ entry, onEdit }) {
             type="button"
             onClick={onEdit}
             className="inline-flex items-center gap-1.5 text-sm font-medium"
-            style={{ color: "var(--gh-accent)" }}
+            style={{ color: "var(--gh-cream)" }}
           >
             <Pencil className="w-3.5 h-3.5" aria-hidden="true" /> Revisit today
           </button>
         </span>
-      </div>
-
-      <div className="flex mt-4">
-        {scores.map((s, i) => (
-          <div key={s.label} className={`flex-1 hairline pt-3 ${i > 0 ? "pl-4" : ""} ${i < 2 ? "pr-4" : ""}`}>
-            <div className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>{s.label}</div>
-            <div className="font-display text-3xl" style={{ color: "var(--gh-ink)" }}>{s.value ?? "–"}<span className="text-base" style={{ color: "var(--gh-ink-muted)" }}>/10</span></div>
+        <div className="weather-summary__spacer" aria-hidden="true" />
+        <div className="weather-summary__identity">
+          <div>
+            <p className="text-sm" style={{ color: "rgba(255,253,246,0.78)" }}>
+              {format(new Date(`${entry.date}T12:00:00`), "EEEE")}, recorded
+            </p>
+            <h2 id="today-summary-heading" className="mt-2 text-4xl sm:text-5xl" style={{ color: "var(--gh-cream)", lineHeight: 0.98 }}>
+              {weather.description}
+            </h2>
           </div>
-        ))}
-      </div>
-
-      {entry.emotions?.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-1.5">
-          {entry.emotions.map((label) => (
-            <span key={label} className="px-2.5 py-1 text-xs font-medium" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }}>
-              <span aria-hidden="true">{emojiFor(label)}</span> {label}
-            </span>
-          ))}
+          <DailySigil entry={entry} />
         </div>
-      )}
-
-      {(entry.gratitude || entry.high_moment?.description) && (
-        <p className="mt-4 text-sm max-w-prose" style={{ color: "var(--gh-ink-soft)" }}>
-          {entry.gratitude || entry.high_moment.description}
+        <p className="mt-4 text-sm leading-relaxed" style={{ color: "rgba(255,253,246,0.9)" }}>
+          {weather.reflection}
         </p>
-      )}
-    </section>
+
+        {entry.emotions?.length > 0 && (
+          <p className="mt-3 text-sm" style={{ color: "rgba(255,253,246,0.82)" }}>
+            Also present: {entry.emotions.map((label) => `${emojiFor(label)} ${label.toLowerCase()}`).join(", ")}.
+          </p>
+        )}
+
+        <div className="mt-7">
+          <WeatherWeekStrip checkIns={allCheckIns} endDate={entry.date} />
+        </div>
+      </section>
+    </SkyField>
   );
 }

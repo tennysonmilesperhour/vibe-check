@@ -15,12 +15,12 @@ export const MAJOR_ARCANA = [
   { id: 10, name: "Wheel of Fortune",   roman: "X",    geoType: "spoked-wheel",          color: "#FDC94E", shadow: "#D96A45", keywords: ["cycles","fate","turning point"], meaning: "The wheel turns. A pivotal moment of change arrives. Ride the cycle with grace.", reversed: "Bad luck, resistance to change, breaking cycles." },
   { id: 11, name: "Justice",            roman: "XI",   geoType: "scales",                color: "#38bdf8", shadow: "#0284c7", keywords: ["fairness","truth","law of cause"], meaning: "Clarity and honesty bring true balance. Every action has its perfect consequence.", reversed: "Injustice, dishonesty, avoidance of accountability." },
   { id: 12, name: "The Hanged Man",     roman: "XII",  geoType: "triangle-down-suspended", color: "#2dd4bf", shadow: "#0d9488", keywords: ["surrender","new perspective","pause"], meaning: "Surrender your struggle. In stillness and release, a new illuminating perspective is born.", reversed: "Delays, resistance to necessary pause, martyrdom." },
-  { id: 13, name: "Death",              roman: "XIII", geoType: "scythe",                color: "#6b7280", shadow: "#374151", keywords: ["transformation","endings","rebirth"], meaning: "What must die so that you may truly live? Embrace transformation — new life follows every ending.", reversed: "Resistance to change, inability to move on, stagnation." },
+  { id: 13, name: "Death",              roman: "XIII", geoType: "scythe",                color: "#6b7280", shadow: "#374151", keywords: ["transformation","endings","rebirth"], meaning: "What must die so that you may truly live? Embrace transformation: new life follows every ending.", reversed: "Resistance to change, inability to move on, stagnation." },
   { id: 14, name: "Temperance",         roman: "XIV",  geoType: "flow-triangles",        color: "#34d399", shadow: "#059669", keywords: ["balance","patience","moderation"], meaning: "Flow between worlds with grace. Blend opposing energies into a harmonious, healing elixir.", reversed: "Imbalance, excess, lack of long-term vision." },
-  { id: 15, name: "The Devil",          roman: "XV",   geoType: "inverted-pentagram",    color: "#dc2626", shadow: "#991b1b", keywords: ["shadow self","bondage","materialism"], meaning: "You have more freedom than you believe. Examine what chains you — they may be of your own making.", reversed: "Breaking free, reclaiming power, releasing addiction." },
+  { id: 15, name: "The Devil",          roman: "XV",   geoType: "inverted-pentagram",    color: "#dc2626", shadow: "#991b1b", keywords: ["shadow self","bondage","materialism"], meaning: "You have more freedom than you believe. Examine what chains you: they may be of your own making.", reversed: "Breaking free, reclaiming power, releasing addiction." },
   { id: 16, name: "The Tower",          roman: "XVI",  geoType: "tower-lightning",       color: "#f97316", shadow: "#c2410c", keywords: ["sudden change","upheaval","revelation"], meaning: "What is built on false foundations must fall. The lightning of truth clears the way for authentic structure.", reversed: "Avoidance of disaster, fear of change, resisting necessary disruption." },
   { id: 17, name: "The Star",           roman: "XVII", geoType: "star-8",                color: "#F5A25E", shadow: "#C99A3F", keywords: ["hope","renewal","inspiration"], meaning: "After the storm, starlight. Hope, healing, and renewed faith pour through you now.", reversed: "Despair, lack of faith, disconnection from inner light." },
-  { id: 18, name: "The Moon",           roman: "XVIII",geoType: "moon-full",             color: "#FDC94E", shadow: "#C2503C", keywords: ["illusion","intuition","the unconscious"], meaning: "Navigate by feeling, not sight. The moon illuminates what the sun cannot — trust the dreamtime.", reversed: "Confusion lifting, fear dissipating, hidden truth emerging." },
+  { id: 18, name: "The Moon",           roman: "XVIII",geoType: "moon-full",             color: "#FDC94E", shadow: "#C2503C", keywords: ["illusion","intuition","the unconscious"], meaning: "Navigate by feeling, not sight. The moon illuminates what the sun cannot: trust the dreamtime.", reversed: "Confusion lifting, fear dissipating, hidden truth emerging." },
   { id: 19, name: "The Sun",            roman: "XIX",  geoType: "sun-rays",              color: "#fbbf24", shadow: "#d97706", keywords: ["joy","success","vitality"], meaning: "Radiant clarity and joy illuminate your path. Success, vitality, and childlike wonder are yours.", reversed: "Temporary sadness, inner child wounds, clouded optimism." },
   { id: 20, name: "Judgement",          roman: "XX",   geoType: "trumpet",               color: "#60a5fa", shadow: "#2563eb", keywords: ["awakening","reckoning","calling"], meaning: "The call to rise has come. Hear it fully. Forgive the past, integrate all you have been, and ascend.", reversed: "Self-doubt, refusal of calling, harsh self-judgment." },
   { id: 21, name: "The World",          roman: "XXI",  geoType: "ouroboros",             color: "#4ade80", shadow: "#16a34a", keywords: ["completion","wholeness","integration"], meaning: "You have arrived. The cycle completes in fullness. Celebrate all you have become and all you've traversed.", reversed: "Incompletion, shortcuts, lack of closure." },
@@ -34,14 +34,14 @@ const SUITS = [
 ];
 
 const COURT_MEANINGS = {
-  Page:   { keywords: ["student","curiosity","new energy"],    meaning: "Youthful, curious energy enters — a student of this element's gifts." },
+  Page:   { keywords: ["student","curiosity","new energy"],    meaning: "Youthful, curious energy enters: a student of this element's gifts." },
   Knight: { keywords: ["action","pursuit","adventure"],        meaning: "Bold, driven movement. Pursue your vision with committed momentum." },
   Queen:  { keywords: ["mastery","nurturing","embodiment"],    meaning: "Mature, embodied wisdom. Lead with the full mastery of this element." },
   King:   { keywords: ["authority","command","vision"],        meaning: "Sovereign command of this domain. Take your seat of authority wisely." },
 };
 
 const PIP_MEANINGS = {
-  Ace:   { keywords: ["pure potential","seed","gift"],         meaning: "A pure seed of new potential arrives — a gift from the universe." },
+  Ace:   { keywords: ["pure potential","seed","gift"],         meaning: "A pure seed of new potential arrives: a gift from the universe." },
   Two:   { keywords: ["balance","choice","partnership"],       meaning: "A moment of balance, union, or choice between two paths." },
   Three: { keywords: ["growth","collaboration","expansion"],   meaning: "Initial vision expands through creativity and collaboration." },
   Four:  { keywords: ["stability","rest","consolidation"],     meaning: "A pause to consolidate gains. Rest, stability, and foundation." },
@@ -49,8 +49,8 @@ const PIP_MEANINGS = {
   Six:   { keywords: ["harmony","success","forward motion"],   meaning: "After struggle, harmony returns. Celebrate progress and move forward." },
   Seven: { keywords: ["strategy","perseverance","vision"],     meaning: "Hold your ground with strategic clarity and unwavering vision." },
   Eight: { keywords: ["movement","speed","mastery"],           meaning: "Rapid movement and focused mastery accelerate your path." },
-  Nine:  { keywords: ["resilience","completion","wisdom"],     meaning: "Near the end of a cycle — draw on all you've learned with resilience." },
-  Ten:   { keywords: ["completion","fulfillment","burden"],    meaning: "A cycle completes in fullness — embrace what this ending offers." },
+  Nine:  { keywords: ["resilience","completion","wisdom"],     meaning: "Near the end of a cycle: draw on all you've learned with resilience." },
+  Ten:   { keywords: ["completion","fulfillment","burden"],    meaning: "A cycle completes in fullness: embrace what this ending offers." },
 };
 
 const NUM_NAMES = ["Ace","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten"];
@@ -85,7 +85,7 @@ function buildMinorArcana() {
         color: suit.color,
         shadow: suit.color,
         keywords: [...c.keywords.slice(0,2), suit.domain.split(",")[0].trim()],
-        meaning: `${c.meaning} Element: ${suit.element} — ${suit.domain}.`,
+        meaning: `${c.meaning} Element: ${suit.element}: ${suit.domain}.`,
         reversed: `Immature or blocked ${court.toLowerCase()} energy in the realm of ${suit.element.toLowerCase()}.`,
         suit: suit.name,
       });
@@ -101,7 +101,7 @@ export const SPREADS = [
   {
     id: "single",
     name: "Daily Draw",
-    description: "One card — a daily oracle message",
+    description: "One card: a daily oracle message",
     positions: [
       { label: "Your Message", x: 50, y: 50 },
     ],
@@ -147,7 +147,7 @@ export const SPREADS = [
     name: "Celtic Cross",
     description: "The classic 10-card deep reading",
     positions: [
-      // Cross cluster left, staff column right — spaced so md cards
+      // Cross cluster left, staff column right: spaced so md cards
       // no longer overlap at small container sizes.
       { label: "The Heart",       x: 32, y: 48 },
       { label: "The Cross",       x: 32, y: 48, rotate: true },

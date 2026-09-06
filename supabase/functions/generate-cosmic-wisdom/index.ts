@@ -1,6 +1,6 @@
 // Cosmic wisdom generation, ported from the Base44 function. Cached per
 // (user, period_type, period_key, systems_key) in cosmic_wisdom.
-import { preflight, json, userClient, askClaude, resolvePeriodKey } from '../_shared/common.ts';
+import { preflight, json, userClient, askClaude, resolvePeriodKey, claimAiRequest } from '../_shared/common.ts';
 
 function buildCosmicContext(profile: Record<string, any>): string | null {
   if (!profile?.enabled_systems?.length) return null;
@@ -77,13 +77,16 @@ Their active cosmic profile:
 ${cosmicContext}
 ${resonanceSummary ? `\nTheir computed resonance map (structurally true cross-system connections, weave these in):\n${resonanceSummary}` : ''}
 
-If the profile only has a birth date and system names, calculate the relevant values from the birth date yourself and use them naturally without mentioning that you did.
+Use only the profile values and computed resonance data provided. Do not invent placements, chart values, or current transits. If the profile is sparse, keep the reading modest and say what it is based on.
 
 Generate a ${periodType.toUpperCase()} wisdom reading for ${periodFocus}. ${depth}
 
 The reading should feel intimately personal to their chart, offer genuine insight about ${periodFocus}, connect their inner nature to relationships, creativity, or daily life, and end with a contemplation question specific to their chart.`;
 
   try {
+    if (!await claimAiRequest(supabase, auth.user.id, 'cosmic-wisdom')) {
+      return json({ error: 'Daily AI reading limit reached. Try again tomorrow.' }, 429);
+    }
     const result = await askClaude(prompt, {
       type: 'object',
       properties: {

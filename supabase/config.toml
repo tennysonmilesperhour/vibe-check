@@ -1,0 +1,11 @@
+[functions.invoke-llm]
+verify_jwt = true
+
+[functions.generate-cosmic-wisdom]
+verify_jwt = true
+
+[functions.generate-daily-weather]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true

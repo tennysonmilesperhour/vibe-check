@@ -10,6 +10,9 @@ import pluginUnusedImports from "eslint-plugin-unused-imports";
 // array entries so rules merge.
 export default [
   {
+    ignores: ["build/**", "dist/**", "ios/App/App/public/**", "node_modules/**"],
+  },
+  {
     files: ["src/**/*.{js,mjs,cjs,jsx}"],
     ignores: ["src/components/ui/**/*", "src/test/**/*"],
     ...pluginJs.configs.recommended,

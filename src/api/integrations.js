@@ -1,3 +1,4 @@
+// @ts-check
 // LLM access, formerly Base44's InvokeLLM. Routed through the invoke-llm
 // edge function so the Anthropic key stays server-side. Returns the plain
 // text (or parsed JSON when a response_json_schema was requested), matching

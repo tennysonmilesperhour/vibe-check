@@ -1,4 +1,4 @@
-// Numerology, fully computed — the app previously asked users to type these
+// Numerology, fully computed: the app previously asked users to type these
 // (or spent an LLM call). Component method with master numbers preserved
 // for core numbers; personal cycles reduce to single digits.
 

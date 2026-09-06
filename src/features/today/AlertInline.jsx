@@ -3,7 +3,7 @@ import { BoundaryAlert } from "@/entities/all";
 import { HandHeart } from "lucide-react";
 
 /**
- * Gentle, in-place boundary alerts — acknowledgeable right here,
+ * Gentle, in-place boundary alerts: acknowledgeable right here,
  * instead of being displayed on one page and actionable on another.
  */
 export default function AlertInline({ alerts, onAcknowledged }) {
@@ -32,7 +32,7 @@ export default function AlertInline({ alerts, onAcknowledged }) {
             <button
               type="button"
               onClick={() => acknowledge(alert)}
-              className="mt-2 text-xs font-bold underline underline-offset-4"
+              className="mt-1 min-h-11 py-2 text-xs font-bold underline underline-offset-4"
               style={{ color: "var(--gh-accent)" }}
             >
               I see this

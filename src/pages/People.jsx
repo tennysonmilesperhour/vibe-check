@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Person, Relationship, Connection, DailyCheckIn, User } from "@/entities/all";
+import { Person, Relationship, Connection, DailyCheckIn } from "@/entities/all";
 import { InvokeLLM } from "@/integrations/Core";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PageTransition from "@/features/shell/PageTransition";
 import { migratePeople, personCheckInStats } from "@/lib/people";
-import { parseLocalDate } from "@/lib/dates";
-import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
-import { UserPlus, Users, Sparkle, RefreshCw, Trash2, Pencil } from "lucide-react";
+import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
+import PeopleOrbit from "@/features/people/PeopleOrbit";
+import InsightReading from "@/features/shell/InsightReading";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
-const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "", linked_user_email: "" };
+const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
 
 /** Everyone you're in orbit with: merged Relationships + Constellation. */
 export default function People() {
@@ -30,15 +30,18 @@ export default function People() {
   const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [synergyBusy, setSynergyBusy] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
       await migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
       const [ppl, ci] = await Promise.all([Person.list(), DailyCheckIn.list("-date", 120).catch(() => [])]);
       setPeople(ppl);
       setCheckIns(ci);
-    } catch {
-      // empty state below
+    } catch (error) {
+      setLoadError(error?.message || "People could not be loaded.");
     }
     setLoading(false);
   }, []);
@@ -53,7 +56,6 @@ export default function People() {
       qualities: (person.qualities || []).join(", "),
       concerns: (person.concerns || []).join(", "),
       boundary_notes: person.boundary_notes || "",
-      linked_user_email: person.linked_user_email || "",
     } : EMPTY_FORM);
   };
 
@@ -65,7 +67,6 @@ export default function People() {
       qualities: form.qualities.split(",").map((s) => s.trim()).filter(Boolean),
       concerns: form.concerns.split(",").map((s) => s.trim()).filter(Boolean),
       boundary_notes: form.boundary_notes,
-      linked_user_email: form.linked_user_email.trim() || undefined,
     };
     if (!payload.name) return;
     try {
@@ -87,8 +88,9 @@ export default function People() {
       setDeleting(null);
       setDetail(null);
       load();
-    } catch {
+    } catch (error) {
       setDeleting(null);
+      toast({ title: "Could not delete person", description: error?.message || "Check your connection and try again.", variant: "destructive" });
     }
   };
 
@@ -97,14 +99,7 @@ export default function People() {
     if (person.synergy_reading && !force) return;
     setSynergyBusy(true);
     try {
-      let snapshot = person.cosmic_snapshot;
-      if (person.linked_user_email) {
-        const [friend] = await User.filter({ email: person.linked_user_email }).catch(() => []);
-        if (friend?.cosmic_profile && (!person.snapshot_updated_at || (friend.updated_date && friend.updated_date > person.snapshot_updated_at))) {
-          snapshot = friend.cosmic_profile;
-          await Person.update(person.id, { cosmic_snapshot: snapshot, snapshot_updated_at: new Date().toISOString() });
-        }
-      }
+      const snapshot = person.cosmic_snapshot;
       const me = await base44.auth.me();
       const text = await InvokeLLM({
         prompt: `You are a relational astrologer and systems reader. Compare these two cosmic profiles and describe the synergy: where these two people naturally feed each other, and where friction is structural rather than personal.
@@ -124,7 +119,20 @@ Warm, specific, honest. No em dashes. 2-3 short paragraphs.`,
     setSynergyBusy(false);
   };
 
-  if (loading) return <div className="min-h-[60vh] field-wash" aria-busy="true" />;
+  if (loading) return <div className="min-h-[60vh] field-wash" aria-busy="true"><span className="sr-only">Loading people</span></div>;
+
+  if (loadError) {
+    return (
+      <div className="field-wash min-h-screen">
+        <main className="max-w-lg mx-auto px-6 py-20 text-center" role="alert">
+          <h1 className="text-3xl" style={{ color: "var(--gh-ink)" }}>People are unavailable</h1>
+          <p className="mt-3 text-sm" style={{ color: "var(--gh-ink-soft)" }}>{loadError}</p>
+          <p className="mt-2 text-sm" style={{ color: "var(--gh-ink-muted)" }}>No people or notes have been deleted.</p>
+          <button type="button" className="ink-button mt-6" onClick={load}>Try again</button>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="field-wash min-h-screen">
@@ -148,115 +156,56 @@ Warm, specific, honest. No em dashes. 2-3 short paragraphs.`,
             </p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-3 mt-8">
-            {people.map((person) => {
-              const stats = personCheckInStats(person, checkIns);
-              return (
-                <button
-                  key={person.id}
-                  type="button"
-                  onClick={() => setDetail(person)}
-                  className="text-left p-4 transition-transform hover:-translate-y-0.5"
-                  style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xl" style={{ color: "var(--gh-ink)" }}>{person.name}</h3>
-                    <span className="text-xs px-2 py-0.5" style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-ink-muted)" }}>
-                      {person.person_type || "friend"}
-                    </span>
-                  </div>
-                  <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
-                    {stats.mentions > 0
-                      ? `${stats.mentions} shared ${stats.mentions === 1 ? "day" : "days"} · mood ${stats.avgMood} together · last ${format(parseLocalDate(stats.lastMention), "MMM d")}`
-                      : "Not yet part of a check-in"}
-                  </p>
-                  {person.linked_user_email && (
-                    <p className="text-xs mt-1 inline-flex items-center gap-1" style={{ color: "var(--gh-accent)" }}>
-                      <Sparkle className="w-3 h-3" aria-hidden="true" /> On vibe check
-                    </p>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <PeopleOrbit people={people} checkIns={checkIns} selectedId={detail?.id} onSelect={setDetail} />
         )}
 
-        {/* detail dialog */}
-        <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
-          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-            {detail && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="font-display text-2xl flex items-center justify-between">
-                    {detail.name}
-                    <span className="flex gap-1">
-                      <button type="button" aria-label={`Edit ${detail.name}`} onClick={() => openEdit(detail)}>
-                        <Pencil className="w-4 h-4" style={{ color: "var(--gh-ink-muted)" }} />
-                      </button>
-                      <button type="button" aria-label={`Delete ${detail.name}`} onClick={() => setDeleting(detail)}>
-                        <Trash2 className="w-4 h-4" style={{ color: "var(--gh-ink-muted)" }} />
-                      </button>
-                    </span>
-                  </DialogTitle>
-                </DialogHeader>
-
-                {(() => {
-                  const stats = personCheckInStats(detail, checkIns);
-                  return stats.mentions > 0 ? (
-                    <p className="text-sm" style={{ color: "var(--gh-ink-soft)" }}>
-                      {stats.mentions} shared days, average mood {stats.avgMood} when together.{" "}
-                      <Link to={`${createPageUrl("Analytics")}?person=${detail.id}`} className="underline underline-offset-4" style={{ color: "var(--gh-accent)" }}>
-                        See the pattern
-                      </Link>
-                    </p>
-                  ) : null;
-                })()}
-
-                {detail.qualities?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>WHAT YOU VALUE</p>
-                    <p className="text-sm mt-1" style={{ color: "var(--gh-ink)" }}>{detail.qualities.join(" · ")}</p>
-                  </div>
-                )}
-                {detail.concerns?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>WHAT YOU WATCH</p>
-                    <p className="text-sm mt-1" style={{ color: "var(--gh-ink)" }}>{detail.concerns.join(" · ")}</p>
-                  </div>
-                )}
-                {detail.boundary_notes && (
-                  <div>
-                    <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>YOUR BOUNDARY</p>
-                    <p className="text-sm mt-1" style={{ color: "var(--gh-ink)" }}>{detail.boundary_notes}</p>
-                  </div>
-                )}
-
-                <div className="hairline pt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>SYNERGY READING</p>
-                    <button
-                      type="button"
-                      className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
-                      style={{ color: "var(--gh-accent)" }}
-                      onClick={() => generateSynergy(detail, !!detail.synergy_reading)}
-                      disabled={synergyBusy}
-                    >
-                      <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
-                      {synergyBusy ? "Reading…" : detail.synergy_reading ? "Refresh" : "Generate"}
-                    </button>
-                  </div>
-                  {detail.synergy_reading ? (
-                    <p className="text-sm mt-2 whitespace-pre-line" style={{ color: "var(--gh-ink)" }}>{detail.synergy_reading}</p>
-                  ) : (
-                    <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
-                      A one-time reading of how your charts meet. Saved here once generated.
-                    </p>
-                  )}
+        {detail && (() => {
+          const stats = personCheckInStats(detail, checkIns);
+          return (
+            <section className="people-detail" aria-labelledby="person-detail-heading">
+              <header>
+                <div>
+                  <p>{detail.person_type || "person"} in your orbit</p>
+                  <h2 id="person-detail-heading">{detail.name}</h2>
                 </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
+                <span className="people-detail__actions">
+                  <button type="button" aria-label={`Edit ${detail.name}`} onClick={() => openEdit(detail)}><Pencil aria-hidden="true" /></button>
+                  <button type="button" aria-label={`Delete ${detail.name}`} onClick={() => setDeleting(detail)}><Trash2 aria-hidden="true" /></button>
+                  <button type="button" onClick={() => setDetail(null)}>Close</button>
+                </span>
+              </header>
+
+              <div className="people-detail__facts">
+                <p><strong>{stats.mentions}</strong><span>shared days</span></p>
+                <p><strong>{stats.avgMood ?? "·"}</strong><span>average mood</span></p>
+                <Link to={`${createPageUrl("Analytics")}?person=${detail.id}`}>Open this pattern</Link>
+              </div>
+
+              <div className="people-detail__notes">
+                {detail.qualities?.length > 0 && <p><span>What you value</span>{detail.qualities.join(" · ")}</p>}
+                {detail.concerns?.length > 0 && <p><span>What you watch</span>{detail.concerns.join(" · ")}</p>}
+                {detail.boundary_notes && <p><span>Your boundary</span>{detail.boundary_notes}</p>}
+              </div>
+
+              <div className="people-detail__reading">
+                <button type="button" className="secondary-action inline-flex items-center gap-2" onClick={() => generateSynergy(detail, !!detail.synergy_reading)} disabled={synergyBusy}>
+                  <RefreshCw className={`w-4 h-4 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
+                  {synergyBusy ? "Reading the connection…" : detail.synergy_reading ? "Refresh connection reading" : "Read this connection"}
+                </button>
+                {detail.synergy_reading ? (
+                  <InsightReading
+                    title="A reflection on this connection"
+                    text={detail.synergy_reading}
+                    evidence={["Your optional Cosmos profile", `${detail.name}'s saved Cosmos snapshot or an unknown profile`]}
+                    note="Optional AI reflection. It cannot determine compatibility or the health of a relationship."
+                  />
+                ) : (
+                  <p>A private, optional reflection on how two symbolic profiles meet. The result is saved with this person.</p>
+                )}
+              </div>
+            </section>
+          );
+        })()}
 
         {/* add/edit dialog */}
         <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
@@ -267,14 +216,14 @@ Warm, specific, honest. No em dashes. 2-3 short paragraphs.`,
             <form onSubmit={save} className="space-y-4">
               <div>
                 <Label htmlFor="p-name">Name</Label>
-                <Input id="p-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="mt-1" />
+                <Input id="p-name" value={form.name} maxLength={100} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="mt-1" />
               </div>
               <div>
                 <Label>Relationship</Label>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {TYPES.map((t) => (
                     <button key={t} type="button" aria-pressed={form.person_type === t} onClick={() => setForm({ ...form, person_type: t })}
-                      className="px-3 py-1.5 text-xs"
+                      className="min-h-11 px-3 py-2 text-xs"
                       style={form.person_type === t
                         ? { background: "var(--gh-ink)", color: "var(--gh-field)" }
                         : { border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }}>
@@ -285,22 +234,18 @@ Warm, specific, honest. No em dashes. 2-3 short paragraphs.`,
               </div>
               <div>
                 <Label htmlFor="p-qualities">Qualities you appreciate (comma separated)</Label>
-                <Input id="p-qualities" value={form.qualities} onChange={(e) => setForm({ ...form, qualities: e.target.value })} className="mt-1" />
+                <Input id="p-qualities" value={form.qualities} maxLength={500} onChange={(e) => setForm({ ...form, qualities: e.target.value })} className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="p-concerns">Concerns (comma separated)</Label>
-                <Input id="p-concerns" value={form.concerns} onChange={(e) => setForm({ ...form, concerns: e.target.value })} className="mt-1" />
+                <Input id="p-concerns" value={form.concerns} maxLength={500} onChange={(e) => setForm({ ...form, concerns: e.target.value })} className="mt-1" />
               </div>
               <div>
                 <Label htmlFor="p-boundary">Boundary notes</Label>
-                <Textarea id="p-boundary" value={form.boundary_notes} onChange={(e) => setForm({ ...form, boundary_notes: e.target.value })} rows={2} className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="p-email">Their vibe check email (optional, links profiles for synergy)</Label>
-                <Input id="p-email" type="email" value={form.linked_user_email} onChange={(e) => setForm({ ...form, linked_user_email: e.target.value })} className="mt-1" />
+                <Textarea id="p-boundary" value={form.boundary_notes} maxLength={1500} onChange={(e) => setForm({ ...form, boundary_notes: e.target.value })} rows={2} className="mt-1" />
               </div>
               <div className="flex justify-end gap-2">
-                <button type="button" className="px-4 py-2 text-sm" style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }} onClick={() => setEditing(null)}>
+                <button type="button" className="min-h-11 px-4 py-2 text-sm" style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }} onClick={() => setEditing(null)}>
                   Cancel
                 </button>
                 <button type="submit" className="ink-button text-sm">{editing === "new" ? "Add person" : "Save changes"}</button>

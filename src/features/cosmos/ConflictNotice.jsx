@@ -37,7 +37,7 @@ export default function ConflictNotice({ profile, onUseComputed }) {
               <button
                 type="button"
                 onClick={() => onUseComputed(c)}
-                className="mt-2 text-xs font-bold underline underline-offset-4"
+                className="mt-1 min-h-11 py-2 text-xs font-bold underline underline-offset-4"
                 style={{ color: "var(--gh-accent)" }}
               >
                 Use {String(c.computed)}

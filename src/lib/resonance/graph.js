@@ -93,7 +93,7 @@ export function resonanceGraph(profile = {}, dateKey) {
   if (byId['gene_keys.life_work'] && byId['human_design.conscious_sun'] &&
       String(byId['gene_keys.life_work'].gate) === String(byId['human_design.conscious_sun'].gate)) {
     addEdge('gene_keys.life_work', 'human_design.conscious_sun', 'hexagram',
-      `Gene Key ${lifeWork} and Gate ${gate} are the same I Ching hexagram — your Life's Work is your Conscious Sun.`);
+      `Gene Key ${lifeWork} and Gate ${gate} are the same I Ching hexagram: your Life's Work is your Conscious Sun.`);
   }
 
   // number identity: life path <-> birth card
@@ -108,12 +108,12 @@ export function resonanceGraph(profile = {}, dateKey) {
     for (const placement of ['astrology.sun', 'astrology.moon', 'astrology.rising']) {
       if (byId[placement]?.sign === cardNode.astro.sign) {
         addEdge('tarot_archetype.birth_card', placement, 'astro',
-          `${cardNode.label} carries ${cardNode.astro.sign} in the Golden Dawn attribution — the same sign as your ${placement.split('.')[1]}.`);
+          `${cardNode.label} carries ${cardNode.astro.sign} in the Golden Dawn attribution: the same sign as your ${placement.split('.')[1]}.`);
       }
     }
     // even without a matching placement, note the card's sign as a wheel edge to itself (skipped)
     if (!edges.some((e) => e.kind === 'astro')) {
-      // link card to sun if both exist regardless of sign match? No — only truthful links.
+      // link card to sun if both exist regardless of sign match? No: only truthful links.
       if (byId['astrology.sun']) {
         edges.push({
           a: 'tarot_archetype.birth_card', b: 'astrology.sun', kind: 'astro',

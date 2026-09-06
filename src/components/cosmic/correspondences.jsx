@@ -82,7 +82,7 @@ export const SYSTEM_CORRESPONDENCES = {
 Astrology and Human Design share roots: HD uses the I Ching's 64 hexagrams mapped to the zodiac wheel and planetary gates. Sun sign themes often resonate with one's Incarnation Cross. Moon sign qualities tend to mirror emotional authority patterns.`,
 
     astrology_gene_keys: `
-Gene Keys are derived from the same 64 hexagrams as Human Design, which in turn map to zodiac degrees. Each Gene Key has a Shadow (unconscious pattern), Gift (awakened expression), and Siddhi (highest potential) — mirroring astrology's concept of a planet in detriment, dignity, and exaltation.`,
+Gene Keys are derived from the same 64 hexagrams as Human Design, which in turn map to zodiac degrees. Each Gene Key has a Shadow (unconscious pattern), Gift (awakened expression), and Siddhi (highest potential): mirroring astrology's concept of a planet in detriment, dignity, and exaltation.`,
 
     astrology_numerology: `
 Both systems decode patterns in birth data. Numerology reduces the birth date to core numbers while astrology maps planetary positions at that moment. Life Path 1 often correlates with Aries/Leo sun themes; Life Path 2 with Libra/Cancer; Life Path 7 with Pisces/Scorpio.`,
@@ -91,7 +91,7 @@ Both systems decode patterns in birth data. Numerology reduces the birth date to
 The Major Arcana map directly to astrology: The Fool = Uranus/Aquarius, The High Priestess = Moon, The Empress = Venus, The Emperor = Aries, The Hierophant = Taurus, The Lovers = Gemini, etc. Birth cards connect to your numerological soul archetype.`,
 
     human_design_gene_keys: `
-Human Design and Gene Keys both use the 64 hexagrams of the I Ching. In HD they are called Gates; in Gene Keys they are called the 64 Keys. Your Life's Work Gene Key is the same as your Conscious Sun Gate in HD — the most visible aspect of your design.`,
+Human Design and Gene Keys both use the 64 hexagrams of the I Ching. In HD they are called Gates; in Gene Keys they are called the 64 Keys. Your Life's Work Gene Key is the same as your Conscious Sun Gate in HD: the most visible aspect of your design.`,
 
     human_design_chakras: `
 Human Design's 9 Centers correspond directly to the chakra system: Root Center = Root Chakra, Sacral Center = Sacral Chakra, Solar Plexus Center = Solar Plexus Chakra, Heart Center = Heart Chakra, G Center = integrates Heart/Throat, Throat Center = Throat Chakra, Ajna = Third Eye, Head = Crown.`,
@@ -106,8 +106,8 @@ The 64 Gene Keys are organized into biological sequences that correlate with the
 Both systems describe core archetypal drives. The Enneagram's nine types echo planetary signatures: Type 1's inner critic mirrors Saturn/Virgo precision, Type 2 resonates with Venus/Cancer nurturing, Type 4 with Neptune/Pisces depth, Type 8 with Mars/Scorpio intensity. Your Sun and Moon signs often color how your Enneagram type expresses and defends itself.`,
 
     enneagram_human_design: `
-The Enneagram maps psychological motivation (core fear and desire) while Human Design maps energetic mechanics (how your energy is built to operate). A Projector Type 3 achieves differently than a Generator Type 3. Your HD Authority shows how to make decisions; your Enneagram type shows the patterns that hijack them — together they reveal both the vehicle and the driver.`,
+The Enneagram maps psychological motivation (core fear and desire) while Human Design maps energetic mechanics (how your energy is built to operate). A Projector Type 3 achieves differently than a Generator Type 3. Your HD Authority shows how to make decisions; your Enneagram type shows the patterns that hijack them: together they reveal both the vehicle and the driver.`,
 
     enneagram_gene_keys: `
-The Enneagram's growth path — from fixation toward essence — parallels the Gene Keys' journey from Shadow through Gift to Siddhi. Your type's core passion (e.g. Type 1's resentment, Type 9's sloth) often names the same pattern as a prominent Shadow in your hologenetic profile, offering two languages for the same inner work.`
+The Enneagram's growth path: from fixation toward essence: parallels the Gene Keys' journey from Shadow through Gift to Siddhi. Your type's core passion (e.g. Type 1's resentment, Type 9's sloth) often names the same pattern as a prominent Shadow in your hologenetic profile, offering two languages for the same inner work.`
 };

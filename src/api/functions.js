@@ -1,3 +1,4 @@
+// @ts-check
 // Backend functions, now Supabase Edge Functions. Same call shape as the
 // Base44 virtual modules: fn(body) -> { data }.
 import { supabase } from './supabase';

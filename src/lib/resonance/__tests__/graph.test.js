@@ -45,7 +45,7 @@ describe('resonanceGraph', () => {
   it('marks today-active nodes from the moon phase and personal day', () => {
     expect(graph.today.moonPhase).toBeTruthy();
     expect(typeof graph.today.personalDay).toBe('number');
-    // Pisces moon placement resonates when the sky moon is in play — presence is enough here
+    // Pisces moon placement resonates when the sky moon is in play: presence is enough here
     expect(Array.isArray(graph.today.activeNodeIds)).toBe(true);
   });
 

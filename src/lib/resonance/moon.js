@@ -1,4 +1,4 @@
-// Lunar phase from pure synodic arithmetic — no API, no lookup table.
+// Lunar phase from pure synodic arithmetic: no API, no lookup table.
 // Reference epoch: the new moon of 2000-01-06 18:14 UTC.
 import { parseLocalDate } from '../dates.js';
 

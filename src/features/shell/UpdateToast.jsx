@@ -55,7 +55,7 @@ export default function UpdateToast() {
       <button
         type="button"
         onClick={() => window.location.reload()}
-        className="text-sm font-bold px-3 py-1.5 shrink-0"
+        className="min-h-11 text-sm font-bold px-3 py-2 shrink-0"
         style={{ background: "var(--gh-gold)", color: "var(--gh-ink)" }}
       >
         Update now

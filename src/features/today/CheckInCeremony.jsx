@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
 import { useToast } from "@/components/ui/use-toast";
 import SkyField from "@/features/shell/SkyField";
-import { ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
+import { WeatherStep, ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
 import { EMOTIONS, ACTIVITIES } from "./vocab";
 import { moonPhase } from "@/lib/resonance/moon";
 import { personalDay } from "@/lib/resonance/numerology";
@@ -12,19 +12,33 @@ import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
 import { computeStreak, isMilestone } from "@/lib/streaks";
 import { todayKey } from "@/lib/dates";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { clearCheckInDraft, loadCheckInDraft, saveCheckInDraft } from "@/lib/checkInDraft";
+import { celebrateSave } from "@/lib/native";
 
 const STEP_IDS = ["mood", "energy", "sleep", "emotions", "activities", "high", "low", "reflection"];
+const STEP_LABELS = {
+  mood: "Weather",
+  energy: "Horizon",
+  sleep: "Night",
+  emotions: "Currents",
+  activities: "Footprints",
+  high: "Light",
+  low: "Shadow",
+  reflection: "Caption",
+};
 
 /**
  * The evening ritual: one question per screen, the sky deepening as you go.
  * Saves as a single DailyCheckIn; runs boundary detection; celebrates streaks.
  */
-export default function CheckInCeremony({ dateKey = todayKey(), existing = null, onDone, onCancel }) {
+export default function CheckInCeremony({ dateKey = todayKey(), userId, existing = null, onDone, onCancel }) {
   const { toast } = useToast();
   const reduced = useReducedMotion();
-  const [stepIndex, setStepIndex] = useState(0);
+  const draft = useMemo(() => loadCheckInDraft(userId, dateKey), [userId, dateKey]);
+  const [stepIndex, setStepIndex] = useState(() => Math.min(STEP_IDS.length - 1, Math.max(0, draft?.stepIndex || 0)));
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState(() => ({
+  const [draftSavedAt, setDraftSavedAt] = useState(draft?.savedAt || null);
+  const [form, setForm] = useState(() => draft?.form || ({
     mood_score: existing?.mood_score ?? null,
     energy_level: existing?.energy_level ?? null,
     sleep_quality: existing?.sleep_quality ?? null,
@@ -36,6 +50,16 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     notes: existing?.notes ?? "",
     person_ids: existing?.person_ids ?? [],
   }));
+
+  useEffect(() => {
+    if (!userId) return undefined;
+    const timer = window.setTimeout(() => {
+      if (saveCheckInDraft(userId, dateKey, form, stepIndex)) {
+        setDraftSavedAt(new Date().toISOString());
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [userId, dateKey, form, stepIndex]);
 
   const set = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
   const toggleIn = (key) => (label) =>
@@ -73,8 +97,10 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       const saved = existing?.id
         ? await DailyCheckIn.update(existing.id, payload)
         : await DailyCheckIn.create(payload);
+      clearCheckInDraft(userId, dateKey);
+      celebrateSave();
 
-      // Automatic boundary pass — the old app made you press a button on another page.
+      // Automatic boundary pass: the old app made you press a button on another page.
       let newAlerts = [];
       try {
         const recent = await DailyCheckIn.list("-date", 30);
@@ -112,8 +138,18 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     setSaving(false);
   };
 
+  const saveForLater = () => {
+    const saved = saveCheckInDraft(userId, dateKey, form, stepIndex);
+    toast({
+      title: saved ? "Draft saved on this device" : "Draft could not be saved",
+      description: saved ? "Come back to Today to continue where you stopped." : "Keep this screen open and try again.",
+      variant: saved ? undefined : "destructive",
+    });
+    if (saved) onCancel?.();
+  };
+
   const steps = useMemo(() => ({
-    mood: <ScaleStep field="mood_score" question="How did today actually feel?" value={form.mood_score} onChange={set("mood_score")} />,
+    mood: <WeatherStep value={form.mood_score} onChange={set("mood_score")} />,
     energy: <ScaleStep field="energy_level" question="How much of you was available?" value={form.energy_level} onChange={set("energy_level")} />,
     sleep: <ScaleStep field="sleep_quality" question="How did last night hold you?" value={form.sleep_quality} onChange={set("sleep_quality")} />,
     emotions: <ChipsStep question="Which feelings moved through?" hint="Choose any that visited, even briefly." options={EMOTIONS} selected={form.emotions} onToggle={toggleIn("emotions")} />,
@@ -124,26 +160,50 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   }), [form]);
 
   const isLast = stepIndex === STEP_IDS.length - 1;
+  const emotionMotes = Math.min(form.emotions.length, 8);
+  const activityMarks = Math.min(form.activities.length, 8);
 
   return (
-    <SkyField depth={depth} className="min-h-screen" veilIntensity={0.8}>
-      <div className="max-w-3xl mx-auto px-6 py-10 min-h-screen flex flex-col">
-        {/* progress: a thin gold line filling across */}
-        <div className="h-px w-full" style={{ background: "rgba(255,253,246,0.25)" }} aria-hidden="true">
-          <motion.div
-            className="h-px"
-            style={{ background: "var(--gh-cream)", transformOrigin: "left" }}
-            animate={{ scaleX: progress }}
+    <SkyField depth={depth} moodScore={form.mood_score} showSun={stepId === "mood"} className="min-h-screen" veilIntensity={0.72}>
+      <div
+        className="ceremony-atmosphere"
+        style={{ "--ceremony-energy": (form.energy_level ?? 5) / 10, "--ceremony-sleep": (form.sleep_quality ?? 5) / 10 }}
+        aria-hidden="true"
+      >
+        <span className="ceremony-atmosphere__night" />
+        <span className="ceremony-atmosphere__horizon" />
+        {Array.from({ length: emotionMotes }, (_, index) => (
+          <span key={`mote-${index}`} className="ceremony-atmosphere__mote" style={{ left: `${12 + index * 10}%`, bottom: `${17 + (index % 3) * 8}%` }} />
+        ))}
+        <span className="ceremony-atmosphere__marks" data-count={activityMarks} />
+      </div>
+      <div className="max-w-3xl mx-auto px-6 py-10 min-h-screen flex flex-col relative z-10">
+        <div
+          className="ceremony-journey"
+          role="progressbar"
+          aria-valuemin="1"
+          aria-valuemax={STEP_IDS.length}
+          aria-valuenow={stepIndex + 1}
+          aria-label={`Check-in progress: ${STEP_LABELS[stepId]}`}
+        >
+          <span className="ceremony-journey__line" aria-hidden="true" />
+          <motion.span
+            className="ceremony-journey__sun"
+            animate={{ left: `${progress * 100}%` }}
             initial={false}
             transition={{ duration: reduced ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }}
+            aria-hidden="true"
           />
         </div>
         <div className="flex justify-between items-center mt-4 text-sm" style={{ color: "rgba(255,253,246,0.8)" }}>
-          <span>{stepIndex + 1} of {STEP_IDS.length}</span>
-          <button type="button" onClick={onCancel} className="underline underline-offset-4">Save for later</button>
+          <span>{STEP_LABELS[stepId]} · {stepIndex + 1} of {STEP_IDS.length}</span>
+          <button type="button" onClick={saveForLater} className="ghost-text-action">Save draft and close</button>
         </div>
+        <p className="sr-only" role="status" aria-live="polite">
+          {draftSavedAt ? "Draft saved on this device." : ""}
+        </p>
 
-        <div className="flex-1 flex items-center py-10">
+        <div className={`flex-1 flex ${stepId === "mood" ? "items-end" : "items-center"} py-10`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={stepId}

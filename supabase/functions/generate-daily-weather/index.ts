@@ -1,6 +1,6 @@
 // Daily cosmic weather: today's sky against the user's chart, cached per
 // local day under period_type 'weather'.
-import { preflight, json, userClient, askClaude, resolvePeriodKey } from '../_shared/common.ts';
+import { preflight, json, userClient, askClaude, resolvePeriodKey, claimAiRequest } from '../_shared/common.ts';
 
 Deno.serve(async (req) => {
   const pf = preflight(req);
@@ -29,12 +29,20 @@ Deno.serve(async (req) => {
   const prompt = `You are an astute, warm guide reading today's sky against a specific person's chart. Date: ${periodKey}.
 
 Their placements and computed resonances:
-${resonanceSummary || 'Only birth data is available; infer placements from it.'}
+${resonanceSummary || 'No computed resonance data is available.'}
 ${profile.birth_date ? `Birth date: ${profile.birth_date}${profile.birth_time ? `, ${profile.birth_time}` : ''}.` : ''}
 
-Using real current transits for this date (moon sign and phase, notable planetary aspects), describe today's cosmic weather FOR THIS PERSON: which of their placements today's sky touches, and what that invites. Specific, grounded, zero generic horoscope filler. No em dashes.`;
+Use only the computed information above. Do not invent planetary transits, placements, or aspects. Frame this as a symbolic daily reflection, not an astronomical forecast. Specific, grounded, zero generic horoscope filler. No em dashes.`;
 
   try {
+    if (!await claimAiRequest(supabase, auth.user.id, 'daily-weather')) {
+      return json({ error: 'Daily AI reading limit reached. Try again tomorrow.' }, 429);
+    }
+    if (body.force_regenerate) {
+      const { error: deleteError } = await supabase.from('cosmic_wisdom').delete()
+        .eq('period_type', 'weather').eq('period_key', periodKey).eq('systems_key', systemsKey);
+      if (deleteError) throw deleteError;
+    }
     const result = await askClaude(prompt, {
       type: 'object',
       properties: {

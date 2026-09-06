@@ -1,7 +1,7 @@
 // General LLM proxy for client features (oracle readings, synergy, tarot
 // interpretation). Keeps the Anthropic key server-side; requires a signed-in
 // user (verify_jwt). Body: { prompt, response_json_schema? }.
-import { preflight, json, userClient, askClaude } from '../_shared/common.ts';
+import { preflight, json, userClient, askClaude, claimAiRequest } from '../_shared/common.ts';
 
 Deno.serve(async (req) => {
   const pf = preflight(req);
@@ -12,10 +12,13 @@ Deno.serve(async (req) => {
   if (!auth?.user) return json({ error: 'Unauthorized' }, 401);
 
   const body = await req.json().catch(() => ({}));
-  const prompt = typeof body.prompt === 'string' ? body.prompt.slice(0, 24000) : '';
+  const prompt = typeof body.prompt === 'string' ? body.prompt.slice(0, 8000) : '';
   if (!prompt) return json({ error: 'prompt is required' }, 400);
 
   try {
+    if (!await claimAiRequest(supabase, auth.user.id, 'invoke-llm')) {
+      return json({ error: 'Daily AI reading limit reached. Try again tomorrow.' }, 429);
+    }
     const result = await askClaude(prompt, body.response_json_schema);
     if (result === null) return json({ stub: true, message: 'ANTHROPIC_API_KEY not configured' });
     return json({ result });

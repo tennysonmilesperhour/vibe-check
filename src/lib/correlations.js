@@ -1,4 +1,4 @@
-// Precomputed correlation insights — plain-language cards computed locally,
+// Precomputed correlation insights: plain-language cards computed locally,
 // replacing the button-triggered LLM round trip for basic pattern facts.
 import { addDaysKey } from './dates.js';
 import { personCheckInStats } from './people.js';

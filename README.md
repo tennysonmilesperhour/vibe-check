@@ -1,41 +1,40 @@
-# vibe-check
+# Vibe Check: Golden Hour
 
-**Welcome to your Base44 project** 
+Vibe Check is a private one-minute evening mood journal. It records mood, energy, sleep, feelings, activities, relationships, and optional reflections, then helps people notice patterns across their own history. Tarot, Cosmos, and AI interpretations are optional reflection tools.
 
-**About**
+## Local development
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+Requirements: Node.js 22+, npm, and Xcode 26 for the iOS shell.
 
-This project contains everything you need to run your app locally.
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env.local` and provide the frontend values.
+3. Start the web app with `npm run dev`.
 
-**Edit the code in your local development environment**
+Useful checks:
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
-
-**Prerequisites:** 
-
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
-
-```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
-
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm audit
 ```
 
-Run the app: `npm run dev`
+## Backend
 
-**Publish your changes**
+The app uses Supabase Auth, Postgres, Row Level Security, and Edge Functions. Apply `supabase/migrations/20260703000001_initial_schema.sql`, deploy the functions under `supabase/functions`, and set the `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` function secrets before enabling AI features.
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+## Web release
 
-**Docs & Support**
+Deploy to Vercel with every variable from `.env.example`. `VITE_PUBLIC_APP_URL` must be the final HTTPS origin; it drives canonical URLs and native sharing. After the origin is known, create `public/sitemap.xml` with absolute URLs and add it to `public/robots.txt`.
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+## iOS release
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+The version 1.0 target is intentionally iPhone-only.
+
+```sh
+npm run ios:sync
+npm run ios:open
+```
+
+Use the App Store packet in `docs/app-store/` for metadata, screenshots, privacy disclosures, accessibility testing, review notes, and the release checklist.

@@ -3,6 +3,9 @@
 // that surface alive on top of Supabase so call sites did not have to change.
 import { supabase } from './supabase';
 import entities from './entities';
+import { InvokeLLM } from './integrations';
+import { clearAllLocalDrafts } from '@/lib/checkInDraft';
+import { AUTH_REDIRECT_URL } from '@/lib/publicConfig';
 
 async function me() {
   const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -41,10 +44,33 @@ export const base44 = {
   auth: {
     me,
     updateMe,
-    logout: async () => { await supabase.auth.signOut(); },
+    logout: async () => {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error) throw error;
+      clearAllLocalDrafts();
+    },
+    resetPassword: async (email) => {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: AUTH_REDIRECT_URL,
+      });
+      if (error) throw error;
+    },
+    updatePassword: async (password) => {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+    },
+    deleteAccount: async () => {
+      const { data, error } = await supabase.functions.invoke('delete-account', { body: {} });
+      if (error) throw error;
+      if (!data?.deleted) throw new Error(data?.error || 'Account deletion did not complete.');
+      clearAllLocalDrafts();
+      await supabase.auth.signOut({ scope: 'local' });
+      return true;
+    },
     redirectToLogin: () => { window.location.assign('/'); },
   },
   entities,
+  integrations: { Core: { InvokeLLM } },
   users: {
     // Server-side invites need the service role; client-side we share a link.
     inviteUser: async () => {

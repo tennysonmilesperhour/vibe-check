@@ -15,10 +15,10 @@ const buildResonanceSummary = (user) => {
 };
 
 const PERIOD_CONFIG = {
-    daily:   { label: "Today",      emoji: "☀️",  color: "var(--gh-gold)",   glow: "rgba(253,201,78,0.35)" },
-    weekly:  { label: "This Week",  emoji: "🌙",  color: "var(--gh-rose)",   glow: "rgba(244,140,160,0.35)" },
-    monthly: { label: "This Month", emoji: "🌊",  color: "var(--gh-peach)",  glow: "rgba(247,158,126,0.35)" },
-    yearly:  { label: "This Year",  emoji: "⭐",  color: "var(--gh-amber)",  glow: "rgba(250,176,94,0.35)" },
+    daily:   { label: "Today",      emoji: "☀️" },
+    weekly:  { label: "This week",  emoji: "🌙" },
+    monthly: { label: "This month", emoji: "🌊" },
+    yearly:  { label: "This year",  emoji: "⭐" },
 };
 
 export default function CosmicWisdomCard({ periodType = "daily" }) {
@@ -53,7 +53,6 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         } catch (e) {
             const msg = e?.response?.data?.error || e?.message || 'Something went wrong';
             setError(msg);
-            console.error('CosmicWisdom error:', msg);
         }
         setLoading(false);
     };
@@ -68,7 +67,6 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
         } catch (e) {
             const msg = e?.response?.data?.error || e?.message || 'Generation failed';
             setError(msg);
-            console.error(e);
         }
         setGenerating(false);
     };
@@ -91,15 +89,10 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
 
     return (
         <div
-            className="rounded-2xl p-5 transition-all duration-500 cursor-pointer"
-            onClick={!wisdom ? undefined : markRead}
+            className="rounded-lg p-5 transition-colors duration-200"
             style={{
-                background: isUnread
-                    ? `linear-gradient(135deg, rgba(253,251,247,0.95), rgba(255,255,255,0.95))`
-                    : 'rgba(255,255,255,0.5)',
-                border: `1px solid ${isUnread ? cfg.color : 'rgba(61,52,80,0.1)'}`,
-                boxShadow: isUnread ? `0 0 30px ${cfg.glow}, 0 0 60px ${cfg.glow}40` : 'none',
-                animation: isUnread ? 'pulse-border 2.5s ease-in-out infinite' : 'none',
+                background: isUnread ? 'var(--gh-cream)' : 'var(--gh-field)',
+                border: `1px solid ${isUnread ? 'var(--gh-accent)' : 'hsl(var(--border))'}`,
             }}
         >
             {/* Header */}
@@ -107,29 +100,31 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                 <div className="flex items-center gap-2">
                     <span className="text-xl">{cfg.emoji}</span>
                     <div>
-                        <span className="text-xs font-bold uppercase tracking-widest" style={{ color: cfg.color }}>
+                        <span className="text-xs font-bold" style={{ color: 'var(--gh-accent)' }}>
                             {cfg.label}
                         </span>
                         {isUnread && (
                             <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full font-semibold animate-pulse"
-                                style={{ background: `${cfg.color}25`, color: cfg.color }}>
+                                style={{ background: 'rgba(194,80,60,0.12)', color: 'var(--gh-accent)' }}>
                                 New ✦
                             </span>
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center gap-1">
                     {wisdom && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7"
+                        <Button variant="ghost" size="icon" className="h-11 w-11"
                             disabled={generating}
                             onClick={() => generate(true)}
-                            style={{ color: 'rgba(105,95,128,0.5)' }}>
+                            aria-label={`Refresh ${cfg.label.toLowerCase()}`}
+                            style={{ color: 'var(--gh-ink-muted)' }}>
                             <RefreshCw className={`w-3 h-3 ${generating ? 'animate-spin' : ''}`} />
                         </Button>
                     )}
                     {wisdom && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={markRead}
-                            style={{ color: 'rgba(105,95,128,0.6)' }}>
+                        <Button variant="ghost" size="icon" className="h-11 w-11" onClick={markRead}
+                            aria-label={expanded ? `Collapse ${cfg.label.toLowerCase()}` : `Expand ${cfg.label.toLowerCase()}`}
+                            style={{ color: 'var(--gh-ink-muted)' }}>
                             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </Button>
                     )}
@@ -140,50 +135,50 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
             {(loading || generating) ? (
                 <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 shrink-0"
-                        style={{ border: `2px solid ${cfg.color}30`, borderTopColor: cfg.color }} />
-                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>
-                        {generating ? "Channeling your cosmic wisdom..." : "Loading..."}
+                        style={{ border: '2px solid rgba(194,80,60,0.2)', borderTopColor: 'var(--gh-accent)' }} />
+                    <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>
+                        {generating ? "Generating reflection. This can take up to 20 seconds." : "Loading reflection…"}
                     </p>
                 </div>
             ) : error ? (
-                <div className="flex items-center justify-between gap-3" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between gap-3">
                     <p className="text-xs" style={{ color: 'rgba(217,92,80,0.7)' }}>{error}</p>
-                    <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg shrink-0"
-                        style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
+                    <Button size="sm" onClick={() => generate(false)} className="min-h-11 text-xs rounded-lg shrink-0"
+                        style={{ background: 'rgba(194,80,60,0.1)', color: 'var(--gh-accent)', border: '1px solid rgba(194,80,60,0.35)' }}>
                         <RefreshCw className="w-3 h-3 mr-1" /> Retry
                     </Button>
                 </div>
             ) : !hasProfile ? null : !wisdom ? (
-                <div className="flex items-center justify-between" onClick={e => e.stopPropagation()}>
-                    <p className="text-xs" style={{ color: 'rgba(105,95,128,0.6)' }}>No wisdom generated yet</p>
-                    <Button size="sm" onClick={() => generate(false)} className="h-7 text-xs rounded-lg"
-                        style={{ background: `${cfg.color}20`, color: cfg.color, border: `1px solid ${cfg.color}40` }}>
-                        <Sparkles className="w-3 h-3 mr-1" /> Generate
+                <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>No reflection generated yet</p>
+                    <Button size="sm" onClick={() => generate(false)} className="min-h-11 text-xs rounded-lg"
+                        style={{ background: 'rgba(194,80,60,0.1)', color: 'var(--gh-accent)', border: '1px solid rgba(194,80,60,0.35)' }}>
+                        <Sparkles className="w-3 h-3 mr-1" /> Generate reflection
                     </Button>
                 </div>
             ) : (
                 <div>
                     {wisdom.theme && (
-                        <p className="text-sm font-semibold mb-2" style={{ color: 'rgba(61,52,80,0.9)', fontFamily: 'Space Grotesk, sans-serif' }}>
+                        <p className="font-sans text-sm font-semibold mb-2" style={{ color: 'var(--gh-ink)' }}>
                             {wisdom.theme}
                         </p>
                     )}
                     {/* Preview line always visible */}
                     {!expanded && (
-                        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgba(105,95,128,0.75)' }}>
+                        <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'var(--gh-ink-muted)' }}>
                             {wisdom.wisdom}
                         </p>
                     )}
                     {/* Full content when expanded */}
                     {expanded && (
                         <div className="space-y-3 mt-1">
-                            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'rgba(70,60,92,0.85)' }}>
+                            <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: 'var(--gh-ink)' }}>
                                 {wisdom.wisdom}
                             </p>
                             {wisdom.contemplation && (
-                                <div className="p-3 rounded-xl mt-2"
-                                    style={{ background: `${cfg.color}0d`, border: `1px solid ${cfg.color}25` }}>
-                                    <p className="text-xs font-semibold mb-1 uppercase tracking-widest" style={{ color: cfg.color }}>
+                                <div className="p-3 rounded-lg mt-2"
+                                    style={{ background: 'rgba(194,80,60,0.06)', border: '1px solid rgba(194,80,60,0.22)' }}>
+                                    <p className="text-xs font-semibold mb-1" style={{ color: 'var(--gh-accent)' }}>
                                         Contemplation
                                     </p>
                                     <p className="text-sm leading-relaxed" style={{ color: 'var(--gh-ink-soft)' }}>

@@ -21,6 +21,13 @@ export function userClient(req: Request) {
   );
 }
 
+export async function claimAiRequest(supabase: any, userId: string, feature: string) {
+  if (!userId) return false;
+  const { data, error } = await supabase.rpc('claim_ai_request', { p_feature: feature });
+  if (error) throw error;
+  return data === true;
+}
+
 /**
  * Anthropic Messages API call. Returns null when no key is configured so
  * callers can respond with an honest stub instead of failing.
@@ -33,6 +40,8 @@ export async function askClaude(prompt: string, schema?: Record<string, unknown>
     ? [{ name: 'respond', description: 'Return the structured response.', input_schema: schema }]
     : undefined;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -41,17 +50,17 @@ export async function askClaude(prompt: string, schema?: Record<string, unknown>
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-opus-4-8',
-      max_tokens: 4096,
-      thinking: { type: 'adaptive' },
+      model: Deno.env.get('ANTHROPIC_MODEL') || 'claude-opus-4-8',
+      max_tokens: 1400,
       ...(tools ? { tools, tool_choice: { type: 'tool', name: 'respond' } } : {}),
       messages: [{ role: 'user', content: prompt }],
     }),
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
 
   if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Anthropic API ${res.status}: ${detail.slice(0, 300)}`);
+    await res.text();
+    throw new Error(`The reading service returned ${res.status}.`);
   }
 
   const data = await res.json();

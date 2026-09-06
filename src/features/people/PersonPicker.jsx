@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { X, Plus, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 /**
  * Multi-select person picker. Replaces free-text who_involved.
@@ -13,6 +13,7 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
   const [open, setOpen] = useState(false);
   const [people, setPeople] = useState([]);
   const [query, setQuery] = useState("");
+  const [createError, setCreateError] = useState(null);
 
   useEffect(() => {
     base44.entities.Person.list().then(setPeople).catch(() => setPeople([]));
@@ -28,13 +29,14 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
 
   const createInline = async () => {
     if (!queryTrimmed) return;
+    setCreateError(null);
     try {
-      const created = await base44.entities.Person.create({ name: queryTrimmed, person_type: "other" });
+      const created = await base44.entities.Person.create({ name: queryTrimmed.slice(0, 100), person_type: "other" });
       setPeople((prev) => [...prev, created]);
       onChange([...value, created.id]);
       setQuery("");
-    } catch {
-      // keep the popover open; the user can retry
+    } catch (error) {
+      setCreateError(error?.message || "Could not add this person. Check your connection and try again.");
     }
   };
 
@@ -44,7 +46,7 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="w-full flex items-center gap-2 border border-input bg-background px-3 py-2 text-sm text-left"
+            className="min-h-11 w-full flex items-center gap-2 border border-input bg-background px-3 py-2 text-sm text-left"
             aria-label="Choose people involved"
           >
             <Users className="w-4 h-4" style={{ color: "var(--gh-ink-muted)" }} />
@@ -55,16 +57,10 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
                 {selected.map((p) => (
                   <span
                     key={p.id}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium"
+                    className="inline-flex items-center px-2 py-0.5 text-xs font-medium"
                     style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", color: "var(--gh-ink)" }}
                   >
                     {p.name}
-                    <X
-                      className="w-3 h-3 cursor-pointer"
-                      role="button"
-                      aria-label={`Remove ${p.name}`}
-                      onClick={(e) => { e.stopPropagation(); toggle(p.id); }}
-                    />
                   </span>
                 ))}
               </span>
@@ -75,6 +71,7 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
           <Command>
             <CommandInput placeholder="Search or add a person" value={query} onValueChange={setQuery} />
             <CommandList>
+              {createError && <p role="alert" className="px-3 py-2 text-xs" style={{ color: "hsl(var(--destructive))" }}>{createError}</p>}
               <CommandEmpty>
                 {queryTrimmed ? "No one by that name yet." : "No people yet. Type a name to add one."}
               </CommandEmpty>

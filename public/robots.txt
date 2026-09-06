@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /support
+Allow: /product.md
+Allow: /llms.txt
+Disallow: /Today
+Disallow: /Analytics
+Disallow: /People
+Disallow: /Practice
+Disallow: /CosmicAddons
+
+Sitemap: https://vibe-check-flame-nu.vercel.app/sitemap.xml

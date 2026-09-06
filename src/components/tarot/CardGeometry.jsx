@@ -1,6 +1,6 @@
 import React from "react";
 
-// ── Sacred Geometry renderer — one per card archetype ───────────────────────
+// ── Sacred Geometry renderer: one per card archetype ───────────────────────
 // All shapes are original SVG geometry, no text/emoji, purely symbolic
 
 import { polar, starPoints, pts } from "@/lib/geometry";
@@ -22,7 +22,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
 
     // ── Major Arcana ─────────────────────────────────────────────────────────
 
-    // 0 The Fool — open spiral path launching off a cliff edge (beginning)
+    // 0 The Fool: open spiral path launching off a cliff edge (beginning)
     "open-spiral": () => {
       let d = `M ${cx} ${cy}`;
       for (let i = 0; i < 540; i += 6) {
@@ -40,7 +40,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // I The Magician — caduceus: two serpents around a staff, infinity above
+    // I The Magician: caduceus: two serpents around a staff, infinity above
     "caduceus": () => {
       const staffX = cx;
       return (
@@ -69,7 +69,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // II High Priestess — thin crescent with triple pillar lines between
+    // II High Priestess: thin crescent with triple pillar lines between
     "crescent-pillars": () => {
       const moonR = r * 0.8;
       const start = (210 - 90) * π/180, end = (330 - 90) * π/180;
@@ -83,7 +83,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
           {/* Inner crescent offset */}
           <path d={`M ${x1+sw*0.8} ${y1} A ${moonR*0.7} ${moonR*0.7} 0 0 1 ${x2+sw*0.8} ${y2}`}
             fill="none" stroke={stroke} strokeWidth={sw2} strokeLinecap="round" opacity="0.4"/>
-          {/* Veil — three vertical lines */}
+          {/* Veil: three vertical lines */}
           {[-r*0.25, 0, r*0.25].map((dx, i) => (
             <line key={i} x1={cx+dx} y1={cy-r*0.1} x2={cx+dx} y2={cy+r*0.7}
               stroke={stroke} strokeWidth={sw2} opacity={0.35 + i * 0.1}/>
@@ -94,7 +94,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // III The Empress — Venus symbol: circle with cross below + spiral
+    // III The Empress: Venus symbol: circle with cross below + spiral
     "venus-spiral": () => {
       const spiralSteps = 360;
       let d = '';
@@ -118,7 +118,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // IV The Emperor — upward triangle within square, stability geometry
+    // IV The Emperor: upward triangle within square, stability geometry
     "triangle-square": () => {
       const sq = r * 0.85;
       const triH = r * 0.75;
@@ -139,7 +139,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // V The Hierophant — double cross (papal cross) with three bars
+    // V The Hierophant: double cross (papal cross) with three bars
     "papal-cross": () => {
       const h = r * 1.8, staffX = cx;
       const bars = [r*0.7, r*0.2, -r*0.3];
@@ -157,7 +157,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // VI The Lovers — vesica piscis (two overlapping circles = sacred union)
+    // VI The Lovers: vesica piscis (two overlapping circles = sacred union)
     "vesica": () => {
       const offset = r * 0.42;
       return (
@@ -174,7 +174,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // VII The Chariot — cube in perspective with motion lines
+    // VII The Chariot: cube in perspective with motion lines
     "cube-motion": () => {
       const front = { x1:cx-r*0.5, y1:cy, x2:cx+r*0.5, y2:cy+r*0.8 };
       const offset = r * 0.3;
@@ -197,7 +197,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // VIII Strength — lemniscate (infinity loop) with downward weight
+    // VIII Strength: lemniscate (infinity loop) with downward weight
     "lemniscate": () => {
       const a = r * 0.75, b = r * 0.32, yBase = cy;
       const d = `M ${cx} ${yBase}
@@ -215,7 +215,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // IX The Hermit — hexagon lantern shape with single ray upward
+    // IX The Hermit: hexagon lantern shape with single ray upward
     "lantern": () => {
       const hex = Array.from({length:6}, (_,i) => polar(cx, cy+r*0.1, r*0.6, i*60));
       return (
@@ -236,7 +236,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // X Wheel of Fortune — spoked wheel with alchemical symbols at quarters
+    // X Wheel of Fortune: spoked wheel with alchemical symbols at quarters
     "spoked-wheel": () => {
       const spokes = 8;
       return (
@@ -258,7 +258,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XI Justice — balanced scale geometry: beam + two pans
+    // XI Justice: balanced scale geometry: beam + two pans
     "scales": () => {
       const beamY = cy - r*0.15;
       return (
@@ -283,7 +283,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XII Hanged Man — downward triangle with single point, suspended
+    // XII Hanged Man: downward triangle with single point, suspended
     "triangle-down-suspended": () => {
       const triR = r*0.7;
       const ty = cy + r*0.15;
@@ -307,7 +307,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XIII Death — scythe: arc blade + staff, rose at base
+    // XIII Death: scythe: arc blade + staff, rose at base
     "scythe": () => {
       return (
         <g>
@@ -330,7 +330,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XIV Temperance — two triangles with flowing wave between (alchemy: water poured)
+    // XIV Temperance: two triangles with flowing wave between (alchemy: water poured)
     "flow-triangles": () => {
       const waveY = cy;
       let wavePath = `M ${cx-r*0.85} ${waveY}`;
@@ -356,7 +356,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XV The Devil — inverted pentagram in circle
+    // XV The Devil: inverted pentagram in circle
     "inverted-pentagram": () => {
       const pts5 = Array.from({length:5}, (_,i) => polar(cx, cy, r*0.78, i*72 + 180));
       const inner5 = Array.from({length:5}, (_,i) => polar(cx, cy, r*0.78*0.382, i*72 + 180 + 36));
@@ -365,7 +365,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
         <g>
           <circle cx={cx} cy={cy} r={r*0.92} fill={fill} stroke={stroke} strokeWidth={sw}/>
           <polygon points={pts(starPath)} fill={fillMid} stroke={stroke} strokeWidth={sw}/>
-          {/* Chain links at bottom — two interlocking rings */}
+          {/* Chain links at bottom: two interlocking rings */}
           {[-r*0.3, r*0.3].map((dx,i) => (
             <circle key={i} cx={cx+dx} cy={cy+r*0.85} r={r*0.13} fill="none" stroke={stroke} strokeWidth={sw2}/>
           ))}
@@ -375,7 +375,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XVI The Tower — tall rectangle struck by diagonal lightning bolt
+    // XVI The Tower: tall rectangle struck by diagonal lightning bolt
     "tower-lightning": () => {
       const tw = r*0.5, th = r*1.5, tx = cx-tw/2, ty = cy-th/2;
       return (
@@ -398,7 +398,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XVII The Star — 8-pointed star (Star of Ishtar) with central glow
+    // XVII The Star: 8-pointed star (Star of Ishtar) with central glow
     "star-8": () => {
       const outer = r*0.88, inner = r*0.38;
       const star8 = Array.from({length:16}, (_,i) => polar(cx, cy, i%2===0 ? outer : inner, i*22.5));
@@ -419,7 +419,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XVIII The Moon — full circle + crescent overlap + twin pillars + reflection pool
+    // XVIII The Moon: full circle + crescent overlap + twin pillars + reflection pool
     "moon-full": () => {
       return (
         <g>
@@ -444,7 +444,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XIX The Sun — circle with double ring of alternating long/short rays
+    // XIX The Sun: circle with double ring of alternating long/short rays
     "sun-rays": () => {
       const innerR = r*0.42;
       return (
@@ -465,7 +465,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XX Judgement — angel trumpet shape (horn) with radiating sound waves
+    // XX Judgement: angel trumpet shape (horn) with radiating sound waves
     "trumpet": () => {
       return (
         <g>
@@ -495,7 +495,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // XXI The World — ouroboros (snake eating tail) encircling a 4-element diamond
+    // XXI The World: ouroboros (snake eating tail) encircling a 4-element diamond
     "ouroboros": () => {
       const oR = r*0.82;
       // Serpent body as thick arc with head and tail meeting
@@ -533,14 +533,14 @@ export default function CardGeometry({ type, color, size = 36 }) {
 
     // ── Minor Arcana suits ────────────────────────────────────────────────────
 
-    // Wands — upward flame: equilateral triangle with inner fire lines
+    // Wands: upward flame: equilateral triangle with inner fire lines
     "flame-wand": () => {
       return (
         <g>
           {/* Main upward triangle */}
           <polygon points={pts([[cx,cy-r*0.9],[cx+r*0.78,cy+r*0.45],[cx-r*0.78,cy+r*0.45]])}
             fill={fill} stroke={stroke} strokeWidth={sw}/>
-          {/* Inner ascending lines — fire flicker */}
+          {/* Inner ascending lines: fire flicker */}
           {[-r*0.28, 0, r*0.28].map((dx,i) => {
             const h = r * (0.6 + i % 2 * 0.12);
             return <line key={i} x1={cx+dx} y1={cy+r*0.35} x2={cx+dx*0.3} y2={cy+r*0.35-h}
@@ -554,7 +554,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // Cups — chalice shape: two arcs + base + stem
+    // Cups: chalice shape: two arcs + base + stem
     "chalice": () => {
       return (
         <g>
@@ -578,7 +578,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // Swords — two crossed diagonal blades
+    // Swords: two crossed diagonal blades
     "crossed-swords": () => {
       const blade = (x1,y1,x2,y2,gx1,gy1,gx2,gy2) => (
         <g>
@@ -599,7 +599,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
       );
     },
 
-    // Pentacles — perfect pentagram in circle
+    // Pentacles: perfect pentagram in circle
     "pentagram": () => {
       const outer = r*0.82, inner = r*0.82*0.382;
       const star5 = Array.from({length:10}, (_,i) => polar(cx, cy, i%2===0 ? outer : inner, i*36-90));

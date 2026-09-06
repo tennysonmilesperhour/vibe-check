@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#612635"/>
+  <circle cx="865" cy="322" r="184" fill="#FDC94E"/>
+  <rect x="0" y="400" width="1200" height="230" fill="#813247"/>
+  <path d="M0 394 C180 280 330 292 505 420 C690 555 865 542 1200 340" fill="none" stroke="#FFFDF6" stroke-width="34" stroke-linecap="round"/>
+  <text x="84" y="170" fill="#FFFDF6" font-size="88" font-family="Georgia, serif">vibe check</text>
+  <text x="90" y="232" fill="#FFFDF6" opacity="0.9" font-size="28" font-family="Arial, sans-serif">One honest check-in each evening.</text>
+</svg>

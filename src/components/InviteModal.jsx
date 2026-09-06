@@ -1,85 +1,73 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { Copy, Mail, Check } from "lucide-react";
+import { Copy, Share2, Check } from "lucide-react";
+import { isNativeApp, shareApp } from "@/lib/native";
+import { PUBLIC_APP_URL } from "@/lib/publicConfig";
 
 export default function InviteModal({ open, onClose }) {
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const inviteUrl = window.location.origin;
+  const inviteUrl = PUBLIC_APP_URL || (!isNativeApp ? window.location.origin : "");
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(inviteUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Link copied!", description: "Share it with your friend." });
+  const handleCopyLink = async () => {
+    if (!inviteUrl) {
+      toast({ title: "Sharing is not configured", description: "The app owner needs to add the public website URL.", variant: "destructive" });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: "Link copied", description: "Share it however you like." });
+    } catch {
+      toast({ title: "Could not copy the link", description: inviteUrl, variant: "destructive" });
+    }
   };
 
-  const handleSendInvite = async () => {
-    if (!email.trim()) return;
-    setSending(true);
+  const handleShare = async () => {
+    if (!inviteUrl) return handleCopyLink();
     try {
-      await base44.users.inviteUser(email.trim(), "user");
-      setEmail("");
-      toast({ title: "✦ Invitation sent", description: `${email} has been invited to join your constellation.` });
-    } catch (e) {
-      toast({ title: "Copy the link instead", description: e?.message || "Email invites are not available yet.", variant: "destructive" });
+      if (!await shareApp(inviteUrl)) return handleCopyLink();
+    } catch (error) {
+      if (error?.name !== "AbortError") await handleCopyLink();
     }
-    setSending(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(194,80,60,0.25)', maxWidth: 420 }}>
         <DialogHeader>
-          <DialogTitle className="gradient-text" style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 18 }}>
-            ✦ Invite to Your Constellation
+          <DialogTitle className="font-sans" style={{ color: 'var(--gh-ink)', fontSize: 18 }}>
+            Share Vibe Check
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm mb-5" style={{ color: 'rgba(105,95,128,0.7)' }}>
-          Invite a friend to join Vibe Check. Once they create their cosmic profile, you can add them to your constellation for synergy readings.
+        <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-soft)' }}>
+          Send someone the app link. Sharing does not connect accounts or expose either person's private profile.
         </p>
 
         {/* Copy link */}
         <div className="mb-5">
-          <Label className="text-xs mb-2 block" style={{ color: 'rgba(82,72,104,0.7)' }}>Share your invite link</Label>
+          <Label className="text-xs mb-2 block" style={{ color: 'var(--gh-ink-muted)' }}>App link</Label>
           <div className="flex gap-2">
             <div className="flex-1 px-3 py-2 rounded-lg text-xs truncate"
-              style={{ background: 'rgba(255,255,255,0.64)', border: '1px solid rgba(61,52,80,0.12)', color: 'rgba(105,95,128,0.8)' }}>
-              {inviteUrl}
+              style={{ background: 'var(--gh-field)', border: '1px solid hsl(var(--border))', color: 'var(--gh-ink-soft)' }}>
+              {inviteUrl || "Public website URL not configured"}
             </div>
-            <Button onClick={handleCopyLink} size="sm" variant="outline"
+            <Button onClick={handleCopyLink} size="icon" variant="outline" aria-label="Copy app link"
               style={{ border: '1px solid rgba(194,80,60,0.3)', color: copied ? '#C9834B' : '#C2503C', background: 'rgba(194,80,60,0.08)' }}>
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </Button>
           </div>
         </div>
 
-        {/* Email invite */}
-        <div>
-          <Label className="text-xs mb-2 block" style={{ color: 'rgba(82,72,104,0.7)' }}>Or send an email invitation</Label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="friend@example.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSendInvite()}
-              className="flex-1"
-            />
-            <Button onClick={handleSendInvite} disabled={!email.trim() || sending} className="btn-cosmic rounded-lg px-4">
-              <Mail className="w-4 h-4 mr-1.5" />
-              {sending ? "Sending..." : "Invite"}
-            </Button>
-          </div>
-        </div>
+        <Button onClick={handleShare} className="btn-cosmic w-full" disabled={!inviteUrl}>
+          <Share2 className="w-4 h-4" aria-hidden="true" /> Share app
+        </Button>
       </DialogContent>
     </Dialog>
   );

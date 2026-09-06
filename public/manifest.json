@@ -1,0 +1,17 @@
+{
+  "name": "Vibe Check: Golden Hour",
+  "short_name": "Vibe Check",
+  "description": "A one-minute evening mood check-in with personal patterns and optional cosmic reflection.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#5A2430",
+  "theme_color": "#5A2430",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

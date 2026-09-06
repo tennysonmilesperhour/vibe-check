@@ -61,7 +61,7 @@ const cosmicProfile = {
   },
   human_design: {
     type: "Projector",
-    authority: "Emotional Authority",
+    authority: "Emotional / Solar Plexus",
     profile: "4/6 – Opportunist / Role Model",
     conscious_sun_gate: "14",
   },

@@ -13,6 +13,11 @@ const signMidDegree = (sign) => {
 };
 
 function arcanaIdByName(name) {
+  const numberedLabel = String(name || '').match(/^\s*(\d{1,2})\s*[–—-]/);
+  if (numberedLabel) {
+    const id = Number(numberedLabel[1]);
+    if (id >= 0 && id <= 21) return id;
+  }
   for (const [lpNum, id] of Object.entries(LIFE_PATH_CARD)) {
     void lpNum;
     if (arcanaName(id)?.toLowerCase() === String(name || '').toLowerCase()) return id;
@@ -97,29 +102,19 @@ export function resonanceGraph(profile = {}, dateKey) {
   }
 
   // number identity: life path <-> birth card
-  if (lp && birthCardName && LIFE_PATH_CARD[Number(lp)] !== undefined) {
+  const cardNode = byId['tarot_archetype.birth_card'];
+  const expectedBirthCardId = LIFE_PATH_CARD[Number(lp)];
+  if (lp && cardNode?.cardId != null && cardNode.cardId === expectedBirthCardId) {
     addEdge('numerology.life_path', 'tarot_archetype.birth_card', 'number',
-      `Life Path ${lp} names ${birthCardName} as its Major Arcana counterpart.`);
+      `Life Path ${lp} names ${arcanaName(expectedBirthCardId)} as its Major Arcana counterpart.`);
   }
 
   // Golden Dawn: birth card <-> its sign/planet, tied back to astrology placements
-  const cardNode = byId['tarot_archetype.birth_card'];
   if (cardNode?.astro?.kind === 'sign') {
     for (const placement of ['astrology.sun', 'astrology.moon', 'astrology.rising']) {
       if (byId[placement]?.sign === cardNode.astro.sign) {
         addEdge('tarot_archetype.birth_card', placement, 'astro',
           `${cardNode.label} carries ${cardNode.astro.sign} in the Golden Dawn attribution: the same sign as your ${placement.split('.')[1]}.`);
-      }
-    }
-    // even without a matching placement, note the card's sign as a wheel edge to itself (skipped)
-    if (!edges.some((e) => e.kind === 'astro')) {
-      // link card to sun if both exist regardless of sign match? No: only truthful links.
-      if (byId['astrology.sun']) {
-        edges.push({
-          a: 'tarot_archetype.birth_card', b: 'astrology.sun', kind: 'astro',
-          why: `${cardNode.label} sits in ${cardNode.astro.sign} on the wheel; your Sun watches from ${byId['astrology.sun'].sign}.`,
-          strength: 1, isActiveToday: false,
-        });
       }
     }
   }

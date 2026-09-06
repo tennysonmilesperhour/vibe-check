@@ -113,11 +113,11 @@ export default function CosmicAddons() {
 
                 {/* Header */}
                 {/* ── The Loom: hero of the cosmos ── */}
-                <SkyField className="cosmos-almanac__loom mb-8" showSun={false} veilIntensity={0.5}>
+                <SkyField className="cosmos-almanac__loom mb-8" showSun={false} showVeilLine={false} veilIntensity={0.5}>
                     <div className="max-w-2xl mx-auto px-5 sm:px-8 py-8" ref={loomRef}>
                         <h1 className="text-4xl text-center" style={{ color: 'var(--gh-cream)' }}>Your Loom</h1>
                         <p className="text-sm text-center mt-1 mb-6" style={{ color: 'rgba(255,253,246,0.85)' }}>
-                            Seven systems, one map. Tap a point or a thread.
+                            Seven systems, one map. Tap an emblem or an exact connection.
                         </p>
                         <Loom profile={profile} onDeepDive={() => setActiveTab('deepdive')} />
                         <nav className="loom-system-key" aria-label="Cosmos systems">
@@ -137,9 +137,9 @@ export default function CosmicAddons() {
                             })}
                         </nav>
                         <div className="loom-provenance" aria-label="Loom information key">
-                            <span><i data-kind="entered" />Entered by you</span>
-                            <span><i data-kind="derived" />Calculated here</span>
-                            <span><i data-kind="reflection" />Optional reflection</span>
+                            <span><i data-kind="wheel" />Wheel-placed</span>
+                            <span><i data-kind="inner" />Inner profile</span>
+                            <span><i data-kind="today" />Active today</span>
                         </div>
                         <div className="text-center mt-4" data-html2canvas-ignore="true">
                             <button type="button" className="ghost-cream-button text-xs py-2"

@@ -5,6 +5,7 @@ import { lifePath, expression, soulUrge, personalYear } from './numerology.js';
 import { arcanaForLifePath } from './tables.js';
 
 const norm = (v) => String(v ?? '').trim().toLowerCase();
+const normCard = (v) => norm(v).replace(/^\d{1,2}\s*[–—-]\s*/, '');
 
 /**
  * deriveAll(profile, onDateKey) ->
@@ -38,15 +39,15 @@ export function deriveAll(profile = {}, onDateKey) {
   };
 
   const conflicts = [];
-  const check = (field, entered, computed, source) => {
+  const check = (field, entered, computed, source, normalize = norm) => {
     if (entered == null || entered === '' || computed == null) return;
-    if (norm(entered) !== norm(computed)) {
+    if (normalize(entered) !== normalize(computed)) {
       conflicts.push({ field, entered, computed, source });
     }
   };
 
   check('numerology.life_path', profile.numerology?.life_path, lp, 'birth date');
-  check('tarot_archetype.birth_card', profile.tarot_archetype?.birth_card, birthCard?.name, 'life path number');
+  check('tarot_archetype.birth_card', profile.tarot_archetype?.birth_card, birthCard?.name, 'life path number', normCard);
   if (profile.gene_keys?.life_work && profile.human_design?.conscious_sun_gate) {
     check(
       'gene_keys.life_work',

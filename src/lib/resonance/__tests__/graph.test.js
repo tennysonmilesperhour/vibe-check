@@ -37,9 +37,37 @@ describe('resonanceGraph', () => {
     expect(edge).toBeTruthy();
   });
 
-  it('links birth card to its Golden Dawn sign (Hierophant -> Taurus)', () => {
-    const edge = graph.edges.find((e) => e.kind === 'astro');
-    expect(edge).toBeTruthy();
+  it('does not link a life path to an overridden, nonmatching birth card', () => {
+    const mismatched = resonanceGraph({
+      ...profile,
+      tarot_archetype: { birth_card: '8 – Strength' },
+    }, '2026-07-02');
+    expect(mismatched.edges.find((edge) => edge.kind === 'number')).toBeUndefined();
+  });
+
+  it('understands the numbered card labels saved by the profile form', () => {
+    const numbered = resonanceGraph({
+      ...profile,
+      tarot_archetype: { birth_card: '5 – The Hierophant' },
+    }, '2026-07-02');
+    expect(numbered.edges.find((edge) => edge.kind === 'number')).toBeTruthy();
+  });
+
+  it('does not invent an astrology link when the attributed sign is absent', () => {
+    expect(graph.edges.find((edge) => edge.kind === 'astro')).toBeUndefined();
+  });
+
+  it('links a birth card only to an astrology placement with the same sign', () => {
+    const matching = resonanceGraph({
+      ...profile,
+      astrology: { ...profile.astrology, rising_sign: 'Taurus' },
+    }, '2026-07-02');
+    const edge = matching.edges.find((item) => item.kind === 'astro');
+    expect(edge).toMatchObject({
+      a: 'tarot_archetype.birth_card',
+      b: 'astrology.rising',
+    });
+    expect(edge.why).toContain('same sign as your rising');
   });
 
   it('marks today-active nodes from the moon phase and personal day', () => {

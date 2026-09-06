@@ -825,9 +825,9 @@
 .loom-system-key button span { margin-right: 0.3rem; }
 .loom-provenance { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1rem; color: rgba(255,253,246,0.68); font-size: 0.62rem; }
 .loom-provenance span { display: inline-flex; align-items: center; gap: 0.3rem; }
-.loom-provenance i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--gh-cream); }
-.loom-provenance i[data-kind="derived"] { background: var(--gh-gold); }
-.loom-provenance i[data-kind="reflection"] { background: transparent; border: 1px solid var(--gh-cream); }
+.loom-provenance i { width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--gh-ink); border: 1px solid var(--gh-cream); }
+.loom-provenance i[data-kind="wheel"] { background: var(--gh-cream); }
+.loom-provenance i[data-kind="today"] { background: var(--gh-gold); border-color: var(--gh-gold); box-shadow: 0 0 0.35rem rgba(253,201,78,0.7); }
 .cosmos-almanac [role="tablist"] { position: sticky; top: 0.5rem; z-index: var(--z-sticky); }
 .cosmos-almanac .glass-card, .cosmos-almanac .glass-card-glow { background: rgba(255,253,246,0.72); border: 0; border-top: 1px solid rgba(90,36,48,0.2); }
 

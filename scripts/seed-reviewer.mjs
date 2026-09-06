@@ -45,10 +45,31 @@ if (user) {
 
 const userId = user.id;
 const cosmicProfile = {
+  first_name: "App",
+  last_name: "Review",
   birth_date: "1990-01-15",
-  enabled_systems: ["numerology", "tarot_archetype"],
-  numerology: { life_path: 8, personal_year: 7 },
+  birth_time: "18:30",
+  birth_city: "Denver",
+  birth_state: "Colorado",
+  birth_country: "United States",
+  enabled_systems: ["astrology", "human_design", "gene_keys", "numerology", "tarot_archetype", "enneagram", "chakras"],
+  astrology: {
+    sun_sign: "Capricorn",
+    moon_sign: "Leo",
+    rising_sign: "Taurus",
+    north_node: "Aquarius",
+  },
+  human_design: {
+    type: "Projector",
+    authority: "Emotional Authority",
+    profile: "4/6 – Opportunist / Role Model",
+    conscious_sun_gate: "14",
+  },
+  gene_keys: { life_work: "14" },
+  numerology: { life_path: 8, expression: 7, soul_urge: 2, personal_year: 7 },
   tarot_archetype: { birth_card: "8 – Strength" },
+  enneagram: { type: "4 – The Individualist", wing: "4w5" },
+  chakras: { dominant_center: "Heart (Anahata) – Love & connection" },
 };
 
 const { error: profileError } = await admin.from("profiles").upsert({

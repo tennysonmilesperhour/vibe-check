@@ -7,7 +7,7 @@ import { weatherIdForScore } from "@/features/today/weather";
  * Sky-register surface: the golden hour gradient, a soft sun glow,
  * and flowing veils. `depth` 1..4 deepens the gradient (ceremony steps).
  */
-export default function SkyField({ depth = 1, moodScore = null, showSun = true, veilIntensity = 1, className = "", children }) {
+export default function SkyField({ depth = 1, moodScore = null, showSun = true, veilIntensity = 1, showVeilLine = true, className = "", children }) {
   return (
     <div
       className={`sky-surface relative overflow-hidden ${className}`}
@@ -19,7 +19,7 @@ export default function SkyField({ depth = 1, moodScore = null, showSun = true, 
           <WeatherOrb score={moodScore} size="hero" />
         </div>
       )}
-      <VeilField intensity={veilIntensity} />
+      <VeilField intensity={veilIntensity} showLine={showVeilLine} />
       <div className="relative">{children}</div>
     </div>
   );

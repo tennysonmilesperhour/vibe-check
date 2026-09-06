@@ -43,9 +43,14 @@ describe('deriveAll', () => {
   });
 
   it('no conflicts when entered matches computed', () => {
-    const agreeing = { ...profile, numerology: { life_path: '5' } };
+    const agreeing = {
+      ...profile,
+      numerology: { life_path: '5' },
+      tarot_archetype: { birth_card: '5 – The Hierophant' },
+    };
     const { conflicts } = deriveAll(agreeing, '2026-07-02');
     expect(conflicts.filter((c) => c.field === 'numerology.life_path')).toEqual([]);
+    expect(conflicts.filter((c) => c.field === 'tarot_archetype.birth_card')).toEqual([]);
   });
 
   it('degrades gracefully without a birth date', () => {

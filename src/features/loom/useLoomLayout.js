@@ -10,48 +10,91 @@ export const THREAD_COLORS = {
   center: 'var(--gh-amber)',
 };
 
-export function useLoomLayout(graph, size = 400) {
-  return useMemo(() => {
-    const cx = size / 2;
-    const cy = size / 2;
-    const rZodiac = size * 0.462;   // sign ring
-    const rGates = size * 0.42;     // 64-tick ring
-    const rPlaced = size * 0.35;    // wheel-positioned nodes
-    const rInner = size * 0.175;    // degree-less nodes
+export function buildLoomLayout(graph, size = 400) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const rZodiac = size * 0.462;
+  const rGates = size * 0.42;
+  const rPlaced = size * 0.35;
+  const rInner = size * 0.19;
+  const wheelNodes = graph.nodes.filter((node) => node.wheelDeg != null);
+  const innerNodes = graph.nodes.filter((node) => node.wheelDeg == null);
+  const clusters = new Map();
 
-    const wheelNodes = graph.nodes.filter((n) => n.wheelDeg != null);
-    const innerNodes = graph.nodes.filter((n) => n.wheelDeg == null);
+  for (const node of wheelNodes) {
+    const key = Number(node.wheelDeg).toFixed(4);
+    const cluster = clusters.get(key) || [];
+    cluster.push(node);
+    clusters.set(key, cluster);
+  }
 
-    const positioned = [
-      ...wheelNodes.map((node) => {
-        const angle = degToWheel(node.wheelDeg);
-        const [x, y] = polar(cx, cy, rPlaced, angle);
-        return { ...node, x, y, angle, ring: 'wheel' };
-      }),
-      ...innerNodes.map((node, i) => {
-        const angle = -90 + (i * 360) / Math.max(innerNodes.length, 1);
-        const [x, y] = polar(cx, cy, rInner, angle + 90); // polar() already treats 0 as up
-        return { ...node, x, y, angle, ring: 'inner' };
-      }),
-    ];
+  // Placements can truthfully share one wheel degree. Keep their common anchor,
+  // then fan the emblems along its tangent so no meaning is hidden by overlap.
+  const positionedWheel = [];
+  for (const cluster of clusters.values()) {
+    const angle = degToWheel(cluster[0].wheelDeg);
+    const [anchorX, anchorY] = polar(cx, cy, rPlaced, angle);
+    const angleRad = ((angle - 90) * Math.PI) / 180;
+    const tangentX = -Math.sin(angleRad);
+    const tangentY = Math.cos(angleRad);
+    const spacing = size * 0.065;
 
-    const byId = Object.fromEntries(positioned.map((n) => [n.id, n]));
-
-    const threads = graph.edges
-      .filter((e) => byId[e.a] && byId[e.b])
-      .map((edge) => {
-        const a = byId[edge.a];
-        const b = byId[edge.b];
-        // curve through a control point pulled toward the center
-        const mx = (a.x + b.x) / 2 + (cx - (a.x + b.x) / 2) * 0.55;
-        const my = (a.y + b.y) / 2 + (cy - (a.y + b.y) / 2) * 0.55;
-        return {
-          ...edge,
-          d: `M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`,
-          color: THREAD_COLORS[edge.kind] || 'var(--gh-cream)',
-        };
+    cluster.forEach((node, index) => {
+      const offset = (index - (cluster.length - 1) / 2) * spacing;
+      positionedWheel.push({
+        ...node,
+        x: anchorX + tangentX * offset,
+        y: anchorY + tangentY * offset,
+        anchorX,
+        anchorY,
+        angle,
+        ring: 'wheel',
       });
+    });
+  }
 
-    return { cx, cy, rZodiac, rGates, rPlaced, rInner, nodes: positioned, threads };
-  }, [graph, size]);
+  const positionedInner = innerNodes.map((node, index) => {
+    const angle = (index * 360) / Math.max(innerNodes.length, 1);
+    const [x, y] = polar(cx, cy, rInner, angle);
+    return { ...node, x, y, anchorX: x, anchorY: y, angle, ring: 'inner' };
+  });
+
+  const positioned = [...positionedWheel, ...positionedInner];
+  const byId = Object.fromEntries(positioned.map((node) => [node.id, node]));
+  const bendDirection = { hexagram: 1, number: -1, astro: 1, center: -1 };
+
+  const threads = graph.edges
+    .filter((edge) => byId[edge.a] && byId[edge.b])
+    .map((edge) => {
+      const a = byId[edge.a];
+      const b = byId[edge.b];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const length = Math.hypot(dx, dy);
+      const sameAnchor = Math.hypot(b.anchorX - a.anchorX, b.anchorY - a.anchorY) < 0.5;
+      let d = `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+
+      // Short links make shared positions read as a cluster. Longer links take
+      // a shallow side bend, avoiding the false visual hub at the wheel center.
+      if (!sameAnchor && length > size * 0.08) {
+        const normalX = -dy / length;
+        const normalY = dx / length;
+        const bend = Math.min(size * 0.055, length * 0.12) * (bendDirection[edge.kind] || 1);
+        const controlX = (a.x + b.x) / 2 + normalX * bend;
+        const controlY = (a.y + b.y) / 2 + normalY * bend;
+        d = `M ${a.x} ${a.y} Q ${controlX} ${controlY} ${b.x} ${b.y}`;
+      }
+
+      return {
+        ...edge,
+        d,
+        color: THREAD_COLORS[edge.kind] || 'var(--gh-cream)',
+      };
+    });
+
+  return { cx, cy, rZodiac, rGates, rPlaced, rInner, nodes: positioned, threads };
+}
+
+export function useLoomLayout(graph, size = 400) {
+  return useMemo(() => buildLoomLayout(graph, size), [graph, size]);
 }

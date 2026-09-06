@@ -202,6 +202,9 @@ export function HumanDesignForm({ data, onChange }) {
             <Field label="Definition" hint="How consistently your energy flows">
                 <SimpleSelect value={data?.definition} onChange={v => set('definition', v)} options={["Single Definition", "Split Definition", "Triple Split", "Quadruple Split"]} />
             </Field>
+            <Field label="Conscious Sun Gate" hint="The gate that also appears as your Gene Keys Life's Work">
+                <SimpleSelect value={data?.conscious_sun_gate} onChange={v => set('conscious_sun_gate', v)} options={GENE_KEY_NUMBERS} placeholder="Gate 1–64" />
+            </Field>
             <div className="md:col-span-2">
                 <Field label="Incarnation Cross" hint="Your life's overarching purpose theme">
                     <Input className="mt-1" value={data?.incarnation_cross || ''} onChange={e => set('incarnation_cross', e.target.value)} placeholder="e.g. Right Angle Cross of the Sphinx" />

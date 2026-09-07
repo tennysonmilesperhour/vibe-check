@@ -31,3 +31,6 @@ build/
 
 .env
 .vercel
+
+# Supabase CLI local metadata
+supabase/.temp/

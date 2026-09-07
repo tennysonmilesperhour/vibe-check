@@ -3,7 +3,7 @@ import LegalPage from "@/features/shell/LegalPage";
 
 export default function Privacy() {
   return (
-    <LegalPage title="Privacy policy" updated="September 4, 2026">
+    <LegalPage title="Privacy policy" updated="September 7, 2026">
       <p>This policy explains what Vibe Check collects, why it is used, where it is processed, and the choices available to you.</p>
 
       <h2>Information you provide</h2>
@@ -19,7 +19,7 @@ export default function Privacy() {
       <p>Unfinished check-in drafts stay on your device. Notification permission is requested only when you enable a reminder, and the reminder itself is scheduled by your device. Vibe Check does not read HealthKit, your contacts, your device location, photos, microphone, or advertising identifier.</p>
 
       <h2>Your choices</h2>
-      <p>You can export your history from Settings. You can correct information inside the app and delete your account from Settings. Account deletion permanently removes your authentication record and the app records attached to it. Device drafts are removed when you sign out or delete your account.</p>
+      <p>You can export your history from Settings. You can correct information inside the app and delete your Vibe Check account from Settings. Deletion permanently removes your Vibe Check records. Vibe Check and Campground share a sign-in service. If your sign-in also owns Campground records, those records and the sign-in remain; otherwise your authentication record is deleted too. Your private journal is not published to Campground. Device drafts are removed when you sign out or delete your account.</p>
 
       <h2>Security and retention</h2>
       <p>App records are protected by account-based access controls and encrypted network connections. We retain them while your account is active, then delete them when the account is deleted, except where a limited record must be kept to meet legal or security obligations. An exported file is under your control; encrypted exports cannot be recovered if you lose the password.</p>

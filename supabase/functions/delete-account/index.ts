@@ -15,6 +15,14 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   if (!serviceRoleKey || !supabaseUrl) return json({ error: 'Account deletion is not configured.' }, 503);
 
+  // Erase only Vibe Check data. Campground uses the same sign-in identity.
+  const { data: sharedAccountRetained, error: eraseError } = await caller.rpc('vibe_delete_data');
+  if (eraseError) {
+    console.error('Vibe Check deletion failed', eraseError.message);
+    return json({ error: 'Your Vibe Check data could not be deleted. Please try again.' }, 500);
+  }
+  if (sharedAccountRetained) return json({ deleted: true, sharedAccountRetained: true });
+
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -23,5 +31,5 @@ Deno.serve(async (req) => {
     console.error('Account deletion failed', error.message);
     return json({ error: 'Account deletion failed. Contact support if this continues.' }, 500);
   }
-  return json({ deleted: true });
+  return json({ deleted: true, sharedAccountRetained: false });
 });

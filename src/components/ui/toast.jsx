@@ -6,7 +6,11 @@ import { cn } from "@/lib/utils";
 const ToastProvider = React.forwardRef(({ ...props }, ref) => (
   <div
     ref={ref}
-    className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
+    // pointer-events-none: on mobile this is a full-width strip pinned to the
+    // top of the screen, and while empty it would otherwise swallow taps meant
+    // for the header underneath it (notably the nav menu button). Individual
+    // toasts turn pointer events back on via `pointer-events-auto`.
+    className="pointer-events-none fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
     {...props}
   />
 ));
@@ -15,7 +19,11 @@ ToastProvider.displayName = "ToastProvider";
 const ToastViewport = React.forwardRef(({ ...props }, ref) => (
   <div
     ref={ref}
-    className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
+    // pointer-events-none: on mobile this is a full-width strip pinned to the
+    // top of the screen, and while empty it would otherwise swallow taps meant
+    // for the header underneath it (notably the nav menu button). Individual
+    // toasts turn pointer events back on via `pointer-events-auto`.
+    className="pointer-events-none fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
     {...props}
   />
 ));

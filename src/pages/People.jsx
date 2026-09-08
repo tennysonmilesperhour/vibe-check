@@ -150,11 +150,11 @@ export default function People() {
                   type="button"
                   onClick={() => setDetail(person)}
                   className="text-left p-4 transition-transform hover:-translate-y-0.5"
-                  style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}
+                  style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl" style={{ color: "var(--gh-ink)" }}>{person.name}</h3>
-                    <span className="text-xs px-2 py-0.5" style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-ink-muted)" }}>
+                    <span className="text-xs px-2 py-0.5" style={{ border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)", color: "var(--gh-ink-muted)" }}>
                       {person.person_type || "friend"}
                     </span>
                   </div>
@@ -270,7 +270,7 @@ export default function People() {
                       className="px-3 py-1.5 text-xs"
                       style={form.person_type === t
                         ? { background: "var(--gh-ink)", color: "var(--gh-field)" }
-                        : { border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }}>
+                        : { border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)", color: "var(--gh-ink-soft)" }}>
                       {t}
                     </button>
                   ))}
@@ -293,7 +293,7 @@ export default function People() {
                 <Input id="p-email" type="email" value={form.linked_user_email} onChange={(e) => setForm({ ...form, linked_user_email: e.target.value })} className="mt-1" />
               </div>
               <div className="flex justify-end gap-2">
-                <button type="button" className="px-4 py-2 text-sm" style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }} onClick={() => setEditing(null)}>
+                <button type="button" className="px-4 py-2 text-sm" style={{ border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)", color: "var(--gh-ink-soft)" }} onClick={() => setEditing(null)}>
                   Cancel
                 </button>
                 <button type="submit" className="ink-button text-sm">{editing === "new" ? "Add person" : "Save changes"}</button>

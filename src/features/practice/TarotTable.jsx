@@ -159,8 +159,8 @@ export default function TarotTable() {
                   onClick={() => { setDeckId(id); if (id === "oracle" && spread.positions.length > 3) setSpreadId("single"); }}
                   className="px-5 py-2.5 text-sm font-bold"
                   style={deckId === id
-                    ? { background: "var(--gh-gold)", color: "var(--gh-dusk-deep)" }
-                    : { border: "1px solid rgba(245,229,216,0.4)", color: duskInk }}
+                    ? { background: "var(--gh-gold)", color: "var(--gh-dusk-deep)", borderRadius: "calc(var(--radius) - 3px)", boxShadow: "var(--shadow-soft)" }
+                    : { border: "1px solid rgba(245,229,216,0.4)", color: duskInk, borderRadius: "calc(var(--radius) - 3px)" }}
                 >
                   {label}
                 </button>
@@ -176,8 +176,8 @@ export default function TarotTable() {
                   onClick={() => setSpreadId(s.id)}
                   className="text-left p-3"
                   style={spreadId === s.id
-                    ? { background: "rgba(253,201,78,0.15)", border: "1px solid var(--gh-gold)" }
-                    : { border: "1px solid rgba(245,229,216,0.25)" }}
+                    ? { background: "rgba(253,201,78,0.15)", border: "1px solid var(--gh-gold)", borderRadius: "var(--radius)", boxShadow: "0 6px 24px rgba(253,201,78,0.16)" }
+                    : { border: "1px solid rgba(245,229,216,0.25)", borderRadius: "var(--radius)" }}
                 >
                   <div className="text-sm font-bold" style={{ color: duskInk }}>{s.name}</div>
                   <div className="text-xs mt-0.5" style={{ color: duskInkSoft }}>{s.description}</div>
@@ -260,7 +260,7 @@ export default function TarotTable() {
             {allFlipped && (
               <div className="max-w-2xl mx-auto mt-8 space-y-3">
                 {drawn.map((item, i) => (
-                  <div key={i} className="p-4" style={{ background: "rgba(245,229,216,0.07)", border: "1px solid rgba(245,229,216,0.15)" }}>
+                  <div key={i} className="p-4" style={{ background: "rgba(245,229,216,0.07)", border: "1px solid rgba(245,229,216,0.15)", borderRadius: "var(--radius)" }}>
                     <div className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-gold)" }}>{item.position.toUpperCase()}</div>
                     <div className="font-display text-xl mt-0.5" style={{ color: duskInk }}>
                       {item.card.name}{item.reversed ? " · reversed" : ""}
@@ -272,7 +272,7 @@ export default function TarotTable() {
                 ))}
 
                 {interpretation && (
-                  <div className="p-5 whitespace-pre-line text-sm" style={{ background: "rgba(253,201,78,0.1)", border: "1px solid rgba(253,201,78,0.4)", color: duskInk }}>
+                  <div className="p-5 whitespace-pre-line text-sm" style={{ background: "rgba(253,201,78,0.1)", border: "1px solid rgba(253,201,78,0.4)", color: duskInk, borderRadius: "var(--radius)" }}>
                     {interpretation}
                   </div>
                 )}

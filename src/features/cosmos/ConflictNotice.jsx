@@ -25,7 +25,7 @@ export default function ConflictNotice({ profile, onUseComputed }) {
         <div
           key={c.field}
           className="flex items-start gap-3 p-4"
-          style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}
+          style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}
         >
           <Compass className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "var(--gh-accent)" }} aria-hidden="true" />
           <div className="flex-1 text-sm" style={{ color: "var(--gh-ink)" }}>

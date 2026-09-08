@@ -54,7 +54,7 @@ export default function WeatherLine({ onActivePoints }) {
   if (!weather) return null;
 
   return (
-    <div className="p-4" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}>
+    <div className="p-4" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}>
       <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>TODAY'S COSMIC WEATHER</p>
       <p className="font-display text-2xl mt-1" style={{ color: "var(--gh-ink)" }}>{weather.theme}</p>
       <p className="text-sm mt-1 max-w-prose" style={{ color: "var(--gh-ink-soft)" }}>{weather.wisdom}</p>

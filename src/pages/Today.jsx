@@ -147,7 +147,7 @@ export default function Today() {
             {dateLine} · {moon.emoji} {moon.name} · {streakLabel(streak)}
           </p>
           {!entry && (
-            <div className="mt-4 p-4 flex items-center justify-between" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}>
+            <div className="mt-4 p-4 flex items-center justify-between" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}>
               <span className="text-sm" style={{ color: "var(--gh-ink)" }}>Today is still unwritten.</span>
               <button type="button" className="ink-button text-sm py-2" onClick={() => setMode("ceremony")}>
                 Begin check-in

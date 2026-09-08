@@ -228,7 +228,7 @@ export default function SettingsSheet({ open, onOpenChange }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete your Vibe Check account?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes your Vibe Check check-ins, journal text, people, readings, and cosmic profile. If you also use Campground, your Campground work and shared sign-in remain. Export anything you want to keep first. This cannot be undone.
+              This permanently deletes your Vibe Check check-ins, journal text, people, readings, and cosmic profile. If you also use Campground or Daily Digest, those records and your shared sign-in remain. Export anything you want to keep first. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

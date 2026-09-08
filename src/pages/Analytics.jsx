@@ -203,14 +203,19 @@ export default function Analytics() {
 
             {chartData.length > 1 && (
               <section aria-label="Mood, energy and sleep over time">
+                <div className="flex flex-wrap gap-5 mb-4 text-xs" aria-label="Chart legend" style={{ color: "var(--gh-ink-soft)" }}>
+                  {[["Mood", "var(--gh-accent)", "solid"], ["Energy", "hsl(var(--chart-3))", "dashed"], ["Sleep", "hsl(var(--chart-2))", "dotted"]].map(([label, color, style]) => (
+                    <span key={label} className="inline-flex items-center gap-2"><span aria-hidden="true" style={{ width: 22, borderTop: `2px ${style} ${color}` }} />{label}</span>
+                  ))}
+                </div>
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -22 }}>
-                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={{ stroke: "rgba(90,36,48,0.25)" }} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={{ stroke: "rgba(16,39,30,0.25)" }} />
                     <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "var(--shadow-lift)", fontSize: 12 }} />
                     <Line type="monotone" dataKey="mood" stroke="var(--gh-accent)" strokeWidth={2} dot={false} name="Mood" />
-                    <Line type="monotone" dataKey="energy" stroke="var(--gh-amber)" strokeWidth={1.5} dot={false} name="Energy" />
-                    <Line type="monotone" dataKey="sleep" stroke="var(--gh-rose)" strokeWidth={1.5} dot={false} name="Sleep" />
+                    <Line type="monotone" dataKey="energy" stroke="hsl(var(--chart-3))" strokeWidth={2} strokeDasharray="6 3" dot={false} name="Energy" />
+                    <Line type="monotone" dataKey="sleep" stroke="hsl(var(--chart-2))" strokeWidth={2} strokeDasharray="2 3" dot={false} name="Sleep" />
                   </LineChart>
                 </ResponsiveContainer>
               </section>
@@ -221,10 +226,10 @@ export default function Analytics() {
                 <h2 className="text-2xl mb-3" style={{ color: "var(--gh-ink)" }}>Mood under each moon</h2>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={moonData} margin={{ top: 8, right: 8, bottom: 0, left: -22 }}>
-                    <XAxis dataKey="phase" tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={{ stroke: "rgba(90,36,48,0.25)" }} />
+                    <XAxis dataKey="phase" tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={{ stroke: "rgba(16,39,30,0.25)" }} />
                     <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "var(--gh-ink-muted)" }} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "var(--shadow-lift)", fontSize: 12 }} />
-                    <Bar dataKey="avg" fill="var(--gh-amber)" maxBarSize={42} />
+                    <Bar dataKey="avg" fill="hsl(var(--chart-3))" maxBarSize={42} />
                   </BarChart>
                 </ResponsiveContainer>
               </section>

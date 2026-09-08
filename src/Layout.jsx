@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import InviteModal from "@/components/InviteModal";
 import SettingsSheet from "@/features/shell/SettingsSheet";
+import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import MoonGlyph from "@/features/loom/MoonGlyph";
 import { DailyCheckIn } from "@/entities/all";
 import { todayKey } from "@/lib/dates";
@@ -33,11 +34,12 @@ function NavLinks({ location, onNavigate }) {
     return (
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navigationItems.map((item) => {
-                const isActive = location.pathname === item.url;
+                const isActive = location.pathname === item.url || (item.title === "Today" && location.pathname === "/");
                 return (
                     <Link
                         key={item.title}
                         to={item.url}
+                        aria-current={isActive ? "page" : undefined}
                         onClick={onNavigate}
                         className="relative flex items-center gap-3 px-3 py-2.5 transition-all duration-200"
                         style={{
@@ -85,14 +87,14 @@ function SidebarHeader() {
                     borderRadius: 'calc(var(--radius) - 4px)',
                     boxShadow: 'var(--shadow-soft), inset 0 1px 0 color-mix(in srgb, var(--gh-cream) 45%, transparent)',
                 }}>
-                <Sun className="w-4 h-4" style={{ color: 'var(--gh-cream)' }} aria-hidden="true" />
+                <SanctuaryMark size={36} className="brand-icon" />
             </div>
             <div>
                 <h2 className="font-display text-lg leading-tight" style={{ color: 'var(--gh-ink)' }}>
                     vibe check
                 </h2>
-                <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--gh-ink-muted)' }}>
-                    Golden Hour
+                <p className="text-[9px] tracking-[.1em] uppercase" style={{ color: 'var(--gh-ink-muted)' }}>
+                    Your daily sanctuary
                 </p>
             </div>
         </div>
@@ -151,10 +153,9 @@ export default function Layout({ children }) {
         <div className="min-h-screen flex w-full relative" style={{ background: 'transparent' }}>
 
             {/* ── Desktop sidebar ── */}
-            <aside className="hidden md:flex flex-col w-60 shrink-0 relative z-20"
+            <aside className="sanctuary-rail hidden md:flex flex-col w-60 shrink-0 sticky top-0 h-screen z-20"
                 style={{
-                    // Not a flat panel: the cream cools toward lilac at the foot,
-                    // so the rail reads as part of the same evening as the page.
+                    // Deep forest rail; scoped ink tokens keep its labels readable.
                     background: 'var(--gradient-rail)',
                     borderRight: '1px solid hsl(var(--border))',
                     boxShadow: '1px 0 26px color-mix(in srgb, var(--gh-ink) 5%, transparent)',
@@ -189,7 +190,9 @@ export default function Layout({ children }) {
 
             {/* ── Mobile slide-in drawer ── */}
             <aside
-                className="fixed top-0 left-0 h-full z-40 flex flex-col md:hidden transition-transform duration-300 ease-in-out"
+                className="sanctuary-rail fixed top-0 left-0 h-full z-40 flex flex-col md:hidden transition-transform duration-300 ease-in-out"
+                inert={mobileOpen ? undefined : ""}
+                aria-hidden={!mobileOpen}
                 style={{
                     width: '72vw',
                     maxWidth: '280px',
@@ -207,18 +210,18 @@ export default function Layout({ children }) {
                                 borderRadius: 'calc(var(--radius) - 4px)',
                                 boxShadow: 'var(--shadow-soft)',
                             }}>
-                            <Sun className="w-4 h-4" style={{ color: 'var(--gh-cream)' }} aria-hidden="true" />
+                            <SanctuaryMark size={36} className="brand-icon" />
                         </div>
                         <div>
                             <h2 className="font-display text-base leading-tight" style={{ color: 'var(--gh-ink)' }}>
                                 vibe check
                             </h2>
-                            <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--gh-ink-muted)' }}>Golden Hour</p>
+                            <p className="text-[9px] tracking-[.1em] uppercase" style={{ color: 'var(--gh-ink-muted)' }}>Your daily sanctuary</p>
                         </div>
                     </div>
                     <button
                         onClick={() => setMobileOpen(false)}
-                        className="p-1.5 transition-colors" aria-label="Close menu"
+                        className="p-3 transition-colors" aria-label="Close menu"
                         style={{ color: 'var(--gh-ink)', background: 'color-mix(in srgb, var(--gh-ink) 8%, transparent)', borderRadius: 'calc(var(--radius) - 5px)' }}>
                         <X className="w-4 h-4" />
                     </button>
@@ -246,7 +249,7 @@ export default function Layout({ children }) {
                     }}>
                     <button
                         onClick={() => setMobileOpen(true)}
-                        className="p-2 transition-colors" aria-label="Open menu"
+                        className="p-3 transition-colors" aria-label="Open menu"
                         style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
                         <Menu className="w-4 h-4" />
                     </button>

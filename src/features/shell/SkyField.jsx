@@ -1,69 +1,67 @@
-import React from "react";
-import VeilField from "./VeilField";
+import React, { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "framer-motion";
+import { Pause, Play } from "lucide-react";
 
-/**
- * Sky-register surface: the twilight gradient, a low sun still burning
- * off to one side, the first stars above it, flowing veils, and a little
- * grain over everything so the washes are not perfectly smooth.
- *
- * `depth` 1..4 pulls more night across the sky (the ceremony steps).
- * `showStars` can be turned off for short surfaces where a starfield
- * reads as noise rather than sky.
- */
-export default function SkyField({
-  depth = 1,
-  showSun = true,
-  showStars = true,
-  veilIntensity = 1,
-  className = "",
-  children,
-}) {
+/** The artwork is a complete fallback for limited motion, data or playback. */
+export default function SkyField({ depth = 1, film = false, className = "", children }) {
+  const reduced = useReducedMotion();
+  const surfaceRef = useRef(null);
+  const videoRef = useRef(null);
+  const [visible, setVisible] = useState(false);
+  const [pageVisible, setPageVisible] = useState(() => !document.hidden);
+  const [saveData, setSaveData] = useState(() => Boolean(navigator.connection?.saveData));
+  const [paused, setPaused] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const permitted = film && reduced === false && !saveData && !failed;
+  const shouldPlay = permitted && visible && pageVisible && !paused && !blocked;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.05 });
+    if (surfaceRef.current) observer.observe(surfaceRef.current);
+    const visibility = () => setPageVisible(!document.hidden);
+    const connection = navigator.connection;
+    const dataChange = () => setSaveData(Boolean(connection?.saveData));
+    document.addEventListener("visibilitychange", visibility);
+    connection?.addEventListener("change", dataChange);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", visibility);
+      connection?.removeEventListener("change", dataChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    let cancelled = false;
+    if (!video) return;
+    if (shouldPlay) {
+      video.play().catch(() => { if (!cancelled) setBlocked(true); });
+    } else {
+      video.pause();
+    }
+    return () => { cancelled = true; video.pause(); };
+  }, [shouldPlay]);
+
   return (
-    <div
-      className={`sky-surface relative overflow-hidden ${className}`}
-      data-depth={depth > 1 ? String(Math.min(depth, 4)) : undefined}
-    >
-      {showStars && <div aria-hidden="true" className="starfield starfield--fade" />}
-
-      {showSun && (
-        <>
-          {/* The sun's own disc of light, low and to the right. */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              right: "-70px",
-              top: "36%",
-              width: "340px",
-              height: "340px",
-              borderRadius: "50%",
-              pointerEvents: "none",
-              background:
-                "radial-gradient(circle, rgba(255,244,214,0.95) 0%, rgba(255,238,190,0.45) 40%, transparent 70%)",
-            }}
-          />
-          {/* A wider, fainter halo so the glow falls off gradually
-              instead of ending at the edge of the disc. */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              right: "-220px",
-              top: "18%",
-              width: "680px",
-              height: "680px",
-              borderRadius: "50%",
-              pointerEvents: "none",
-              background:
-                "radial-gradient(circle, rgba(255,236,196,0.30) 0%, rgba(255,226,178,0.12) 45%, transparent 72%)",
-            }}
-          />
-        </>
+    <div ref={surfaceRef} className={`sky-surface sanctuary-surface relative overflow-hidden ${className}`} data-depth={Math.min(depth, 4)}>
+      <img className="sanctuary-image" src="/media/sanctuary.webp" alt="" aria-hidden="true" />
+      {permitted && visible && pageVisible && (
+        <video ref={videoRef} className={`sanctuary-film ${playing ? "is-playing" : ""}`} muted loop playsInline preload="none"
+          poster="/media/sanctuary.webp" src="/media/forest-light.mp4" aria-hidden="true" tabIndex={-1}
+          onPlaying={() => setPlaying(true)} onPause={() => setPlaying(false)}
+          onError={() => { setFailed(true); setPlaying(false); }} />
       )}
-
-      <VeilField intensity={veilIntensity} />
-      <div aria-hidden="true" className="grain-layer" />
-      <div className="relative">{children}</div>
+      <div className="sanctuary-shade" aria-hidden="true" />
+      <div className="sanctuary-content relative">{children}</div>
+      {permitted && (
+        <button type="button" className="sanctuary-film-control" aria-label={paused || blocked ? "Play nature film" : "Pause nature film"}
+          onClick={() => { if (blocked) { setBlocked(false); setPaused(false); } else setPaused(!paused); }}>
+          {paused || blocked ? <Play size={13} aria-hidden="true" /> : <Pause size={13} aria-hidden="true" />}
+          <span>{paused || blocked ? "Play nature film" : "Pause nature film"}</span>
+        </button>
+      )}
     </div>
   );
 }

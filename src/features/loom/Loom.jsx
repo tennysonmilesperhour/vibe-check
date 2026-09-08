@@ -129,7 +129,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
               <motion.circle
                 cx={node.x} cy={node.y} r={r}
                 fill={isActive ? "var(--gh-gold)" : "var(--gh-cream)"}
-                stroke="rgba(90,36,48,0.4)"
+                stroke="rgba(16,39,30,0.4)"
                 strokeWidth="1"
                 initial={reduced ? false : { scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -167,7 +167,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
               className="text-xs px-3 py-1.5 rounded-full transition"
               style={{
                 border: `1px solid ${on ? "var(--gh-gold)" : "rgba(255,253,246,0.4)"}`,
-                background: on ? "rgba(253,201,78,0.9)" : "rgba(255,253,246,0.12)",
+                background: on ? "rgba(185,154,85,0.9)" : "rgba(255,253,246,0.12)",
                 color: on ? "var(--gh-ink)" : "var(--gh-cream)",
                 fontWeight: on ? 600 : 400,
               }}
@@ -182,7 +182,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
       {selected && (
         <div
           className="mt-4 p-4"
-          style={{ background: "rgba(255,253,246,0.95)", border: "1px solid rgba(90,36,48,0.2)" }}
+          style={{ background: "rgba(255,253,246,0.95)", border: "1px solid rgba(16,39,30,0.2)" }}
           role="region"
           aria-live="polite"
         >

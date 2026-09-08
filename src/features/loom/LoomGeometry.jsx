@@ -117,7 +117,7 @@ export function ProgressiveGeometry({ cx, cy, r, completedCount }) {
   if (completedCount >= 4) tiers.push(petal(r * 0.33, 6, 30, "petals-rot", 0.6));
   if (completedCount >= 5) {
     const hex = ringPoints(cx, cy, r * 0.74, 6, 0);
-    tiers.push(<DrawPath key="hexagon" d={`M ${pts(hex).replace(/ /g, " L ")} Z`} delay={0.8} stroke="rgba(253,201,78,0.55)" strokeWidth="1.2" />);
+    tiers.push(<DrawPath key="hexagon" d={`M ${pts(hex).replace(/ /g, " L ")} Z`} delay={0.8} stroke="rgba(165,142,102,0.55)" strokeWidth="1.2" />);
   }
   if (completedCount >= 7) {
     // full flower of life: center + two rings of six
@@ -187,7 +187,7 @@ export function HexagramFigure({ cx, cy, size }) {
       <DrawPath d={closedPath(triB)} delay={0.5} stroke={cream(0.7)} strokeWidth="1.4" />
       <DrawPath d={closedPath(innerHex)} delay={0.7} stroke={cream(0.28)} strokeWidth="0.8" />
       <Bloom delay={0.9}>
-        <circle cx={cx} cy={cy} r={size * 0.085} fill="none" stroke="rgba(253,201,78,0.5)" strokeWidth="0.9" />
+        <circle cx={cx} cy={cy} r={size * 0.085} fill="none" stroke="rgba(165,142,102,0.5)" strokeWidth="0.9" />
       </Bloom>
     </g>
   );

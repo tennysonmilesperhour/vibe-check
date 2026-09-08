@@ -3,10 +3,10 @@ import { dateKey, parseLocalDate, addDaysKey } from './dates';
 import { validDateKey } from './living-patterns';
 
 export const CALENDAR_METRICS = {
-  mood: { label: 'Mood', title: 'Daily mood', field: 'mood_score', description: 'The mood from your daily check-in. Individual moments stay separate.', ends: ['Lower mood', 'Higher mood'], colors: ['#854831', '#C98E6D', '#E4D8C2', '#96AF8F', '#244E39'], ink: ['#FFFFFF', '#25190F', '#243426', '#163321', '#FFFFFF'] },
-  stress: { label: 'Stress', title: 'Recorded stress', description: 'The highest stress score recorded each day, across daily check-ins and journal moments.', ends: ['Less stress', 'More stress'], colors: ['#F2EBDE', '#E5CFB5', '#D7A67E', '#B8744E', '#783B29'], ink: ['#243426', '#32241B', '#322017', '#21150E', '#FFFFFF'] },
-  energy: { label: 'Energy', title: 'Daily energy', field: 'energy_level', description: 'The energy score from your daily check-in.', ends: ['Lower energy', 'Higher energy'], colors: ['#F2EBDE', '#D6DEC9', '#B0C19D', '#71916B', '#244E39'], ink: ['#243426', '#243426', '#183522', '#0D2214', '#FFFFFF'] },
-  sleep: { label: 'Sleep', title: 'Sleep quality', field: 'sleep_quality', description: 'The sleep quality score from your daily check-in.', ends: ['Lower quality', 'Higher quality'], colors: ['#F2EBDE', '#D6DEC9', '#B0C19D', '#71916B', '#244E39'], ink: ['#243426', '#243426', '#183522', '#0D2214', '#FFFFFF'] },
+  mood: { label: 'Mood', title: 'Daily mood', field: 'mood_score', description: 'The mood from your daily check-in. Individual moments stay separate.', ends: ['Lower mood', 'Higher mood'], colors: ['#79513A', '#B69674', '#D8D2B9', '#929F79', '#304B35'], ink: ['#FFFFFF', '#25190F', '#243426', '#163321', '#FFFFFF'] },
+  stress: { label: 'Stress', title: 'Recorded stress', description: 'The highest stress score recorded each day, across daily check-ins and journal moments.', ends: ['Less stress', 'More stress'], colors: ['#E1DBC4', '#D0BC99', '#BB976E', '#A2734D', '#71432F'], ink: ['#243426', '#32241B', '#322017', '#16110C', '#FFFFFF'] },
+  energy: { label: 'Energy', title: 'Daily energy', field: 'energy_level', description: 'The energy score from your daily check-in.', ends: ['Lower energy', 'Higher energy'], colors: ['#E1DBC4', '#CCD1AE', '#A7B18B', '#7C9168', '#304B35'], ink: ['#243426', '#243426', '#183522', '#0D2214', '#FFFFFF'] },
+  sleep: { label: 'Sleep', title: 'Sleep quality', field: 'sleep_quality', description: 'The sleep quality score from your daily check-in.', ends: ['Lower quality', 'Higher quality'], colors: ['#E1DBC4', '#CCD1AE', '#A7B18B', '#7C9168', '#304B35'], ink: ['#243426', '#243426', '#183522', '#0D2214', '#FFFFFF'] },
 };
 
 function score(value) {

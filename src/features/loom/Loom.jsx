@@ -167,7 +167,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
               className="text-xs px-3 py-1.5 rounded-full transition"
               style={{
                 border: `1px solid ${on ? "var(--gh-gold)" : "rgba(255,253,246,0.4)"}`,
-                background: on ? "rgba(185,154,85,0.9)" : "rgba(255,253,246,0.12)",
+                background: on ? "rgba(165,142,102,0.9)" : "rgba(255,253,246,0.12)",
                 color: on ? "var(--gh-ink)" : "var(--gh-cream)",
                 fontWeight: on ? 600 : 400,
               }}

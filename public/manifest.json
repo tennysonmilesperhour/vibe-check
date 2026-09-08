@@ -4,8 +4,8 @@
   "description": "One honest check-in each evening, woven into your cosmic map.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f0e5",
-  "theme_color": "#183c2e",
+  "background_color": "#adb498",
+  "theme_color": "#18231b",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },

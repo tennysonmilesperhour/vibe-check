@@ -119,10 +119,10 @@ function GenericDetail({ data, fields }) {
 
 // ── PDF Export ───────────────────────────────────────────────────────────────
 
-// Golden Hour ink on paper: ink #5A2430, accent #C2503C, muted #A6606E.
-const PDF_INK = [90, 36, 48];
-const PDF_ACCENT = [194, 80, 60];
-const PDF_MUTED = [166, 96, 110];
+// Woodland ink on paper; keep exported text dark for ordinary white paper.
+const PDF_INK = [27, 36, 26];
+const PDF_ACCENT = [52, 73, 47];
+const PDF_MUTED = [84, 94, 65];
 
 async function exportToPDF(systemLabel, reportText, profileData) {
   const { jsPDF } = await import("jspdf");

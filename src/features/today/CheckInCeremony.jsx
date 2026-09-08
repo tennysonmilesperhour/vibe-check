@@ -134,7 +134,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         const streak = computeStreak(recent, todayKey());
         if (isMilestone(streak) && !reduced && !existing) {
           const confetti = (await import("canvas-confetti")).default;
-          confetti({ particleCount: 90, spread: 75, origin: { y: 0.7 }, colors: ["#A8B69A", "#D0B999", "#B99A55", "#F5F0E5"] });
+          confetti({ particleCount: 90, spread: 75, origin: { y: 0.7 }, colors: ["#929B78", "#B59B79", "#A58E66", "#E9E2CD"] });
         }
         toast({
           title: existing ? "Today, updated" : "The day is kept",

@@ -6,7 +6,7 @@ Updated September 8, 2026 from the user's direction. This is the current visual 
 
 Vibe Check should feel like an elegant, luxurious sanctuary in nature: lush greenery, warm natural materials, soft light, quiet depth, and carefully composed space. The experience should feel alive through cinematic stock video backgrounds, generated imagery and symbols, and fluid animation throughout the key moments of reflection.
 
-The requested palette is sage greens, dark greens, gold accents, cream, and tan. Luxury should come through art direction, typography, texture, composition, and polished interactions.
+The latest palette comes from the user’s woodland reference image: moss and olive, shadowed forest, lichen, aged paper, and weathered wood. This reference supersedes the earlier pale sage and cream treatment. Luxury should come through art direction, typography, texture, composition, and polished interactions.
 
 The [plant voice direction](plant-voice.md) establishes the narrative: Nature connects the experience, Tobacco is the central guide and spokesperson for the plants, and optional chakra companions offer a deeper layer of reflection. Carry that botanical presence through the imagery, symbols, motion, and copy.
 
@@ -14,18 +14,24 @@ The [product foundation](product-foundation.md) sets the priority: Free daily re
 
 ## Palette
 
-These hex values are implementation starting points; the color families and atmosphere are the user's confirmed direction.
+The central moss panel was sampled from the user’s September 8 woodland mood board. Supporting shades adapt the foliage, paper, and wood into accessible interface pairs. Use the picture as color direction; do not republish the screenshot, its photos, or its social-media interface.
 
-| Color | Starting value | Use |
+| Color | Value | Use |
 | --- | --- | --- |
-| Sage | `#A8B69A` | Soft surfaces, selections, botanical detail |
-| Deep forest | `#183C2E` | Immersive sections, navigation, primary buttons |
-| Dark evergreen | `#10271E` | Deepest background and text on light surfaces |
-| Muted gold | `#B99A55` | Fine borders, symbols, highlights, selected details |
-| Warm cream | `#F5F0E5` | Reading surfaces and text on deep green |
-| Natural tan | `#D0B999` | Secondary surfaces, paper and stone warmth |
+| Moss | `#555E41` | Tobacco’s panels, atmospheric gradients |
+| Forest | `#26392C` | Navigation, immersive scenes, selected surfaces |
+| Forest shadow | `#0C120F` | Deepest background and image shading |
+| Lichen | `#929B78` | Botanical details and intermediate chart shades |
+| Soft lichen | `#ADB498` | Main page canvas |
+| Aged parchment | `#D8D2B9` | Cards and long reading surfaces |
+| Light paper | `#E4DDC5` | Form fields and popovers |
+| Weathered wood | `#77604B` | Warm material accents |
+| Antique brass | `#A58E66` | Restrained linework and small highlights |
+| Pine ink | `#1B241A` | Text on lichen and parchment |
 
-Use cream with evergreen text for sustained reading, and forest green with cream text for immersive moments. Sage bridges the two. Gold remains a selective accent. Verify contrast for every text and control pairing; use a darker gold variant where a gold label needs to sit on cream.
+Use parchment lettering on the moss guide and forest navigation. Keep page and card text dark. The mobile header follows the same forest treatment as the desktop rail. Nature posters and films receive a muted olive grade through CSS; artwork remains separate from text and controls. Decorative brass is not the only indicator of selection or status.
+
+Mood retains a diverging brown–parchment–green scale. Stress increases through distinct paper-to-brown bands; energy and sleep use paper-to-green bands. Numeric scores, legends, missing-day hatching, unsafe markers, and different timeline line styles remain visible. This reskin changes no scores, filtering, chart aggregation, or saved records.
 
 ## Typography, materials, and composition
 
@@ -66,9 +72,9 @@ Generated artwork supplies atmosphere and symbolic illustration. Actual charts a
 | --- | --- |
 | Welcome and Today | Cinematic forest or water background, cream type, clear forest/cream action, fine gold emblem |
 | Check-in | Sage and cream working surfaces with subtle botanical depth and fluid step changes |
-| Patterns and People | Cream and tan reading surfaces, dark green labels, restrained gold emphasis |
+| Patterns and People | Lichen canvas, parchment reading surfaces, moss guide panels, dark pine labels |
 | Practice and Cosmos | Deep forest atmosphere, generated sanctuary art, coherent gold symbols and Loom linework |
-| Navigation and settings | Consistent green and cream palette, readable hierarchy, clear active and focus states |
+| Navigation and settings | Forest rail and mobile header, parchment labels, clear active and focus states |
 
 ## Completion criteria for the visual update
 

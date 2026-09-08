@@ -242,9 +242,9 @@ export default function Layout({ children }) {
             {/* ── Main content ── */}
             <main className="flex-1 flex flex-col min-w-0 relative z-10">
                 {/* Mobile top bar */}
-                <header className="md:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-20"
+                <header className="woodland-mobile-header md:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-20"
                     style={{
-                        background: 'color-mix(in srgb, var(--gh-cream) 92%, transparent)',
+                        background: '#1b281eed',
                         backdropFilter: 'blur(16px)',
                         borderBottom: '1px solid hsl(var(--border))'
                     }}>

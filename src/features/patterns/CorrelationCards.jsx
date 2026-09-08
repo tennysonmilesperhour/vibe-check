@@ -18,7 +18,7 @@ export default function CorrelationCards({ checkIns, people }) {
           <div
             key={`${card.kind}-${i}`}
             className="flex gap-3 p-4"
-            style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}
+            style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}
           >
             <Sparkle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "var(--gh-accent)" }} aria-hidden="true" />
             <p className="text-sm" style={{ color: "var(--gh-ink)" }}>{card.text}</p>

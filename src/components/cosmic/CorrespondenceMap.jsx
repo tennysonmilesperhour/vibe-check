@@ -100,7 +100,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
     <div className="space-y-6">
       {/* Active correspondences */}
       {activePairs.length > 0 && (
-        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
           <div className="flex items-center gap-2 mb-1">
             <BookOpen className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} />
             <h3 className="text-base font-bold" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Active connections</h3>
@@ -124,7 +124,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
 
       {/* Inactive pairs */}
       {inactivePairs.length > 0 && (
-        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))' }}>
+        <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
           <h3 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: 'var(--gh-ink-muted)' }}>Weave both systems to unlock</h3>
           <div className="opacity-60">
             {inactivePairs.map((pair, i) => (
@@ -143,7 +143,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
       )}
 
       {/* Deep Integration Report */}
-      <div className="p-6" style={{ background: tint('--gh-gold', 8), border: '1px solid hsl(var(--border))' }}>
+      <div className="p-6" style={{ background: tint('--gh-gold', 8), border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Combine className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} />
@@ -151,7 +151,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
           </div>
           {deepReport && (
             <Button size="sm" variant="outline" onClick={() => exportMapPDF(profile, deepReport)}
-              className="gap-1.5 text-xs rounded-none" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
+              className="gap-1.5 text-xs" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
               <Download className="w-3 h-3" /> Save as PDF
             </Button>
           )}
@@ -183,7 +183,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
       {!deepReport && activePairs.length > 0 && (
         <div className="flex justify-end">
           <Button variant="outline" onClick={() => exportMapPDF(profile, null)}
-            className="gap-2 text-sm rounded-none" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
+            className="gap-2 text-sm" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
             <Download className="w-4 h-4" /> Save the map as PDF
           </Button>
         </div>

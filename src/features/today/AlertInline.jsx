@@ -24,7 +24,7 @@ export default function AlertInline({ alerts, onAcknowledged }) {
         <div
           key={alert.id}
           className="flex items-start gap-3 p-4"
-          style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))" }}
+          style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}
         >
           <HandHeart className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "var(--gh-accent)" }} aria-hidden="true" />
           <div className="flex-1">

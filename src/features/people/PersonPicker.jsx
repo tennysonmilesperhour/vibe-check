@@ -56,7 +56,7 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
                   <span
                     key={p.id}
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium"
-                    style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", color: "var(--gh-ink)" }}
+                    style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 6px)", color: "var(--gh-ink)" }}
                   >
                     {p.name}
                     <X

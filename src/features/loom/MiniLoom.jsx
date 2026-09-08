@@ -17,7 +17,7 @@ export default function MiniLoom({ profile, size = 180 }) {
       to={createPageUrl("CosmicAddons")}
       aria-label="Open your Loom in Cosmos"
       className="block p-4"
-      style={{ background: "linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-peach) 50%, var(--gh-gold) 100%)" }}
+      style={{ background: "var(--gradient-sky)", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}
     >
       <svg viewBox={`0 0 ${size} ${size}`} style={{ width: "100%", maxWidth: 220, margin: "0 auto", display: "block" }} aria-hidden="true">
         <circle cx={layout.cx} cy={layout.cy} r={layout.rZodiac} fill="none" stroke="rgba(255,253,246,0.4)" strokeWidth="0.75" />

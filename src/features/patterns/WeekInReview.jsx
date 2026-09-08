@@ -47,7 +47,7 @@ export default function WeekInReview({ checkIns, people = [], forceShow = false 
     <section
       aria-labelledby="week-review-heading"
       className="p-6"
-      style={{ background: "linear-gradient(165deg, var(--gh-rose) 0%, var(--gh-peach) 55%, var(--gh-gold) 100%)" }}
+      style={{ background: "var(--gradient-sky)", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}
     >
       <p className="text-xs font-bold tracking-wide" style={{ color: "rgba(255,253,246,0.9)" }}>WEEK IN REVIEW</p>
       <h2 id="week-review-heading" className="text-3xl mt-1" style={{ color: "var(--gh-cream)" }}>

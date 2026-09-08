@@ -40,7 +40,7 @@ export default function InviteModal({ open, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="rounded-none" style={{ background: "var(--gh-field)", border: "1px solid hsl(var(--border))", maxWidth: 420 }}>
+      <DialogContent style={{ background: "var(--gh-field)", border: "1px solid hsl(var(--border))", maxWidth: 420 }}>
         <DialogHeader>
           <DialogTitle className="font-display text-xl" style={{ color: "var(--gh-ink)" }}>
             Invite a friend
@@ -54,12 +54,12 @@ export default function InviteModal({ open, onClose }) {
 
         <div className="flex gap-2">
           <div className="flex-1 px-3 py-2 text-xs truncate flex items-center"
-            style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", color: "var(--gh-ink-soft)" }}>
+            style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)", color: "var(--gh-ink-soft)" }}>
             {inviteUrl}
           </div>
           <button type="button" onClick={handleCopyLink} aria-label="Copy invite link"
             className="px-3 flex items-center transition-colors"
-            style={{ border: "1px solid hsl(var(--border))", color: "var(--gh-accent)", background: "transparent" }}>
+            style={{ border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)", color: "var(--gh-accent)", background: "transparent" }}>
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </button>
         </div>

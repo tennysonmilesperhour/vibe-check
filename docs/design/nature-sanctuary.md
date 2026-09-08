@@ -44,6 +44,11 @@ Background video should be muted, play inline, and have a coordinated poster ima
 
 ## Generated imagery and symbols
 
+The approved app icon and logo are [B1 / Breath](breath-brand.md): a green
+tobacco leaf formed from flowing wave filaments, paired with the lowercase
+Instrument Serif wordmark. Use its shared vector source and generated assets
+for all brand placements.
+
 Create a cohesive family of botanical sanctuary scenes, reflective pools, moss and stone details, and subtle celestial imagery rooted in the natural setting. Use consistent lighting, grading, and composition across the collection.
 
 Develop original botanical and celestial emblems with fine gold linework: leaves, seed forms, sun and moon motifs, organic rings, and geometry related to the Loom. Keep their stroke weight, visual density, and proportions consistent. Simplify approved motifs for small interface sizes so they remain recognizable.

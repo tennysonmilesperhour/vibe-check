@@ -253,6 +253,7 @@ export default function Layout({ children }) {
                         style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
                         <Menu className="w-4 h-4" />
                     </button>
+                    <SanctuaryMark size={30} />
                     <span className="font-display text-lg" style={{ color: 'var(--gh-ink)' }}>
                         vibe check
                     </span>

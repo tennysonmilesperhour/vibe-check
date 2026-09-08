@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Leaf, Sprout, Orbit, ArrowRight } from "lucide-react";
+import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
@@ -99,40 +101,24 @@ export default function Today() {
   if (!entry && mode !== "peek") {
     const isFirstRun = !lastEntryAt && streak === 0;
     return (
-      <SkyField className="min-h-[calc(100vh-0px)]">
-        <PageTransition className="max-w-3xl mx-auto px-6 py-16 md:py-24">
-          <p className="text-sm" style={{ color: "rgba(255,253,246,0.85)" }}>
-            {dateLine} · {moon.emoji} {moon.name}
-            {lastEntryAt ? ` · ${hoursSince(lastEntryAt)} hours since your last entry` : ""}
-          </p>
-          <h1 className="mt-4 text-5xl md:text-7xl" style={{ color: "var(--gh-cream)", maxWidth: "12ch", lineHeight: 0.98 }}>
-            {isFirstRun ? "Welcome to the golden hour" : "How did today feel for you?"}
-          </h1>
-          {isFirstRun && (
-            <p className="mt-5 text-base max-w-md" style={{ color: "rgba(255,253,246,0.9)" }}>
-              One honest check-in each evening. Over time this place learns
-              your weather, your people, and the sky you were born under.
-            </p>
-          )}
-          <div className="mt-10 flex flex-wrap gap-3">
-            <button type="button" className="cream-button" onClick={() => setMode("ceremony")}>
-              {isFirstRun ? "Begin your first check-in" : "Begin check-in"}
-            </button>
-            {isFirstRun && !profile?.enabled_systems?.length ? (
-              <Link to={createPageUrl("CosmicAddons")} className="ghost-cream-button inline-block">
-                Weave your cosmos first
-              </Link>
-            ) : (
-              <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>
-                Skip to reflection
-              </button>
-            )}
+      <SkyField className="today-invitation" film>
+        <PageTransition className="today-content">
+          <div className="today-date"><span>{dateLine}</span><span>{moon.name}{lastEntryAt ? ` · ${hoursSince(lastEntryAt)} hours since your last entry` : ""}</span></div>
+          <div className="today-heading">
+            <p className="sanctuary-eyebrow">A MOMENT, JUST FOR YOU</p>
+            <h1>{isFirstRun ? "Welcome to your sanctuary." : "Come back to yourself."}</h1>
+            <p>{isFirstRun ? "Take a breath. Notice how you feel. Start a small daily ritual, and discover the patterns that make you, you." : "Let the day settle. What felt good, what felt heavy, and what would you like to carry forward?"}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button type="button" className="cream-button gap-5" onClick={() => setMode("ceremony")}>{isFirstRun ? "Begin your first check-in" : "Begin check-in"}<ArrowRight size={16} aria-hidden="true" /></button>
+              <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>Explore your reflections</button>
+            </div>
+            {streak > 0 && <p className="mt-6 text-xs">{streakLabel(streak)} kept. There is room for tonight.</p>}
           </div>
-          {streak > 0 && (
-            <p className="mt-10 text-sm" style={{ color: "rgba(255,253,246,0.85)" }}>
-              {streakLabel(streak)} kept so far. Tonight continues the run.
-            </p>
-          )}
+          <nav className="today-paths" aria-label="Explore your sanctuary">
+            <Link to={createPageUrl("Analytics")}><Sprout size={24} aria-hidden="true" /><strong>Your patterns</strong><span>See what helps you grow.</span></Link>
+            <Link to={createPageUrl("Practice")}><Leaf size={24} aria-hidden="true" /><strong>A little practice</strong><span>Make room for reflection.</span></Link>
+            <Link to={createPageUrl("CosmicAddons")}><Orbit size={24} aria-hidden="true" /><strong>Your cosmos</strong><span>Explore your inner connections.</span></Link>
+          </nav>
         </PageTransition>
       </SkyField>
     );
@@ -143,6 +129,7 @@ export default function Today() {
     <div className="field-wash min-h-screen">
       <PageTransition className="max-w-3xl mx-auto px-6 py-10 space-y-10">
         <header>
+          <div className="reflection-header"><div><p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p><h1>A little more understanding.</h1></div><SanctuaryMark size={62} /></div>
           <p className="text-sm" style={{ color: "var(--gh-ink-muted)" }}>
             {dateLine} · {moon.emoji} {moon.name} · {streakLabel(streak)}
           </p>

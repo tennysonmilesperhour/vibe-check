@@ -1,5 +1,10 @@
 # Vibe Check — Golden Hour Redesign
 
+> Historical specification. As of September 8, 2026, the
+> [Nature Sanctuary visual guidance](../../design/nature-sanctuary.md)
+> supersedes the visual palette, art direction, and motion guidance here
+> wherever they conflict. The shared sanctuary visual system is implemented.
+
 **Date:** 2026-07-02 · **Status:** Approved direction, pending spec review
 **Scope:** Full redesign in one run: visual system, IA, core loop, Resonance Engine, the Loom, all 20 approved innovations, bug fixes, housekeeping.
 

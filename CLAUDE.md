@@ -28,6 +28,9 @@ Caveats to be honest about:
 
 ## Project notes
 
+- Current visual direction: [Nature Sanctuary](docs/design/nature-sanctuary.md),
+  updated September 8, 2026. Use this for visual work; it supersedes conflicting
+  Golden Hour and twilight guidance. The shared visual system is implemented.
 - Vite + React app (former Base44 project) on a Supabase backend, deployed on
   Vercel. Auth lives in `src/features/shell/AuthGate.jsx` and
   `src/lib/AuthContext.jsx`, over the Supabase client in `src/api/supabase.js`.

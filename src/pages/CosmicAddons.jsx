@@ -133,7 +133,7 @@ export default function CosmicAddons() {
 
                 {/* Header */}
                 {/* ── The Loom: hero of the cosmos ── */}
-                <SkyField className="mb-10 rounded-[var(--radius)]" showSun={false} showStars={false} veilIntensity={0.5}>
+                <SkyField className="mb-10 rounded-[var(--radius)]">
                     <div className="max-w-lg mx-auto px-6 py-8" ref={loomRef}>
                         <h1 className="text-4xl text-center" style={{ color: 'var(--gh-cream)' }}>Your Loom</h1>
                         <p className="text-sm text-center mt-1 mb-6" style={{ color: 'rgba(255,253,246,0.85)' }}>

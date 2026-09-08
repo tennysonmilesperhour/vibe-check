@@ -102,7 +102,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         const streak = computeStreak(recent, todayKey());
         if (isMilestone(streak) && !reduced && !existing) {
           const confetti = (await import("canvas-confetti")).default;
-          confetti({ particleCount: 90, spread: 75, origin: { y: 0.7 }, colors: ["#F48CA0", "#FAB05E", "#FDC94E", "#FFFDF6"] });
+          confetti({ particleCount: 90, spread: 75, origin: { y: 0.7 }, colors: ["#A8B69A", "#D0B999", "#B99A55", "#F5F0E5"] });
         }
         toast({
           title: existing ? "Today, updated" : "The day is kept",
@@ -133,7 +133,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const isLast = stepIndex === STEP_IDS.length - 1;
 
   return (
-    <SkyField depth={depth} className="min-h-screen" veilIntensity={0.8}>
+    <SkyField depth={depth} className="min-h-screen ceremony-surface">
       <div className="max-w-3xl mx-auto px-6 py-10 min-h-screen flex flex-col">
         {/* progress: a thin gold line filling across */}
         <div className="h-px w-full" style={{ background: "rgba(255,253,246,0.25)" }} aria-hidden="true">

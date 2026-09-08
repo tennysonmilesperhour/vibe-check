@@ -63,7 +63,12 @@ screen.
 
 ## Design language
 
-Golden Hour: one palette, three registers (sky, field, dusk), Instrument
-Serif display type, square corners, no dark purple, no italics. Tokens live
-in `src/index.css` — components use `--gh-*` custom properties and the mapped
-Tailwind semantic classes, not raw hex.
+The current direction is **Nature Sanctuary**: sage and dark greens, muted
+gold accents, cream, and tan; elegant typography, cinematic nature video
+backgrounds, generated imagery and symbols, and calm, fluid motion.
+
+See the [current visual guidance](docs/design/nature-sanctuary.md) for palette
+roles, art direction, motion, and application by screen. This supersedes the
+older Golden Hour and twilight visual guidance. The implementation uses
+shared sanctuary colors with compatible `--gh-*` aliases in `src/index.css`.
+See [asset provenance and playback behavior](docs/design/sanctuary-assets.md).

@@ -145,3 +145,16 @@ textarea.living-input { resize: vertical; }
 @media (min-width: 1150px) { .calendar-months { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .calendar-detail-grid { grid-template-columns: 1fr; gap: 22px; } .calendar-months { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 420px) { .pattern-calendar.living-card { padding: 16px 12px; } .calendar-day-grid { gap: 3px; } .calendar-day { min-height: 48px; } .calendar-day strong { font-size: 16px; } .calendar-month-preview { padding: 9px; } .calendar-month-preview[aria-pressed="true"] { padding: 8px; } .calendar-month-title { font-size: 11px; } .calendar-entry-list { grid-template-columns: 1fr; } }
+
+/* Astrology: readable lessons and optional chart depth. */
+.astro-guide { padding: clamp(1rem, 3vw, 1.5rem); border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: var(--gh-cream); color: var(--gh-ink-soft); }
+.astro-guide h3, .astro-guide h4, .astro-profile label, .astro-disclosure summary { color: var(--gh-ink); }
+.astro-note { padding: .85rem; background: color-mix(in srgb, var(--gh-accent) 7%, var(--gh-cream)); border-radius: .65rem; font-size: .8rem; line-height: 1.6; }
+.astro-disclosure { padding: .9rem; border: 1px solid hsl(var(--border)); border-radius: .65rem; }
+.astro-disclosure summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
+.astro-disclosure summary:focus-visible, .astro-profile select:focus-visible, .astro-profile textarea:focus-visible { outline: 2px solid var(--gh-accent); outline-offset: 3px; }
+.astro-profile select, .astro-profile textarea { display: block; width: 100%; min-width: 0; padding: .65rem; border: 1px solid hsl(var(--border)); border-radius: .5rem; background: var(--gh-cream); color: var(--gh-ink); font-size: .875rem; }
+.astro-house-label { display: block; margin-top: .65rem; font-size: .7rem; }
+.astro-house-label select { margin-top: .25rem; font-size: .75rem; }
+.astro-aspect-row { display: grid; grid-template-columns: 1fr; gap: .5rem; min-width: 0; }
+@media (min-width: 640px) { .astro-aspect-row { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; } }

@@ -12,6 +12,7 @@ import {
     AstrologyForm, HumanDesignForm, GeneKeysForm,
     NumerologyForm, TarotForm, ChakraForm, EnneagramForm
 } from "@/components/cosmic/ProfileForm";
+import AstrologyGuide from "@/components/cosmic/AstrologyGuide";
 import SystemReports from "@/components/cosmic/SystemReport";
 import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";
 import Loom from "@/features/loom/Loom";
@@ -100,7 +101,7 @@ export default function CosmicAddons() {
     /** One-tap fix from ConflictNotice: adopt the computed value. */
     const useComputed = (conflict) => {
         const [systemKey, field] = conflict.field.split('.');
-        setProfile(prev => ({ ...prev, [systemKey]: { ...(prev[systemKey] || {}), [field]: String(conflict.computed) } }));
+        setProfile(prev => ({ ...prev, [systemKey]: { ...(prev[systemKey] || {}), [field]: String(conflict.computed), ...(conflict.field === 'astrology.sun_sign' ? { sun_source: 'date_estimate' } : {}) } }));
     };
 
     const toggleSystem = (systemId) => {
@@ -190,7 +191,7 @@ export default function CosmicAddons() {
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth data</h3>
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
-                                Your name feeds the numerology (expression, soul urge, life path). Your birth date computes everything derivable exactly.
+                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations and an approximate Sun sign.
                             </p>
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
@@ -251,13 +252,11 @@ export default function CosmicAddons() {
                             <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Your cosmic blueprint</h3>
                             <p className="text-sm mb-3 w-full" style={{ color: 'var(--gh-ink-muted)' }}>Systems light up as you fill in your profile data</p>
                             <div className="w-full mb-4 p-4" style={{ background: 'color-mix(in srgb, var(--gh-gold) 10%, transparent)', borderLeft: '2px solid var(--gh-gold)' }}>
-                                <p className="text-sm font-medium mb-1" style={{ color: 'var(--gh-ink)' }}>Computed, not generated</p>
-                                <p className="text-xs" style={{ color: 'var(--gh-ink-soft)' }}>
-                                    Everything derivable from your name and birth date — Sun sign, decan, every core
-                                    numerology number, your birth and shadow cards — is calculated exactly, in-app, and
-                                    fills itself in below. Moon, Rising, North Node, Human Design and Gene Keys need
-                                    precise ephemeris math this app doesn&apos;t do yet: pull them once from a chart
-                                    service you trust and enter them here. Nothing on your loom is ever guessed.
+                                <p className="text-sm font-medium mb-1" style={{ color: 'var(--gh-ink)' }}>Begin with what you know</p>
+                                <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>
+                                    Your birth date gives an approximate Sun sign and decan, along with numerology and tarot correspondences.
+                                    Enter known astrology placements, houses, and aspects from an accurate birth chart. Leave anything unknown blank.
+                                    Your readings use the details you provide and keep symbolic interpretation separate from your own lived record.
                                 </p>
                             </div>
                         </div>
@@ -307,9 +306,10 @@ export default function CosmicAddons() {
                     <TabsContent value="deepdive" className="space-y-6">
                         <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <p className="text-sm" style={{ color: 'var(--gh-ink-soft)' }}>
-                                Each system below has a full structured breakdown and a deep reading composed from your profile — computed from content tables, never generated. Each can be exported as a PDF.
+                                Explore the systems you have chosen through your profile details, reflective questions, and small experiments. You can save each reading as a PDF.
                             </p>
                         </div>
+                        {enabledSystems.includes("astrology") && <AstrologyGuide />}
                         <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile}
                             openSystem={deepDive.system} openNonce={deepDive.nonce} />
                     </TabsContent>

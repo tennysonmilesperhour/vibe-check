@@ -260,7 +260,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
                 <span className="text-sm font-semibold" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>Deep reading</span>
               </div>
               {report && (
-                <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, data)}
+                <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, systemId === "astrology" ? null : data)}
                   className="text-xs gap-1.5" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
                   <Download className="w-3 h-3" /> Save as PDF
                 </Button>

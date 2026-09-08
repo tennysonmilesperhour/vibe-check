@@ -41,8 +41,10 @@ Use the App Store packet in `docs/app-store/` for metadata, screenshots, privacy
 
 ## Shared backend accounts
 
-The active project `xyhbuqsxglfjbounogdz` also hosts Campground (`camp_*`), Dialogue (`dialogue_waitlist`), and AI Catch Up (`aicu_subscribers`). Existing Vibe Check tables, users, and inference functions remain in place. Each app's data stays isolated by RLS.
+The active project `xyhbuqsxglfjbounogdz` also hosts Campground (`camp_*`), Dialogue (`dialogue_waitlist`), AI Catch Up (`aicu_subscribers`), and Daily Digest (`digest_*` plus the private `digest-evidence` bucket). Existing Vibe Check tables, users, and inference functions remain in place. Each app's data stays isolated by RLS.
 
-The `protect_shared_accounts` migration and updated `delete-account` function erase Vibe Check data atomically. If Campground also uses the identity, that identity and Campground records remain. A database trigger prevents accidental shared-identity deletion. If no Campground data remains, the Auth identity is deleted normally. Deploy the Campground schema before this migration and deploy the migration before the function. This branch follows the currently deployed `release/v1.0.0-rc.1` code, rather than replacing it with the divergent main branch.
+The `protect_shared_accounts` migration and updated `delete-account` function erase Vibe Check data atomically. If Campground or Daily Digest also uses the identity, that identity and their records remain. A database trigger prevents accidental shared-identity deletion. If no data from these other apps remains, the Auth identity is deleted normally. Deploy the Campground schema before this migration and deploy the migration before the function. This branch follows the currently deployed `release/v1.0.0-rc.1` code, rather than replacing it with the divergent main branch.
 
 Shared migration history contains multiple repositories' changes. Never reset the database or replace its history from one partial checkout. Auth callback URLs include both apps; email verification stays enabled. Custom SMTP remains unconfigured.
+
+The `preserve_daily_digest_identity` migration extends the existing deletion guard to Daily Digest bylines and uploads. Apply Daily Digest's `daily_digest_shared_backend` migration first. It preserves existing Vibe Check tables and the deployed deletion function.

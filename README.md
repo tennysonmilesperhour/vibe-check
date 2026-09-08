@@ -10,10 +10,16 @@ the voice of the plants, helping users notice patterns and practice responses
 that fit their own needs and values. Optional paid systems add
 deeper interpretations; the core experience requires no external AI account.
 
-This is the product direction. The foundation document identifies the
-remaining implementation work, including longer chart ranges and complete
-weekly and monthly reports. The existing app includes check-ins, people,
-charts, a weekly overview, and a Loom connecting seven symbolic systems.
+The free baseline is implemented: short check-ins and drafts, a full journal,
+people and habit filters, uncapped history retrieval, weekly/monthly reports,
+source-linked stress patterns, eleven practical invitations, saved outcomes,
+and a private export preview with optional password encryption. Seven optional
+chakra plant companions open journal prompts. All matching and reports run
+without sending journal text to an AI provider. Paid packaging is not enabled.
+
+Schema additions are in `supabase/migrations/20260908191348_vibe_living_patterns.sql`.
+The report engine recomputes from current entries, so corrections and deletions
+carry through to charts, reports, and exports. Missing days stay visible.
 
 ## Stack
 
@@ -70,8 +76,7 @@ screen.
 
 The [plant voice direction](docs/design/plant-voice.md) gives the app its
 narrative: Tobacco introduces the systems as the spokesperson for the plants,
-with optional plant companions for deeper chakra reflections. Specific chakra
-pairings are proposed and remain open for selection.
+with optional plant companions for deeper chakra reflections. The current chakra pairings are authored reflective invitations, not medical or universal traditional claims.
 
 The current direction is **Nature Sanctuary**: sage and dark greens, muted
 gold accents, cream, and tan; elegant typography, cinematic nature video

@@ -76,6 +76,8 @@ export default function TodaySummary({ entry, onEdit }) {
           {entry.gratitude || entry.high_moment.description}
         </p>
       )}
+      {entry.low_moment?.description && <p className="mt-4 text-sm whitespace-pre-wrap" style={{ color: 'var(--gh-ink-soft)' }}><strong>A difficult moment: </strong>{entry.low_moment.description}</p>}
+      {entry.notes && <p className="mt-4 text-sm whitespace-pre-wrap" style={{ color: 'var(--gh-ink-soft)' }}>{entry.notes}</p>}
     </section>
   );
 }

@@ -191,6 +191,7 @@ export default function TarotTable() {
             </div>
 
             <Input
+              aria-label="Your question (optional)"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="A question to hold, if you have one (optional)"
@@ -198,6 +199,7 @@ export default function TarotTable() {
               style={{ borderColor: "rgba(245,229,216,0.35)", color: duskInk }}
             />
             <Input
+              aria-label="Ritual seed (optional)"
               value={seed}
               onChange={(e) => setSeed(e.target.value)}
               placeholder="Ritual seed (optional: the same words deal the same cards)"

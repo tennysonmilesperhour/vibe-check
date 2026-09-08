@@ -1,6 +1,6 @@
 # Vibe Check: Free access to your own patterns
 
-Updated September 8, 2026 from the user's feedback. This is the product direction for future implementation. It takes precedence over earlier guidance that places cosmic profile setup or paid interpretation ahead of journaling and pattern access. The free baseline is confirmed direction; the detailed interactions below are proposed specifications.
+Updated September 8, 2026 from the user's feedback. The core free experience is implemented as of September 8, 2026. It takes precedence over earlier guidance that places cosmic profile setup or paid interpretation ahead of journaling and pattern access. The detailed direction below also includes future options. Current implementation includes check-ins and explicit drafts, private journaling and interaction labels, full history and filters, weekly/monthly reports, matched practices and feedback, report reflections, a private encrypted-export option, and session sign-out controls. Optional paid packaging, a separate PIN app lock, and AI integrations are not enabled.
 
 ## Intention
 

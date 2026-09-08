@@ -104,7 +104,7 @@ export default function AuthGate() {
         <div className="welcome-story">
           <p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p>
           <h1>A little closer<br />to yourself.</h1>
-          <p className="welcome-description">Leave the noise behind. A quiet moment to notice how you feel, find your patterns, and come back to what matters.</p>
+          <p className="welcome-description">Your days, in their fullness. A private journal, honest patterns, and practices for coming back to yourself. Guided by Tobacco, the voice of the plants.</p>
           <a href="#welcome-form" className="welcome-invitation">Your moment starts here <ArrowUpRight size={18} aria-hidden="true" /></a>
         </div>
         <div className="welcome-caption"><span className="caption-rule" />Rooted in nature. Made for reflection.</div>
@@ -144,7 +144,7 @@ export default function AuthGate() {
           <button type="button" className="auth-magic" onClick={() => changeMode(mode === "magic" || mode === "reset" ? "signin" : "magic")}>
             {mode === "magic" || mode === "reset" ? "Sign in with a password" : "Email me a magic link"}
           </button>
-          <p className="auth-footnote">A small daily ritual. A little more understanding.</p>
+          <p className="auth-footnote">Your journal, full history, charts, weekly and monthly reports, and everyday practices are free. No AI account required.</p>
         </div>
         <div className="welcome-pillars" aria-label="A place to reflect"><span><Leaf size={18} aria-hidden="true" />Daily rituals</span><span><Sprout size={18} aria-hidden="true" />Personal growth</span><span><Orbit size={18} aria-hidden="true" />Inner connection</span></div>
       </section>

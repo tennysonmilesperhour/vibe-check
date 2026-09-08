@@ -11,6 +11,7 @@ import AuthGate from '@/features/shell/AuthGate';
 import PasswordReset from '@/features/shell/PasswordReset';
 import AppErrorBoundary from '@/components/AppErrorBoundary';
 import UpdateToast from '@/features/shell/UpdateToast';
+import './living.css';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];

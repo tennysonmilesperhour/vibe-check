@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
 import { Pause, Play } from "lucide-react";
 
 /** The artwork is a complete fallback for limited motion, data or playback. */
 export default function SkyField({ depth = 1, film = false, className = "", children }) {
-  const reduced = useReducedMotion();
+  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   const surfaceRef = useRef(null);
   const videoRef = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -14,19 +13,23 @@ export default function SkyField({ depth = 1, film = false, className = "", chil
   const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
   const [blocked, setBlocked] = useState(false);
-  const permitted = film && reduced === false && !saveData && !failed;
+  const permitted = film && !reduced && !saveData && !failed;
   const shouldPlay = permitted && visible && pageVisible && !paused && !blocked;
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.05 });
     if (surfaceRef.current) observer.observe(surfaceRef.current);
     const visibility = () => setPageVisible(!document.hidden);
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const motionChange = () => setReduced(motionQuery.matches);
+    motionQuery.addEventListener("change", motionChange);
     const connection = navigator.connection;
     const dataChange = () => setSaveData(Boolean(connection?.saveData));
     document.addEventListener("visibilitychange", visibility);
     connection?.addEventListener("change", dataChange);
     return () => {
       observer.disconnect();
+      motionQuery.removeEventListener("change", motionChange);
       document.removeEventListener("visibilitychange", visibility);
       connection?.removeEventListener("change", dataChange);
     };

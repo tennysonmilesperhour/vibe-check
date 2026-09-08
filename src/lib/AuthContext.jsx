@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { supabase } from '@/api/supabase';
+import { queryClientInstance } from '@/lib/query-client';
 import { base44 } from '@/api/base44Client';
 
 // Supabase-backed auth, preserving the context contract the app already
@@ -50,6 +51,7 @@ export const AuthProvider = ({ children }) => {
       if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
       if (session) setTimeout(() => { checkUserAuth(); }, 0);
       else {
+        queryClientInstance.clear();
         setUser(null);
         setIsAuthenticated(false);
         setAuthError({ type: 'auth_required', message: 'Sign in to continue' });
@@ -60,8 +62,10 @@ export const AuthProvider = ({ children }) => {
     return () => sub?.subscription?.unsubscribe();
   }, [checkUserAuth]);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const logout = async (scope = 'local') => {
+    const { error } = await supabase.auth.signOut({ scope });
+    if (error) throw error;
+    queryClientInstance.clear();
     setUser(null);
     setIsAuthenticated(false);
   };

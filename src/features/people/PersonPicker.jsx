@@ -15,7 +15,7 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    base44.entities.Person.list().then(setPeople).catch(() => setPeople([]));
+    base44.entities.Person.all().then(setPeople).catch(() => setPeople([]));
   }, []);
 
   const selected = people.filter((p) => value.includes(p.id));

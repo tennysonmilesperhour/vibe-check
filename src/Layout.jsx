@@ -26,8 +26,8 @@ const navigationItems = [
     { title: "Today", url: createPageUrl("Today"), icon: Sun, description: "The daily ritual" },
     { title: "Patterns", url: createPageUrl("Analytics"), icon: ChartLine, description: "Reflection over time" },
     { title: "People", url: createPageUrl("People"), icon: Users, description: "Everyone in orbit" },
-    { title: "Practice", url: createPageUrl("Practice"), icon: Layers, description: "Tarot, oracle, healing work" },
-    { title: "Cosmos", url: createPageUrl("CosmicAddons"), icon: Sparkle, description: "Your Loom and systems" },
+    { title: "Practice", url: createPageUrl("Practice"), icon: Layers, description: "Support for this moment" },
+    { title: "Cosmos", url: createPageUrl("CosmicAddons"), icon: Sparkle, description: "Optional deeper explorations" },
 ];
 
 function NavLinks({ location, onNavigate }) {
@@ -227,7 +227,8 @@ export default function Layout({ children }) {
                     </button>
                 </div>
                 <NavLinks location={location} onNavigate={() => setMobileOpen(false)} />
-                <div className="px-3 pb-2">
+                <div className="px-3 pb-2 space-y-1">
+                    <button onClick={() => { setMobileOpen(false); setSettingsOpen(true); }} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><Settings2 size={16} aria-hidden="true" />Settings</button>
                     <button onClick={() => { setMobileOpen(false); setInviteOpen(true); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
                         style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>

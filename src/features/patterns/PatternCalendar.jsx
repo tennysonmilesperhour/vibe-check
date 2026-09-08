@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { parseLocalDate, todayKey } from '@/lib/dates';
@@ -11,9 +11,14 @@ const BANDS = ['0–2', '>2–4', '>4–6', '>6–8', '>8–10'];
 const displayScore = (value) => Number.isInteger(value) ? String(value) : value.toFixed(1);
 
 export default function PatternCalendar({ entries, start, end, weekStart = 1 }) {
-  const [metric, setMetric] = useState('mood');
-  const [chosenMonth, setChosenMonth] = useState('');
-  const [chosenDate, setChosenDate] = useState('');
+  const [params, setParams] = useSearchParams();
+  const metric = Object.hasOwn(CALENDAR_METRICS, params.get('calendarMetric')) ? params.get('calendarMetric') : 'mood';
+  const chosenMonth = params.get('calendarMonth') || '';
+  const chosenDate = params.get('calendarDay') || '';
+  function choose(patch) {
+    setParams((previous) => { const next = new URLSearchParams(previous); for (const [key, value] of Object.entries(patch)) { if (value) next.set(key, value); else next.delete(key); } return next; }, { replace: true });
+  }
+  const journalLink = (patch) => `/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal', ...patch })}`;
   const days = useMemo(() => calendarDays(entries, start, end, metric), [entries, start, end, metric]);
   const months = useMemo(() => calendarMonths(start, end, weekStart), [start, end, weekStart]);
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days]);
@@ -28,10 +33,10 @@ export default function PatternCalendar({ entries, start, end, weekStart = 1 }) 
   const styleFor = (day) => day?.value != null ? { backgroundColor: spec.colors[scoreBand(day.value)], color: spec.ink[scoreBand(day.value)] } : undefined;
   const dateLabel = (date) => format(parseLocalDate(date), 'EEEE, MMMM d, yyyy');
   const unsafeDays = days.filter((day) => day.unsafe).length;
-  function selectMonth(key) { setChosenMonth(key); setChosenDate(''); }
+  function selectMonth(key) { choose({ calendarMonth: key, calendarDay: '' }); }
 
   return <section className="pattern-calendar living-card space-y-6" aria-labelledby="pattern-calendar-heading">
-    <header className="calendar-heading"><div><p className="sanctuary-eyebrow">SEE WHAT REPEATS</p><h2 id="pattern-calendar-heading">{spec.title} calendar</h2><p className="living-muted mt-2">{spec.description}</p></div><div className="living-chips" aria-label="Calendar measure">{Object.entries(CALENDAR_METRICS).map(([key, item]) => <button type="button" key={key} className="living-chip" aria-pressed={metric === key} onClick={() => setMetric(key)}>{item.label}</button>)}</div></header>
+    <header className="calendar-heading"><div><p className="sanctuary-eyebrow">SEE WHAT REPEATS</p><h2 id="pattern-calendar-heading">{spec.title} calendar</h2><p className="living-muted mt-2">{spec.description}</p></div><div className="living-chips" aria-label="Calendar measure">{Object.entries(CALENDAR_METRICS).map(([key, item]) => <button type="button" key={key} className="living-chip" aria-pressed={metric === key} onClick={() => choose({ calendarMetric: key })}>{item.label}</button>)}</div></header>
     <div className="calendar-legend" aria-label={`${spec.label} color scale, out of ten`}><div className="calendar-scale"><span>{spec.ends[0]}</span><div className="calendar-scale-bands">{BANDS.map((band, index) => <span key={band}><i aria-hidden="true" style={{ backgroundColor: spec.colors[index] }} /><span>{band}</span></span>)}</div><span>{spec.ends[1]}</span></div><div className="calendar-marker-key"><span><i className="calendar-no-score" aria-hidden="true" />No score</span><span><b aria-hidden="true">◆</b>Interaction marked unsafe</span></div></div>
     <p className="living-muted text-sm">{format(parseLocalDate(start), 'MMM d, yyyy')} – {format(parseLocalDate(end), 'MMM d, yyyy')} · {summary.recorded} scored days · {summary.missing} without a matching score. Colors use the same scale in every month.</p>
 
@@ -45,7 +50,7 @@ export default function PatternCalendar({ entries, start, end, weekStart = 1 }) 
         {weekdayOrder.map((day) => <span key={day} className="calendar-weekday">{WEEKDAYS[day]}</span>)}
         {Array.from({ length: month.offset }, (_, index) => <span key={`blank-${index}`} />)}
         {month.dates.map((date) => { const day = byDate.get(date); const label = `${dateLabel(date)}: ${day?.value == null ? `no ${spec.label.toLowerCase()} score` : `${spec.label.toLowerCase()} ${displayScore(day.value)} out of 10`}${day?.unsafe ? `; ${day.unsafe} interaction${day.unsafe === 1 ? '' : 's'} marked unsafe` : ''}`;
-          return day ? <button type="button" key={date} className={`calendar-day ${day.value == null ? 'calendar-no-score' : ''}`} style={styleFor(day)} aria-label={label} title={label} aria-pressed={date === selectedDate} aria-current={date === todayKey() ? 'date' : undefined} onClick={() => setChosenDate(date)}><span className="calendar-date">{Number(date.slice(-2))}</span><strong>{day.value == null ? '—' : displayScore(day.value)}</strong>{day.unsafe > 0 && <span className="calendar-unsafe" aria-hidden="true">◆</span>}</button> : <span key={date} className="calendar-day calendar-outside" aria-label={`${dateLabel(date)}: ${date > todayKey() ? 'future day' : 'outside selected range'}`}><span className="calendar-date">{Number(date.slice(-2))}</span></span>;
+          return day ? <button type="button" key={date} className={`calendar-day ${day.value == null ? 'calendar-no-score' : ''}`} style={styleFor(day)} aria-label={label} title={label} aria-pressed={date === selectedDate} aria-current={date === todayKey() ? 'date' : undefined} onClick={() => choose({ calendarDay: date })}><span className="calendar-date">{Number(date.slice(-2))}</span><strong>{day.value == null ? '—' : displayScore(day.value)}</strong>{day.unsafe > 0 && <span className="calendar-unsafe" aria-hidden="true">◆</span>}</button> : <span key={date} className="calendar-day calendar-outside" aria-label={`${dateLabel(date)}: ${date > todayKey() ? 'future day' : 'outside selected range'}`}><span className="calendar-date">{Number(date.slice(-2))}</span></span>;
         })}
       </div><p className="living-muted text-xs mt-3">Large number = {spec.label.toLowerCase()} / 10. Select a day to read its record. Faded dates fall outside this view.</p></div>
       <aside className="calendar-rhythm" aria-labelledby="weekday-rhythm-heading"><h3 id="weekday-rhythm-heading">Does the weekday matter?</h3><p className="living-muted text-sm mt-2">Average {spec.label.toLowerCase()} across this date range. Each weekday needs at least 3 scored days.</p><div className="calendar-weekday-bars">{weekdayOrder.map((weekday) => { const row = summary.weekdays[weekday]; return <div className="calendar-weekday-row" key={weekday}><span>{WEEKDAYS[weekday]}</span><div className="calendar-bar-track" aria-hidden="true">{row.mean != null && <span style={{ width: `${row.mean * 10}%`, backgroundColor: metric === 'stress' ? '#854831' : '#31583F' }} />}</div><strong>{row.mean == null ? '—' : row.mean.toFixed(1)}</strong><small>{row.count} {row.count === 1 ? 'day' : 'days'}</small></div>; })}</div>
@@ -53,6 +58,6 @@ export default function PatternCalendar({ entries, start, end, weekStart = 1 }) 
         {unsafeDays > 0 && <p className="calendar-run"><strong>◆ {unsafeDays} {unsafeDays === 1 ? 'day includes' : 'days include'} an unsafe interaction</strong><span>This marker stays visible alongside any daily score.</span></p>}
       </aside>
     </div>
-    {selected && <section className="calendar-selected" aria-labelledby="calendar-selected-heading" aria-live="polite"><div className="calendar-selected-heading"><h3 id="calendar-selected-heading">{format(parseLocalDate(selectedDate), 'EEEE, MMMM d')}</h3><span>{selected.value == null ? `No ${spec.label.toLowerCase()} score` : `${spec.label}: ${displayScore(selected.value)} / 10`} · {selected.rows.length} {selected.rows.length === 1 ? 'entry' : 'entries'}</span></div>{selected.rows.length ? <div className="calendar-entry-list">{selected.rows.slice(0,4).map((entry) => <article key={entry.key}><p className="living-label">{entry.kind === 'day' ? 'Daily check-in' : entry.interaction_feeling ? `${entry.interaction_feeling === 'unsafe' ? '◆ ' : ''}Interaction · ${entry.interaction_feeling}` : 'Journal moment'}</p>{entryText(entry) ? <p className="calendar-entry-excerpt">{entryText(entry)}</p> : <p className="living-muted text-sm">Scores or tags recorded without a written reflection.</p>}<Link className="living-text-link" to={`/Analytics?tab=journal&entry=${encodeURIComponent(entry.key)}`}>Read full entry <ArrowRight size={14} /></Link></article>)}{selected.rows.length > 4 && <Link className="living-text-link" to={`/Analytics?tab=journal&range=custom&start=${selectedDate}&end=${selectedDate}`}>See all {selected.rows.length} entries for this day <ArrowRight size={14} /></Link>}</div> : <p className="living-muted">No entries match this day in the current filters. A gap does not tell us how the day felt.</p>}</section>}
+    {selected && <section className="calendar-selected" aria-labelledby="calendar-selected-heading" aria-live="polite"><div className="calendar-selected-heading"><h3 id="calendar-selected-heading">{format(parseLocalDate(selectedDate), 'EEEE, MMMM d')}</h3><span>{selected.value == null ? `No ${spec.label.toLowerCase()} score` : `${spec.label}: ${displayScore(selected.value)} / 10`} · {selected.rows.length} {selected.rows.length === 1 ? 'entry' : 'entries'}</span></div>{selected.rows.length ? <div className="calendar-entry-list">{selected.rows.slice(0,4).map((entry) => <article key={entry.key}><p className="living-label">{entry.kind === 'day' ? 'Daily check-in' : entry.interaction_feeling ? `${entry.interaction_feeling === 'unsafe' ? '◆ ' : ''}Interaction · ${entry.interaction_feeling}` : 'Journal moment'}</p>{entryText(entry) ? <p className="calendar-entry-excerpt">{entryText(entry)}</p> : <p className="living-muted text-sm">Scores or tags recorded without a written reflection.</p>}<Link className="living-text-link" to={journalLink({ entry: entry.key })}>Read full entry <ArrowRight size={14} /></Link></article>)}{selected.rows.length > 4 && <Link className="living-text-link" to={journalLink({ range: 'custom', start: selectedDate, end: selectedDate, entry: '' })}>See all {selected.rows.length} entries for this day <ArrowRight size={14} /></Link>}</div> : <p className="living-muted">No entries match this day in the current filters. A gap does not tell us how the day felt.</p>}</section>}
   </section>;
 }

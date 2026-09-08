@@ -2,6 +2,7 @@ import React from "react";
 import PersonPicker from "@/features/people/PersonPicker";
 import { Textarea } from "@/components/ui/textarea";
 import { SCALE_WORDS } from "./vocab";
+import VocabularyIcon from "./VocabularyIcon";
 
 const cream = "var(--gh-cream)";
 const creamSoft = "rgba(255,253,246,0.75)";
@@ -64,7 +65,7 @@ export function ChipsStep({ question, hint, options, selected, onToggle }) {
               type="button"
               aria-pressed={isOn}
               onClick={() => onToggle(opt.label)}
-              className="min-h-11 rounded-lg px-4 py-2.5 text-sm font-medium transition-transform"
+              className="min-h-11 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-transform"
               style={{
                 background: isOn ? cream : "rgba(255,253,246,0.14)",
                 color: isOn ? "var(--gh-ink)" : cream,
@@ -72,7 +73,7 @@ export function ChipsStep({ question, hint, options, selected, onToggle }) {
                 transform: isOn ? "translateY(-2px)" : "none",
               }}
             >
-              <span aria-hidden="true">{opt.emoji}</span> {opt.label}
+              <VocabularyIcon name={opt.icon} size={17} /> {opt.label}
             </button>
           );
         })}

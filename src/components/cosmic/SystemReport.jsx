@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { systemReading } from "@/lib/wisdom/engine";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, Download, ChevronDown, ChevronUp, Sun, Moon, Sunrise, Orbit } from "lucide-react";
 import { systemMeta, tint } from "./systemMeta";
 
 // ── Per-system detail renderers ─────────────────────────────────────────────
@@ -36,10 +36,10 @@ function NotesBlock({ children }) {
 }
 
 const PLANETS = [
-  { label: "Sun ☉", key: "sun_sign", desc: "Core identity & conscious self" },
-  { label: "Moon ☽", key: "moon_sign", desc: "Emotional nature & inner world" },
-  { label: "Rising ↑", key: "rising_sign", desc: "Outer persona & first impressions" },
-  { label: "North Node ☊", key: "north_node", desc: "Soul's evolutionary direction" },
+  { label: "Sun", Icon: Sun, key: "sun_sign", desc: "Core identity & conscious self" },
+  { label: "Moon", Icon: Moon, key: "moon_sign", desc: "Emotional nature & inner world" },
+  { label: "Rising", Icon: Sunrise, key: "rising_sign", desc: "Outer persona & first impressions" },
+  { label: "North Node", Icon: Orbit, key: "north_node", desc: "Soul's evolutionary direction" },
 ];
 
 const HD_CENTERS = [
@@ -62,7 +62,9 @@ function AstrologyDetail({ data }) {
       {PLANETS.map(p => data?.[p.key] && (
         <div key={p.key} className="flex items-start gap-3 py-2.5" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
           <div className="w-28 shrink-0">
-            <p className="text-sm font-semibold" style={{ color: 'var(--gh-accent)' }}>{p.label}</p>
+            <p className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: 'var(--gh-accent)' }}>
+              <p.Icon size={14} strokeWidth={1.5} className="shrink-0" aria-hidden="true" /> {p.label}
+            </p>
             <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{p.desc}</p>
           </div>
           <div className="flex-1">

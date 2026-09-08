@@ -56,7 +56,8 @@ function CardBack() {
         </g>
       ))}
       {/* Bottom label */}
-      <text x="60" y="192" textAnchor="middle" fontSize="5" fill="#b99a55" opacity="0.7" letterSpacing="2" fontFamily="serif">✦ COSMIC WISDOM ✦</text>
+      <text x="60" y="192" textAnchor="middle" fontSize="5" fill="#b99a55" opacity="0.7" letterSpacing="2" fontFamily="serif">COSMIC WISDOM</text>
+      {[18, 102].map((x) => <path key={x} d={`M${x} 187.5l0.7 2.1 2.1 0.7-2.1 0.7-0.7 2.1-0.7-2.1-2.1-0.7 2.1-0.7Z`} fill="#b99a55" opacity="0.7" />)}
     </svg>
   );
 }

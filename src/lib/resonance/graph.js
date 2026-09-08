@@ -130,7 +130,7 @@ export function resonanceGraph(profile = {}, dateKey) {
   const today = { moonPhase: null, personalDay: null, activeNodeIds: [] };
   if (dateKey) {
     const moon = moonPhase(dateKey);
-    today.moonPhase = { name: moon.name, emoji: moon.emoji, illumination: Math.round(moon.illumination * 100) / 100 };
+    today.moonPhase = { name: moon.name, illumination: Math.round(moon.illumination * 100) / 100 };
     const pd = profile.birth_date ? personalDay(profile.birth_date, dateKey) : null;
     today.personalDay = pd;
 
@@ -156,7 +156,7 @@ export function summarizeGraph(graph) {
   for (const node of graph.nodes) lines.push(`- ${node.label} (${node.system})`);
   for (const edge of graph.edges) lines.push(`* RESONANCE: ${edge.why}`);
   if (graph.today?.moonPhase) {
-    lines.push(`* TODAY: ${graph.today.moonPhase.emoji} ${graph.today.moonPhase.name}${graph.today.personalDay ? `, Personal Day ${graph.today.personalDay}` : ''}`);
+    lines.push(`* TODAY: ${graph.today.moonPhase.name}${graph.today.personalDay ? `, Personal Day ${graph.today.personalDay}` : ''}`);
   }
   return lines.join('\n');
 }

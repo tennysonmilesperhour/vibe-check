@@ -19,8 +19,8 @@ export const AuthProvider = ({ children }) => {
   // shows the new-password screen until it's cleared.
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
-  const checkUserAuth = useCallback(async () => {
-    setIsLoadingAuth(true);
+  const checkUserAuth = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setIsLoadingAuth(true);
     try {
       const { data } = await supabase.auth.getSession();
       if (data?.session) {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
       // client holds its auth lock, and further auth calls deadlock the app
       // (the post-login blank screen). Defer to the next tick instead.
       if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
-      if (session) setTimeout(() => { checkUserAuth(); }, 0);
+      if (session) setTimeout(() => { checkUserAuth({ silent: event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' }); }, 0);
       else {
         queryClientInstance.clear();
         setUser(null);

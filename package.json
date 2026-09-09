@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "brand:generate": "node scripts/generate-brand.mjs",
     "build": "vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
@@ -72,6 +73,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.13.5",
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
@@ -84,6 +86,7 @@
     "eslint-plugin-react-refresh": "^0.5.4",
     "eslint-plugin-unused-imports": "^4.3.0",
     "globals": "^15.14.0",
+    "opentype.js": "^2.0.0",
     "postcss": "^8.5.26",
     "rollup-plugin-visualizer": "^7.1.1",
     "tailwindcss": "^4.3.3",

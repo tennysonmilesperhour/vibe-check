@@ -20,10 +20,10 @@ describe('moonPhase', () => {
     expect(['First Quarter', 'Waxing Crescent', 'Waxing Gibbous']).toContain(m.name);
   });
 
-  it('returns one of the eight canonical phases with an emoji', () => {
+  it('returns one of the eight canonical phases with its index', () => {
     const m = moonPhase('2026-07-02');
     expect(PHASES.map((p) => p.name)).toContain(m.name);
-    expect(m.emoji).toBeTruthy();
+    expect(PHASES[m.index].name).toBe(m.name);
     expect(m.index).toBeGreaterThanOrEqual(0);
     expect(m.index).toBeLessThan(8);
   });

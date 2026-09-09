@@ -1,0 +1,109 @@
+import { useEffect, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Plus, ArrowUpRight, Pencil, Trash2 } from 'lucide-react';
+import { JournalEntry, DailyCheckIn } from '@/api/entities';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import PersonPicker from '@/features/people/PersonPicker';
+import StressFields from '@/features/today/StressFields';
+import { todayKey } from '@/lib/dates';
+import { entryPeople, entryStates, validDateKey } from '@/lib/living-patterns';
+import { stateById, ALIGNMENTS } from '@/lib/practices';
+
+export function EntryLink({ entry, children }) {
+  return <Link className="living-text-link" to={`/Analytics?tab=journal&entry=${encodeURIComponent(entry.key)}`}>{children || entry.date}<ArrowUpRight size={13} aria-hidden="true" /></Link>;
+}
+
+export function EntryCard({ entry, people = [], selected = false, onEdit, onDelete }) {
+  const ref = useRef(null);
+  useEffect(() => { if (selected) ref.current?.scrollIntoView({ block: 'center', behavior: 'instant' }); }, [selected]);
+  const names = entryPeople(entry).map((id) => people.find((person) => person.id === id)?.name || 'Removed person');
+  const context = entry.stress_context || {};
+  return <article ref={ref} className={`living-card journal-entry ${selected ? 'journal-entry-selected' : ''}`} id={`entry-${entry.id}`}>
+    <div className="flex flex-wrap justify-between items-start gap-3"><div><p className="sanctuary-eyebrow">{entry.kind === 'day' ? 'DAILY CHECK-IN' : entry.interaction_feeling ? 'INTERACTION' : 'JOURNAL'}{entry.is_demo ? ' · DEMO' : ''}</p><h3 className="mt-1">{entry.date}</h3></div><div className="flex gap-3">{onEdit && <button type="button" className="living-icon-button" aria-label={`Edit entry from ${entry.date}`} onClick={() => onEdit(entry)}><Pencil size={16} /></button>}{onDelete && <button type="button" className="living-icon-button" aria-label={`Delete entry from ${entry.date}`} onClick={() => onDelete(entry)}><Trash2 size={16} /></button>}</div></div>
+    <div className="living-chips mt-3">{entry.mood_score != null && <span className="living-tag">{entry.kind === 'day' ? 'Day mood' : 'Moment mood'} {entry.mood_score}/10</span>}{context.stress_score != null && <span className="living-tag">Stress {context.stress_score}/10</span>}{entry.interaction_feeling && <span className={`living-tag ${entry.interaction_feeling === 'unsafe' ? 'living-tag-alert' : ''}`}>Interaction: {entry.interaction_feeling}</span>}{entry.boundary_respected && <span className="living-tag">Boundary respected: {entry.boundary_respected}</span>}{names.map((name, i) => <span className="living-tag" key={`${name}:${i}`}>{name}</span>)}</div>
+    {entry.high_moment?.description && <div className="mt-4"><p className="living-label">A supportive moment</p><p className="whitespace-pre-wrap mt-1">{entry.high_moment.description}</p></div>}
+    {entry.low_moment?.description && <div className="mt-4"><p className="living-label">A difficult moment</p><p className="whitespace-pre-wrap mt-1">{entry.low_moment.description}</p></div>}
+    {entry.notes && <p className="whitespace-pre-wrap mt-4">{entry.notes}</p>}
+    {entry.gratitude && <p className="whitespace-pre-wrap mt-3"><span className="living-label">Gratitude · </span>{entry.gratitude}</p>}
+    {(entry.activities?.length > 0 || entry.emotions?.length > 0) && <p className="living-muted text-sm mt-3">{[...(entry.emotions || []), ...(entry.activities || [])].join(' · ')}</p>}
+    {entryStates(entry).length > 0 && <p className="living-muted text-sm mt-3">Recorded feelings: {entryStates(entry).map((id) => stateById(id)?.label).join(' · ')}</p>}
+    {context.body_cues?.length > 0 && <p className="text-sm mt-3"><strong>Body cues:</strong> {context.body_cues.join(', ')}</p>}
+    {[['situation', 'What happened before'], ['response', 'My response'], ['need', 'What I needed']].map(([field, label]) => context[field] ? <p className="text-sm whitespace-pre-wrap mt-3" key={field}><strong>{label}: </strong>{context[field]}</p> : null)}
+    {context.alignment && <p className="text-sm mt-3"><strong>How it felt:</strong> {ALIGNMENTS.find((a) => a.id === context.alignment)?.label}</p>}
+    {entry.occurred_at && <p className="living-muted text-xs mt-3">Experience time: {new Date(entry.occurred_at).toLocaleString()}</p>}
+    {entry.created_at && <p className="living-muted text-xs mt-4">Recorded {new Date(entry.created_at).toLocaleString()}{entry.updated_at !== entry.created_at && entry.updated_at ? ` · Edited ${new Date(entry.updated_at).toLocaleDateString()}` : ''}</p>}
+  </article>;
+}
+
+export function JournalComposer({ open, existing = null, prompt = '', onClose, onSaved }) {
+  const [form, setForm] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (open) {
+      setForm(existing ? { ...existing, kind: existing.entry_kind || (['reflection', 'interaction'].includes(existing.kind) ? existing.kind : 'reflection'), emotions_text: (existing.emotions || []).join(', '), time: existing.occurred_at ? new Date(existing.occurred_at).toTimeString().slice(0, 5) : '', activities_text: (existing.activities || []).join(', ') } : { date: todayKey(), kind: 'reflection', time: '', emotions_text: '', notes: prompt, mood_score: null, person_ids: [], activities_text: '', stress_context: {}, interaction_feeling: '', boundary_respected: '' });
+      setError('');
+    }
+  }, [open, existing, prompt]);
+  const update = (patch) => setForm((previous) => ({ ...previous, ...patch }));
+  async function save(asDraft = false) {
+    if (!validDateKey(form.date) || form.date > todayKey()) { setError('Choose a valid date up to today.'); return; }
+    if (!asDraft && !form.notes.trim() && !form.stress_context?.state_ids?.length && form.mood_score == null && !form.interaction_feeling) { setError('Add a few words, a feeling, or a mood to keep this entry.'); return; }
+    setBusy(true); setError('');
+    try {
+      const payload = { date: form.date, occurred_at: form.time ? new Date(`${form.date}T${form.time}:00`).toISOString() : null, emotions: [...new Set(form.emotions_text.split(',').map((value) => value.trim()).filter(Boolean))], kind: form.kind, notes: form.notes, mood_score: form.mood_score, person_ids: form.person_ids || [], activities: [...new Set(form.activities_text.split(',').map((value) => value.trim()).filter(Boolean))], stress_context: form.stress_context || {}, interaction_feeling: form.kind === 'interaction' ? form.interaction_feeling || null : null, boundary_respected: form.kind === 'interaction' ? form.boundary_respected || null : null, is_draft: asDraft };
+      if (existing?.id) await JournalEntry.update(existing.id, payload); else await JournalEntry.create(payload);
+      await onSaved?.(); onClose();
+    } catch (err) { setError(err.message || 'Could not save. Your words are still here.'); }
+    setBusy(false);
+  }
+  return <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !busy) onClose(); }}><DialogContent className="living-dialog"><DialogHeader><DialogTitle>{existing ? 'Revisit your words' : 'Keep a moment'}</DialogTitle><DialogDescription>Your private journal. People you add are not notified.</DialogDescription></DialogHeader>
+    {form && <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); save(); }}>
+      <div className="grid sm:grid-cols-2 gap-4"><label className="living-label">Date of the experience<input className="living-input mt-2" type="date" required max={todayKey()} value={form.date} onChange={(e) => update({ date: e.target.value })} /></label><label className="living-label">Kind of entry<select className="living-input mt-2" value={form.kind} onChange={(e) => update({ kind: e.target.value })}><option value="reflection">Reflection</option><option value="interaction">An interaction</option></select></label></div>
+      <label className="living-label">Time of the experience · optional<input className="living-input mt-2" type="time" value={form.time} onChange={(e) => update({ time: e.target.value })} /></label>
+      <label className="living-label">What do you want to remember?<textarea className="living-input mt-2" rows={5} maxLength={30000} value={form.notes} onChange={(e) => update({ notes: e.target.value })} placeholder="What happened? How did it leave you feeling?" /></label>
+      <label className="living-label">Mood in this moment<select className="living-input mt-2" value={form.mood_score ?? ''} onChange={(e) => update({ mood_score: e.target.value ? Number(e.target.value) : null })}><option value="">Not recorded</option>{Array.from({ length: 10 }, (_, i) => <option value={i + 1} key={i}>{i + 1} / 10</option>)}</select><span className="living-muted text-xs">This stays separate from your overall daily mood.</span></label>
+      <div><p className="living-label mb-2">People involved · optional</p><PersonPicker value={form.person_ids} onChange={(ids) => update({ person_ids: ids })} /></div>
+      {form.kind === 'interaction' && <div className="grid sm:grid-cols-2 gap-4"><label className="living-label">How did the interaction feel?<select className="living-input mt-2" value={form.interaction_feeling || ''} onChange={(e) => update({ interaction_feeling: e.target.value })}><option value="">Not recorded</option>{['supportive', 'strained', 'unsafe', 'mixed', 'unsure'].map((value) => <option key={value}>{value}</option>)}</select></label><label className="living-label">Was your boundary respected?<select className="living-input mt-2" value={form.boundary_respected || ''} onChange={(e) => update({ boundary_respected: e.target.value })}><option value="">Not recorded</option>{['yes', 'no', 'unsure'].map((value) => <option key={value}>{value}</option>)}</select></label></div>}
+      <label className="living-label">Feelings in your own words<input className="living-input mt-2" value={form.emotions_text} onChange={(e) => update({ emotions_text: e.target.value })} maxLength={1000} placeholder="Hopeful, frustrated, relieved… separated by commas" /></label>
+      <label className="living-label">Habits or activities<input className="living-input mt-2" value={form.activities_text} onChange={(e) => update({ activities_text: e.target.value })} maxLength={1000} placeholder="A walk, late work, coffee… separated by commas" /></label>
+      <details open={Boolean(existing?.stress_context?.state_ids?.length)}><summary className="living-label cursor-pointer mb-4">Stress, body cues, and feeling like yourself · optional</summary><StressFields value={form.stress_context} onChange={(value) => update({ stress_context: value })} /></details>
+      {error && <p className="living-error" role="alert">{error}</p>}
+      <div className="flex flex-wrap gap-3"><button type="submit" className="ink-button" disabled={busy}>{busy ? 'Keeping your words…' : 'Save journal entry'}</button><button type="button" className="living-secondary" disabled={busy} onClick={() => save(true)}>Save as a draft</button></div>
+    </form>}
+  </DialogContent></Dialog>;
+}
+
+export default function Journal({ data, entries, onChanged }) {
+  const [params, setParams] = useSearchParams();
+  const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [limit, setLimit] = useState(20);
+  const selectedKey = params.get('entry');
+  const selected = data.entries.find((entry) => entry.key === selectedKey);
+  const open = params.get('compose') === '1' || Boolean(editing);
+  const close = () => { setEditing(null); setParams((previous) => { const next = new URLSearchParams(previous); next.delete('compose'); next.delete('prompt'); return next; }); };
+  const compose = () => setParams((previous) => { const next = new URLSearchParams(previous); next.set('compose', '1'); return next; });
+  async function remove() {
+    setBusy(true); setError('');
+    try { await (deleting.kind === 'day' ? DailyCheckIn : JournalEntry).delete(deleting.id); await onChanged(); setDeleting(null); }
+    catch (err) { setError(err.message); }
+    setBusy(false);
+  }
+  const edit = (entry) => { if (entry.kind === 'day') window.location.assign(`/Today?date=${entry.date}`); else setEditing(entry); };
+  const drafts = data.journal.filter((entry) => entry.is_draft);
+  return <section className="space-y-5" aria-labelledby="journal-heading">
+    <div className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR WORDS, KEPT TOGETHER</p><h2 id="journal-heading">Journal & history</h2><p className="living-muted mt-2">{entries.length} entries in this view. A good day belongs beside everything that came before.</p></div><button className="ink-button" onClick={compose}><Plus size={16} />Keep a moment</button></div>
+    {error && <p className="living-error" role="alert">{error}</p>}
+    {drafts.length > 0 && <div className="living-inset"><p className="living-label mb-2">Saved drafts</p><div className="living-chips">{drafts.map((draft) => <button key={draft.id} className="living-chip" onClick={() => setEditing(draft)}>Resume {draft.date} draft</button>)}</div></div>}
+    {selectedKey && !selected && <p className="living-muted">This entry is no longer in your saved history.</p>}
+    {selected && <div><p className="living-label mb-2">Entry opened from your report or chart</p><EntryCard entry={selected} people={data.people} selected onEdit={edit} onDelete={setDeleting} /></div>}
+    {entries.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} onEdit={edit} onDelete={setDeleting} />)}
+    {!entries.length && <p className="living-muted py-6">No entries match this view. Adjust the filters or keep a new moment.</p>}
+    {entries.length > limit && <button className="living-secondary" onClick={() => setLimit((count) => count + 20)}>Show more history</button>}
+    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} onClose={close} onSaved={onChanged} />
+    <Dialog open={Boolean(deleting)} onOpenChange={(isOpen) => { if (!isOpen && !busy) setDeleting(null); }}><DialogContent><DialogHeader><DialogTitle>Delete this entry?</DialogTitle><DialogDescription>This removes the entry from your journal, charts, and reports. This cannot be undone.</DialogDescription></DialogHeader><div className="flex gap-3"><button className="living-secondary" onClick={() => setDeleting(null)}>Keep it</button><button className="ink-button" disabled={busy} onClick={remove}>{busy ? 'Deleting…' : 'Delete entry'}</button></div></DialogContent></Dialog>
+  </section>;
+}

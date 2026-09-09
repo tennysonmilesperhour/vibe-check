@@ -426,7 +426,7 @@ export default function CardGeometry({ type, color, size = 36 }) {
           {/* Full moon circle */}
           <circle cx={cx} cy={cy-r*0.3} r={r*0.52} fill={fill} stroke={stroke} strokeWidth={sw}/>
           {/* Crescent shadow */}
-          <circle cx={cx+r*0.25} cy={cy-r*0.3} r={r*0.48} fill="rgba(4,2,14,0.85)" stroke="none"/>
+          <circle cx={cx+r*0.25} cy={cy-r*0.3} r={r*0.48} fill="rgba(13,35,27,0.95)" stroke="none"/>
           {/* Twin pillars */}
           {[-1,1].map(dir => (
             <rect key={dir} x={cx+dir*r*0.75-r*0.1} y={cy+r*0.1} width={r*0.18} height={r*0.75}

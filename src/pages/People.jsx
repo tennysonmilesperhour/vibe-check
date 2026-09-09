@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Person, Relationship, Connection, DailyCheckIn, User } from "@/entities/all";
+import { Person, Relationship, Connection, DailyCheckIn, JournalEntry, User } from "@/entities/all";
+import PeopleOrbit from '@/features/people/PeopleOrbit';
+import TobaccoGuide from '@/features/shell/TobaccoGuide';
 import { synergyReading } from "@/lib/wisdom/readings";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,8 @@ export default function People() {
   const { toast } = useToast();
   const [people, setPeople] = useState([]);
   const [checkIns, setCheckIns] = useState([]);
+  const [journal, setJournal] = useState([]);
+  const [loadError, setLoadError] = useState('');
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null); // null | 'new' | person
@@ -34,11 +38,13 @@ export default function People() {
   const load = useCallback(async () => {
     try {
       await migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
-      const [ppl, ci] = await Promise.all([Person.list(), DailyCheckIn.list("-date", 120).catch(() => [])]);
+      const [ppl, ci, entries] = await Promise.all([Person.all(), DailyCheckIn.all("-date"), JournalEntry.all('-date')]);
       setPeople(ppl);
       setCheckIns(ci);
-    } catch {
-      // empty state below
+      setJournal(entries.filter((entry) => !entry.is_draft));
+      setLoadError('');
+    } catch (err) {
+      setLoadError(err.message);
     }
     setLoading(false);
   }, []);
@@ -132,6 +138,10 @@ export default function People() {
           </button>
         </header>
 
+        {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={load}>Retry</button></p>}
+        <div className="mt-6"><TobaccoGuide compact>Keep people here by a name or nickname that works for you. We can return to the experiences you recorded together. Adding someone sends no invitation or notification.</TobaccoGuide></div>
+        <PeopleOrbit people={people} onChoose={setDetail} />
+
         {people.length === 0 ? (
           <div className="text-center py-20">
             <Users className="w-10 h-10 mx-auto" style={{ color: "var(--gh-ink-muted)" }} aria-hidden="true" />
@@ -160,7 +170,7 @@ export default function People() {
                   </div>
                   <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
                     {stats.mentions > 0
-                      ? `${stats.mentions} shared ${stats.mentions === 1 ? "day" : "days"} · mood ${stats.avgMood} together · last ${format(parseLocalDate(stats.lastMention), "MMM d")}`
+                      ? `${stats.mentions} tagged check-ins · daily mood ${stats.avgMood} · last ${format(parseLocalDate(stats.lastMention), "MMM d")}`
                       : "Not yet part of a check-in"}
                   </p>
                   {person.linked_user_email && (
@@ -197,13 +207,14 @@ export default function People() {
                   const stats = personCheckInStats(detail, checkIns);
                   return stats.mentions > 0 ? (
                     <p className="text-sm" style={{ color: "var(--gh-ink-soft)" }}>
-                      {stats.mentions} shared days, average mood {stats.avgMood} when together.{" "}
-                      <Link to={`${createPageUrl("Analytics")}?person=${detail.id}`} className="underline underline-offset-4" style={{ color: "var(--gh-accent)" }}>
+                      {stats.mentions} check-ins tagged with this person; average daily mood {stats.avgMood} in those entries.{" "}
+                      <Link to={`${createPageUrl("Analytics")}?person=${detail.id}&range=all`} className="underline underline-offset-4" style={{ color: "var(--gh-accent)" }}>
                         See the pattern
                       </Link>
                     </p>
                   ) : null;
                 })()}
+                <div className="living-inset"><p className="living-muted">{journal.filter((entry) => entry.person_ids?.includes(detail.id)).length} journal moments linked to this person.</p><Link className="living-text-link mt-2" to={`/Analytics?tab=journal&person=${detail.id}&range=all`}>Read the full relationship history</Link></div>
 
                 {detail.qualities?.length > 0 && (
                   <div>

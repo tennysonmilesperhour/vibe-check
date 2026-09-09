@@ -1,82 +1,79 @@
+import "./UpdateToast.css";
 import React, { useEffect, useState } from "react";
+import { ArrowUpRight, RefreshCw, X } from "lucide-react";
+import { getVersionNotice, latestVersionUrl, LIVE_ORIGIN, UPDATE_POLL_MS, UPDATE_SNOOZE_MS } from "@/lib/app-version";
 
-const POLL_MS = 3 * 60 * 1000;
-
-// The public production origin — keep in sync with the og: URLs in index.html,
-// and update both when a custom domain lands. Polling must be absolute: the
-// production deployment is also reachable at aliases behind Vercel Deployment
-// Protection (vibe-check-tennysonmilesperhour.vercel.app, the git-main alias),
-// where a same-origin fetch of /version.json gets a 302 to the SSO login and
-// dies. This origin serves version.json publicly (Access-Control-Allow-Origin
-// pinned in vercel.json), so the check works from any production alias.
-const CANONICAL_ORIGIN = "https://vibe-check-flame-nu.vercel.app";
-
-/**
- * Notices when a newer deployment exists (by polling version.json on the
- * public production origin, which every build stamps) and offers a one-tap
- * reload. Checks on an interval and whenever the tab regains focus. Runs only
- * on the production deployment — preview/local builds carry a one-off stamp
- * that can never match production, so they'd nag forever.
- */
+/** Offer the current live release from any deployed version, without reloading edits. */
 export default function UpdateToast() {
-  const [stale, setStale] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const [snoozed, setSnoozed] = useState(null);
 
   useEffect(() => {
-    // Gate on the build-time flag, not the current hostname: the production
-    // build is served from several aliases (public origin + SSO-gated ones),
-    // while every origin that would false-nag (preview deploys, `vite preview`
-    // on any host, forks) is a non-production build.
-    if (typeof __BUILD_ID__ === "undefined" || !__IS_PRODUCTION_BUILD__) return;
-
+    if (typeof __BUILD_ID__ === "undefined" || typeof __BUILD_ENVIRONMENT__ === "undefined") return;
+    if (!["production", "preview"].includes(__BUILD_ENVIRONMENT__)) return;
+    const current = {
+      build: __BUILD_ID__,
+      environment: window.location.origin === LIVE_ORIGIN ? "production" : __BUILD_ENVIRONMENT__,
+    };
     let cancelled = false;
+    let controller;
+    let timeout;
+
     const check = async () => {
+      if (document.visibilityState !== "visible" || !navigator.onLine || controller) return;
+      controller = new AbortController();
+      timeout = window.setTimeout(() => controller?.abort(), 10000);
       try {
-        const res = await fetch(`${CANONICAL_ORIGIN}/version.json?t=${Date.now()}`, {
+        const res = await fetch(`${LIVE_ORIGIN}/version.json?t=${Date.now()}`, {
           cache: "no-store",
+          credentials: "omit",
+          signal: controller.signal,
         });
         if (!res.ok) return;
-        const { build } = await res.json();
-        if (!cancelled && build && build !== __BUILD_ID__) setStale(true);
+        const manifest = await res.json();
+        if (!cancelled) setNotice(getVersionNotice(current, manifest));
       } catch {
-        // offline or transient; try again next tick
+        // Offline, SSO HTML or a transient failure: keep the app usable and retry.
+      } finally {
+        window.clearTimeout(timeout);
+        controller = undefined;
       }
     };
 
     check();
-    const interval = setInterval(check, POLL_MS);
-    const onFocus = () => { if (document.visibilityState === "visible") check(); };
-    document.addEventListener("visibilitychange", onFocus);
-    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(check, UPDATE_POLL_MS);
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    window.addEventListener("online", check);
     return () => {
       cancelled = true;
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", onFocus);
-      window.removeEventListener("focus", onFocus);
+      controller?.abort();
+      window.clearTimeout(timeout);
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("focus", check);
+      window.removeEventListener("online", check);
     };
   }, []);
 
-  if (!stale) return null;
+  if (!notice || (snoozed?.build === notice.build && Date.now() < snoozed.until)) return null;
 
   return (
-    <div
-      role="status"
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 px-4 py-3 shadow-lg"
-      style={{
-        background: "var(--gh-ink)",
-        color: "var(--gh-field)",
-        zIndex: "var(--z-toast)",
-        maxWidth: "calc(100vw - 2rem)",
-      }}
-    >
-      <span className="text-sm">A newer version of vibe check is live.</span>
-      <button
-        type="button"
-        onClick={() => window.location.reload()}
-        className="text-sm font-bold px-3 py-1.5 shrink-0"
-        style={{ background: "var(--gh-gold)", color: "var(--gh-ink)" }}
-      >
-        Update now
+    <section className="app-update-toast" role="status" aria-live="polite" aria-labelledby="app-update-title">
+      <RefreshCw size={19} className="app-update-icon" aria-hidden="true" />
+      <div className="app-update-body">
+        <p id="app-update-title">{notice.kind === "preview" ? "You’re viewing a preview" : "The live version has changed"}</p>
+        <p className="app-update-description">Open the latest Vibe Check on this page. Save any edits first.</p>
+        <button className="app-update-action" type="button"
+          onClick={() => window.location.assign(latestVersionUrl(window.location.href, notice.build))}>
+          Open latest version <ArrowUpRight size={16} aria-hidden="true" />
+        </button>
+      </div>
+      <button className="app-update-dismiss" type="button" aria-label="Remind me in 15 minutes"
+        title="Remind me in 15 minutes"
+        onClick={() => setSnoozed({ build: notice.build, until: Date.now() + UPDATE_SNOOZE_MS })}>
+        <X size={18} aria-hidden="true" />
       </button>
-    </div>
+    </section>
   );
 }

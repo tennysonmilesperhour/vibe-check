@@ -1,135 +1,84 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Space+Grotesk:wght@400;500;700&display=swap');
-
-/* Tailwind v4 entry. The toolchain is @tailwindcss/postcss v4, which no longer
-   wires preflight + utilities from the old `@tailwind base/components/utilities`
-   directives — that mismatch shipped the app with no reset and no utility
-   classes (raw browser buttons, unstyled inputs). `@import "tailwindcss"` is the
-   v4 entry; `@config` keeps the existing JS config (Golden Hour color tokens,
-   radius, keyframes, tailwindcss-animate) working unchanged. */
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
 @layer base {
   :root {
-    /* ── Golden Hour, after the sun goes down ────────────────────
-       The palette now runs the whole arc of an evening: the gold of
-       the last light, the plum the sky turns twenty minutes later,
-       and the first stars over it.
-
-       Four registers:
-       sky      — ritual surfaces: twilight plum → rose → gold, stars above
-       field    — working surfaces: warm near-white, drifting washes
-       dusk     — tarot table: deep aubergine, gold accents
-       twilight — the mystical register: plum and lilac, luminous
-
-       Ink stays warm rose-brown; every dark tone is warm-shifted
-       (aubergine and mulberry, never cold indigo or flat black). */
-
-    /* shadcn variable remap (HSL triplets) */
-    --background: 40 45% 98%;            /* --gh-field #FFFDFA */
-    --foreground: 348 43% 25%;           /* --gh-ink   #5A2430 */
-    --card: 40 45% 99%;
-    --card-foreground: 348 43% 25%;
-    --popover: 40 45% 99%;
-    --popover-foreground: 348 43% 25%;
-    --primary: 9 51% 50%;                /* --gh-accent #C2503C */
-    --primary-foreground: 43 90% 97%;
-    --secondary: 348 30% 94%;
-    --secondary-foreground: 348 43% 28%;
-    --muted: 30 35% 94%;
-    --muted-foreground: 343 29% 54%;     /* --gh-ink-muted #A6606E */
-    --accent: 36 92% 88%;
-    --accent-foreground: 348 43% 28%;
-    --destructive: 0 65% 45%;
-    --destructive-foreground: 43 90% 97%;
-    /* Hairlines sit a little lighter than before: edges should suggest, not
-       cut. Held at 90% rather than going lighter still — on transparent
-       controls (the range chips, the person select) this border is the only
-       thing marking the control's bounds. */
-    --border: 346 26% 90%;
-    --input: 346 26% 89%;
-    --ring: 9 51% 50%;
-
-    --chart-1: 348 81% 75%;              /* rose */
-    --chart-2: 33 94% 64%;               /* amber */
-    --chart-3: 9 51% 50%;                /* accent */
-    --chart-4: 20 88% 73%;               /* peach */
-    --chart-5: 343 40% 36%;              /* ink-soft */
-
-    /* Softer edges. Not pill-shaped — just enough that nothing cuts. */
+    /* Woodland palette from the user’s September 8 reference.
+       Legacy --gh names remain aliases for existing feature surfaces. */
+    --woodland-moss: #555e41;
+    --woodland-bark: #77604b;
+    --woodland-paper: #e4ddc5;
+    --woodland-shadow: #0c120f;
+    --gh-sage: var(--sanctuary-sage);
+    --plot-mood: #34492f;
+    --plot-energy: #756032;
+    --plot-sleep: #405b55;
+    --plot-stress: #844b36;
+    --sanctuary-sage: #929b78;
+    --sanctuary-forest: #26392c;
+    --sanctuary-evergreen: #1b241a;
+    --sanctuary-gold: #a58e66;
+    --sanctuary-cream: #d8d2b9;
+    --sanctuary-tan: #b59b79;
+    --background: 75.0 15.7% 65.1%;
+    --foreground: 114.0 16.1% 12.2%;
+    --card: 48.4 28.4% 78.6%;
+    --card-foreground: 114.0 16.1% 12.2%;
+    --popover: 46.5 36.5% 83.3%;
+    --popover-foreground: 114.0 16.1% 12.2%;
+    --primary: 108.5 21.7% 23.5%;
+    --primary-foreground: 45.0 45.2% 87.8%;
+    --secondary: 77.8 18.4% 60.6%;
+    --secondary-foreground: 111.4 18.9% 14.5%;
+    --muted: 70.3 20.6% 72.4%;
+    --muted-foreground: 93.0 20.8% 18.8%;
+    --accent: 74.5 20.0% 67.6%;
+    --accent-foreground: 107.0 25.8% 17.5%;
+    --destructive: 16.1 46.6% 34.5%;
+    --destructive-foreground: 42.0 50.0% 88.2%;
+    --border: 74.5 14.5% 55.5%;
+    --input: 80.7 14.1% 40.2%;
+    --ring: 91.8 26.6% 25.1%;
+    --chart-1: 108.5 21.7% 23.5%;
+    --chart-2: 79.5 22.8% 37.1%;
+    --chart-3: 27.9 30.8% 35.7%;
+    --chart-4: 17.4 41.8% 35.7%;
+    --chart-5: 167.5 15.8% 29.8%;
     --radius: 0.875rem;
-
-    --sidebar-background: 40 45% 98%;
-    --sidebar-foreground: 348 43% 25%;
-    --sidebar-primary: 9 51% 50%;
-    --sidebar-primary-foreground: 43 90% 97%;
-    --sidebar-accent: 30 35% 94%;
-    --sidebar-accent-foreground: 348 43% 28%;
-    --sidebar-border: 348 22% 90%;
-    --sidebar-ring: 9 51% 50%;
-
-    /* Golden Hour custom tokens */
-    --gh-rose: #F48CA0;
-    --gh-peach: #F79E7E;
-    --gh-amber: #FAB05E;
-    --gh-gold: #FDC94E;
-    --gh-cream: #FFFDF6;
-    --gh-ink: #5A2430;
-    --gh-ink-soft: #7A3040;
-    --gh-ink-muted: #A6606E;
-    --gh-accent: #C2503C;
-    --gh-field: #FFFDFA;
-
-    /* dusk register (tarot table) */
-    --gh-dusk-deep: #2E1418;
-    --gh-dusk: #4A1E28;
-    --gh-dusk-ink: #F5E5D8;
-
-    /* twilight register: what the sky does after the gold burns off.
-       Warm-shifted plums, so it reads as late evening and not as night. */
-    --gh-twilight: #8A4A6E;
-    --gh-mulberry: #5E2E51;
-    --gh-nocturne: #35182F;
-    --gh-lilac: #D3A2CE;
-    --gh-starlight: #FFF4E2;
-
-    /* Light that things give off, rather than light falling on them. */
-    /* The sky register paints these over deep plum, so they can be strong.
-       The field register paints them under body copy, so it uses the faint
-       pair — a heavy wash there drags --gh-ink-muted under the 4.5:1 the
-       subtitles need. */
-    --gh-glow-rose: rgba(244, 140, 160, 0.18);
-    --gh-glow-lilac: rgba(211, 162, 206, 0.30);
-    --gh-glow-lilac-faint: rgba(211, 162, 206, 0.15);
-
-    /* The sky ramp itself, so the small surfaces that paint it inline
-       (the sidebar mark, MiniLoom, Week in Review) stay in step with
-       the full-page sky instead of drifting into their own variants. */
-    --gradient-sky: linear-gradient(
-      168deg,
-      var(--gh-twilight) 0%,
-      #C4657F 17%,
-      var(--gh-rose) 35%,
-      var(--gh-peach) 56%,
-      var(--gh-amber) 78%,
-      var(--gh-gold) 100%
-    );
-
-    /* The nav rail, shared by the desktop sidebar and the mobile drawer so
-       the two cannot drift apart. */
-    --gradient-rail: linear-gradient(
-      185deg,
-      var(--gh-cream) 0%,
-      var(--gh-cream) 55%,
-      color-mix(in srgb, var(--gh-lilac) 13%, var(--gh-cream)) 100%
-    );
-
-    /* Elevation, warm-tinted — a shadow here is dusk pooling, never grey. */
-    --shadow-soft: 0 1px 2px rgba(90, 36, 48, 0.04), 0 4px 14px rgba(90, 36, 48, 0.06);
-    --shadow-lift: 0 2px 6px rgba(90, 36, 48, 0.05), 0 14px 34px rgba(90, 36, 48, 0.10);
-    --shadow-halo: 0 10px 40px rgba(194, 80, 60, 0.16);
-
-    /* semantic z-scale */
+    --sidebar-background: 136.4 18.6% 11.6%;
+    --sidebar-foreground: 43.4 38.7% 85.3%;
+    --sidebar-primary: 41.3 35.3% 66.1%;
+    --sidebar-primary-foreground: 136.4 18.6% 11.6%;
+    --sidebar-accent: 92.5 19.4% 24.3%;
+    --sidebar-accent-foreground: 43.4 38.7% 85.3%;
+    --sidebar-border: 85.4 16.2% 31.4%;
+    --sidebar-ring: 41.3 35.3% 66.1%;
+    --gh-rose: var(--sanctuary-sage);
+    --gh-peach: var(--sanctuary-tan);
+    --gh-amber: #ab956d;
+    --gh-gold: var(--sanctuary-gold);
+    --gh-cream: var(--sanctuary-cream);
+    --gh-ink: var(--sanctuary-evergreen);
+    --gh-ink-soft: #2f3c28;
+    --gh-ink-muted: #2f3a26;
+    --gh-accent: #34492f;
+    --gh-field: #adb498;
+    --gh-dusk-deep: #101a14;
+    --gh-dusk: #2e3e2d;
+    --gh-dusk-ink: #e9e2cd;
+    --gh-twilight: #555e41;
+    --gh-mulberry: #3e4c35;
+    --gh-nocturne: #0c120f;
+    --gh-lilac: #b3bb94;
+    --gh-starlight: #ddd0ac;
+    --gh-glow-rose: rgba(146,155,120,0.13);
+    --gh-glow-lilac: rgba(165,142,102,0.14);
+    --gh-glow-lilac-faint: rgba(146,155,120,0.08);
+    --gradient-sky: linear-gradient(145deg, #101a14 0%, #34432e 65%, #555e41 100%);
+    --gradient-rail: linear-gradient(175deg, #152019 0%, #303c2b 100%);
+    --shadow-soft: 0 2px 5px rgba(16,39,30,.025), 0 8px 24px rgba(16,39,30,.04);
+    --shadow-lift: 0 8px 28px rgba(16,39,30,.11);
+    --shadow-halo: 0 6px 28px rgba(165,142,102,.12);
     --z-dropdown: 20;
     --z-sticky: 30;
     --z-backdrop: 40;
@@ -137,223 +86,183 @@
     --z-toast: 60;
     --z-tooltip: 70;
   }
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-    min-height: 100vh;
-  }
-
-  h1, h2, h3, .font-display {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-style: normal;
-    font-weight: 400;
-    letter-spacing: -0.01em;
-  }
-
-  h1, h2, h3 {
-    text-wrap: balance;
-  }
-
-  /* Italics are not part of this design language. */
-  em, i {
-    font-style: normal;
-  }
-
-  /* Form fields always write in ink, even inside cream-text sky surfaces
-     (otherwise password dots on a white input are invisible). Inline styles
-     still win where a register needs something else (e.g. the dusk table). */
-  input, textarea, select {
-    color: var(--gh-ink);
-    caret-color: var(--gh-accent);
-  }
-  input::placeholder, textarea::placeholder {
-    color: var(--gh-ink-muted);
-  }
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,.font-display { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-style: normal; letter-spacing: -.025em; }
+  h1,h2,h3 { text-wrap: balance; }
+  input,textarea,select { color: var(--gh-ink); caret-color: var(--gh-accent); }
+  input::placeholder,textarea::placeholder { color: var(--gh-ink-muted); }
+  button,a,input,textarea,select { -webkit-tap-highlight-color: transparent; }
+  button:not(:disabled),a { cursor: pointer; }
+  button:disabled { cursor: not-allowed; opacity: .52; }
+  :focus-visible { outline: 2px solid var(--gh-accent); outline-offset: 4px; }
+  .sky-surface :focus-visible,.dusk-surface :focus-visible,.sanctuary-rail :focus-visible { outline-color: var(--gh-cream); }
+  ::selection { background: #a2ad88; color: #18231b; }
 }
 
 @layer components {
-  /* ── sky register: the sunset, and the twenty minutes after it ──
-     Six stops rather than four. The plum at the top is the sky once the
-     sun is already gone; the gold at the bottom is the light still
-     leaving. Two radial glows sit over the ramp so the surface has an
-     actual light source instead of reading as a flat gradient. */
-  .sky-surface {
-    position: relative;
-    /* Own stacking context: .grain-layer blends with mix-blend-mode, and
-       without this it would composite against whatever is behind the
-       surface (the page, for a hero card) instead of against the sky. */
-    isolation: isolate;
-    background:
-      radial-gradient(ellipse 75% 55% at 82% 74%, rgba(255, 243, 214, 0.5) 0%, transparent 60%),
-      radial-gradient(ellipse 65% 45% at 4% 2%, var(--gh-glow-lilac) 0%, transparent 62%),
-      var(--gradient-sky);
-    color: var(--gh-cream);
-  }
+  .brand-mark { --brand-leaf: #26392c; --brand-sage: #929b78; --brand-gold: #a58e66; flex-shrink: 0; }
+  .sanctuary-rail .brand-mark,.welcome-brand .brand-mark,.woodland-mobile-header .brand-mark { --brand-leaf: #d0dabc; --brand-sage: #a8b69a; --brand-gold: #c7b48a; }
+  .sky-surface { isolation: isolate; position: relative; background: var(--gradient-sky); color: var(--gh-cream); }
+  .sanctuary-image,.sanctuary-film { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 58% center; pointer-events: none; filter: saturate(.68) sepia(.16) brightness(.8); }
+  .sanctuary-film { opacity: 0; transition: opacity 1.6s ease; }
+  .sanctuary-film.is-playing { opacity: 1; }
+  .sanctuary-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg,rgba(12,18,15,.79),rgba(34,43,24,.18)),linear-gradient(0deg,rgba(22,28,18,.77),transparent 65%); }
+  .sanctuary-surface[data-depth="2"] .sanctuary-shade { background-color: rgba(8,28,20,.14); }
+  .sanctuary-surface[data-depth="3"] .sanctuary-shade { background-color: rgba(8,28,20,.25); }
+  .sanctuary-surface[data-depth="4"] .sanctuary-shade { background-color: rgba(8,28,20,.36); }
+  .sanctuary-shade { transition: background-color .6s ease; }
+  .sanctuary-content { z-index: 1; }
+  .sanctuary-film-control { position: absolute; bottom: 20px; right: 24px; z-index: 2; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid #b8c3ac70; border-radius: 30px; background: #18231bdb; color: #e9e2cd; font-size: 10px; letter-spacing: .035em; }
+  .sanctuary-film-control:hover { background: #254b36; }
+  .field-wash { background: radial-gradient(ellipse at 96% 0%,#555e4140,transparent 50%),radial-gradient(ellipse at 0% 100%,#77604b20,transparent 55%),var(--gh-field); }
+  .dusk-surface { background: radial-gradient(ellipse at 50% 0%,#555e4177,transparent 65%),linear-gradient(160deg,#101a14,#2e3e2d); color: var(--gh-dusk-ink); }
+  .hairline { border-top: 1px solid hsl(var(--border)); }
+  .veil-card { background: var(--gh-cream); border: 1px solid hsl(var(--border)); border-radius: var(--radius); box-shadow: var(--shadow-soft); }
+  .ink-button,.cream-button,.ghost-cream-button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: .85rem 1.5rem; border-radius: 8px; font-size: .875rem; font-weight: 600; transition: background .2s,transform .2s,box-shadow .2s; }
+  .ink-button { background: var(--gh-accent); color: var(--gh-cream); border: 1px solid #ffffff08; box-shadow: var(--shadow-soft); }
+  .cream-button { background: var(--gh-cream); color: var(--gh-ink); border: 1px solid #aca084; }
+  .ghost-cream-button { border: 1px solid #e9e2cd66; background: #18231b40; color: var(--gh-cream); }
+  .ink-button:hover:not(:disabled) { background: #26392c; box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+  .cream-button:hover:not(:disabled) { background: #c9c2a8; transform: translateY(-1px); }
+  .ghost-cream-button:hover:not(:disabled) { background: #e9e2cd1a; }
+  .ink-button:active:not(:disabled),.cream-button:active:not(:disabled) { transform: translateY(0); }
+  .sanctuary-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .19em; line-height: 1.6; }
 
-  /* The ceremony deepens as it goes. Each step pulls more night across
-     the same sky, instead of swapping in a hand-darkened gradient —
-     so the depths stay in step with the palette automatically. */
-  .sky-surface::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: linear-gradient(168deg, var(--gh-nocturne) 0%, var(--gh-mulberry) 48%, transparent 88%);
-    opacity: var(--sky-deepen, 0);
-    transition: opacity 800ms ease-out;
-  }
-  .sky-surface[data-depth="2"] { --sky-deepen: 0.20; }
-  .sky-surface[data-depth="3"] { --sky-deepen: 0.38; }
-  .sky-surface[data-depth="4"] { --sky-deepen: 0.56; }
+  /* Arrival: a generous landscape and an intimate cream reading surface. */
+  .welcome-page { min-height: 100svh; display: grid; grid-template-columns: minmax(0,1.18fr) minmax(410px,1fr); background: var(--gh-cream); padding: 14px; gap: 14px; }
+  .welcome-landscape { border-radius: 16px; min-height: calc(100svh - 28px); }
+  .welcome-landscape .sanctuary-content { min-height: inherit; display: flex; flex-direction: column; padding: 38px 52px 42px; }
+  .welcome-brand { display: flex; align-items: center; gap: 13px; font-family: 'Instrument Serif',Georgia,serif; font-size: 32px; letter-spacing: -.015em; }
+  .welcome-brand svg { color: #c7b48a; }
+  .welcome-story { margin: auto 0; padding: 90px 0 72px; }
+  .welcome-story .sanctuary-eyebrow { color: #e3d4b4; display: flex; align-items: center; gap: 14px; }
+  .welcome-story .sanctuary-eyebrow::before { content: ''; width: 29px; height: 1px; background: #a58e66; }
+  .welcome-story h1 { font-size: clamp(64px,6.2vw,106px); line-height: .99; margin-top: 24px; letter-spacing: -.038em; }
+  .welcome-description { font-size: 14px; line-height: 1.9; max-width: 340px; margin-top: 26px; color: #f0ede3e6; }
+  .welcome-invitation { display: inline-flex; align-items: center; gap: 30px; min-height: 44px; font-size: 12px; margin-top: 25px; border-bottom: 1px solid #c3ad76a8; }
+  .welcome-invitation svg { transition: transform .2s; }
+  .welcome-invitation:hover svg { transform: translate(2px,-2px); }
+  .welcome-caption { display: flex; align-items: center; gap: 12px; font-size: 10px; color: #e0decfde; padding-bottom: 42px; letter-spacing: .03em; }
+  .caption-rule { width: 24px; height: 1px; background: #a58e66; }
+  .welcome-panel { display: flex; flex-direction: column; padding: 22px 40px 18px; }
+  .welcome-topline { display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--gh-ink-muted); }
+  .welcome-topline a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+  .welcome-form-wrap { width: 100%; max-width: 360px; margin: auto; padding: 38px 0; scroll-margin-top: 28px; }
+  .welcome-form-mark { color: #695437; margin-bottom: 23px; }
+  .welcome-form-wrap>.sanctuary-eyebrow { color: var(--gh-ink-muted); font-size: 9px; }
+  .welcome-form-wrap h2 { font-size: clamp(38px,3.7vw,56px); line-height: 1.12; margin-top: 9px; }
+  .welcome-form-intro { font-size: 12px; line-height: 1.8; margin-top: 12px; color: var(--gh-ink-muted); }
+  .auth-mode-switch { display: flex; gap: 26px; margin-top: 30px; border-bottom: 1px solid #a8ad90; }
+  .auth-mode-switch button { padding: 12px 0; min-height: 44px; font-size: 12px; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--gh-ink-muted); }
+  .auth-mode-switch button[aria-pressed="true"] { color: #26392c; border-bottom-color: #695437; font-weight: 700; }
+  .sanctuary-auth-form { display: flex; flex-direction: column; gap: 18px; margin-top: 23px; }
+  .sanctuary-auth-form label { font-size: 11px; font-weight: 600; }
+  .sanctuary-auth-form input { margin-top: 8px; min-height: 48px; height: 48px; border-radius: 7px; background: var(--woodland-paper); border-color: #7b8667; box-shadow: none; font-size: 12px; padding: 0 14px; }
+  .sanctuary-auth-form input:focus-visible { border-color: #34492f; outline: none; box-shadow: 0 0 0 3px #34492f18; }
+  .auth-label-row { display: flex; align-items: center; justify-content: space-between; }
+  .auth-label-row button { font-size: 10px; text-decoration: underline; text-underline-offset: 4px; min-height: 28px; }
+  .auth-submit { width: 100%; justify-content: space-between; margin-top: 6px; font-size: 12px; min-height: 51px; }
+  .auth-notice { font-size: 12px; padding: 12px 14px; background: #c5cbb0; border-left: 2px solid #697b51; border-radius: 4px; color: #2f3c28; line-height: 1.6; margin-top: 16px; }
+  .auth-error { background: #dfc7ad; border-left-color: #814b35; color: #663923; }
+  .auth-alternative { display: flex; gap: 14px; align-items: center; font-size: 10px; color: var(--gh-ink-muted); margin: 18px 0 12px; }
+  .auth-alternative span { height: 1px; background: #a8ad90; flex: 1; }
+  .auth-magic { min-height: 44px; width: 100%; border: 1px solid #7b8667; border-radius: 7px; font-size: 11px; transition: background .2s; }
+  .auth-magic:hover { background: #c5cbb0; }
+  .auth-footnote { margin-top: 19px; font-size: 9px; text-align: center; color: var(--gh-ink-muted); }
+  .welcome-pillars { display: flex; justify-content: space-around; border-top: 1px solid #a8ad90; padding: 23px 0 8px; gap: 12px; }
+  .welcome-pillars span { display: flex; align-items: center; gap: 8px; font-size: 9px; color: var(--gh-ink-muted); }
+  .welcome-pillars svg { color: #695437; stroke-width: 1.2; }
 
-  /* ── stars: the first few out, before the sky has finished turning ──
-     Decorative layer, absolutely positioned by whoever mounts it. */
-  .starfield {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-repeat: no-repeat;
-    background-image:
-      radial-gradient(1.7px 1.7px at 9% 11%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.2px 1.2px at 17% 26%, var(--gh-starlight), transparent 60%),
-      radial-gradient(2px 2px at 24% 7%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.1px 1.1px at 33% 19%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.5px 1.5px at 41% 5%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.2px 1.2px at 48% 23%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.9px 1.9px at 56% 12%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.1px 1.1px at 63% 30%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.4px 1.4px at 71% 8%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.2px 1.2px at 78% 21%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.8px 1.8px at 86% 14%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.1px 1.1px at 93% 28%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.3px 1.3px at 13% 38%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.1px 1.1px at 29% 44%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.5px 1.5px at 52% 40%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.1px 1.1px at 68% 47%, var(--gh-starlight), transparent 60%),
-      radial-gradient(1.3px 1.3px at 88% 42%, var(--gh-starlight), transparent 60%);
-    opacity: 0.72;
-    animation: star-breathe 7s ease-in-out infinite alternate;
-  }
-  /* Stars fade out toward the bright bottom of the sky, where there is
-     still too much daylight left to see them. */
-  .starfield--fade {
-    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 78%);
-    mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 78%);
-  }
-
-  /* ── grain: a little tooth, so large washes are not perfectly smooth ──
-     Positioned layer; the parent must establish a stacking context. */
-  .grain-layer {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.07;
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E");
-  }
-
-  /* ── field register: near-white ground, color drifts like weather ──
-     A fourth wash in lilac keeps the mystical register present even on
-     the working surfaces, without touching legibility. */
-  .field-wash {
-    background:
-      radial-gradient(ellipse 60% 45% at 18% 8%, var(--gh-glow-rose) 0%, transparent 60%),
-      radial-gradient(ellipse 55% 50% at 88% 18%, rgba(250, 176, 94, 0.16) 0%, transparent 60%),
-      radial-gradient(ellipse 50% 42% at 96% 74%, var(--gh-glow-lilac-faint) 0%, transparent 62%),
-      radial-gradient(ellipse 70% 55% at 55% 105%, rgba(247, 158, 126, 0.14) 0%, transparent 60%),
-      var(--gh-field);
-  }
-
-  /* ── dusk register: the tarot table ── */
-  .dusk-surface {
-    background:
-      radial-gradient(ellipse 65% 45% at 50% -5%, rgba(138, 74, 110, 0.5) 0%, transparent 68%),
-      radial-gradient(ellipse 80% 60% at 50% 108%, rgba(94, 46, 81, 0.45) 0%, transparent 62%),
-      linear-gradient(170deg, var(--gh-dusk-deep) 0%, var(--gh-nocturne) 42%, var(--gh-dusk) 100%);
-    color: var(--gh-dusk-ink);
-  }
-
-  /* A rule that fades out at both ends instead of stopping dead. */
-  .hairline {
-    border-top: 1px solid transparent;
-    border-image: linear-gradient(
-        90deg,
-        transparent 0%,
-        color-mix(in srgb, var(--gh-ink) 22%, transparent) 15%,
-        color-mix(in srgb, var(--gh-ink) 22%, transparent) 85%,
-        transparent 100%
-      )
-      1;
-  }
-
-  /* Cream panel, soft edge, warm shadow — for panels that want the card
-     treatment from a class rather than an inline style. Callers may override
-     the background and keep the edge and elevation. */
-  .veil-card {
-    background:
-      linear-gradient(168deg, color-mix(in srgb, var(--gh-cream) 94%, var(--gh-rose)) 0%, var(--gh-cream) 58%);
-    border: 1px solid hsl(var(--border));
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
-  }
-
-  .ink-button {
-    background: linear-gradient(168deg, var(--gh-ink-soft) 0%, var(--gh-ink) 100%);
-    color: var(--gh-field);
-    font-weight: 700;
-    padding: 0.8rem 1.4rem;
-    border-radius: calc(var(--radius) - 3px);
-    box-shadow: var(--shadow-soft);
-    transition: box-shadow 200ms ease-out, transform 200ms ease-out, filter 200ms ease-out;
-  }
-  .ink-button:hover { filter: brightness(1.12); box-shadow: var(--shadow-lift); transform: translateY(-1px); }
-  .ink-button:active { transform: translateY(0); filter: brightness(0.98); }
-
-  .cream-button {
-    background: linear-gradient(168deg, var(--gh-cream) 0%, color-mix(in srgb, var(--gh-cream) 92%, var(--gh-amber)) 100%);
-    color: var(--gh-accent);
-    font-weight: 700;
-    padding: 0.8rem 1.4rem;
-    border-radius: calc(var(--radius) - 3px);
-    box-shadow: var(--shadow-soft);
-    transition: transform 200ms ease-out, box-shadow 200ms ease-out;
-  }
-  .cream-button:hover { box-shadow: var(--shadow-halo); transform: translateY(-1px); }
-  .cream-button:active { transform: translateY(0); }
-
-  .ghost-cream-button {
-    border: 1px solid color-mix(in srgb, var(--gh-cream) 55%, transparent);
-    color: var(--gh-cream);
-    padding: 0.75rem 1.4rem;
-    border-radius: calc(var(--radius) - 3px);
-    backdrop-filter: blur(6px);
-    transition: background-color 200ms ease-out, border-color 200ms ease-out;
-  }
-  .ghost-cream-button:hover {
-    background: color-mix(in srgb, var(--gh-cream) 14%, transparent);
-    border-color: color-mix(in srgb, var(--gh-cream) 80%, transparent);
-  }
+  /* Forest navigation with parchment labels. */
+  .sanctuary-rail,.woodland-mobile-header { --gh-ink: #e9e2cd; --gh-ink-soft: #d8dac2; --gh-ink-muted: #c0c8a9; --gh-accent: #c7b48a; --border: 84 16% 35%; color: #e9e2cd; }
+  .sanctuary-rail nav a { min-height: 66px; }
+  .sanctuary-rail nav a:hover { background-color: #ffffff09 !important; }
+  .sanctuary-rail button { min-height: 44px; }
+  .sanctuary-rail .veil-card { box-shadow: none; }
+  .sanctuary-rail .brand-icon { color: #c7b48a; }
+  .today-invitation { min-height: 100svh; }
+  .today-invitation .sanctuary-content { min-height: inherit; }
+  .today-content { min-height: inherit; max-width: 1060px; padding: 48px 64px 80px; display: flex; flex-direction: column; }
+  .today-date { display: flex; justify-content: space-between; gap: 20px; align-items: center; font-size: 11px; color: #e9e9db; }
+  .today-heading { margin-top: auto; padding-top: 100px; }
+  .today-heading h1 { font-size: clamp(60px,6.5vw,94px); line-height: 1.01; max-width: 9ch; margin: 20px 0 24px; }
+  .today-heading>p:not(.sanctuary-eyebrow) { max-width: 360px; color: #e3e7da; font-size: 14px; line-height: 1.9; }
+  .today-paths { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; margin-top: 75px; border-top: 1px solid #e9e2cd3d; padding-top: 28px; }
+  .today-paths a { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 6px 0; }
+  .today-paths svg { color: #c7b48a; stroke-width: 1.3; }
+  .today-paths strong { font-family: 'Instrument Serif',Georgia,serif; font-weight: 400; font-size: 25px; }
+  .today-paths span { font-size: 11px; color: #e3e7da; line-height: 1.7; }
+  .today-paths a:hover strong { color: #e4ce9d; }
+  .tarot-preview { display: flex; justify-content: center; gap: 16px; padding: 28px 0 0; }
+  .reflection-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+  .reflection-header h1 { font-size: 50px; margin-top: 12px; }
+  .reflection-header svg { color: #695437; flex-shrink: 0; }
 }
 
-@keyframes star-breathe {
-  from { opacity: 0.5; }
-  to { opacity: 0.85; }
+@media (min-width: 1440px) {
+  .welcome-page { grid-template-columns: minmax(0,1.32fr) minmax(480px,1fr); }
+  .welcome-landscape .sanctuary-content { padding-left: 64px; padding-right: 64px; }
 }
-
-
-/* Reduced motion: every animation collapses to (near-)instant. */
+@media (max-width: 1000px) {
+  .welcome-page { grid-template-columns: minmax(0,1fr) minmax(360px,1fr); }
+  .welcome-landscape .sanctuary-content { padding: 28px; }
+  .welcome-story h1 { font-size: 65px; }
+  .welcome-panel { padding: 18px 24px; }
+  .welcome-pillars span { flex-direction: column; text-align: center; }
+  .today-content { padding: 32px 36px 84px; }
+}
+@media (max-width: 760px) {
+  .welcome-page { display: flex; flex-direction: column; padding: 10px; gap: 0; }
+  .welcome-landscape { min-height: 540px; border-radius: 12px; }
+  .welcome-landscape .sanctuary-content { padding: 26px; min-height: 540px; }
+  .welcome-brand { font-size: 27px; gap: 9px; }
+  .welcome-brand svg { width: 40px; height: 40px; }
+  .welcome-story { padding: 46px 0 24px; }
+  .welcome-story h1 { font-size: clamp(54px,12vw,78px); }
+  .welcome-description { font-size: 12px; max-width: 310px; }
+  .welcome-story .sanctuary-eyebrow { font-size: 8px; }
+  .welcome-caption { padding-bottom: 50px; font-size: 9px; }
+  .welcome-panel { padding: 22px 18px 16px; }
+  .welcome-form-wrap { max-width: 420px; padding: 36px 0; }
+  .welcome-form-wrap h2 { font-size: 46px; }
+  .welcome-form-mark { margin-bottom: 20px; }
+  .sanctuary-auth-form input { font-size: 16px; }
+  .auth-label-row button { min-height: 44px; }
+  .welcome-pillars span { flex-direction: row; font-size: 8px; }
+  .today-invitation { min-height: calc(100svh - 65px); }
+  .today-content { padding: 28px 26px 90px; }
+  .today-date { font-size: 10px; align-items: flex-start; flex-direction: column; gap: 8px; }
+  .today-heading { padding-top: 65px; }
+  .today-heading h1 { font-size: 66px; }
+  .today-paths { margin-top: 55px; gap: 14px; }
+  .today-paths strong { font-size: 22px; }
+  .today-paths span { font-size: 10px; }
+  .sanctuary-film-control { right: 18px; bottom: 18px; }
+  .reflection-header h1 { font-size: 42px; }
+  .reflection-header>div { min-width: 0; }
+}
+@media (max-width: 360px) {
+  .welcome-landscape .sanctuary-content { padding: 22px; }
+  .reflection-header>svg { display: none; }
+  .welcome-story h1 { font-size: 52px; }
+  .welcome-pillars { gap: 5px; }
+  .welcome-pillars svg { width: 14px; }
+  .today-heading h1 { font-size: 56px; }
+  .today-paths { grid-template-columns: 1fr; gap: 15px; }
+  .today-paths a { display: grid; grid-template-columns: 24px 1fr; gap: 4px 12px; }
+  .today-paths a span { grid-column: 2; }
+}
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+  *,*::before,*::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* Dark reading-table fields need a light placeholder independent of the
+   standard cream-surface input utility. */
+.dusk-surface input::placeholder { color: #cbd3bf; opacity: 1; }
+.dusk-surface input { min-height: 44px; }
+
+/* Moss panels echo the center of the reference; reading surfaces are aged paper. */
+.woodland-mobile-header { background: #1b281eed; color: #e9e2cd; }
+.woodland-mobile-header :focus-visible { outline-color: #e9e2cd; }
+.veil-card { background: var(--gh-cream); }

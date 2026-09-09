@@ -8,11 +8,9 @@ import { writeFileSync, mkdirSync } from 'fs'
 // running app can notice when a newer deployment exists (UpdateToast).
 const BUILD_ID = String(Date.now())
 
-// Only the production deployment should run the update check. Preview
-// deployments and local `vite preview` builds carry their own one-off stamp
-// that can never equal production's, so polling from them would nag forever.
-// Vercel sets VERCEL_ENV at build time; it's undefined everywhere else.
-const IS_PRODUCTION_BUILD = process.env.VERCEL_ENV === 'production'
+// Deployed previews also offer a route back to the current production app.
+// Local development and local preview builds stay quiet.
+const BUILD_ENVIRONMENT = process.env.VERCEL_ENV || 'development'
 
 const versionFilePlugin = () => ({
   name: 'emit-version-json',
@@ -20,7 +18,7 @@ const versionFilePlugin = () => ({
     mkdirSync(path.resolve(__dirname, 'dist'), { recursive: true })
     writeFileSync(
       path.resolve(__dirname, 'dist/version.json'),
-      JSON.stringify({ build: BUILD_ID })
+      JSON.stringify({ build: BUILD_ID, environment: BUILD_ENVIRONMENT })
     )
   },
 })
@@ -30,7 +28,7 @@ const versionFilePlugin = () => ({
 export default defineConfig(({ mode }) => ({
   define: {
     __BUILD_ID__: JSON.stringify(BUILD_ID),
-    __IS_PRODUCTION_BUILD__: JSON.stringify(IS_PRODUCTION_BUILD),
+    __BUILD_ENVIRONMENT__: JSON.stringify(BUILD_ENVIRONMENT),
   },
   plugins: [
     react(),

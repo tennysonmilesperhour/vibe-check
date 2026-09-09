@@ -6,20 +6,20 @@ const SYNODIC_DAYS = 29.53058867;
 const EPOCH_NEW_MOON = Date.UTC(2000, 0, 6, 18, 14);
 
 export const PHASES = [
-  { name: 'New Moon', emoji: '🌑' },
-  { name: 'Waxing Crescent', emoji: '🌒' },
-  { name: 'First Quarter', emoji: '🌓' },
-  { name: 'Waxing Gibbous', emoji: '🌔' },
-  { name: 'Full Moon', emoji: '🌕' },
-  { name: 'Waning Gibbous', emoji: '🌖' },
-  { name: 'Last Quarter', emoji: '🌗' },
-  { name: 'Waning Crescent', emoji: '🌘' },
+  { name: 'New Moon' },
+  { name: 'Waxing Crescent' },
+  { name: 'First Quarter' },
+  { name: 'Waxing Gibbous' },
+  { name: 'Full Moon' },
+  { name: 'Waning Gibbous' },
+  { name: 'Last Quarter' },
+  { name: 'Waning Crescent' },
 ];
 
 /**
  * Phase for a local date key ('yyyy-MM-dd'), evaluated at local noon so the
  * answer matches what people see in the sky that evening.
- * Returns { index, name, emoji, illumination, ageDays }.
+ * Returns { index, name, illumination, ageDays }; render with MoonGlyph.
  */
 export function moonPhase(dateKey) {
   const local = parseLocalDate(dateKey);
@@ -35,7 +35,6 @@ export function moonPhase(dateKey) {
   return {
     index,
     name: PHASES[index].name,
-    emoji: PHASES[index].emoji,
     illumination,
     ageDays: cycle,
   };

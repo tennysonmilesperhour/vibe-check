@@ -7,6 +7,7 @@ import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
 import { format } from "date-fns";
 import { todayKey, parseLocalDate, hoursSince } from "@/lib/dates";
 import { moonPhase } from "@/lib/resonance/moon";
+import MoonGlyph from "@/features/loom/MoonGlyph";
 import { computeStreak, streakLabel } from "@/lib/streaks";
 import { migratePeople } from "@/lib/people";
 import { Person, Relationship, Connection } from "@/entities/all";
@@ -138,7 +139,7 @@ export default function Today() {
         <header>
           <div className="reflection-header"><div><p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p><h1>A little more understanding.</h1></div><SanctuaryMark size={62} /></div>
           <p className="text-sm" style={{ color: "var(--gh-ink-muted)" }}>
-            {dateLine} · {moon.emoji} {moon.name} · {streakLabel(streak)}
+            {dateLine} · <span className="inline-flex items-center gap-1.5"><MoonGlyph name={moon.name} illumination={moon.illumination} />{moon.name}</span> · {streakLabel(streak)}
           </p>
           {!entry && (
             <div className="mt-4 p-4 flex items-center justify-between" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}>

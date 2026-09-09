@@ -78,12 +78,27 @@ The [plant voice direction](docs/design/plant-voice.md) gives the app its
 narrative: Tobacco introduces the systems as the spokesperson for the plants,
 with optional plant companions for deeper chakra reflections. The current chakra pairings are authored reflective invitations, not medical or universal traditional claims.
 
-The current direction is **Nature Sanctuary**: sage and dark greens, muted
-gold accents, cream, and tan; elegant typography, cinematic nature video
-backgrounds, generated imagery and symbols, and calm, fluid motion.
+The current direction is **Nature Sanctuary**, with the September 8 woodland
+palette: moss, fern, deep forest, warm bark, and weathered brass. The B1/Breath
+mark, botanical imagery, fine-line symbols, serif typography, and calm motion
+carry this across the app.
 
 See the [current visual guidance](docs/design/nature-sanctuary.md) for palette
 roles, art direction, motion, and application by screen. This supersedes the
 older Golden Hour and twilight visual guidance. The implementation uses
 shared sanctuary colors with compatible `--gh-*` aliases in `src/index.css`.
 See [asset provenance and playback behavior](docs/design/sanctuary-assets.md).
+
+## Account deletion and shared infrastructure
+
+Public privacy, terms, and support routes remain available without signing in.
+Deletion covers the full Vibe Check history, including journal entries, drafts,
+practice sessions, report reflections, and preferences. Campground and Daily
+Digest records and their shared sign-in remain protected.
+
+The completion migration is
+`supabase/migrations/20260908235730_complete_vibe_account_deletion.sql`; it and
+the updated `delete-account` Edge Function were applied for this release.
+`supabase/tests/delete_vibe_data.sql` verifies generated fixtures inside a
+rolled-back subtransaction. The shared project has migration history from
+multiple apps: reconcile remote history before any broad `supabase db push`.

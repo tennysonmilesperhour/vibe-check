@@ -146,7 +146,8 @@ export default function AuthGate() {
           </button>
           <p className="auth-footnote">Your journal, full history, charts, weekly and monthly reports, and everyday practices are free. No AI account required.</p>
         </div>
-        <div className="welcome-pillars" aria-label="A place to reflect"><span><Leaf size={18} aria-hidden="true" />Daily rituals</span><span><Sprout size={18} aria-hidden="true" />Personal growth</span><span><Orbit size={18} aria-hidden="true" />Inner connection</span></div>
+          <div className="welcome-pillars" aria-label="A place to reflect"><span><Leaf size={18} aria-hidden="true" />Daily rituals</span><span><Sprout size={18} aria-hidden="true" />Personal growth</span><span><Orbit size={18} aria-hidden="true" />Inner connection</span></div>
+          <nav className="flex flex-wrap justify-center gap-5 text-xs py-3" aria-label="App information"><a className="underline underline-offset-4 py-2" href="/privacy">Privacy</a><a className="underline underline-offset-4 py-2" href="/terms">Terms</a><a className="underline underline-offset-4 py-2" href="/support">Support</a></nav>
       </section>
     </main>
   );

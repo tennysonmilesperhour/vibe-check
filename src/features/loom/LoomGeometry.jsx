@@ -3,12 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { polar, ringPoints, pts } from "@/lib/geometry";
 import { ZODIAC_SIGNS, GATE_WHEEL } from "@/lib/resonance/tables";
 
-// The U+FE0E variation selector forces TEXT presentation, so these render as
-// thin typographic zodiac symbols rather than the platform's color emoji.
-const VS_TEXT = "︎";
-const GLYPH_FONT = "'Iowan Old Style', 'Palatino Linotype', 'Segoe UI Symbol', Georgia, 'Times New Roman', serif";
-const RAW_GLYPHS = { Aries: "♈", Taurus: "♉", Gemini: "♊", Cancer: "♋", Leo: "♌", Virgo: "♍", Libra: "♎", Scorpio: "♏", Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓" };
-const GLYPHS = Object.fromEntries(Object.entries(RAW_GLYPHS).map(([k, v]) => [k, v + VS_TEXT]));
+import ZodiacGlyph from "./ZodiacGlyph";
 
 const cream = (a) => `rgba(255,253,246,${a})`;
 
@@ -62,9 +57,9 @@ export function WheelRings({ cx, cy, rZodiac, rGates, highlightGates = [] }) {
         return (
           <g key={sign}>
             <line x1={tx1} y1={ty1} x2={tx2} y2={ty2} stroke={cream(0.35)} strokeWidth="0.75" />
-            <text x={gx} y={gy} textAnchor="middle" dominantBaseline="central" fontSize={rZodiac * 0.085} fontFamily={GLYPH_FONT} fill={cream(0.85)}>
-              {GLYPHS[sign]}
-            </text>
+            <g transform={`translate(${gx - rZodiac * 0.045}, ${gy - rZodiac * 0.045})`}>
+              <ZodiacGlyph sign={sign} size={rZodiac * 0.09} color={cream(0.85)} />
+            </g>
           </g>
         );
       })}

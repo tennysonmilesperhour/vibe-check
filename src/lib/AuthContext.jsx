@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, useCallback } fr
 import { supabase } from '@/api/supabase';
 import { queryClientInstance } from '@/lib/query-client';
 import { base44 } from '@/api/base44Client';
+import { clearLegacyDrafts } from '@/lib/legacy-drafts';
 
 // Supabase-backed auth, preserving the context contract the app already
 // consumes (App.jsx, ProtectedRoute): user / isAuthenticated / isLoadingAuth /
@@ -52,6 +53,7 @@ export const AuthProvider = ({ children }) => {
       if (session) setTimeout(() => { checkUserAuth({ silent: event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' }); }, 0);
       else {
         queryClientInstance.clear();
+        clearLegacyDrafts();
         setUser(null);
         setIsAuthenticated(false);
         setAuthError({ type: 'auth_required', message: 'Sign in to continue' });
@@ -65,6 +67,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async (scope = 'local') => {
     const { error } = await supabase.auth.signOut({ scope });
     if (error) throw error;
+    clearLegacyDrafts();
     queryClientInstance.clear();
     setUser(null);
     setIsAuthenticated(false);

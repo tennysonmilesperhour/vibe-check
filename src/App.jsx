@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -14,6 +14,9 @@ import UpdateToast from '@/features/shell/UpdateToast';
 import './living.css';
 
 const { Pages, Layout, mainPage } = pagesConfig;
+const Privacy = lazy(() => import('@/pages/Privacy'));
+const Terms = lazy(() => import('@/pages/Terms'));
+const Support = lazy(() => import('@/pages/Support'));
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
@@ -91,7 +94,14 @@ function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
-            <AuthenticatedApp />
+            <Suspense fallback={<div className="min-h-screen field-wash" aria-busy="true" />}>
+              <Routes>
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="*" element={<AuthenticatedApp />} />
+              </Routes>
+            </Suspense>
           </Router>
           <Toaster />
           <UpdateToast />

@@ -101,6 +101,8 @@
 }
 
 @layer components {
+  .brand-mark { --brand-leaf: #26392c; --brand-sage: #929b78; --brand-gold: #a58e66; flex-shrink: 0; }
+  .sanctuary-rail .brand-mark,.welcome-brand .brand-mark,.woodland-mobile-header .brand-mark { --brand-leaf: #d0dabc; --brand-sage: #a8b69a; --brand-gold: #c7b48a; }
   .sky-surface { isolation: isolate; position: relative; background: var(--gradient-sky); color: var(--gh-cream); }
   .sanctuary-image,.sanctuary-film { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 58% center; pointer-events: none; filter: saturate(.68) sepia(.16) brightness(.8); }
   .sanctuary-film { opacity: 0; transition: opacity 1.6s ease; }

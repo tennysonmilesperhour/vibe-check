@@ -28,6 +28,26 @@ Caveats to be honest about:
 
 ## Project notes
 
+- Product foundation: [Free access to your own patterns](docs/design/product-foundation.md).
+  Journaling, people and habit patterns, full history, weekly/monthly reports,
+  stress pattern recognition, matched somatic recommendations with full
+  instructions, and user-reported response and alignment history,
+  export, and privacy controls form the free baseline. Optional paid systems
+  add depth. ChatGPT or other external AI is never required for the baseline.
+  This direction supersedes conflicting priorities in older roadmaps.
+  Support the user's movement from “not-self” to “self” through their own
+  definitions of needs, values, and choice. Do not infer identity or alignment
+  from calmness, mood, a chakra, or a personality system.
+  Offer immediate free actions for confusion, fight or flight, anger,
+  shutdown, emotional numbness, and procrastination, with a mixed/unsure
+  path. Match the user's selected experience and feedback; no journal history
+  is required, and no practice guarantees a state will disappear.
+- Narrative direction: [The voice of the plants](docs/design/plant-voice.md).
+  Tobacco is the central guide across the systems; optional chakra plant
+  companions add a deeper layer. The listed pairings are proposals.
+- Current visual direction: [Nature Sanctuary](docs/design/nature-sanctuary.md),
+  updated September 8, 2026. Use this for visual work; it supersedes conflicting
+  Golden Hour and twilight guidance. The shared visual system is implemented.
 - Vite + React app (former Base44 project) on a Supabase backend, deployed on
   Vercel. Auth lives in `src/features/shell/AuthGate.jsx` and
   `src/lib/AuthContext.jsx`, over the Supabase client in `src/api/supabase.js`.

@@ -41,6 +41,16 @@ export const base44 = {
   auth: {
     me,
     updateMe,
+    deleteAccount: async () => {
+      const { data, error } = await supabase.functions.invoke('delete-account', { body: {} });
+      if (error) {
+        const result = await error.context?.clone?.().json().catch(() => null);
+        if (result?.recordsDeleted) throw Object.assign(new Error(result.error || 'Your records were deleted, but sign-in removal did not finish.'), { recordsDeleted: true });
+        throw error;
+      }
+      if (!data?.deleted) throw new Error(data?.error || 'Account deletion did not complete.');
+      return data;
+    },
     logout: async () => { await supabase.auth.signOut(); },
     redirectToLogin: () => { window.location.assign('/'); },
   },

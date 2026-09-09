@@ -42,7 +42,7 @@ export function resonanceGraph(profile = {}, dateKey) {
     // The Sun sign is computable from the birth date alone, so plot it even
     // before the user opens the astrology form. Moon/Rising/Node still need a
     // birth time, so they stay whatever the user (or the AI calc) filled in.
-    const sunSign = a.sun_sign || values.astrology?.sun_sign || null;
+    const sunSign = a.sun_source === 'unknown' ? null : a.sun_source === 'date_estimate' ? values.astrology?.sun_sign : a.sun_sign || values.astrology?.sun_sign || null;
     addNode('astrology.sun', 'astrology', sunSign && `Sun in ${sunSign}`, sunSign ? signMidDegree(sunSign) : null, { sign: sunSign });
     addNode('astrology.moon', 'astrology', a.moon_sign && `Moon in ${a.moon_sign}`, a.moon_sign ? signMidDegree(a.moon_sign) : null, { sign: a.moon_sign });
     addNode('astrology.rising', 'astrology', a.rising_sign && `${a.rising_sign} Rising`, a.rising_sign ? signMidDegree(a.rising_sign) : null, { sign: a.rising_sign });
@@ -130,7 +130,7 @@ export function resonanceGraph(profile = {}, dateKey) {
   const today = { moonPhase: null, personalDay: null, activeNodeIds: [] };
   if (dateKey) {
     const moon = moonPhase(dateKey);
-    today.moonPhase = { name: moon.name, emoji: moon.emoji, illumination: Math.round(moon.illumination * 100) / 100 };
+    today.moonPhase = { name: moon.name, illumination: Math.round(moon.illumination * 100) / 100 };
     const pd = profile.birth_date ? personalDay(profile.birth_date, dateKey) : null;
     today.personalDay = pd;
 
@@ -156,7 +156,7 @@ export function summarizeGraph(graph) {
   for (const node of graph.nodes) lines.push(`- ${node.label} (${node.system})`);
   for (const edge of graph.edges) lines.push(`* RESONANCE: ${edge.why}`);
   if (graph.today?.moonPhase) {
-    lines.push(`* TODAY: ${graph.today.moonPhase.emoji} ${graph.today.moonPhase.name}${graph.today.personalDay ? `, Personal Day ${graph.today.personalDay}` : ''}`);
+    lines.push(`* TODAY: ${graph.today.moonPhase.name}${graph.today.personalDay ? `, Personal Day ${graph.today.personalDay}` : ''}`);
   }
   return lines.join('\n');
 }

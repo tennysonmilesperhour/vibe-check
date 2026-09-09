@@ -26,7 +26,7 @@ export default function MiniLoom({ profile, size = 180 }) {
           <path key={`${t.a}-${t.b}`} d={t.d} fill="none" stroke={THREAD_COLORS[t.kind]} strokeWidth={t.isActiveToday ? 1.8 : 1} opacity={0.85} />
         ))}
         {layout.nodes.map((n) => (
-          <circle key={n.id} cx={n.x} cy={n.y} r="3.5" fill="var(--gh-cream)" stroke="rgba(90,36,48,0.35)" strokeWidth="0.75" />
+          <circle key={n.id} cx={n.x} cy={n.y} r="3.5" fill="var(--gh-cream)" stroke="rgba(16,39,30,0.35)" strokeWidth="0.75" />
         ))}
       </svg>
       <p className="text-center text-xs mt-2 font-medium" style={{ color: "var(--gh-cream)" }}>

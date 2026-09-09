@@ -2,6 +2,7 @@ import React from "react";
 import PersonPicker from "@/features/people/PersonPicker";
 import { Textarea } from "@/components/ui/textarea";
 import { SCALE_WORDS } from "./vocab";
+import VocabularyIcon from "./VocabularyIcon";
 
 const cream = "var(--gh-cream)";
 const creamSoft = "rgba(255,253,246,0.75)";
@@ -22,7 +23,7 @@ export function ScaleStep({ field, question, value, onChange }) {
           <span className="pb-3 text-lg" style={{ color: creamSoft }}>{words[value]}</span>
         )}
       </div>
-      <div className="mt-6 grid grid-cols-10 gap-1.5 max-w-xl" role="radiogroup" aria-label={question}>
+      <div className="mt-6 grid grid-cols-5 sm:grid-cols-10 gap-1.5 max-w-xl" role="radiogroup" aria-label={question}>
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
@@ -31,7 +32,7 @@ export function ScaleStep({ field, question, value, onChange }) {
             aria-checked={value === n}
             aria-label={`${n} of 10`}
             onClick={() => onChange(n)}
-            className="h-12 text-sm font-bold transition-transform"
+            className="h-12 rounded-lg text-sm font-bold transition-transform"
             style={{
               background: value === n ? cream : "rgba(255,253,246,0.24)",
               color: value === n ? "var(--gh-accent)" : cream,
@@ -64,7 +65,7 @@ export function ChipsStep({ question, hint, options, selected, onToggle }) {
               type="button"
               aria-pressed={isOn}
               onClick={() => onToggle(opt.label)}
-              className="px-4 py-2.5 text-sm font-medium transition-transform"
+              className="min-h-11 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-transform"
               style={{
                 background: isOn ? cream : "rgba(255,253,246,0.14)",
                 color: isOn ? "var(--gh-ink)" : cream,
@@ -72,7 +73,7 @@ export function ChipsStep({ question, hint, options, selected, onToggle }) {
                 transform: isOn ? "translateY(-2px)" : "none",
               }}
             >
-              <span aria-hidden="true">{opt.emoji}</span> {opt.label}
+              <VocabularyIcon name={opt.icon} size={17} /> {opt.label}
             </button>
           );
         })}
@@ -107,14 +108,14 @@ export function MomentStep({ kind, question, value, onChange }) {
         </div>
         <div>
           <span className="text-sm" style={{ color: creamSoft }}>How strongly did it land? {value?.intensity || "–"}/10</span>
-          <div className="mt-2 grid grid-cols-10 gap-1 max-w-md">
+          <div className="mt-2 grid grid-cols-5 sm:grid-cols-10 gap-1 max-w-md">
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
               <button
                 key={n}
                 type="button"
                 aria-label={`Intensity ${n}`}
                 onClick={() => update({ intensity: n })}
-                className="h-8 text-xs font-bold"
+                className="h-11 rounded-lg text-xs font-bold"
                 style={{
                   background: value?.intensity === n ? cream : "rgba(255,253,246,0.24)",
                   color: value?.intensity === n ? "var(--gh-accent)" : cream,

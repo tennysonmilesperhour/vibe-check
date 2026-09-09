@@ -3,6 +3,8 @@ import { supabase, isSupabaseConfigured } from "@/api/supabase";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SkyField from "./SkyField";
+import SanctuaryMark from "./SanctuaryMark";
+import { ArrowUpRight, Leaf, Orbit, Sprout, ArrowRight } from "lucide-react";
 
 /** Turn Supabase's terse auth errors into something a beta tester can act on. */
 function friendlyAuthError(err) {
@@ -89,82 +91,64 @@ export default function AuthGate() {
     setBusy(false);
   };
 
+  const changeMode = (next) => { setMode(next); setError(null); setNotice(null); };
+  const title = mode === "signup" ? "Make space for you."
+    : mode === "reset" ? "A fresh start."
+    : mode === "magic" ? "Let us send you in."
+    : "Welcome back.";
+
   return (
-    <SkyField className="min-h-screen">
-      <div className="max-w-sm mx-auto px-6 py-20">
-        <h1 className="text-5xl" style={{ color: "var(--gh-cream)", lineHeight: 0.98 }}>
-          vibe check
-        </h1>
-        <p className="mt-3 text-sm" style={{ color: "rgba(255,253,246,0.9)" }}>
-          One honest check-in each evening.
-        </p>
-
-        {!isSupabaseConfigured && (
-          <div className="mt-6 p-4 text-sm" role="alert"
-            style={{ background: "rgba(90,36,48,0.55)", color: "var(--gh-cream)", border: "1px solid rgba(255,253,246,0.4)" }}>
-            This build is missing its database configuration. If you are the
-            owner: add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel's
-            Environment Variables, then redeploy. Sign-in cannot work until then.
-          </div>
-        )}
-
-        <form onSubmit={submit} className="mt-10 space-y-4">
-          {mode === "signup" && (
-            <div>
-              <Label htmlFor="auth-name" style={{ color: "var(--gh-cream)" }}>Name</Label>
-              <Input id="auth-name" value={name} onChange={(e) => setName(e.target.value)}
-                autoComplete="name" className="mt-1 bg-white/95" />
-            </div>
-          )}
-          <div>
-            <Label htmlFor="auth-email" style={{ color: "var(--gh-cream)" }}>Email</Label>
-            <Input id="auth-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email" className="mt-1 bg-white/95" />
-          </div>
-          {mode !== "magic" && mode !== "reset" && (
-            <div>
-              <Label htmlFor="auth-password" style={{ color: "var(--gh-cream)" }}>Password</Label>
-              <Input id="auth-password" type="password" required minLength={8} value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={mode === "signup" ? "new-password" : "current-password"} className="mt-1 bg-white/95" />
-            </div>
-          )}
-
-          {error && <p className="text-sm" style={{ color: "var(--gh-cream)", background: "rgba(90,36,48,0.5)", padding: "8px 10px" }}>{error}</p>}
-          {notice && <p className="text-sm" style={{ color: "var(--gh-cream)", background: "rgba(255,253,246,0.18)", padding: "8px 10px" }}>{notice}</p>}
-
-          <button type="submit" className="cream-button w-full" disabled={busy}>
-            {busy ? "One moment…"
-              : mode === "signup" ? "Create account"
-              : mode === "magic" ? "Send magic link"
-              : mode === "reset" ? "Send the reset link"
-              : "Sign in"}
-          </button>
-        </form>
-
-        <div className="mt-6 flex flex-col gap-2 text-sm" style={{ color: "rgba(255,253,246,0.9)" }}>
-          {mode === "signin" && (
-            <button type="button" className="underline underline-offset-4 text-left" onClick={() => setMode("reset")}>
-              Forgot your password?
-            </button>
-          )}
-          {mode !== "signin" && (
-            <button type="button" className="underline underline-offset-4 text-left" onClick={() => setMode("signin")}>
-              Sign in with a password
-            </button>
-          )}
-          {mode !== "signup" && (
-            <button type="button" className="underline underline-offset-4 text-left" onClick={() => setMode("signup")}>
-              New here? Create an account
-            </button>
-          )}
-          {mode !== "magic" && (
-            <button type="button" className="underline underline-offset-4 text-left" onClick={() => setMode("magic")}>
-              Email me a magic link instead
-            </button>
-          )}
+    <main className="welcome-page">
+      <SkyField className="welcome-landscape" film>
+        <div className="welcome-brand"><SanctuaryMark size={50} /><span>vibe check</span></div>
+        <div className="welcome-story">
+          <p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p>
+          <h1>A little closer<br />to yourself.</h1>
+          <p className="welcome-description">Your days, in their fullness. A private journal, honest patterns, and practices for coming back to yourself. Guided by Tobacco, the voice of the plants.</p>
+          <a href="#welcome-form" className="welcome-invitation">Your moment starts here <ArrowUpRight size={18} aria-hidden="true" /></a>
         </div>
-      </div>
-    </SkyField>
+        <div className="welcome-caption"><span className="caption-rule" />Rooted in nature. Made for reflection.</div>
+      </SkyField>
+      <section className="welcome-panel" aria-labelledby="welcome-title">
+        <div className="welcome-topline"><span>Room to grow.</span><a href="mailto:morphiclabsdata@gmail.com">Need a hand? <ArrowUpRight size={13} aria-hidden="true" /></a></div>
+        <div id="welcome-form" className="welcome-form-wrap">
+          <SanctuaryMark className="welcome-form-mark" size={64} />
+          <p className="sanctuary-eyebrow">PAUSE. NOTICE. BEGIN AGAIN.</p>
+          <h2 id="welcome-title">{title}</h2>
+          <p className="welcome-form-intro">{mode === "signup" ? "Begin a daily ritual, entirely your own."
+            : mode === "reset" ? "We'll email you a link to reset your password."
+            : mode === "magic" ? "One link in your inbox. No password needed."
+            : "Your space for a softer landing, every day."}</p>
+          {(mode === "signin" || mode === "signup") && (
+            <div className="auth-mode-switch" aria-label="Account options">
+              <button type="button" aria-pressed={mode === "signin"} onClick={() => changeMode("signin")}>Sign in</button>
+              <button type="button" aria-pressed={mode === "signup"} onClick={() => changeMode("signup")}>Create account</button>
+            </div>
+          )}
+          {!isSupabaseConfigured && <p className="auth-notice" role="status">Sign-in is temporarily unavailable. Please try again later or contact support.</p>}
+          <form onSubmit={submit} className="sanctuary-auth-form">
+            {mode === "signup" && <div><Label htmlFor="auth-name">Your name</Label><Input id="auth-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" placeholder="Your name" /></div>}
+            <div><Label htmlFor="auth-email">Email address</Label><Input id="auth-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@example.com" /></div>
+            {mode !== "magic" && mode !== "reset" && <div>
+              <div className="auth-label-row"><Label htmlFor="auth-password">Password</Label>{mode === "signin" && <button type="button" onClick={() => changeMode("reset")}>Forgot password?</button>}</div>
+              <Input id="auth-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"} />
+            </div>}
+            {error && <p className="auth-notice auth-error" role="alert">{error}</p>}
+            {notice && <p className="auth-notice" role="status">{notice}</p>}
+            <button type="submit" className="ink-button auth-submit" disabled={busy || !isSupabaseConfigured}>
+              <span>{busy ? "One moment…" : mode === "signup" ? "Create your account" : mode === "magic" ? "Send magic link" : mode === "reset" ? "Send reset link" : "Enter your sanctuary"}</span>
+              <ArrowRight size={17} aria-hidden="true" />
+            </button>
+          </form>
+          <div className="auth-alternative"><span />or<span /></div>
+          <button type="button" className="auth-magic" onClick={() => changeMode(mode === "magic" || mode === "reset" ? "signin" : "magic")}>
+            {mode === "magic" || mode === "reset" ? "Sign in with a password" : "Email me a magic link"}
+          </button>
+          <p className="auth-footnote">Your journal, full history, charts, weekly and monthly reports, and everyday practices are free. No AI account required.</p>
+        </div>
+          <div className="welcome-pillars" aria-label="A place to reflect"><span><Leaf size={18} aria-hidden="true" />Daily rituals</span><span><Sprout size={18} aria-hidden="true" />Personal growth</span><span><Orbit size={18} aria-hidden="true" />Inner connection</span></div>
+          <nav className="flex flex-wrap justify-center gap-5 text-xs py-3" aria-label="App information"><a className="underline underline-offset-4 py-2" href="/privacy">Privacy</a><a className="underline underline-offset-4 py-2" href="/terms">Terms</a><a className="underline underline-offset-4 py-2" href="/support">Support</a></nav>
+      </section>
+    </main>
   );
 }

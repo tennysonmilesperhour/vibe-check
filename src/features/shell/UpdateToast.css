@@ -1,0 +1,61 @@
+/* The visible toast alone receives clicks; no overlay covers app navigation. */
+.app-update-toast {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: var(--z-toast, 60);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: min(26rem, calc(100vw - 2rem));
+  padding: 1.125rem;
+  border: 1px solid #a58e6670;
+  border-radius: 1rem;
+  background: #26392c;
+  color: #e9e2cd;
+  box-shadow: 0 12px 40px #1b241a40;
+  animation: update-toast-enter 220ms ease-out;
+}
+.app-update-icon { flex-shrink: 0; margin-top: 0.25rem; color: #c7b48a; }
+.app-update-body { flex: 1; min-width: 0; }
+#app-update-title { margin: 0; font-size: 0.95rem; font-weight: 650; line-height: 1.5; }
+.app-update-description { margin: 0.35rem 0 0.8rem; color: #dce3d3; font-size: 0.8rem; line-height: 1.6; }
+.app-update-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  background: #c7b48a;
+  color: #1b241a;
+  font-size: 0.8rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.app-update-action:hover { background: #ddd0ac; }
+.app-update-dismiss {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: -0.5rem -0.5rem 0 0;
+  border-radius: 50%;
+  color: #dce3d3;
+  cursor: pointer;
+}
+.app-update-dismiss:hover { background: #ffffff14; }
+.app-update-action:focus-visible, .app-update-dismiss:focus-visible {
+  outline: 2px solid #e9e2cd;
+  outline-offset: 3px;
+}
+@keyframes update-toast-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-update-toast { animation: none; }
+}

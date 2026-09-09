@@ -3,7 +3,7 @@
 // surface that used to hit InvokeLLM now draws from here.
 import { todayKey } from "@/lib/dates";
 import { deriveAll } from "@/lib/resonance/derive";
-import { ZODIAC, ELEMENT_TEMPERAMENT, MODALITY_MODE } from "./content/zodiac";
+import { astrologyReading } from "./astrology";
 import { NUMBERS, reduceToKey } from "./content/numerology";
 import { HD_TYPES, resolveType, resolveAuthority, resolveProfile } from "./content/humanDesign";
 import { GK_SEQUENCE_META, resolveKey } from "./content/geneKeys";
@@ -24,59 +24,6 @@ function format(sections) {
 }
 
 // ── per-system composers ─────────────────────────────────────────────────────
-
-function astrologyReading(data, computed) {
-  const d = { ...computed, ...clean(data) };
-  const sun = d.sun_sign, moon = d.moon_sign, rising = d.rising_sign, node = d.north_node;
-  const sunSign = ZODIAC[sun];
-  const sections = [];
-
-  if (!sun && !moon && !rising) {
-    return "Add your birth date on the Systems tab and your Sun sign will be computed automatically. Fill in your Moon and Rising (they need your birth time) to unlock the full natal reading.";
-  }
-
-  const lead = sunSign
-    ? `Your Sun in ${sun} sets the keynote of who you are. ${cap(sunSign.gift)}. ${sunSign.sun}`
-    : `Your chart is taking shape. Here is what your placements reveal so far.`;
-  sections.push({ h: "The core of you", p: lead });
-
-  if (sunSign) {
-    sections.push({
-      h: `Sun in ${sun}`,
-      p: `${ELEMENT_TEMPERAMENT[sunSign.element]} ${MODALITY_MODE[sunSign.modality]} Ruled by ${sunSign.ruler}, your keywords are ${sunSign.keywords.join(", ")}. The shadow to watch is ${sunSign.shadow}.`,
-    });
-  }
-  if (moon && ZODIAC[moon]) {
-    sections.push({ h: `Moon in ${moon}`, p: ZODIAC[moon].moon });
-  }
-  if (rising && ZODIAC[rising]) {
-    sections.push({ h: `${rising} Rising`, p: ZODIAC[rising].rising });
-  }
-
-  // Sun/Moon/Rising interplay
-  if (sun && moon) {
-    const same = ZODIAC[sun]?.element === ZODIAC[moon]?.element;
-    sections.push({
-      h: "How your energies meet",
-      p: same
-        ? `Your Sun and Moon share the ${ZODIAC[sun].element} element, so who you are and what you feel pull in the same direction. There is an unusual inner consistency here: your outer drive and your emotional needs rarely fight. The risk is a blind spot where you never get the friction that forces growth.`
-        : `Your ${ZODIAC[sun].element} Sun and ${ZODIAC[moon].element} Moon run on different fuel: ${ZODIAC[sun].element.toLowerCase()} identity, ${ZODIAC[moon].element.toLowerCase()} feeling. What you consciously want and what you emotionally need do not always agree, and learning to honor both, rather than letting one silence the other, is a lifelong piece of your integration.`,
-    });
-  }
-
-  if (node && ZODIAC[node]) {
-    sections.push({ h: "Your growth edge (North Node)", p: `${ZODIAC[node].node} The North Node marks where you are stretching, and it rarely feels natural at first. Leaning into ${node} qualities is how your chart wants you to evolve.` });
-  }
-
-  if (d.custom_notes) sections.push({ h: "Your own notes", p: d.custom_notes });
-
-  sections.push({
-    h: "Living it",
-    p: `A chart is not a verdict, it is a set of tendencies you can work with consciously. This week, notice one place your ${sun ? `${sun} Sun` : "Sun"} wants to lead${moon && ZODIAC[moon] ? ` and one place your ${moon} Moon quietly needs tending` : ""}. Give each a little of what it is actually asking for.`,
-  });
-
-  return format(sections);
-}
 
 function humanDesignReading(data) {
   const d = clean(data);

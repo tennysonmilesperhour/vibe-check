@@ -4,6 +4,7 @@ import { tarotReading } from "@/lib/wisdom/readings";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
+import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import TarotCard from "@/components/tarot/TarotCard";
 import { FULL_DECK, SPREADS } from "@/components/tarot/tarotDeck";
 import { ORACLE_DECK } from "@/components/tarot/oracleDeck";
@@ -142,12 +143,16 @@ export default function TarotTable() {
     <div className="dusk-surface min-h-screen">
       <div className="max-w-4xl mx-auto px-6 py-10">
         <header className="text-center">
+          <SanctuaryMark size={52} className="mx-auto mb-5 text-[var(--gh-gold)]" />
           <h1 className="text-4xl md:text-5xl" style={{ color: duskInk }}>The table is set</h1>
           <p className="text-sm mt-2" style={{ color: duskInkSoft }}>
             {deckId === "tarot" ? "78 cards, reversals included" : "44 oracle cards, always upright"}
           </p>
         </header>
 
+        {!drawn && <div aria-hidden="true" className="tarot-preview">
+          {[0,1,2].map((index) => <div key={index} style={{ transform: `translateY(${index === 1 ? -7 : 5}px) rotate(${(index - 1) * 12}deg)` }}><TarotCard card={FULL_DECK[index]} size="sm" disabled /></div>)}
+        </div>}
         {!drawn && (
           <div className="max-w-xl mx-auto mt-10 space-y-6">
             <div className="flex justify-center gap-2" role="group" aria-label="Choose a deck">
@@ -176,7 +181,7 @@ export default function TarotTable() {
                   onClick={() => setSpreadId(s.id)}
                   className="text-left p-3"
                   style={spreadId === s.id
-                    ? { background: "rgba(253,201,78,0.15)", border: "1px solid var(--gh-gold)", borderRadius: "var(--radius)", boxShadow: "0 6px 24px rgba(253,201,78,0.16)" }
+                    ? { background: "rgba(185,154,85,0.15)", border: "1px solid var(--gh-gold)", borderRadius: "var(--radius)", boxShadow: "0 6px 24px rgba(185,154,85,0.16)" }
                     : { border: "1px solid rgba(245,229,216,0.25)", borderRadius: "var(--radius)" }}
                 >
                   <div className="text-sm font-bold" style={{ color: duskInk }}>{s.name}</div>
@@ -186,6 +191,7 @@ export default function TarotTable() {
             </div>
 
             <Input
+              aria-label="Your question (optional)"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="A question to hold, if you have one (optional)"
@@ -193,6 +199,7 @@ export default function TarotTable() {
               style={{ borderColor: "rgba(245,229,216,0.35)", color: duskInk }}
             />
             <Input
+              aria-label="Ritual seed (optional)"
               value={seed}
               onChange={(e) => setSeed(e.target.value)}
               placeholder="Ritual seed (optional: the same words deal the same cards)"
@@ -272,7 +279,7 @@ export default function TarotTable() {
                 ))}
 
                 {interpretation && (
-                  <div className="p-5 whitespace-pre-line text-sm" style={{ background: "rgba(253,201,78,0.1)", border: "1px solid rgba(253,201,78,0.4)", color: duskInk, borderRadius: "var(--radius)" }}>
+                  <div className="p-5 whitespace-pre-line text-sm" style={{ background: "rgba(185,154,85,0.1)", border: "1px solid rgba(185,154,85,0.4)", color: duskInk, borderRadius: "var(--radius)" }}>
                     {interpretation}
                   </div>
                 )}

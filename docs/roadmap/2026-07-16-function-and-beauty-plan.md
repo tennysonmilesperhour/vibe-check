@@ -1,5 +1,9 @@
 # Vibe Check — Function & Beauty Plan
 
+September 8 update: The [product foundation](../design/product-foundation.md)
+now governs free access, the daily/weekly/monthly journey, and optional paid
+depth. Use that direction where this historical plan conflicts with it.
+
 **Date:** 2026-07-16 · **Status:** Proposed
 **Basis:** Fresh audit on commit `59ecd7e` (lint, tests, build, live Supabase/Vercel
 state, and rendered screenshots of every surface at desktop + phone widths against

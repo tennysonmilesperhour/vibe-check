@@ -3,6 +3,7 @@
 // .update / .delete exactly as before; this layer translates.
 // RLS scopes every query to the signed-in user; user_id is stamped on insert.
 import { supabase } from './supabase';
+import { fetchAllPages } from '../lib/crypto';
 
 const SORTABLE = { date: 'date', created_date: 'created_at', updated_date: 'updated_at' };
 
@@ -39,9 +40,14 @@ function makeEntity(table) {
         .from(table)
         .select('*')
         .order(column, { ascending })
+        .order('id', { ascending: true })
         .range(offset, offset + limit - 1);
       if (error) throw error;
       return (data || []).map(outbound);
+    },
+
+    async all(sort = '-created_date') {
+      return fetchAllPages((limit, offset) => this.list(sort, limit, offset), 500);
     },
 
     async filter(criteria = {}, sort = '-created_date', limit = 100) {
@@ -106,6 +112,11 @@ export const Reading = makeEntity('readings');
 export const BoundaryAlert = makeEntity('boundary_alerts');
 export const HealingProgress = makeEntity('healing_progress');
 export const CosmicWisdom = makeEntity('cosmic_wisdom');
+export const JournalEntry = makeEntity('vibe_journal_entries');
+export const PracticeSession = makeEntity('vibe_practice_sessions');
+export const ReportReflection = makeEntity('vibe_report_reflections');
+export const VibePreference = makeEntity('vibe_preferences');
+export const CheckInDraft = makeEntity('vibe_checkin_drafts');
 
 // Legacy entities, retired after the people migration. Empty reads keep the
 // one-time migratePeople() call harmless; writes are refused.
@@ -129,5 +140,6 @@ export const User = {
 
 export default {
   DailyCheckIn, Person, Reading, BoundaryAlert, HealingProgress, CosmicWisdom,
+  JournalEntry, PracticeSession, ReportReflection, VibePreference, CheckInDraft,
   Relationship, Connection, User,
 };

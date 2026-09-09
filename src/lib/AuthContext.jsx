@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { supabase } from '@/api/supabase';
+import { queryClientInstance } from '@/lib/query-client';
 import { base44 } from '@/api/base44Client';
+import { clearLegacyDrafts } from '@/lib/legacy-drafts';
 
 // Supabase-backed auth, preserving the context contract the app already
 // consumes (App.jsx, ProtectedRoute): user / isAuthenticated / isLoadingAuth /
@@ -18,8 +20,8 @@ export const AuthProvider = ({ children }) => {
   // shows the new-password screen until it's cleared.
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
-  const checkUserAuth = useCallback(async () => {
-    setIsLoadingAuth(true);
+  const checkUserAuth = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setIsLoadingAuth(true);
     try {
       const { data } = await supabase.auth.getSession();
       if (data?.session) {
@@ -48,8 +50,10 @@ export const AuthProvider = ({ children }) => {
       // client holds its auth lock, and further auth calls deadlock the app
       // (the post-login blank screen). Defer to the next tick instead.
       if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
-      if (session) setTimeout(() => { checkUserAuth(); }, 0);
+      if (session) setTimeout(() => { checkUserAuth({ silent: event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' }); }, 0);
       else {
+        queryClientInstance.clear();
+        clearLegacyDrafts();
         setUser(null);
         setIsAuthenticated(false);
         setAuthError({ type: 'auth_required', message: 'Sign in to continue' });
@@ -60,8 +64,11 @@ export const AuthProvider = ({ children }) => {
     return () => sub?.subscription?.unsubscribe();
   }, [checkUserAuth]);
 
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const logout = async (scope = 'local') => {
+    const { error } = await supabase.auth.signOut({ scope });
+    if (error) throw error;
+    clearLegacyDrafts();
+    queryClientInstance.clear();
     setUser(null);
     setIsAuthenticated(false);
   };

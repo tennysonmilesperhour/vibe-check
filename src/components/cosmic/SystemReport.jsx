@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { astrologyPlacements, astrologyAspects } from "@/lib/wisdom/astrology";
+import { deriveAstrology } from "@/lib/resonance/astrology";
+import { AstrologySources } from "./AstrologyGuide";
 import { systemReading } from "@/lib/wisdom/engine";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Download, ChevronDown, ChevronUp } from "lucide-react";
@@ -35,54 +38,15 @@ function NotesBlock({ children }) {
   );
 }
 
-const PLANETS = [
-  { label: "Sun ☉", key: "sun_sign", desc: "Core identity & conscious self" },
-  { label: "Moon ☽", key: "moon_sign", desc: "Emotional nature & inner world" },
-  { label: "Rising ↑", key: "rising_sign", desc: "Outer persona & first impressions" },
-  { label: "North Node ☊", key: "north_node", desc: "Soul's evolutionary direction" },
-];
+const HD_CENTERS = ["Head", "Ajna", "Throat", "G Center (Identity)", "Heart/Ego", "Solar Plexus", "Spleen", "Sacral", "Root"];
 
-const HD_CENTERS = [
-  "Head", "Ajna", "Throat", "G Center (Identity)", "Heart/Ego",
-  "Solar Plexus", "Sacral", "Spleen", "Root"
-];
-
-const SIGN_SIGNATURE = [
-  { label: "Element", key: "element" },
-  { label: "Modality", key: "modality" },
-  { label: "Polarity", key: "polarity" },
-  { label: "Ruling Planet", key: "ruler" },
-];
-
-function AstrologyDetail({ data }) {
-  const hasSignature = SIGN_SIGNATURE.some(s => data?.[s.key]) || data?.decan;
-  return (
-    <>
-    <Section title="Planetary Placements">
-      {PLANETS.map(p => data?.[p.key] && (
-        <div key={p.key} className="flex items-start gap-3 py-2.5" style={{ borderBottom: '1px solid hsl(var(--border))' }}>
-          <div className="w-28 shrink-0">
-            <p className="text-sm font-semibold" style={{ color: 'var(--gh-accent)' }}>{p.label}</p>
-            <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{p.desc}</p>
-          </div>
-          <div className="flex-1">
-            <span className="px-2.5 py-1 rounded-sm text-sm font-medium"
-              style={{ background: tint('--gh-accent', 10), color: 'var(--gh-accent)', border: `1px solid ${tint('--gh-accent', 30)}` }}>
-              {data[p.key]}
-            </span>
-          </div>
-        </div>
-      ))}
-      <NotesBlock>{data?.custom_notes}</NotesBlock>
-    </Section>
-    {hasSignature && (
-      <Section title="Sign Signature">
-        {SIGN_SIGNATURE.map(s => <DataRow key={s.key} label={s.label} value={data?.[s.key]} />)}
-        {data?.decan && <DataRow label="Decan" value={data.decan_ruler ? `${data.decan} · ${data.decan_ruler}` : String(data.decan)} />}
-      </Section>
-    )}
-    </>
-  );
+function AstrologyDetail({ data, cosmicProfile }) {
+  const placements = astrologyPlacements(data || {}, deriveAstrology(cosmicProfile?.birth_date));
+  return <Section title="Your known placements">
+    {placements.map(p => <DataRow key={p.id} label={`${p.symbol} ${p.label}`} value={`${p.sign} · ${p.source}${p.house ? ` · House ${p.house.number}` : ''}`} />)}
+    {astrologyAspects(data || {}).map(a => <DataRow key={`${a.a.id}-${a.b.id}-${a.label}`} label="Entered aspect" value={`${a.a.label} ${a.label.toLowerCase()} ${a.b.label}`} />)}
+    <p className="text-xs mt-3">Unknown placements are left open. These are natal placements, without calculated transits or event forecasts.</p>
+  </Section>;
 }
 
 function HumanDesignDetail({ data }) {
@@ -155,10 +119,10 @@ function GenericDetail({ data, fields }) {
 
 // ── PDF Export ───────────────────────────────────────────────────────────────
 
-// Golden Hour ink on paper: ink #5A2430, accent #C2503C, muted #A6606E.
-const PDF_INK = [90, 36, 48];
-const PDF_ACCENT = [194, 80, 60];
-const PDF_MUTED = [166, 96, 110];
+// Woodland ink on paper; keep exported text dark for ordinary white paper.
+const PDF_INK = [27, 36, 26];
+const PDF_ACCENT = [52, 73, 47];
+const PDF_MUTED = [84, 94, 65];
 
 async function exportToPDF(systemLabel, reportText, profileData) {
   const { jsPDF } = await import("jspdf");
@@ -242,7 +206,8 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
   const meta = systemMeta(systemId);
   const Detail = SYSTEM_DETAILS[systemId];
   const [expanded, setExpanded] = useState(false);
-  const [report, setReport] = useState(null);
+  const [composed, setComposed] = useState(false);
+  const report = useMemo(() => composed ? systemReading(systemId, profile[systemId] || {}, cosmicProfile) : null, [composed, systemId, profile, cosmicProfile]);
   const cardRef = useRef(null);
 
   // When the Loom sends the reader here ("Deep dive into X"), open this card
@@ -251,7 +216,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
   useEffect(() => {
     if (!autoOpen) return;
     setExpanded(true);
-    setReport((r) => r || systemReading(systemId, profile[systemId] || {}, cosmicProfile));
+    setComposed(true);
     const t = setTimeout(() => {
       cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
@@ -263,14 +228,13 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
   const data = profile[systemId];
 
   const compose = () => {
-    // Composed from the wisdom engine's content tables — exact, instant, local.
-    setReport(systemReading(systemId, data || {}, cosmicProfile));
+    setComposed(true);
   };
 
   return (
     <div ref={cardRef} className="overflow-hidden" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)', scrollMarginTop: "1rem" }}>
       <button className="w-full p-5 flex items-center justify-between text-left"
-        onClick={() => setExpanded(e => !e)}>
+        aria-expanded={expanded} onClick={() => { setExpanded(e => !e); if (systemId === 'astrology' && !expanded) setComposed(true); }}>
         <div className="flex items-center gap-3">
           <Icon className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} aria-hidden="true" />
           <div>
@@ -284,7 +248,9 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
       {expanded && (
         <div className="px-5 pb-5">
           {/* Profile data */}
-          <Detail data={data} />
+          <Detail data={data} cosmicProfile={cosmicProfile} />
+
+          {systemId === "astrology" && <AstrologySources />}
 
           {/* Composed deep reading */}
           <div className="mt-4 p-4" style={{ background: tint('--gh-gold', 8), border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
@@ -294,7 +260,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
                 <span className="text-sm font-semibold" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>Deep reading</span>
               </div>
               {report && (
-                <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, data)}
+                <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, systemId === "astrology" ? null : data)}
                   className="text-xs gap-1.5" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
                   <Download className="w-3 h-3" /> Save as PDF
                 </Button>
@@ -303,12 +269,18 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
 
             {report ? (
               <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--gh-ink-soft)' }}>
-                {report}
+                {systemId === 'astrology' ? report.split('\n\n').map((section, index) => {
+                  const breakAt = section.indexOf('\n');
+                  return breakAt < 0 ? <p key={index}>{section}</p> : <section key={index} className="mb-6 last:mb-0">
+                    <h4 className="text-xs font-bold tracking-wider mb-2" style={{ color: 'var(--gh-accent)' }}>{section.slice(0, breakAt)}</h4>
+                    <p>{section.slice(breakAt + 1)}</p>
+                  </section>;
+                }) : report}
               </div>
             ) : (
               <div className="text-center py-4">
                 <p className="text-xs mb-3" style={{ color: 'var(--gh-ink-muted)' }}>
-                  Composed exactly from your profile and the engine's content tables — nothing generated
+                  Explore your known placements through original reflections and practical questions.
                 </p>
                 <button type="button" onClick={compose} className="ink-button text-sm">
                   Compose your reading

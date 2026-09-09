@@ -75,7 +75,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                     Weave your cosmos to receive daily wisdom
                 </p>
                 <p className="text-sm mt-1" style={{ color: "var(--gh-ink-soft)" }}>
-                    Add your birth date and the systems you work with; every reading is computed from them.
+                    Add your birth date and the systems you work with; your reflections will use the details you provide.
                 </p>
                 <Link to={createPageUrl("CosmicAddons")} className="ink-button inline-block text-sm mt-4">
                     Weave your cosmos
@@ -88,8 +88,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
 
     return (
         <div
-            className="p-5 cursor-pointer transition-colors duration-300"
-            onClick={markRead}
+            className="p-5 transition-colors duration-300"
             style={{
                 background: isUnread ? tint("--gh-gold", 10) : "var(--gh-cream)",
                 border: isUnread ? "1px solid var(--gh-gold)" : "1px solid hsl(var(--border))",
@@ -106,7 +105,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                     )}
                 </p>
                 <button type="button" onClick={(e) => { e.stopPropagation(); markRead(); }}
-                    aria-label={expanded ? "Collapse wisdom" : "Expand wisdom"}
+                    aria-expanded={expanded} aria-label={expanded ? "Collapse wisdom" : "Expand wisdom"}
                     style={{ color: "var(--gh-ink-muted)" }}>
                     {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
@@ -126,6 +125,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                     <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "var(--gh-ink-soft)" }}>
                         {wisdom.wisdom}
                     </p>
+                    {wisdom.basis && <p className="text-xs" style={{ color: "var(--gh-ink-muted)" }}>{wisdom.basis}</p>}
                     {wisdom.contemplation && (
                         <div className="p-3" style={{ background: tint("--gh-gold", 12), borderLeft: "2px solid var(--gh-gold)" }}>
                             <p className="text-xs font-semibold mb-1 uppercase tracking-widest" style={{ color: "var(--gh-ink-muted)" }}>

@@ -33,6 +33,7 @@ export default function ConflictNotice({ profile, onUseComputed }) {
               You entered <strong>{String(c.entered)}</strong> for {c.field.replace(/_/g, " ").replace(".", " · ")},
               but your {c.source} implies <strong>{String(c.computed)}</strong>.
             </p>
+            {c.field === "astrology.sun_sign" && <p className="text-xs mt-1">An accurate birth chart may differ near a sign boundary. Keep your entered sign if it comes from that chart.</p>}
             {onUseComputed && (
               <button
                 type="button"

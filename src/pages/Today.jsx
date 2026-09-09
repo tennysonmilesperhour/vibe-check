@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Leaf, Sprout, Orbit, ArrowRight } from "lucide-react";
+import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
 import { format } from "date-fns";
 import { todayKey, parseLocalDate, hoursSince } from "@/lib/dates";
 import { moonPhase } from "@/lib/resonance/moon";
+import MoonGlyph from "@/features/loom/MoonGlyph";
 import { computeStreak, streakLabel } from "@/lib/streaks";
 import { migratePeople } from "@/lib/people";
 import { Person, Relationship, Connection } from "@/entities/all";
@@ -13,13 +16,10 @@ import PageTransition from "@/features/shell/PageTransition";
 import CheckInCeremony from "@/features/today/CheckInCeremony";
 import TodaySummary from "@/features/today/TodaySummary";
 import AlertInline from "@/features/today/AlertInline";
-import CosmicWisdomCard from "@/components/cosmic/CosmicWisdomCard";
-import MiniLoom from "@/features/loom/MiniLoom";
-import WeatherLine from "@/features/today/WeatherLine";
+import DailySupport from '@/features/today/DailySupport';
+import { validDateKey } from '@/lib/living-patterns';
 import { createPageUrl } from "@/utils";
 import { useSearchParamState } from "@/lib/deeplink";
-
-const DATE_SHAPE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * State-adaptive landing:
@@ -33,24 +33,31 @@ export default function Today() {
   const [streak, setStreak] = useState(0);
   const [lastEntryAt, setLastEntryAt] = useState(null);
   const [mode, setMode] = useState("landing"); // landing | ceremony | peek
-  const [profile, setProfile] = useState(null);
   // ?date=yyyy-MM-dd lets you write a past day (never a future one).
   const [dateParam, setDateParam] = useSearchParamState("date", "");
-  const targetDate = DATE_SHAPE.test(dateParam) && dateParam <= todayKey() ? dateParam : todayKey();
+  const targetDate = validDateKey(dateParam) && dateParam <= todayKey() ? dateParam : todayKey();
   const isBackfill = targetDate !== todayKey();
   const [backfillEntry, setBackfillEntry] = useState(null);
+  const [loadedBackfillDate, setLoadedBackfillDate] = useState(null);
+  const [backfillLoading, setBackfillLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    if (!isBackfill) { setBackfillEntry(null); return; }
-    DailyCheckIn.filter({ date: targetDate }).then(([e]) => setBackfillEntry(e || null)).catch(() => {});
+    if (!isBackfill) { setBackfillEntry(null); setBackfillLoading(false); return; }
+    let active = true;
+    setBackfillLoading(true);
+    DailyCheckIn.filter({ date: targetDate }).then(([e]) => { if (active) { setBackfillEntry(e || null); setLoadedBackfillDate(targetDate); } }).catch((err) => { if (active) setLoadError(err.message); }).finally(() => { if (active) setBackfillLoading(false); });
     setMode("ceremony");
+    return () => { active = false; };
   }, [targetDate, isBackfill]);
+
+  useEffect(() => { if (dateParam === todayKey()) setMode("ceremony"); }, [dateParam]);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [checkIns, openAlerts] = await Promise.all([
-        DailyCheckIn.list("-date", 120),
+        DailyCheckIn.all("-date"),
         BoundaryAlert.filter({ is_acknowledged: false }).catch(() => []),
       ]);
       const today = checkIns.find((c) => c.date === todayKey()) || null;
@@ -58,15 +65,14 @@ export default function Today() {
       setAlerts(openAlerts);
       setStreak(computeStreak(checkIns, todayKey()));
       if (!today && checkIns[0]?.created_date) setLastEntryAt(checkIns[0].created_date);
-    } catch {
-      // an empty Today is handled below; never blank-screen
+    } catch (err) {
+      setLoadError(err.message || 'Could not load your check-ins.');
     }
     setLoading(false);
   }, []);
 
   useEffect(() => {
     load();
-    base44.auth.me().then((me) => setProfile(me?.cosmic_profile || null)).catch(() => {});
     // one-time data migration, safe to call every mount
     migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
   }, [load]);
@@ -80,9 +86,13 @@ export default function Today() {
   const moon = moonPhase(todayKey());
   const dateLine = format(parseLocalDate(todayKey()), "EEEE, MMMM d");
 
+  if (loadError) return <div className="living-page"><p className="living-error" role="alert">{loadError}</p><button className="ink-button mt-4" onClick={() => window.location.reload()}>Reload your history</button></div>;
+  if (loading || (isBackfill && loadedBackfillDate !== targetDate) || backfillLoading) return <div className="living-page" role="status">Opening this day's record…</div>;
+
   if (mode === "ceremony") {
     return (
       <CheckInCeremony
+        key={`${targetDate}:${(isBackfill ? backfillEntry : entry)?.id || 'new'}`}
         dateKey={targetDate}
         existing={isBackfill ? backfillEntry : entry}
         onDone={() => { setMode("landing"); setDateParam(""); load(); }}
@@ -99,42 +109,26 @@ export default function Today() {
   if (!entry && mode !== "peek") {
     const isFirstRun = !lastEntryAt && streak === 0;
     return (
-      <SkyField className="min-h-[calc(100vh-0px)]">
-        <PageTransition className="max-w-3xl mx-auto px-6 py-16 md:py-24">
-          <p className="text-sm" style={{ color: "rgba(255,253,246,0.85)" }}>
-            {dateLine} · {moon.emoji} {moon.name}
-            {lastEntryAt ? ` · ${hoursSince(lastEntryAt)} hours since your last entry` : ""}
-          </p>
-          <h1 className="mt-4 text-5xl md:text-7xl" style={{ color: "var(--gh-cream)", maxWidth: "12ch", lineHeight: 0.98 }}>
-            {isFirstRun ? "Welcome to the golden hour" : "How did today feel for you?"}
-          </h1>
-          {isFirstRun && (
-            <p className="mt-5 text-base max-w-md" style={{ color: "rgba(255,253,246,0.9)" }}>
-              One honest check-in each evening. Over time this place learns
-              your weather, your people, and the sky you were born under.
-            </p>
-          )}
-          <div className="mt-10 flex flex-wrap gap-3">
-            <button type="button" className="cream-button" onClick={() => setMode("ceremony")}>
-              {isFirstRun ? "Begin your first check-in" : "Begin check-in"}
-            </button>
-            {isFirstRun && !profile?.enabled_systems?.length ? (
-              <Link to={createPageUrl("CosmicAddons")} className="ghost-cream-button inline-block">
-                Weave your cosmos first
-              </Link>
-            ) : (
-              <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>
-                Skip to reflection
-              </button>
-            )}
+      <><SkyField className="today-invitation" film>
+        <PageTransition className="today-content">
+          <div className="today-date"><span>{dateLine}</span><span>{moon.name}{lastEntryAt ? ` · ${hoursSince(lastEntryAt)} hours since your last entry` : ""}</span></div>
+          <div className="today-heading">
+            <p className="sanctuary-eyebrow">A MOMENT, JUST FOR YOU</p>
+            <h1>{isFirstRun ? "Welcome to your sanctuary." : "Come back to yourself."}</h1>
+            <p>{isFirstRun ? "Keep a private record of your days. See your patterns over time, with Tobacco guiding you toward practices that fit what you need." : "What happened, how did it feel, and what do you want to remember? A short check-in is enough."}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button type="button" className="cream-button gap-5" onClick={() => setMode("ceremony")}>{isFirstRun ? "Begin your first check-in" : "Begin check-in"}<ArrowRight size={16} aria-hidden="true" /></button>
+              <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>Explore your reflections</button>
+            </div>
+            {streak > 0 && <p className="mt-6 text-xs">{streakLabel(streak)} kept. There is room for tonight.</p>}
           </div>
-          {streak > 0 && (
-            <p className="mt-10 text-sm" style={{ color: "rgba(255,253,246,0.85)" }}>
-              {streakLabel(streak)} kept so far. Tonight continues the run.
-            </p>
-          )}
+          <nav className="today-paths" aria-label="Explore your sanctuary">
+            <Link to={createPageUrl("Analytics")}><Sprout size={24} aria-hidden="true" /><strong>Your patterns</strong><span>See what helps you grow.</span></Link>
+            <Link to={createPageUrl("Practice")}><Leaf size={24} aria-hidden="true" /><strong>Help for this moment</strong><span>A practice for how you feel.</span></Link>
+            <Link to="/Analytics?tab=reports"><Orbit size={24} aria-hidden="true" /><strong>Weekly & monthly reports</strong><span>The whole story stays in view.</span></Link>
+          </nav>
         </PageTransition>
-      </SkyField>
+      </SkyField><div className="living-page"><DailySupport welcome={isFirstRun} /></div></>
     );
   }
 
@@ -143,8 +137,9 @@ export default function Today() {
     <div className="field-wash min-h-screen">
       <PageTransition className="max-w-3xl mx-auto px-6 py-10 space-y-10">
         <header>
+          <div className="reflection-header"><div><p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p><h1>A little more understanding.</h1></div><SanctuaryMark size={62} /></div>
           <p className="text-sm" style={{ color: "var(--gh-ink-muted)" }}>
-            {dateLine} · {moon.emoji} {moon.name} · {streakLabel(streak)}
+            {dateLine} · <span className="inline-flex items-center gap-1.5"><MoonGlyph name={moon.name} illumination={moon.illumination} />{moon.name}</span> · {streakLabel(streak)}
           </p>
           {!entry && (
             <div className="mt-4 p-4 flex items-center justify-between" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}>
@@ -158,25 +153,13 @@ export default function Today() {
 
         <AlertInline alerts={alerts} onAcknowledged={(id) => setAlerts((a) => a.filter((x) => x.id !== id))} />
 
-        <WeatherLine />
-
         {entry && <TodaySummary entry={entry} onEdit={() => setMode("ceremony")} />}
-
-        <div className="grid md:grid-cols-[1fr_auto] gap-6 items-start">
-          <section aria-label="Today's wisdom">
-            <CosmicWisdomCard periodType="daily" />
-          </section>
-          {profile && (
-            <aside aria-label="Your Loom today" className="md:w-56">
-              <MiniLoom profile={profile} />
-            </aside>
-          )}
-        </div>
+        <DailySupport />
 
         <nav aria-label="Continue" className="flex flex-wrap gap-4 hairline pt-6 text-sm font-medium">
           <Link to={createPageUrl("Analytics")} style={{ color: "var(--gh-accent)" }}>See your patterns</Link>
-          <Link to={createPageUrl("Practice")} style={{ color: "var(--gh-accent)" }}>Pull a card</Link>
-          <Link to={createPageUrl("CosmicAddons")} style={{ color: "var(--gh-accent)" }}>Visit your cosmos</Link>
+          <Link to={createPageUrl("Practice")} style={{ color: "var(--gh-accent)" }}>Find a practice</Link>
+          <Link to={createPageUrl("CosmicAddons")} style={{ color: "var(--gh-accent)" }}>Explore optional systems</Link>
         </nav>
       </PageTransition>
     </div>

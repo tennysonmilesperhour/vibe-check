@@ -21,7 +21,7 @@ export default [
       globals: {
         ...globals.browser,
         __BUILD_ID__: "readonly",
-        __IS_PRODUCTION_BUILD__: "readonly",
+        __BUILD_ENVIRONMENT__: "readonly",
       },
       parserOptions: {
         ecmaVersion: 2022,

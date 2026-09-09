@@ -3,6 +3,7 @@
 // static per-system content. Still zero API calls.
 import { todayKey } from "@/lib/dates";
 import { deriveAll } from "@/lib/resonance/derive";
+import { astrologyPeriodWisdom, astrologyPlacements } from "./astrology";
 import { ZODIAC } from "./content/zodiac";
 import { NUMBERS, reduceToKey } from "./content/numerology";
 import { resolveType, HD_TYPES } from "./content/humanDesign";
@@ -94,49 +95,21 @@ export function integratedReading(enabledSystems = [], profile = {}) {
   try { computed = deriveAll(profile, todayKey()).values || {}; } catch { computed = {}; }
 
   const signals = collectSignals(enabledSystems, profile, computed);
-  const name = (profile.first_name || "").trim();
-  const who = name || "You";
-  const paras = [];
-
-  if (signals.length === 0) {
-    return "Turn on a system or two and add a little profile data on the Systems tab, and a synthesized reading across everything will compose here, the single story your whole blueprint is telling.";
-  }
-
-  // 1. the core thread
-  const thread = signals.map((s) => s.essence).filter(Boolean);
-  paras.push(
-    `${who} ${name ? "are" : "are"} not a list of separate systems; ${name ? "you" : "you"} are one signal read in several languages. Across your active blueprint, the same theme keeps surfacing: ${joinNicely(thread.slice(0, 3))}. That is the through-line, the thing your whole chart keeps pointing at from different angles.`
-  );
-
-  // 2. how the systems mirror
+  if (signals.length === 0) return "Choose an optional system and add the details you know. I will help you explore its questions while keeping your own experience at the center.";
+  const paras = ["I am Tobacco. Let us put the systems you chose beside one another and see which questions are useful in your life."];
+  paras.push(`A possible through-line to explore: ${joinNicely(signals.map(s => s.essence).slice(0, 3))}. These are symbolic associations, not independent evidence about who you are.`);
   const mirrorPairs = findResonances(signals);
-  if (mirrorPairs.length) {
-    paras.push(`Notice how the systems echo each other. ${mirrorPairs.join(" ")} When two independent traditions describe the same pattern, that pattern is worth trusting.`);
-  } else {
-    paras.push(`Each of your systems approaches you from its own angle: ${signals.map((s) => `${s.label} names ${s.short}`).join("; ")}. Laid side by side, they describe one person from several windows.`);
-  }
-
-  // 3. the creative tension
-  const tension = findTension(signals);
-  paras.push(tension);
-
-  // 4. synthesis
-  paras.push(
-    `The irreducible truth underneath it all: ${who.toLowerCase() === "you" ? "you are" : `${who} is`} here to ${signals[0].verb}. ${signals.length > 1 ? `Every system in your blueprint is a different set of instructions for the same task.` : `As you add more systems, this portrait will only sharpen.`}`
-  );
-
-  // 5. an integration practice
-  paras.push(
-    `A practice that honors all of it at once: once a day, pause and ask a single question, am I living as myself right now, or as the pattern? Your ${signals[0].label} gives you the clearest tell, ${signals[0].tell}. You do not need to work all seven systems. You need to catch yourself, gently, in the one moment where you are about to abandon yourself, and choose differently.`
-  );
-
+  if (mirrorPairs.length) paras.push(mirrorPairs.join(" "));
+  paras.push(`Each perspective has its own vocabulary: ${signals.map(s => `${s.label} offers ${s.short}`).join("; ")}. You can keep a useful question and leave an interpretation that does not fit.`);
+  paras.push(findTension(signals));
+  paras.push("Choose one real situation from your journal. What happened, what did you need, and what response would you like to practice? Return to the whole record over time. Feeling angry or uncomfortable does not mean you have stopped being yourself; your values, boundaries, and freedom to choose matter here.");
   return paras.join("\n\n");
 }
 
 function collectSignals(enabled, profile, computed) {
   const out = [];
   if (enabled.includes("astrology")) {
-    const sun = profile.astrology?.sun_sign || computed.astrology?.sun_sign;
+    const sun = astrologyPlacements(profile.astrology || {}, computed.astrology || {}).find(p => p.id === "sun")?.sign;
     if (sun && ZODIAC[sun]) out.push({
       system: "astrology", label: "Astrology", short: `a ${sun} Sun`,
       essence: ZODIAC[sun].gift, verb: `live out ${ZODIAC[sun].keywords[0]} and ${ZODIAC[sun].keywords[1]}`,
@@ -205,14 +178,14 @@ function findResonances(signals) {
   const gk = signals.find((s) => s.system === "gene_keys");
   if (num && tarot) pairs.push(`Your ${num.short} and ${tarot.short} are the same insight in two dialects, numerology and Tarot draw your archetype from the same root number.`);
   if (hd && gk) pairs.push(`Your Human Design and Gene Keys share one source, the 64 hexagrams; your Life's Work key is literally your Conscious Sun gate.`);
-  if (astro && tarot) pairs.push(`Astrology and your Tarot archetype map to the same sky, the Major Arcana are the zodiac in pictures.`);
+  if (astro && tarot) pairs.push(`Some Western esoteric traditions associate particular tarot cards with signs or planets. These correspondences offer another symbolic perspective, not confirmation of a prediction.`);
   return pairs;
 }
 
 function findTension(signals) {
-  if (signals.length < 2) return "Where a blueprint seems to contradict itself, it is usually not a flaw but a creative tension, two true things you are asked to hold at once. Add more systems and yours will show its particular paradox.";
-  const a = signals[0], b = signals[1];
-  return `Where your systems seem to disagree, look closer. ${a.label} pulls you toward ${a.short}, while ${b.label} asks ${b.short}, and the friction between them is not a mistake to resolve but a muscle to build. The most alive people are not the ones without contradictions; they are the ones who have stopped needing to choose a single side.`;
+  return signals.length > 1
+    ? "When interpretations differ, you do not have to make them agree. Ask which perspective gives you a useful choice in the actual situation, and which adds pressure or confusion."
+    : "Treat this perspective as an invitation to reflect. You do not need another system to know what you have experienced.";
 }
 
 // ── Relationship synergy reading (two profiles) ───────────────────────────────
@@ -226,7 +199,9 @@ export function synergyReading(mine = {}, theirs = null, name = "this person") {
   }
 
   const paras = [];
-  const mySun = mine.astrology?.sun_sign, theirSun = theirs.astrology?.sun_sign;
+  const allowsAstrology = profile => !Array.isArray(profile.enabled_systems) || profile.enabled_systems.includes("astrology");
+  const mySun = allowsAstrology(mine) ? astrologyPlacements(mine.astrology || {}, deriveAll(mine).values.astrology).find(p => p.id === "sun")?.sign : null;
+  const theirSun = allowsAstrology(theirs) ? astrologyPlacements(theirs.astrology || {}, deriveAll(theirs).values.astrology).find(p => p.id === "sun")?.sign : null;
   const myLP = reduceToKey(mine.numerology?.life_path), theirLP = reduceToKey(theirs.numerology?.life_path);
   const myType = resolveType(mine.human_design?.type), theirType = resolveType(theirs.human_design?.type);
 
@@ -253,21 +228,14 @@ export function synergyReading(mine = {}, theirs = null, name = "this person") {
   if (paras.length === 0) {
     paras.push(`You and ${name} have some profile data to compare, but not yet enough for a full synergy read. Add each other's Sun sign, Life Path, or Human Design type to see where you feed each other and where friction is structural rather than personal.`);
   } else {
-    paras.push(`None of this is a verdict on whether it works, only a map of where the current runs easy and where it runs uphill. The uphill stretches are not signs of a wrong match; they are just where you will each have to be a little more conscious and a little more generous.`);
+    paras.push(`I am Tobacco. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`);
   }
 
   return paras.join("\n\n");
 }
 
 function elementChemistry(e1, e2, s1, s2, name) {
-  const same = e1 === e2;
-  const compatible = (
-    (e1 === "Fire" && e2 === "Air") || (e1 === "Air" && e2 === "Fire") ||
-    (e1 === "Earth" && e2 === "Water") || (e1 === "Water" && e2 === "Earth")
-  );
-  if (same) return `Your Suns share the ${e1} element (${s1} and ${s2}). There is an easy, instinctive understanding here, you speak the same emotional language, and you feel met. The shadow of sameness is a lack of challenge: two ${e1.toLowerCase()} people can amplify each other's excesses with no one to balance the room.`;
-  if (compatible) return `Your Suns are elementally complementary, ${e1} (${s1}) and ${e2} (${s2}) feed each other. ${e1 === "Fire" || e2 === "Fire" ? "Fire gives Air something to catch, and Air gives Fire room to breathe" : "Water softens Earth, and Earth gives Water a vessel to hold it"}. This is a naturally nourishing pairing when you lean into the difference instead of resenting it.`;
-  return `Your Suns come from elements that require translation, ${e1} (${s1}) and ${e2} (${s2}). ${name}'s way of moving through the world runs on different fuel than yours, so misreads are common and rarely mean what they seem to. The connection thrives on explicit understanding rather than assumed sameness.`;
+  return `Your ${s1} Sun is associated with ${e1.toLowerCase()}, while ${name}'s ${s2} Sun is associated with ${e2.toLowerCase()}. ${e1 === e2 ? "A shared element can prompt a conversation about familiar priorities; it does not demonstrate emotional understanding." : "Different elements can prompt a conversation about different priorities; they do not establish conflict."} Consider ${ZODIAC[s1].keywords[0]} and ${ZODIAC[s2].keywords[0]} as topics to discuss if you want to. Ask what each of you actually needs. Sun signs alone cannot establish aspects or tell you whether a relationship is supportive.`;
 }
 
 // ── Check-in pattern reading (Analytics oracle) ───────────────────────────────
@@ -345,24 +313,30 @@ function buildExperiment(avgMood, trend, topEmos, corr) {
 export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
   let computed = {};
   try { computed = deriveAll(profile, todayKey()).values || {}; } catch { computed = {}; }
-  const num = computed.numerology || {};
-  const moon = graph?.today?.moonPhase;
+  const enabled = profile.enabled_systems || [];
+  const num = enabled.includes("numerology") ? computed.numerology || {} : {};
+  const moon = enabled.includes("astrology") ? graph?.today?.moonPhase : null;
+  const astrology = enabled.includes("astrology") ? astrologyPeriodWisdom(periodType, profile.astrology || {}, computed.astrology || {}) : null;
+  if (astrology) {
+    const cycle = ({ daily: num.personal_day, weekly: num.personal_year, monthly: num.personal_month, yearly: num.personal_year })[periodType];
+    const number = NUMBERS[reduceToKey(cycle)];
+    return number ? { ...astrology, wisdom: `${astrology.wisdom}\n\nFrom your optional numerology practice: ${number.core}. Consider whether that question belongs beside this reflection.` } : astrology;
+  }
   const name = (profile.first_name || "").trim();
 
-  const sun = profile.astrology?.sun_sign || computed.astrology?.sun_sign;
-  const birth = resolveArcana(profile.tarot_archetype?.birth_card || computed.tarot_archetype?.birth_card);
+  const birth = enabled.includes("tarot_archetype") ? resolveArcana(profile.tarot_archetype?.birth_card || computed.tarot_archetype?.birth_card) : null;
   const lp = reduceToKey(num.life_path);
 
   if (periodType === "daily") {
     const pd = num.personal_day;
     const theme = moon ? `${moon.name}${pd ? ` · Personal Day ${pd}` : ""}` : (pd ? `Personal Day ${pd}` : "Today");
     const parts = [];
-    if (moon) parts.push(`The ${moon.name.toLowerCase()} sets today's tone: ${moonGuidance(moon.name)}`);
+    if (moon) parts.push(`The ${moon.name.toLowerCase()} can be a symbolic prompt: ${moonGuidance(moon.name)}`);
     if (pd && NUMBERS[reduceToKey(pd)]) {
       const n = NUMBERS[reduceToKey(pd)];
       parts.push(`Your personal day resonates with the ${n.title.toLowerCase()}, ${n.core}. ${dayAdvice(reduceToKey(pd))}`);
     }
-    if (sun && ZODIAC[sun]) parts.push(`As a ${sun}, let ${ZODIAC[sun].keywords[0]} lead and keep an eye on ${ZODIAC[sun].shadow}.`);
+
     return {
       theme,
       wisdom: parts.join(" ") || `A quiet day to be exactly where you are${name ? `, ${name}` : ""}. Notice one small thing and let it be enough.`,
@@ -395,7 +369,7 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
     theme: "The year you are in",
     wisdom: py && NUMBERS[py]
       ? `This is a personal ${py} year for you, the season of the ${NUMBERS[py].title.toLowerCase()}. ${NUMBERS[py].personalYear} ${lp ? `Underneath the year runs your lifelong Life Path ${lp}: ${NUMBERS[lp].core}.` : ""}`
-      : `Add your birth date to see which numerological year you are in. ${lp ? `Your Life Path ${lp} names the longer arc: ${NUMBERS[lp].core}.` : ""}`,
+      : `Look back at what mattered this year and choose what you want to carry forward. ${lp ? `Your Life Path ${lp} names the longer arc: ${NUMBERS[lp].core}.` : ""}`,
     contemplation: "If this whole year had one lesson, what would it be?",
   };
 }
@@ -403,12 +377,12 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
 function moonGuidance(name) {
   const n = String(name).toLowerCase();
   if (n.includes("new")) return "a threshold for intentions, plant quietly what you want to grow.";
-  if (n.includes("full")) return "everything is illuminated and amplified, feel it fully, then release what the light reveals.";
+  if (n.includes("full")) return "review what you have noticed and decide what deserves more attention.";
   if (n.includes("first quarter") || n.includes("waxing")) return "building energy, push a little on what you began.";
-  if (n.includes("last quarter") || n.includes("waning")) return "a time to release, forgive, and clear space.";
+  if (n.includes("last quarter") || n.includes("waning")) return "consider what you would like to finish or make room for.";
   if (n.includes("crescent")) return "tender early momentum, protect the small new thing.";
   if (n.includes("gibbous")) return "refine and adjust as things come toward fullness.";
-  return "let the sky's rhythm set your pace today.";
+  return "notice the sky while choosing a pace that fits your needs.";
 }
 
 function dayAdvice(key) {

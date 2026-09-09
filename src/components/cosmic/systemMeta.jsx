@@ -8,7 +8,7 @@ export const SYSTEMS = [
         id: "astrology",
         label: "Astrology",
         Icon: Sun,
-        description: "Sun, Moon & Rising signs, North Node — planetary cycles and archetypes",
+        description: "Planets, signs, houses, and aspects — possibilities to explore through your own choices",
     },
     {
         id: "human_design",

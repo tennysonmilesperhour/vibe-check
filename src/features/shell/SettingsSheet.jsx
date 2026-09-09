@@ -1,138 +1,95 @@
-import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
-import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
-import { encryptJson, fetchAllPages } from "@/lib/crypto";
-import { todayKey } from "@/lib/dates";
-import { Download } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
+import { useLivingData } from '@/features/patterns/useLivingData';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { useToast } from '@/components/ui/use-toast';
+import { clearLegacyDrafts } from '@/lib/legacy-drafts';
+import { queryClientInstance } from '@/lib/query-client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
-const DEFAULTS = { mood_threshold: 4, consecutive_days: 3, password_protection: false };
+const DEFAULTS = { mood_threshold: 4, consecutive_days: 3 };
 
-/** App settings: boundary thresholds and honest data export. */
 export default function SettingsSheet({ open, onOpenChange }) {
   const { toast } = useToast();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const living = useLivingData();
   const [settings, setSettings] = useState(DEFAULTS);
-  const [exportPassword, setExportPassword] = useState("");
+  const [weekStart, setWeekStart] = useState(1);
   const [saving, setSaving] = useState(false);
-  const [exporting, setExporting] = useState(false);
-
+  const [error, setError] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deletionFinished, setDeletionFinished] = useState(false);
   useEffect(() => {
     if (!open) return;
-    base44.auth.me().then((me) => {
-      if (me?.boundary_settings) setSettings({ ...DEFAULTS, ...me.boundary_settings });
-    }).catch(() => {});
+    let active = true;
+    base44.auth.me().then((me) => { if (active) setSettings({ ...DEFAULTS, ...me.boundary_settings }); }).catch((err) => { if (active) setError(err.message); });
+    return () => { active = false; };
   }, [open]);
-
-  const save = async () => {
-    setSaving(true);
+  useEffect(() => { setWeekStart(living.data?.preferences?.week_start ?? 1); }, [living.data?.preferences?.week_start]);
+  async function save() {
+    setSaving(true); setError('');
     try {
       await base44.auth.updateMe({ boundary_settings: settings });
-      toast({ title: "Settings saved" });
-    } catch (e) {
-      toast({ title: "Could not save", description: e?.message, variant: "destructive" });
-    }
+      await living.savePreferences({ week_start: weekStart });
+      toast({ title: 'Settings saved' });
+    } catch (err) { setError(err.message); }
     setSaving(false);
-  };
-
-  const exportData = async () => {
-    if (settings.password_protection && !exportPassword) {
-      toast({ title: "Enter a password to encrypt the export", variant: "destructive" });
-      return;
-    }
-    setExporting(true);
+  }
+  async function signOut(scope) {
+    setSaving(true); setError('');
+    try { await logout(scope); onOpenChange(false); }
+    catch (err) { setError(err.message); }
+    setSaving(false);
+  }
+  async function deleteAccount() {
+    if (confirmation !== 'DELETE' || deleting) return;
+    setDeleting(true); setDeleteError('');
+    let erased = deletionFinished;
     try {
-      const [checkIns, alerts, me] = await Promise.all([
-        fetchAllPages((limit, offset) => DailyCheckIn.list("-date", limit, offset)),
-        fetchAllPages((limit, offset) => BoundaryAlert.list("-created_date", limit, offset)).catch(() => []),
-        base44.auth.me(),
-      ]);
-      const payload = { export_date: new Date().toISOString(), cosmic_profile: me?.cosmic_profile || null, check_ins: checkIns, alerts };
-      let body;
-      let filename = `vibe-check-export-${todayKey()}`;
-      if (settings.password_protection) {
-        body = JSON.stringify(await encryptJson(payload, exportPassword), null, 2);
-        filename += ".enc.json";
-      } else {
-        body = JSON.stringify(payload, null, 2);
-        filename += ".json";
+      if (!erased) {
+        await base44.auth.deleteAccount();
+        erased = true;
+        setDeletionFinished(true);
+        clearLegacyDrafts();
+        queryClientInstance.clear();
       }
-      const url = URL.createObjectURL(new Blob([body], { type: "application/json" }));
-      const link = Object.assign(document.createElement("a"), { href: url, download: filename });
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      toast({
-        title: "Export complete",
-        description: settings.password_protection
-          ? "Encrypted with your password. It cannot be recovered if lost."
-          : `${checkIns.length} check-ins downloaded.`,
-      });
-    } catch (e) {
-      toast({ title: "Export failed", description: e?.message, variant: "destructive" });
+      await logout('local');
+      setDeleteOpen(false); onOpenChange(false);
+      navigate('/', { replace: true });
+      toast({ title: 'Your Vibe Check records were deleted', description: 'Any Campground or Daily Digest records and their shared sign-in are preserved.' });
+    } catch (err) {
+      if (err.recordsDeleted) {
+        setDeletionFinished(true);
+        clearLegacyDrafts();
+        queryClientInstance.clear();
+        setDeleteError('Your Vibe Check records were deleted, but sign-in removal did not finish. Sign out below and contact support if you need help removing the remaining sign-in.');
+      } else {
+        setDeleteError(erased ? 'Your Vibe Check records were deleted, but sign-out did not finish. Reconnect and retry signing out.' : err.message);
+      }
     }
-    setExporting(false);
-  };
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="font-display text-2xl">Settings</SheetTitle>
-          <SheetDescription>Boundaries and your data. Detection runs automatically when you save a check-in.</SheetDescription>
-        </SheetHeader>
-
-        <div className="space-y-8 mt-6">
-          <section aria-labelledby="s-boundaries">
-            <h3 id="s-boundaries" className="text-sm font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>BOUNDARIES</h3>
-            <div className="mt-4 space-y-5">
-              <div>
-                <Label>Low mood line: {settings.mood_threshold}</Label>
-                <Slider min={1} max={7} step={1} value={[settings.mood_threshold]}
-                  onValueChange={([v]) => setSettings({ ...settings, mood_threshold: v })} className="mt-2"
-                  aria-label="Low mood threshold" />
-                <p className="text-xs mt-1" style={{ color: "var(--gh-ink-muted)" }}>A day at or under this gets a gentle notice.</p>
-              </div>
-              <div>
-                <Label>Declining run: {settings.consecutive_days} days</Label>
-                <Slider min={2} max={7} step={1} value={[settings.consecutive_days]}
-                  onValueChange={([v]) => setSettings({ ...settings, consecutive_days: v })} className="mt-2"
-                  aria-label="Consecutive declining days" />
-              </div>
-              <button type="button" className="ink-button text-sm py-2" onClick={save} disabled={saving}>
-                {saving ? "Saving…" : "Save settings"}
-              </button>
-            </div>
-          </section>
-
-          <section aria-labelledby="s-export" className="hairline pt-6">
-            <h3 id="s-export" className="text-sm font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>YOUR DATA</h3>
-            <div className="mt-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Encrypt exports</Label>
-                  <p className="text-xs" style={{ color: "var(--gh-ink-muted)" }}>AES-256 with a password entered at export time. Never stored.</p>
-                </div>
-                <Switch checked={settings.password_protection}
-                  onCheckedChange={(c) => setSettings({ ...settings, password_protection: c })}
-                  aria-label="Encrypt exports" />
-              </div>
-              {settings.password_protection && (
-                <Input type="password" value={exportPassword} onChange={(e) => setExportPassword(e.target.value)}
-                  placeholder="Export password" autoComplete="new-password" />
-              )}
-              <button type="button" className="ink-button text-sm py-2 inline-flex items-center gap-2" onClick={exportData} disabled={exporting}>
-                <Download className="w-4 h-4" aria-hidden="true" /> {exporting ? "Gathering everything…" : "Export full history"}
-              </button>
-            </div>
-          </section>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
+    setDeleting(false);
+  }
+  return <><Sheet open={open} onOpenChange={onOpenChange}><SheetContent className="overflow-y-auto living-settings">
+    <SheetHeader><SheetTitle className="font-display text-2xl">Settings & privacy</SheetTitle><SheetDescription>Your record, your preferences, and who can see this device.</SheetDescription></SheetHeader>
+    <div className="space-y-7 mt-6">
+      {error && <p className="living-error" role="alert">{error}</p>}
+      <section className="space-y-5" aria-labelledby="settings-reflections"><h3 id="settings-reflections" className="font-semibold">Reflections & reports</h3>
+        <div><Label>Low mood line: {settings.mood_threshold}</Label><Slider min={1} max={7} step={1} value={[settings.mood_threshold]} onValueChange={([value]) => setSettings({ ...settings, mood_threshold: value })} className="mt-3" aria-label="Low mood threshold" /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
+        <div><Label>Declining run: {settings.consecutive_days} days</Label><Slider min={2} max={7} step={1} value={[settings.consecutive_days]} onValueChange={([value]) => setSettings({ ...settings, consecutive_days: value })} className="mt-3" aria-label="Consecutive declining days" /></div>
+        <label className="living-label">Your week begins<select className="living-input mt-2" value={weekStart} onChange={(event) => setWeekStart(Number(event.target.value))}><option value={1}>Monday</option><option value={0}>Sunday</option></select></label>
+        <button className="ink-button" onClick={save} disabled={saving || living.isLoading}>{saving ? 'Saving…' : 'Save settings'}</button>
+      </section>
+      <section className="space-y-3 hairline pt-6"><h3 className="font-semibold">Your private record</h3><p className="living-muted text-sm">Check-ins, journal entries, people, and practice responses are saved to your account. Adding someone to your orbit does not invite them or share your entries.</p><p className="living-muted text-sm">Choose a date range and individual entries, remove saved people’s names, and preview the exact contents before downloading. Password encryption is available in the export preview.</p><button className="living-secondary" onClick={() => { onOpenChange(false); navigate('/Analytics?export=1'); }}>Choose & preview an export</button><p className="living-muted text-sm">Edit or delete individual records from their history. Reports update with those changes. Your patterns, full history, and reports stay free.</p></section>
+      <section className="space-y-3 hairline pt-6"><h3 className="font-semibold">On a shared device</h3><p className="living-muted text-sm">Sign out to close access to your account on this device. Downloaded files and browser history remain on the device.</p><div className="flex flex-wrap gap-3"><button className="living-secondary" disabled={saving} onClick={() => signOut('local')}>Sign out on this device</button><button className="living-secondary" disabled={saving} onClick={() => signOut('global')}>Sign out on all devices</button></div><p className="living-muted text-xs">Other sessions are revoked immediately; an already issued access token may remain valid until it expires.</p></section>
+      <section className="space-y-3 hairline pt-6"><h3 className="font-semibold">Support & account deletion</h3><a className="living-text-link break-all" href="mailto:morphiclabsdata@gmail.com">morphiclabsdata@gmail.com</a><div className="flex flex-wrap gap-4"><a className="living-text-link" href="/privacy">Privacy</a><a className="living-text-link" href="/terms">Terms</a><a className="living-text-link" href="/support">Support</a></div><button className="living-secondary" onClick={() => { setConfirmation(''); setDeleteError(''); setDeletionFinished(false); setDeleteOpen(true); }}>Delete Vibe Check account</button></section>
+    </div>
+  </SheetContent></Sheet><Dialog open={deleteOpen} onOpenChange={(value) => { if (!deleting) setDeleteOpen(value); }}><DialogContent className="living-dialog"><DialogHeader><DialogTitle>Delete your Vibe Check account?</DialogTitle><DialogDescription>This permanently deletes your Vibe Check check-ins, journal, people, readings, practice responses, report notes, preferences, and saved drafts. Any Campground or Daily Digest records and their shared sign-in remain. Downloaded exports remain on your device.</DialogDescription></DialogHeader><p className="living-muted">Export anything you want to keep before continuing.</p><label className="living-label">Type DELETE to confirm<input className="living-input mt-2" value={confirmation} disabled={deleting || deletionFinished} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" /></label>{deleteError && <p className="living-error" role="alert">{deleteError}</p>}<div className="flex flex-wrap gap-3"><button className="living-secondary" disabled={deleting} onClick={() => setDeleteOpen(false)}>Cancel</button><button className="ink-button" disabled={confirmation !== 'DELETE' || deleting} onClick={deleteAccount}>{deleting ? 'Working…' : deletionFinished ? 'Retry sign-out' : 'Permanently delete Vibe Check account'}</button></div></DialogContent></Dialog></>;
 }

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-    ZODIAC_SIGNS, HUMAN_DESIGN_TYPES, HUMAN_DESIGN_AUTHORITIES, HUMAN_DESIGN_PROFILES,
+    HUMAN_DESIGN_TYPES, HUMAN_DESIGN_AUTHORITIES, HUMAN_DESIGN_PROFILES,
     GENE_KEY_NUMBERS, LIFE_PATH_NUMBERS, TAROT_MAJOR_ARCANA, CHAKRA_CENTERS,
     ENNEAGRAM_TYPES, ENNEAGRAM_WINGS, ENNEAGRAM_INSTINCTS
 } from "./correspondences";
@@ -16,7 +16,7 @@ import {
     lifePath, expression, soulUrge, personality, birthdayNumber, maturity,
     personalYear, personalMonth, personalDay, karmicDebts,
 } from "@/lib/resonance/numerology";
-import { deriveAstrology } from "@/lib/resonance/astrology";
+import AstrologyProfile from "./AstrologyProfile";
 import { arcanaForLifePath, arcanaName } from "@/lib/resonance/tables";
 import { todayKey } from "@/lib/dates";
 
@@ -90,66 +90,7 @@ function SimpleSelect({ value, onChange, options, placeholder }) {
     );
 }
 
-const ORDINAL = { 1: '1st', 2: '2nd', 3: '3rd' };
-
-export function AstrologyForm({ data, onChange, birthDate }) {
-    const set = (key, val) => onChange({ ...data, [key]: val });
-    const derived = deriveAstrology(birthDate);
-    const autoSign = derived.sun_sign;
-
-    // Fill the Sun sign and stash the sign's fixed attributes so the engine and the
-    // deep-dive reports can reference them. Only writes empty fields.
-    useEffect(() => {
-        if (!autoSign) return;
-        const updates = {};
-        if (!data?.sun_sign) updates.sun_sign = autoSign;
-        for (const k of ['element', 'modality', 'polarity', 'ruler', 'decan', 'decan_ruler']) {
-            if (derived[k] != null && data?.[k] == null) updates[k] = str(derived[k]);
-        }
-        if (Object.keys(updates).length) onChange({ ...data, ...updates });
-    }, [birthDate]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    return (
-        <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Sun Sign" hint="Your core identity and conscious self">
-                <div className="relative">
-                    <SimpleSelect value={data?.sun_sign} onChange={v => set('sun_sign', v)} options={ZODIAC_SIGNS} />
-                    {autoSign && autoSign === data?.sun_sign && <AutoBadge />}
-                </div>
-            </Field>
-            <Field label="Moon Sign" hint="Your emotional nature and inner world (needs birth time)">
-                <SimpleSelect value={data?.moon_sign} onChange={v => set('moon_sign', v)} options={ZODIAC_SIGNS} />
-            </Field>
-            <Field label="Rising / Ascendant" hint="How others see you; your outer mask (needs birth time & place)">
-                <SimpleSelect value={data?.rising_sign} onChange={v => set('rising_sign', v)} options={ZODIAC_SIGNS} />
-            </Field>
-            <Field label="North Node Sign" hint="Your soul's evolutionary direction (needs birth time)">
-                <SimpleSelect value={data?.north_node} onChange={v => set('north_node', v)} options={ZODIAC_SIGNS} />
-            </Field>
-
-            {autoSign && (
-                <div className="md:col-span-2">
-                    <p className="text-xs mb-2" style={{ color: 'var(--gh-ink-muted)' }}>
-                        Derived from your Sun in {autoSign} — no birth time needed:
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <DerivedChip label="Element" value={derived.element} />
-                        <DerivedChip label="Modality" value={derived.modality} />
-                        <DerivedChip label="Polarity" value={derived.polarity} />
-                        <DerivedChip label="Ruling Planet" value={derived.ruler} />
-                        <DerivedChip label="Decan" value={derived.decan ? `${ORDINAL[derived.decan]} · ${derived.decan_ruler}` : null} />
-                    </div>
-                </div>
-            )}
-
-            <div className="md:col-span-2">
-                <Field label="Personal Notes" hint="Anything else about your chart worth keeping alongside it">
-                    <Textarea className="mt-1" rows={2} value={data?.custom_notes || ''} onChange={e => set('custom_notes', e.target.value)} placeholder="e.g. Venus in Scorpio, Saturn return, stellium in 8th house..." />
-                </Field>
-            </div>
-        </div>
-    );
-}
+export const AstrologyForm = AstrologyProfile;
 
 export function HumanDesignForm({ data, onChange }) {
     const set = (key, val) => onChange({ ...data, [key]: val });

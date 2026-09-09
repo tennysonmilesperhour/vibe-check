@@ -2,15 +2,16 @@ import React from "react";
 import { useSearchParamState } from "@/lib/deeplink";
 import TarotTable from "@/features/practice/TarotTable";
 import HealingBoard from "./HealingBoard";
+import SomaticPractice from '@/features/practice/SomaticPractice';
 
 /** Active inner work: the tarot table and the healing board, one roof. */
 export default function Practice() {
-  const [tab, setTab] = useSearchParamState("tab", "tarot");
+  const [tab, setTab] = useSearchParamState("tab", "somatic");
 
   return (
     <div className={tab === "tarot" ? "dusk-surface min-h-screen" : "field-wash min-h-screen"}>
       <nav aria-label="Practice areas" className="flex justify-center gap-1 pt-6">
-        {[["tarot", "Tarot & Oracle"], ["healing", "Healing Board"]].map(([id, label]) => (
+        {[["somatic", "For this moment"], ["tarot", "Tarot & Oracle"], ["healing", "Practice board"]].map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -25,7 +26,7 @@ export default function Practice() {
           </button>
         ))}
       </nav>
-      {tab === "healing" ? <HealingBoard /> : <TarotTable />}
+      {tab === "somatic" || !['healing', 'tarot'].includes(tab) ? <SomaticPractice /> : tab === "healing" ? <HealingBoard /> : <TarotTable />}
     </div>
   );
 }

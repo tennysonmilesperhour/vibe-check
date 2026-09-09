@@ -2,8 +2,9 @@ import React, { useMemo } from "react";
 import { parseLocalDate, addDaysKey, todayKey } from "@/lib/dates";
 import { format } from "date-fns";
 import { EMOTIONS } from "@/features/today/vocab";
+import VocabularyIcon from "@/features/today/VocabularyIcon";
 
-const emojiFor = (label) => EMOTIONS.find((e) => e.label === label)?.emoji || "";
+const iconFor = (label) => EMOTIONS.find((e) => e.label === label)?.icon;
 
 /**
  * The Sunday ritual: a composed look back at the week just lived.
@@ -80,7 +81,14 @@ export default function WeekInReview({ checkIns, people = [], forceShow = false 
       <div className="mt-5 space-y-1.5 text-sm" style={{ color: "var(--gh-cream)" }}>
         <p>Average mood {week.avg.toFixed(1)}. Brightest day {format(parseLocalDate(week.best.date), "EEEE")} at {week.best.mood_score}.</p>
         {week.topEmotions.length > 0 && (
-          <p>The week felt {week.topEmotions.map((e) => `${emojiFor(e)} ${e.toLowerCase()}`).join(", ")}.</p>
+          <p>The week felt {week.topEmotions.map((emotion, index) => (
+            <React.Fragment key={emotion}>
+              {index > 0 && ", "}
+              <span className="inline-flex items-center gap-1 align-middle">
+                <VocabularyIcon name={iconFor(emotion)} size={14} /> {emotion.toLowerCase()}
+              </span>
+            </React.Fragment>
+          ))}.</p>
         )}
         {week.topPeople.length > 0 && <p>Most present: {week.topPeople.join(" and ")}.</p>}
       </div>

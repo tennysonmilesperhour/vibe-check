@@ -1,12 +1,8 @@
-// Sun-sign astrology — everything that is honestly derivable from a birth
-// DATE alone, no birth time or place required. The Sun's sign, and with it a
-// sign's element / modality / polarity / ruling planet, are fixed tropical
-// correspondences; the decan follows the date's position within the sign.
-//
-// Moon, Rising, and the Nodes are deliberately NOT here: they need an exact
-// birth time (and place, for the Rising) plus ephemeris math, so they stay on
-// the AI birth-chart calculator rather than being faked from the date.
+// Calendar-based tropical Sun and decan estimates. Exact boundaries vary by year
+// and time; an accurately calculated chart may give a different sign near a cusp.
+// Other natal placements, houses, and aspects must be entered from a chart.
 import { ZODIAC_SIGNS } from '@/components/cosmic/correspondences';
+import { parseLocalDate, dateKey } from '@/lib/dates';
 
 // Tropical sign boundaries as calendar dates — [month, day] the sign begins.
 // These match the date ranges the app has always used (ProfileForm.getSunSign).
@@ -37,7 +33,8 @@ const SIGN_ATTRIBUTES = {
 const ELEMENT_POLARITY = { Fire: 'Yang', Air: 'Yang', Earth: 'Yin', Water: 'Yin' };
 
 const parts = (birthDate) => {
-  if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null;
+  if (typeof birthDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null;
+  if (dateKey(parseLocalDate(birthDate)) !== birthDate) return null;
   const [y, m, d] = birthDate.split('-').map(Number);
   return { y, m, d };
 };

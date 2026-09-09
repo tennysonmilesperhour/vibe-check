@@ -70,7 +70,9 @@ export function deriveAll(profile = {}, onDateKey) {
     }
   };
 
-  check('astrology.sun_sign', profile.astrology?.sun_sign, astro.sun_sign, 'birth date');
+  // A entered chart may be more accurate than calendar boundaries. Only flag legacy entries
+  // for review; an explicit choice or unknown value should not be repeatedly challenged.
+  if (!profile.astrology?.sun_source) check('astrology.sun_sign', profile.astrology?.sun_sign, astro.sun_sign, 'calendar-based Sun estimate');
   check('numerology.life_path', profile.numerology?.life_path, lp, 'birth date');
   check('tarot_archetype.birth_card', profile.tarot_archetype?.birth_card, birthCard?.name, 'life path number');
   if (profile.gene_keys?.life_work && profile.human_design?.conscious_sun_gate) {

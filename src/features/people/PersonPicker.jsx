@@ -3,11 +3,13 @@ import { base44 } from "@/api/base44Client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { X, Plus, Users } from "lucide-react";
+import { matchPersonByText, samePersonId, searchPeople } from "@/lib/people";
+import { announcePerson, watchPeople } from "./peopleEvents";
 
 /**
  * Multi-select person picker. Replaces free-text who_involved.
  * value: array of person ids. onChange(nextIds).
- * Inline-creates a Person when the typed name is new.
+ * Inline-creates a Person when the typed name is new; aliases match the existing person.
  */
 export default function PersonPicker({ value = [], onChange, placeholder = "Who was involved?" }) {
   const [open, setOpen] = useState(false);
@@ -15,22 +17,38 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    base44.entities.Person.all().then(setPeople).catch(() => setPeople([]));
+    let active = true;
+    base44.entities.Person.all().then((rows) => { if (active) setPeople(rows); }).catch(() => { if (active) setPeople([]); });
+    const stop = watchPeople((person) => {
+      setPeople((prev) => (prev.some((row) => samePersonId(row.id, person.id)) ? prev.map((row) => (samePersonId(row.id, person.id) ? person : row)) : [...prev, person]));
+    });
+    return () => { active = false; stop(); };
   }, []);
 
-  const selected = people.filter((p) => value.includes(p.id));
+  const selected = people.filter((p) => value.some((id) => samePersonId(id, p.id)));
   const queryTrimmed = query.trim();
-  const exactExists = people.some((p) => p.name.toLowerCase() === queryTrimmed.toLowerCase());
+  const matched = matchPersonByText(queryTrimmed, people);
+  const visible = searchPeople(query, people);
+  const isSelected = (id) => value.some((current) => samePersonId(current, id));
 
   const toggle = (id) => {
-    onChange(value.includes(id) ? value.filter((v) => v !== id) : [...value, id]);
+    onChange(isSelected(id) ? value.filter((v) => !samePersonId(v, id)) : [...value, id]);
+  };
+
+  const selectExisting = (person) => {
+    if (!isSelected(person.id)) onChange([...value, person.id]);
+    setQuery("");
   };
 
   const createInline = async () => {
     if (!queryTrimmed) return;
+    if (matched) {
+      selectExisting(matched);
+      return;
+    }
     try {
       const created = await base44.entities.Person.create({ name: queryTrimmed, person_type: "other" });
-      setPeople((prev) => [...prev, created]);
+      announcePerson(created);
       onChange([...value, created.id]);
       setQuery("");
     } catch {
@@ -72,19 +90,20 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
           </button>
         </PopoverTrigger>
         <PopoverContent className="p-0 w-72" align="start">
-          <Command>
+          <Command shouldFilter={false}>
             <CommandInput placeholder="Search or add a person" value={query} onValueChange={setQuery} />
             <CommandList>
               <CommandEmpty>
                 {queryTrimmed ? "No one by that name yet." : "No people yet. Type a name to add one."}
               </CommandEmpty>
               <CommandGroup>
-                {people.map((p) => (
-                  <CommandItem key={p.id} value={p.name} onSelect={() => toggle(p.id)}>
-                    <span className={value.includes(p.id) ? "font-bold" : ""}>{p.name}</span>
+                {visible.map((p) => (
+                  <CommandItem key={p.id} value={`${p.id} ${p.name}`} onSelect={() => toggle(p.id)}>
+                    <span className={isSelected(p.id) ? "font-bold" : ""}>{p.name}</span>
+                    {p.legacy_names?.length > 0 && <span className="ml-2 text-xs opacity-70">{p.legacy_names.join(", ")}</span>}
                   </CommandItem>
                 ))}
-                {queryTrimmed && !exactExists && (
+                {queryTrimmed && !matched && (
                   <CommandItem value={`add-${queryTrimmed}`} onSelect={createInline}>
                     <Plus className="w-4 h-4 mr-1" /> Add "{queryTrimmed}"
                   </CommandItem>

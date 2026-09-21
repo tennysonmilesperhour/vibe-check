@@ -1,6 +1,9 @@
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from 'date-fns';
 import { dateKey, todayKey, parseLocalDate, diffDaysKeys, addDaysKey } from './dates';
 import { STRESS_STATES } from './practices';
+import { entryPeople, samePersonId } from './people';
+
+export { entryPeople };
 
 export function validDateKey(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parseLocalDate(value).getTime()) && dateKey(parseLocalDate(value)) === value;
@@ -22,11 +25,6 @@ export function entryStates(entry) {
 }
 
 /** @param {any} entry */
-export function entryPeople(entry) {
-  return [...new Set([...(entry.person_ids || []), ...(entry.high_moment?.person_ids || []), ...(entry.low_moment?.person_ids || [])])];
-}
-
-/** @param {any} entry */
 export function entryText(entry) {
   return [entry.notes, entry.high_moment?.description, entry.low_moment?.description, entry.gratitude, entry.stress_context?.situation, entry.stress_context?.response, entry.stress_context?.need].filter(Boolean).join('\n\n');
 }
@@ -35,7 +33,7 @@ export function entryText(entry) {
 export function filterEntries(entries, filters = {}) {
   return entries.filter((entry) => (!filters.start || entry.date >= filters.start)
     && (!filters.end || entry.date <= filters.end)
-    && (!filters.person || entryPeople(entry).includes(filters.person))
+    && (!filters.person || entryPeople(entry).some((id) => samePersonId(id, filters.person)))
     && (!filters.habit || (entry.activities || []).includes(filters.habit))
     && (!filters.state || entryStates(entry).includes(filters.state))
     && (!filters.search || entryText(entry).toLowerCase().includes(filters.search.toLowerCase())));

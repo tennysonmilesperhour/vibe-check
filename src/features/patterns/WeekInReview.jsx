@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { parseLocalDate, addDaysKey, todayKey } from "@/lib/dates";
+import { entryPeople, samePersonId } from "@/lib/people";
 import { format } from "date-fns";
 import { EMOTIONS } from "@/features/today/vocab";
 import VocabularyIcon from "@/features/today/VocabularyIcon";
@@ -30,11 +31,14 @@ export default function WeekInReview({ checkIns, people = [], forceShow = false 
     const topEmotions = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
 
     const personCounts = {};
-    for (const e of entries) for (const id of e.person_ids || []) personCounts[id] = (personCounts[id] || 0) + 1;
+    for (const e of entries) for (const id of entryPeople(e)) {
+      const key = String(id).toLowerCase();
+      personCounts[key] = (personCounts[key] || 0) + 1;
+    }
     const topPeople = Object.entries(personCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 2)
-      .map(([id]) => people.find((p) => p.id === id)?.name)
+      .map(([id]) => people.find((p) => samePersonId(p.id, id))?.name)
       .filter(Boolean);
 
     return { days, entries, avg, best, topEmotions, topPeople };

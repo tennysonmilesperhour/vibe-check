@@ -8,6 +8,22 @@ function aliasesOf(person) {
   return [person.name, ...(person.legacy_names || [])].filter(Boolean);
 }
 
+export function samePersonId(a, b) {
+  return Boolean(a) && Boolean(b) && String(a).toLowerCase() === String(b).toLowerCase();
+}
+
+/** Picker ids from the day, high moment, and low moment, without duplicates. */
+export function entryPeople(entry) {
+  return [...new Set([...(entry.person_ids || []), ...(entry.high_moment?.person_ids || []), ...(entry.low_moment?.person_ids || [])])];
+}
+
+/** Picker search: name or alias contains the query. Empty query returns everyone. */
+export function searchPeople(query, people) {
+  const needle = (query || '').trim().toLowerCase();
+  if (!needle) return people;
+  return people.filter((person) => aliasesOf(person).some((alias) => alias.toLowerCase().includes(needle)));
+}
+
 /** Exact (case-insensitive) name or legacy-alias match. Returns the person or null. */
 export function matchPersonByText(text, people) {
   if (!text) return null;
@@ -96,15 +112,73 @@ export async function migratePeople({ Person, Relationship, Connection, auth }) 
   return { migrated: true, count: merged.length };
 }
 
-/** Historical mood stats for a person from check-ins (uses person_ids when present, whole-word text as fallback). */
+/**
+ * True when this entry tagged the person with the picker, including people
+ * recorded only on a high or low moment. Historical who_involved text is a
+ * fallback only when the picker was never used on the entry.
+ */
+export function entryInvolvesPerson(entry, person) {
+  if (!entry || !person?.id) return false;
+  const ids = entryPeople(entry);
+  if (ids.some((id) => samePersonId(id, person.id))) return true;
+  if (ids.length) return false;
+  const texts = [entry.high_moment?.who_involved, entry.low_moment?.who_involved];
+  return texts.some((text) => text && mentionsPerson(text, person));
+}
+
+/** Historical mood stats for a person from check-ins (picker tags, including nested moments). */
 export function personCheckInStats(person, checkIns) {
-  const involved = checkIns.filter((entry) => {
-    if (entry.person_ids?.length) return entry.person_ids.includes(person.id);
-    const texts = [entry.high_moment?.who_involved, entry.low_moment?.who_involved];
-    return texts.some((t) => t && mentionsPerson(t, person));
-  });
+  const involved = checkIns.filter((entry) => entryInvolvesPerson(entry, person));
   if (involved.length === 0) return { mentions: 0, avgMood: null, lastMention: null };
-  const avgMood = involved.reduce((a, e) => a + (e.mood_score || 0), 0) / involved.length;
-  const lastMention = involved.map((e) => e.date).sort().at(-1);
-  return { mentions: involved.length, avgMood: Math.round(avgMood * 10) / 10, lastMention };
+  const scored = involved.filter((entry) => entry.mood_score != null);
+  const avgMood = scored.length
+    ? scored.reduce((a, e) => a + Number(e.mood_score), 0) / scored.length
+    : null;
+  const lastMention = involved.map((e) => e.date).filter(Boolean).sort().at(-1) || null;
+  return { mentions: involved.length, avgMood: avgMood == null ? null : Math.round(avgMood * 10) / 10, lastMention };
+}
+
+export function personMentionCount(person, entries) {
+  return entries.filter((entry) => entryInvolvesPerson(entry, person)).length;
+}
+
+/** Other people tagged in the same check-in or journal moment via the picker. */
+export function peopleRecordedTogether(person, people, entries) {
+  const shared = new Map();
+  for (const entry of entries) {
+    if (!entryInvolvesPerson(entry, person)) continue;
+    for (const id of entryPeople(entry)) {
+      if (samePersonId(id, person.id)) continue;
+      const key = String(id).toLowerCase();
+      shared.set(key, (shared.get(key) || 0) + 1);
+    }
+  }
+  return people
+    .filter((other) => !samePersonId(other.id, person.id) && shared.has(String(other.id).toLowerCase()))
+    .map((other) => ({ person: other, shared: shared.get(String(other.id).toLowerCase()) }))
+    .sort((a, b) => b.shared - a.shared || a.person.name.localeCompare(b.person.name));
+}
+
+function companionScore(a, b, entries) {
+  return entries.filter((entry) => entryInvolvesPerson(entry, a) && entryInvolvesPerson(entry, b)).length;
+}
+
+/** Frequent people first so the inner orbit reflects tracking proximity. */
+export function orderPeopleForOrbit(people, entries) {
+  const scored = people.map((person) => ({ person, mentions: personMentionCount(person, entries) }));
+  scored.sort((a, b) => b.mentions - a.mentions || a.person.name.localeCompare(b.person.name));
+  return scored.map((row) => row.person);
+}
+
+/** Sit people who were tagged together nearer each other on a ring. */
+export function arrangeOrbitRing(people, entries) {
+  if (people.length <= 2) return [...people];
+  const remaining = [...people];
+  const ordered = [remaining.shift()];
+  while (remaining.length) {
+    const last = ordered[ordered.length - 1];
+    remaining.sort((a, b) => companionScore(last, b, entries) - companionScore(last, a, entries) || a.name.localeCompare(b.name));
+    ordered.push(remaining.shift());
+  }
+  return ordered;
 }

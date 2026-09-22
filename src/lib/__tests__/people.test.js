@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchPersonByText, mentionsPerson, dedupePeopleDrafts } from '../people.js';
+import { matchPersonByText, mentionsPerson, dedupePeopleDrafts, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing } from '../people.js';
 
 const people = [
   { id: 'p1', name: 'Mom', legacy_names: ['mother', 'mama'] },
@@ -56,5 +56,63 @@ describe('dedupePeopleDrafts', () => {
     expect(out[0].qualities.sort()).toEqual(['funny', 'kind']);
     expect(out[0].linked_user_email).toBe('mom@x.com');
     expect(out[0].legacy_names).toContain('mother');
+  });
+});
+
+describe('searchPeople (picker)', () => {
+  it('finds a person by alias without requiring the display name', () => {
+    expect(searchPeople('mama', people).map((person) => person.id)).toEqual(['p1']);
+    expect(searchPeople('SARAH', people).map((person) => person.id)).toEqual(['p3']);
+  });
+
+  it('does not treat an alias search as a reason to add a new person', () => {
+    expect(matchPersonByText('mother', people)?.id).toBe('p1');
+    expect(matchPersonByText('Mommy', people)).toBeNull();
+  });
+});
+
+describe('entryInvolvesPerson and personCheckInStats', () => {
+  it('counts a person tagged only on a high or low moment', () => {
+    const checkIns = [
+      { id: 'a', date: '2026-09-01', mood_score: 8, high_moment: { person_ids: ['p1'] } },
+      { id: 'b', date: '2026-09-02', mood_score: 4, low_moment: { person_ids: ['P1'] } },
+    ];
+    expect(entryInvolvesPerson(checkIns[0], people[0])).toBe(true);
+    expect(entryInvolvesPerson(checkIns[0], people[1])).toBe(false);
+    expect(personCheckInStats(people[0], checkIns)).toEqual({ mentions: 2, avgMood: 6, lastMention: '2026-09-02' });
+  });
+
+  it('does not fall back to substring text once the picker has been used', () => {
+    const entry = { person_ids: ['p2'], high_moment: { who_involved: 'Dinner with Mom' } };
+    expect(entryInvolvesPerson(entry, people[0])).toBe(false);
+    expect(entryInvolvesPerson(entry, people[1])).toBe(true);
+  });
+
+  it('uses whole-word who_involved text only when no picker ids exist', () => {
+    const entry = { high_moment: { who_involved: "Tom's mommy came by" } };
+    expect(entryInvolvesPerson(entry, people[0])).toBe(false);
+    expect(entryInvolvesPerson(entry, people[1])).toBe(true);
+  });
+});
+
+describe('people recorded together from picker tags', () => {
+  const entries = [
+    { id: '1', person_ids: ['p1', 'p2'] },
+    { id: '2', high_moment: { person_ids: ['p1'] }, low_moment: { person_ids: ['p3'] } },
+    { id: '3', person_ids: ['p1', 'p2', 'p3'] },
+    { id: '4', person_ids: ['p2'] },
+  ];
+
+  it('matches people tagged in the same entry, including nested moments', () => {
+    expect(peopleRecordedTogether(people[0], people, entries).map((row) => [row.person.id, row.shared])).toEqual([
+      ['p3', 2],
+      ['p2', 2],
+    ]);
+  });
+
+  it('places frequently tagged people first and sits companions beside each other', () => {
+    expect(orderPeopleForOrbit(people, entries).map((person) => person.id)).toEqual(['p1', 'p2', 'p3']);
+    expect(arrangeOrbitRing([people[2], people[0], people[1]], entries).map((person) => person.id)[0]).toBe('p3');
+    expect(arrangeOrbitRing([people[2], people[0], people[1]], entries).map((person) => person.id)[1]).toBe('p1');
   });
 });

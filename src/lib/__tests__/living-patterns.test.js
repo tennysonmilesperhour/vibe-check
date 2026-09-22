@@ -33,6 +33,7 @@ describe('a whole history, including difficult moments', () => {
     const entries = timelineEntries([day('1', '2026-09-02', 3, { person_ids: ['p'], activities: ['Late work'] }), day('2', '2026-09-03', 8), day('3', '2026-09-04', 9, { high_moment: { person_ids: ['p'] }, activities: ['Walk'] })]);
     expect(filterEntries(entries, { person: 'p', habit: 'Late work' }).map((entry) => entry.id)).toEqual(['1']);
     expect(filterEntries(entries, { person: 'p' })).toHaveLength(2);
+    expect(filterEntries(entries, { person: 'P' })).toHaveLength(2);
   });
 });
 

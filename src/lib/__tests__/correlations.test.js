@@ -52,6 +52,26 @@ describe('insightCards', () => {
     expect(insightCards([mk('2026-06-01', 5, 5)], [])).toEqual([]);
   });
 
+  it('uses high-moment picker tags when matching a person to check-ins', () => {
+    const people = [{ id: 'p1', name: 'Alex', legacy_names: [] }];
+    const checkIns = [];
+    for (let i = 1; i <= 10; i++) {
+      const day = String(i).padStart(2, '0');
+      const withAlex = i <= 6;
+      checkIns.push({
+        date: `2026-06-${day}`,
+        mood_score: withAlex ? 9 : 4,
+        sleep_quality: 6,
+        activities: [],
+        high_moment: withAlex ? { person_ids: ['p1'] } : null,
+      });
+    }
+    const card = insightCards(checkIns, people).find((row) => row.kind === 'person');
+    expect(card).toBeTruthy();
+    expect(card.text).toMatch(/Alex/);
+  });
+
+
   it('never emits buzzwords or em dashes', () => {
     const checkIns = [];
     for (let i = 1; i <= 20; i++) {

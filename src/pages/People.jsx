@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PageTransition from "@/features/shell/PageTransition";
-import { migratePeople, personCheckInStats } from "@/lib/people";
+import { entryInvolvesPerson, migratePeople, peopleRecordedTogether, personCheckInStats } from "@/lib/people";
+import { timelineEntries } from "@/lib/living-patterns";
 import { parseLocalDate } from "@/lib/dates";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
@@ -124,6 +125,7 @@ export default function People() {
   };
 
   if (loading) return <div className="min-h-[60vh] field-wash" aria-busy="true" />;
+  const entries = timelineEntries(checkIns, journal);
 
   return (
     <div className="field-wash min-h-screen">
@@ -140,7 +142,7 @@ export default function People() {
 
         {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={load}>Retry</button></p>}
         <div className="mt-6"><TobaccoGuide compact>Keep people here by a name or nickname that works for you. We can return to the experiences you recorded together. Adding someone sends no invitation or notification.</TobaccoGuide></div>
-        <PeopleOrbit people={people} onChoose={setDetail} />
+        <PeopleOrbit people={people} entries={entries} onChoose={setDetail} />
 
         {people.length === 0 ? (
           <div className="text-center py-20">
@@ -207,14 +209,36 @@ export default function People() {
                   const stats = personCheckInStats(detail, checkIns);
                   return stats.mentions > 0 ? (
                     <p className="text-sm" style={{ color: "var(--gh-ink-soft)" }}>
-                      {stats.mentions} check-ins tagged with this person; average daily mood {stats.avgMood} in those entries.{" "}
+                      {stats.mentions} check-ins tagged with this person{stats.avgMood != null ? `; average daily mood ${stats.avgMood} in those entries` : ""}.{" "}
                       <Link to={`${createPageUrl("Analytics")}?person=${detail.id}&range=all`} className="underline underline-offset-4" style={{ color: "var(--gh-accent)" }}>
                         See the pattern
                       </Link>
                     </p>
                   ) : null;
                 })()}
-                <div className="living-inset"><p className="living-muted">{journal.filter((entry) => entry.person_ids?.includes(detail.id)).length} journal moments linked to this person.</p><Link className="living-text-link mt-2" to={`/Analytics?tab=journal&person=${detail.id}&range=all`}>Read the full relationship history</Link></div>
+                <div className="living-inset"><p className="living-muted">{journal.filter((entry) => entryInvolvesPerson(entry, detail)).length} journal moments linked to this person.</p><Link className="living-text-link mt-2" to={`/Analytics?tab=journal&person=${detail.id}&range=all`}>Read the full relationship history</Link></div>
+                {(() => {
+                  const companions = peopleRecordedTogether(detail, people, entries);
+                  if (!companions.length) return null;
+                  return (
+                    <div>
+                      <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>RECORDED TOGETHER</p>
+                      <p className="living-muted text-sm mt-1">People you tagged in the same check-in or journal moment with the people picker.</p>
+                      <div className="living-chips mt-2">
+                        {companions.map(({ person, shared }) => (
+                          <button
+                            key={person.id}
+                            type="button"
+                            className="living-chip"
+                            onClick={() => setDetail(person)}
+                          >
+                            {person.name} · {shared} {shared === 1 ? "entry" : "entries"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {detail.qualities?.length > 0 && (
                   <div>

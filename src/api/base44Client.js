@@ -32,6 +32,9 @@ async function me() {
 
 async function updateMe(patch) {
   const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError && isTransientAuthError(authError)) {
+    throw Object.assign(new Error('Could not reach your account just now.'), { status: 0, transient: true });
+  }
   if (authError || !authData?.user) throw Object.assign(new Error('Not signed in'), { status: 401 });
   const allowed = {};
   for (const key of ['full_name', 'cosmic_profile', 'boundary_settings', 'people_migrated_at']) {
@@ -41,7 +44,8 @@ async function updateMe(patch) {
     .from('profiles')
     .upsert({ id: authData.user.id, ...allowed });
   if (error) throw error;
-  return me();
+  // The write succeeded; a failed re-read must not report the save as failed.
+  return me().catch(() => null);
 }
 
 export const base44 = {

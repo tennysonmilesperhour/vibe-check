@@ -9,7 +9,8 @@ import { todayKey } from '@/lib/dates';
 import { entryPeople, entryStates, validDateKey } from '@/lib/living-patterns';
 import { stateById, ALIGNMENTS } from '@/lib/practices';
 import { useAuth } from '@/lib/AuthContext';
-import { readBuffer, writeBuffer, clearBuffer, bufferIsNewer } from '@/lib/writing-buffer';
+import { readBuffer, clearBuffer, bufferRestorable } from '@/lib/writing-buffer';
+import useWritingBuffer from '@/hooks/use-writing-buffer';
 import useBeforeUnload from '@/hooks/use-before-unload';
 
 export function EntryLink({ entry, children }) {
@@ -63,7 +64,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
       baselineRef.current = JSON.stringify(initial);
       touchedRef.current = false;
       const buffer = readBuffer(bufferKey);
-      const restore = bufferIsNewer(buffer, existing?.updated_at);
+      const restore = bufferRestorable(buffer, existing?.updated_at);
       setForm(restore ? buffer.value : initial);
       setNotice(restore ? 'Your unsaved words are back.' : '');
       setConfirmClose(false);
@@ -73,9 +74,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
   }, [open, existing, prompt, bufferKey]);
   const dirty = Boolean(open && form && baselineRef.current !== null && JSON.stringify(form) !== baselineRef.current);
   // Buffer only what the person actually typed; clear it on save or discard.
-  useEffect(() => {
-    if (open && form && touchedRef.current) writeBuffer(bufferKey, form);
-  }, [open, form, bufferKey]);
+  useWritingBuffer(bufferKey, form, { enabled: Boolean(open && form && touchedRef.current), basedOn: existing?.updated_at || null });
   useBeforeUnload(dirty);
   const update = (patch) => { touchedRef.current = true; setForm((previous) => ({ ...previous, ...patch })); };
   const canKeepAsDraft = !existing || existing.is_draft;

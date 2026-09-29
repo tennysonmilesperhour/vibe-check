@@ -11,10 +11,19 @@ const LAZY_ONLY = /charts|recharts|jspdf|html2canvas|canvg|purify/i
 
 const dist = path.resolve(process.cwd(), 'dist')
 const html = readFileSync(path.join(dist, 'index.html'), 'utf8')
-const files = [
-  ...html.matchAll(/<script[^>]+type="module"[^>]+src="([^"]+\.js)"/g),
-  ...html.matchAll(/<link[^>]+rel="modulepreload"[^>]+href="([^"]+\.js)"/g),
-].map((match) => match[1])
+// Read attributes independently of their order or quoting.
+const attr = (tag, name) => tag.match(new RegExp(`\\b${name}\\s*=\\s*["']?([^"'\\s>]+)`, 'i'))?.[1]
+const entries = [...html.matchAll(/<script\b[^>]*>/gi)].map(([tag]) => tag)
+  .filter((tag) => attr(tag, 'type') === 'module' && attr(tag, 'src')?.endsWith('.js'))
+  .map((tag) => attr(tag, 'src'))
+const preloads = [...html.matchAll(/<link\b[^>]*>/gi)].map(([tag]) => tag)
+  .filter((tag) => attr(tag, 'rel') === 'modulepreload' && attr(tag, 'href')?.endsWith('.js'))
+  .map((tag) => attr(tag, 'href'))
+if (!entries.length) {
+  console.error('✗ no module entry script found in dist/index.html; the budget check cannot run')
+  process.exit(1)
+}
+const files = [...entries, ...preloads]
 
 let total = 0
 const problems = []

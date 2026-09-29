@@ -4,7 +4,7 @@
 // call degrades to a no-op.
 const PREFIX = 'vibe:unsaved:';
 
-/** @returns {{ value: any, savedAt: number } | null} */
+/** @returns {{ value: any, basedOn: string | null } | null} */
 export function readBuffer(key) {
   if (!key) return null;
   try {
@@ -15,10 +15,15 @@ export function readBuffer(key) {
   }
 }
 
-export function writeBuffer(key, value) {
+/**
+ * @param {string | null} key
+ * @param {any} value
+ * @param {string | null} basedOn the server `updated_at` of the version these edits started from
+ */
+export function writeBuffer(key, value, basedOn = null) {
   if (!key) return;
   try {
-    window.sessionStorage.setItem(PREFIX + key, JSON.stringify({ value, savedAt: Date.now() }));
+    window.sessionStorage.setItem(PREFIX + key, JSON.stringify({ value, basedOn: basedOn || null }));
   } catch {
     // storage blocked or full; the page still holds the words
   }
@@ -45,9 +50,15 @@ export function clearAllBuffers() {
   }
 }
 
-/** True when a buffered copy is newer than every saved copy we know about. */
-export function bufferIsNewer(buffer, ...savedTimes) {
-  if (!buffer?.savedAt) return false;
-  const latest = Math.max(0, ...savedTimes.map((time) => Date.parse(time || '') || 0));
-  return buffer.savedAt > latest;
+/**
+ * Restore a tab copy only when the server holds nothing newer than the version
+ * it was based on. This compares server timestamps with each other and never
+ * with the device clock, which may be wrong.
+ * @param {{ basedOn?: string | null } | null} buffer
+ * @param {...(string | null | undefined)} serverTimes `updated_at` values the server holds now
+ */
+export function bufferRestorable(buffer, ...serverTimes) {
+  if (!buffer) return false;
+  const latest = serverTimes.filter(Boolean).sort().at(-1) || '';
+  return (buffer.basedOn || '') >= latest;
 }

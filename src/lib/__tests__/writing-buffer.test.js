@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { readBuffer, writeBuffer, clearBuffer, clearAllBuffers, bufferIsNewer } from '../writing-buffer.js';
+import { readBuffer, writeBuffer, clearBuffer, clearAllBuffers, bufferRestorable } from '../writing-buffer.js';
 
 function fakeStorage() {
   const map = new Map();
@@ -18,11 +18,13 @@ describe('writing buffer', () => {
   beforeEach(() => { globalThis.window = /** @type {any} */ ({ sessionStorage: fakeStorage() }); });
   afterEach(() => { delete globalThis.window; });
 
-  it('keeps unsaved words and returns them with a timestamp', () => {
-    writeBuffer('composer:u1:new', { notes: 'half a thought' });
-    const saved = readBuffer('composer:u1:new');
+  it('keeps unsaved words with the server version they were based on', () => {
+    writeBuffer('composer:u1:e1', { notes: 'half a thought' }, '2026-09-29T20:00:00.000000+00:00');
+    const saved = readBuffer('composer:u1:e1');
     expect(saved.value).toEqual({ notes: 'half a thought' });
-    expect(saved.savedAt).toBeGreaterThan(0);
+    expect(saved.basedOn).toBe('2026-09-29T20:00:00.000000+00:00');
+    writeBuffer('composer:u1:new', { notes: 'fresh' });
+    expect(readBuffer('composer:u1:new').basedOn).toBeNull();
   });
 
   it('clears one entry, or every Vibe entry on sign-out, leaving other keys alone', () => {
@@ -44,11 +46,18 @@ describe('writing buffer', () => {
     expect(() => clearAllBuffers()).not.toThrow();
   });
 
-  it('restores only when the buffered copy is newer than every saved copy', () => {
-    const buffer = { value: {}, savedAt: Date.parse('2026-09-29T20:00:00Z') };
-    expect(bufferIsNewer(buffer, '2026-09-29T19:00:00Z', null)).toBe(true);
-    expect(bufferIsNewer(buffer, '2026-09-29T21:00:00Z')).toBe(false);
-    expect(bufferIsNewer(null, '2026-09-29T19:00:00Z')).toBe(false);
-    expect(bufferIsNewer(buffer)).toBe(true);
+  it('restores only when the server has nothing newer than the buffer was based on', () => {
+    const t1 = '2026-09-29T20:00:00.000000+00:00';
+    const t2 = '2026-09-29T20:05:00.000000+00:00';
+    // Edits started from the current server version: restore them.
+    expect(bufferRestorable({ basedOn: t2 }, t1, t2)).toBe(true);
+    // Someone saved a newer version elsewhere: keep the server copy.
+    expect(bufferRestorable({ basedOn: t1 }, t2)).toBe(false);
+    // A brand-new entry with nothing on the server: restore.
+    expect(bufferRestorable({ basedOn: null })).toBe(true);
+    expect(bufferRestorable({ basedOn: null }, null, undefined)).toBe(true);
+    // Something was saved after a new-entry buffer began: keep the server copy.
+    expect(bufferRestorable({ basedOn: null }, t1)).toBe(false);
+    expect(bufferRestorable(null, t1)).toBe(false);
   });
 });

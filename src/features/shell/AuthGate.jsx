@@ -26,6 +26,8 @@ function friendlyAuthError(err) {
  * The front door: email + password sign in / sign up, or a magic link.
  * Rendered inline whenever there is no session.
  */
+const NEUTRAL_SIGNUP_NOTICE = "Check your email. If this address is new, there's a link to confirm your account. If you already have an account, sign in or reset your password instead.";
+
 export default function AuthGate() {
   const [mode, setMode] = useState("signin"); // signin | signup | magic | reset
   const [email, setEmail] = useState("");
@@ -74,15 +76,20 @@ export default function AuthGate() {
             emailRedirectTo: window.location.origin,
           },
         });
-        if (err) throw err;
         // One message whether or not the address already has an account, so
         // nobody can use this form to learn whether someone else uses Vibe Check.
-        if (data?.session) {
+        // With email confirmation on (keep it on), Supabase hides existing
+        // accounts; with it off it says so, and that answer is folded in here.
+        if (err?.code === "user_already_exists") {
+          setNotice(NEUTRAL_SIGNUP_NOTICE);
+        } else if (err) {
+          throw err;
+        } else if (data?.session) {
           // Confirmation is off: the signup already signed us in. The auth
           // listener will pick up the session and render the app.
           setNotice("You're in. One moment…");
         } else {
-          setNotice("Check your email. If this address is new, there's a link to confirm your account. If you already have an account, sign in or reset your password instead.");
+          setNotice(NEUTRAL_SIGNUP_NOTICE);
         }
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });

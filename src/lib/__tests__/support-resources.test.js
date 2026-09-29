@@ -13,11 +13,18 @@ describe('detectSupportRegion', () => {
     expect(detectSupportRegion({ timeZone: 'Australia/Perth' })).toBe('AU');
     expect(detectSupportRegion({ timeZone: 'Pacific/Auckland' })).toBe('NZ');
   });
-  it('falls back to the language region, then to nothing', () => {
+  it('uses the language region only when the time zone names no place', () => {
     expect(detectSupportRegion({ timeZone: 'UTC', languages: ['en-GB'] })).toBe('GB');
-    expect(detectSupportRegion({ timeZone: 'UTC', languages: ['fr-FR', 'en-AU'] })).toBe('AU');
+    expect(detectSupportRegion({ timeZone: 'Etc/GMT+5', languages: ['fr-FR', 'en-AU'] })).toBe('AU');
+    expect(detectSupportRegion({ timeZone: '', languages: ['en-UK'] })).toBe('GB');
     expect(detectSupportRegion({ timeZone: 'Europe/Berlin', languages: ['de-DE'] })).toBeNull();
     expect(detectSupportRegion()).toBeNull();
+  });
+  it('never guesses a listed country for someone whose time zone is elsewhere', () => {
+    expect(detectSupportRegion({ timeZone: 'Europe/Berlin', languages: ['en-US'] })).toBeNull();
+    expect(detectSupportRegion({ timeZone: 'Asia/Kolkata', languages: ['en-US'] })).toBeNull();
+    expect(detectSupportRegion({ timeZone: 'Europe/Paris', languages: ['en-GB'] })).toBeNull();
+    expect(detectSupportRegion({ timeZone: 'America/Mexico_City', languages: ['es-US'] })).toBeNull();
   });
 });
 

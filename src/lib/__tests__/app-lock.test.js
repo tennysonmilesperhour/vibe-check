@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { setAppLock, pinMatches, hasAppLock, removeAppLock, isUnlocked, relock, relockAll, validPin, failedAttempts, recordFailedAttempt, clearFailedAttempts, waitLabel } from '../app-lock.js';
+import { setAppLock, pinMatches, hasAppLock, removeAppLock, isUnlocked, markUnlocked, relock, validPin, failedAttempts, recordFailedAttempt, clearFailedAttempts, waitLabel, noteHidden, noteVisible, noteQuickExit, RELOCK_AFTER_MS } from '../app-lock.js';
+import { markConfirmed, confirmedRecently } from '../recent-auth.js';
 
 function fakeStorage() {
   const map = new Map();
@@ -43,15 +44,41 @@ describe('app lock', () => {
     expect(hasAppLock('u1')).toBe(false);
   });
 
-  it('relocks every account on quick exit and leaves other tab data alone', async () => {
+  it('quick exit relocks every account and forgets a recent password check', async () => {
     await setAppLock('u1', '2468');
     await setAppLock('u2', '1357');
+    markConfirmed('u1');
     window.sessionStorage.setItem('vibe:unsaved:ceremony:u1:2026-09-29', 'words');
-    relockAll();
+    expect(confirmedRecently('u1')).toBe(true);
+    noteQuickExit();
     expect(isUnlocked('u1')).toBe(false);
     expect(isUnlocked('u2')).toBe(false);
+    expect(confirmedRecently('u1')).toBe(false);
     expect(hasAppLock('u1')).toBe(true);
     expect(window.sessionStorage.getItem('vibe:unsaved:ceremony:u1:2026-09-29')).toBe('words');
+    // Unlocking again afterwards works, even in the same millisecond or with the clock set back.
+    markUnlocked('u1', Date.now() - 60_000);
+    expect(isUnlocked('u1')).toBe(true);
+  });
+
+  it('relocks after 5 minutes in the background, even across a reload', async () => {
+    await setAppLock('u1', '2468');
+    const hiddenAt = Date.now();
+    noteHidden('u1', hiddenAt);
+    noteHidden('u1', hiddenAt + 60_000); // the earliest time counts
+    // A reload reads the same tab storage, so the answer doesn't depend on memory.
+    expect(isUnlocked('u1', hiddenAt + RELOCK_AFTER_MS - 1)).toBe(true);
+    expect(isUnlocked('u1', hiddenAt + RELOCK_AFTER_MS + 1)).toBe(false);
+    expect(noteVisible('u1', hiddenAt + RELOCK_AFTER_MS + 1)).toBe(false);
+    expect(isUnlocked('u1', hiddenAt)).toBe(false);
+  });
+
+  it('stays unlocked after a short time away and starts the clock over', async () => {
+    await setAppLock('u1', '2468');
+    const hiddenAt = Date.now();
+    noteHidden('u1', hiddenAt);
+    expect(noteVisible('u1', hiddenAt + 60_000)).toBe(true);
+    expect(isUnlocked('u1', hiddenAt + RELOCK_AFTER_MS * 10)).toBe(true);
   });
 
   it('treats a damaged lock record as a mismatch', async () => {

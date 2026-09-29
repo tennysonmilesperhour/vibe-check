@@ -1,13 +1,18 @@
+import { useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import SupportResources from '@/features/safety/SupportResources';
 import SafetyPlan from '@/features/safety/SafetyPlan';
 import QuickExit from '@/features/safety/QuickExit';
-import { hasAppLock, isUnlocked } from '@/lib/app-lock';
+import useLockState from '@/features/safety/useLockState';
 
 /** Public: reachable signed in or out, from every surface that offers support. */
 export default function SupportNow() {
   const { user } = useAuth();
+  // This page sits outside the app's lock so it's always reachable; the plan
+  // follows the same lock, including the relock after time in the background.
+  const planRef = useRef(null);
+  const { locked } = useLockState(user?.id, planRef);
   const [params] = useSearchParams();
   const focus = params.get('focus') === 'relationship' ? 'relationship' : 'crisis';
   return (
@@ -26,10 +31,9 @@ export default function SupportNow() {
           <h2 id="support-services-heading">Talk to someone now</h2>
           <SupportResources focus={focus} />
         </section>
-        {/* This page stays reachable while the app is locked; the private plan does not. */}
-        {user && (hasAppLock(user.id) && !isUnlocked(user.id)
-          ? <p className="living-muted">Unlock Vibe Check to see your safety plan.</p>
-          : <SafetyPlan />)}
+        {user && (locked
+          ? <p className="living-muted">Your safety plan is hidden while Vibe Check is locked. <a className="underline" href="/">Unlock Vibe Check</a> to see it.</p>
+          : <div ref={planRef}><SafetyPlan /></div>)}
         <section className="living-card space-y-3" aria-labelledby="device-safety-heading">
           <h2 id="device-safety-heading">Using Vibe Check safely</h2>
           <ul className="list-disc pl-5 space-y-2 text-sm">

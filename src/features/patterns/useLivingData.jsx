@@ -11,17 +11,34 @@ export async function fetchLivingData() {
   return { checkIns, journal, sessions, reflections, preferences: preferences[0]?.values || {}, people, entries: timelineEntries(checkIns, journal) };
 }
 
+// Merges with the latest stored values, then refreshes every ['living', user]
+// query (the full history and the preferences-only one below).
+async function storePreferences(client, userId, patch) {
+  const [row] = await VibePreference.list();
+  const result = await VibePreference.upsert({ values: { ...(row?.values || {}), ...patch } }, 'user_id');
+  await client.invalidateQueries({ queryKey: ['living', userId] });
+  return result;
+}
+
 export function useLivingData() {
   const { user } = useAuth();
   const client = useQueryClient();
   const queryKey = ['living', user?.id];
   const query = useQuery({ queryKey, queryFn: fetchLivingData, enabled: Boolean(user?.id), staleTime: 0 });
   const refresh = () => client.invalidateQueries({ queryKey });
-  const savePreferences = async (patch) => {
-    const [row] = await VibePreference.list();
-    const result = await VibePreference.upsert({ values: { ...(row?.values || {}), ...patch } }, 'user_id');
-    await refresh();
-    return result;
-  };
+  const savePreferences = (patch) => storePreferences(client, user?.id, patch);
   return { ...query, refresh, savePreferences };
+}
+
+/** Just the preferences: one small request, for controls that must show at once. */
+export function usePreferences() {
+  const { user } = useAuth();
+  const client = useQueryClient();
+  const query = useQuery({
+    queryKey: ['living', user?.id, 'preferences'],
+    queryFn: async () => (await VibePreference.list())[0]?.values || {},
+    enabled: Boolean(user?.id),
+  });
+  const savePreferences = (patch) => storePreferences(client, user?.id, patch);
+  return { ...query, savePreferences };
 }

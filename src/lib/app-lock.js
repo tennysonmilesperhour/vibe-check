@@ -5,6 +5,8 @@
 const LOCK_PREFIX = 'vibe:lock:';
 const UNLOCK_PREFIX = 'vibe:unlocked:';
 const ATTEMPTS_PREFIX = 'vibe:lock-attempts:';
+const HIDDEN_PREFIX = 'vibe:hidden-at:';
+const QUICK_EXIT_KEY = 'vibe:quick-exit-at';
 const ITERATIONS = 150_000;
 export const RELOCK_AFTER_MS = 5 * 60 * 1000;
 export const MAX_ATTEMPTS = 5;
@@ -67,32 +69,56 @@ export async function pinMatches(userId, pin) {
 export function removeAppLock(userId) {
   store('localStorage')?.removeItem(LOCK_PREFIX + userId);
   clearFailedAttempts(userId);
-  store('sessionStorage')?.removeItem(UNLOCK_PREFIX + userId);
+  relock(userId);
 }
 
-export function markUnlocked(userId) {
-  store('sessionStorage')?.setItem(UNLOCK_PREFIX + userId, '1');
+// Unlocking is per tab (sessionStorage) and stamped with the time, so it can
+// expire: after RELOCK_AFTER_MS in the background, even across a reload or a
+// restored tab, and whenever quick exit runs in any tab on this device.
+/** When quick exit last ran on this device (0 if never). */
+export const quickExitAt = () => Number(store('localStorage')?.getItem(QUICK_EXIT_KEY) || 0);
+
+export function markUnlocked(userId, now = Date.now()) {
+  // Always after the last quick exit, even if the device clock went back.
+  store('sessionStorage')?.setItem(UNLOCK_PREFIX + userId, String(Math.max(now, quickExitAt() + 1)));
+  store('sessionStorage')?.removeItem(HIDDEN_PREFIX + userId);
 }
 
-export function isUnlocked(userId) {
-  return store('sessionStorage')?.getItem(UNLOCK_PREFIX + userId) === '1';
+export function isUnlocked(userId, now = Date.now()) {
+  const session = store('sessionStorage');
+  const unlockedAt = Number(session?.getItem(UNLOCK_PREFIX + userId) || 0);
+  if (!unlockedAt || unlockedAt <= quickExitAt()) return false;
+  const hiddenAt = Number(session?.getItem(HIDDEN_PREFIX + userId) || 0);
+  return !(hiddenAt && now - hiddenAt > RELOCK_AFTER_MS);
 }
 
 export function relock(userId) {
   store('sessionStorage')?.removeItem(UNLOCK_PREFIX + userId);
+  store('sessionStorage')?.removeItem(HIDDEN_PREFIX + userId);
 }
 
-/** Lock every account on this tab again, e.g. on quick exit. */
-export function relockAll() {
+/** The app went to the background; keep the earliest time. */
+export function noteHidden(userId, now = Date.now()) {
   const session = store('sessionStorage');
-  if (!session) return;
-  const keys = [];
-  for (let i = 0; i < session.length; i += 1) {
-    const key = session.key(i);
-    if (key?.startsWith(UNLOCK_PREFIX)) keys.push(key);
-  }
-  keys.forEach((key) => session.removeItem(key));
+  if (session?.getItem(UNLOCK_PREFIX + userId) && !session.getItem(HIDDEN_PREFIX + userId)) session.setItem(HIDDEN_PREFIX + userId, String(now));
 }
+
+/** The app is back in view. Returns whether it stays unlocked. */
+export function noteVisible(userId, now = Date.now()) {
+  const stays = isUnlocked(userId, now);
+  if (stays) store('sessionStorage')?.removeItem(HIDDEN_PREFIX + userId);
+  else relock(userId);
+  return stays;
+}
+
+/** Quick exit: lock every account in every tab on this device. */
+export function noteQuickExit(now = Date.now()) {
+  // Always a new value, so other tabs hear it even twice in one millisecond.
+  store('localStorage')?.setItem(QUICK_EXIT_KEY, String(Math.max(now, quickExitAt() + 1)));
+}
+
+/** Whether a storage change made in another tab can change this tab's lock. */
+export const affectsLock = (key) => key === null || key === QUICK_EXIT_KEY || key.startsWith(LOCK_PREFIX);
 
 // Wrong PINs are counted on the device, so reloading the page doesn't reset
 // the pause. Every fifth miss pauses entry, twice as long each time.

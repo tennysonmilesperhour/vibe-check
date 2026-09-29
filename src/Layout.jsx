@@ -21,7 +21,7 @@ import { DailyCheckIn } from "@/entities/all";
 import { todayKey } from "@/lib/dates";
 import { moonPhase } from "@/lib/resonance/moon";
 import { computeStreak, streakLabel } from "@/lib/streaks";
-import { useLivingData } from "@/features/patterns/useLivingData";
+import { usePreferences } from "@/features/patterns/useLivingData";
 import QuickExit from "@/features/safety/QuickExit";
 
 // Five surfaces, five jobs, five distinct icons.
@@ -133,7 +133,7 @@ export default function Layout({ children }) {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [streak, setStreak] = useState(null);
     // Quick exit is opt-in (Settings), so it never surprises anyone.
-    const quickExitOn = Boolean(useLivingData().data?.preferences?.quick_exit);
+    const quickExitOn = Boolean(usePreferences().data?.quick_exit);
 
     // The footer shows the real run. Re-check when the route changes so a
     // just-saved check-in is reflected without a reload.

@@ -21,7 +21,7 @@ export default function SupportCard({ focus = 'crisis', title = 'Support is here
       {first && (
         <p className="text-sm">
           {first.label}: {first.detail}{' '}
-          {first.call && <a className="underline" href={telHref(first.call)} aria-label={`Call ${first.label} now`}>Call now</a>}
+          {first.call && <a className="underline" href={telHref(first.call)} aria-label={`Call now: ${first.label}`}>Call now</a>}
         </p>
       )}
       <p className="text-sm">{known ? `In immediate danger, call ${known.emergency}.` : 'In immediate danger, call your local emergency number.'}</p>

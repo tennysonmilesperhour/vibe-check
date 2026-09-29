@@ -64,9 +64,14 @@ export const SUPPORT_REGIONS = {
 const CANADA_ZONES = /^America\/(Toronto|Montreal|Vancouver|Edmonton|Calgary|Winnipeg|Regina|Swift_Current|Halifax|Glace_Bay|Moncton|Goose_Bay|St_Johns|Whitehorse|Dawson|Dawson_Creek|Fort_Nelson|Creston|Yellowknife|Inuvik|Cambridge_Bay|Rankin_Inlet|Resolute|Iqaluit|Atikokan|Blanc-Sablon)$/;
 const US_ZONES = /^(America\/(New_York|Detroit|Chicago|Denver|Phoenix|Los_Angeles|Anchorage|Juneau|Sitka|Metlakatla|Yakutat|Nome|Adak|Boise|Menominee|Indiana\/.+|Kentucky\/.+|North_Dakota\/.+)|Pacific\/Honolulu|US\/.+)$/;
 
+// Zones that say nothing about where someone is.
+const PLACELESS_ZONES = /^(|UTC|GMT|UCT|Universal|Zulu|Etc\/.*)$/;
+
 /**
- * Best guess at where someone is, from their time zone first and their
- * language region second. Returns a key of SUPPORT_REGIONS or null.
+ * Best guess at where someone is, from their time zone. The language setting
+ * only counts when the zone names no place: an en-US browser in Berlin is in
+ * Germany, and a wrong guess would show the wrong emergency number.
+ * Returns a key of SUPPORT_REGIONS or null.
  * @param {{ timeZone?: string, languages?: readonly string[] }} signals
  */
 export function detectSupportRegion({ timeZone = '', languages = [] } = {}) {
@@ -76,6 +81,7 @@ export function detectSupportRegion({ timeZone = '', languages = [] } = {}) {
   if (timeZone === 'Europe/Dublin') return 'IE';
   if (timeZone.startsWith('Australia/')) return 'AU';
   if (timeZone === 'Pacific/Auckland' || timeZone === 'Pacific/Chatham') return 'NZ';
+  if (!PLACELESS_ZONES.test(timeZone)) return null;
   for (const language of languages) {
     const region = String(language).split('-')[1]?.toUpperCase();
     if (region === 'UK') return 'GB';

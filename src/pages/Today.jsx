@@ -63,7 +63,7 @@ export default function Today() {
       ]);
       const today = checkIns.find((c) => c.date === todayKey()) || null;
       setEntry(today);
-      // Notices are opt-in; older ones stay hidden unless the person turned them on.
+      // Notices are opt-in. Turning them on marks older ones as seen (Settings).
       setAlerts(me?.boundary_settings?.notices_enabled ? openAlerts : []);
       setStreak(computeStreak(checkIns, todayKey()));
       if (!today && checkIns[0]?.created_date) setLastEntryAt(checkIns[0].created_date);

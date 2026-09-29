@@ -17,9 +17,9 @@ export default function SupportResources({ focus = 'crisis' }) {
           <p className="font-semibold">{line.label}</p>
           <p className="living-muted text-sm">{line.detail}</p>
           <div className="flex flex-wrap gap-3">
-            {line.call && <a className="living-secondary" href={telHref(line.call)} aria-label={`Call ${line.label}`}><Phone size={15} aria-hidden="true" />Call</a>}
-            {line.text && <a className="living-secondary" href={smsHref(line.text)} aria-label={`Text ${line.label}`}><MessageSquare size={15} aria-hidden="true" />Text</a>}
-            {line.url && <a className="living-text-link" href={line.url} target="_blank" rel="noreferrer" aria-label={`${line.label} website (opens in a new tab)`}>Website <ExternalLink size={13} aria-hidden="true" /></a>}
+            {line.call && <a className="living-secondary" href={telHref(line.call)} aria-label={`Call: ${line.label}`}><Phone size={15} aria-hidden="true" />Call</a>}
+            {line.text && <a className="living-secondary" href={smsHref(line.text)} aria-label={`Text: ${line.label}`}><MessageSquare size={15} aria-hidden="true" />Text</a>}
+            {line.url && <a className="living-text-link" href={line.url} target="_blank" rel="noreferrer" aria-label={`Website: ${line.label} (opens in a new tab)`}>Website <ExternalLink size={13} aria-hidden="true" /></a>}
           </div>
         </div>
       ))}

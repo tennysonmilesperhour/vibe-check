@@ -60,8 +60,9 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <LockGate>
+    {(frozenLocation) => (
     <Suspense fallback={<div className="min-h-screen field-wash" aria-busy="true" />}>
-    <Routes>
+    <Routes location={frozenLocation}>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
           <RouteErrorBoundary key="/"><MainPage /></RouteErrorBoundary>
@@ -90,6 +91,7 @@ const AuthenticatedApp = () => {
       <Route path="*" element={<PageNotFound />} />
     </Routes>
     </Suspense>
+    )}
     </LockGate>
   );
 };

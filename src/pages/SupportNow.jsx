@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { removeAppLock } from '@/lib/app-lock';
@@ -15,6 +15,8 @@ export default function SupportNow() {
   // follows the same lock, including the relock after time in the background.
   const { locked, unlock } = useLockState(user?.id);
   const [askPin, setAskPin] = useState(false);
+  const unlockButton = useRef(null);
+  const unlockedHere = useRef(false);
   // Hidden rather than removed on a relock, so unsaved words stay.
   const [planReady, setPlanReady] = useState(() => !locked);
   useEffect(() => { if (!locked) setPlanReady(true); }, [locked]);
@@ -39,16 +41,21 @@ export default function SupportNow() {
         {user && locked && (
           <div className="living-card space-y-3">
             <p>Your safety plan is hidden while Vibe Check is locked.</p>
-            <button type="button" className="living-secondary" onClick={() => setAskPin(true)}>Unlock to see it</button>
+            <button ref={unlockButton} type="button" className="living-secondary" onClick={() => setAskPin(true)}>Unlock to see it</button>
           </div>
         )}
         {user && planReady && <div hidden={locked} inert={locked ? '' : undefined}><SafetyPlan /></div>}
         {user && locked && askPin && (
           <LockScreen
             userId={user.id}
-            onUnlock={() => { unlock(); setAskPin(false); }}
+            onUnlock={() => { unlockedHere.current = true; unlock(); setAskPin(false); }}
             onForgot={async () => { await logout('local'); removeAppLock(user.id); }}
             onCancel={() => setAskPin(false)}
+            // Back to where the person was: the plan after unlocking, the button after "Not now".
+            onClosed={() => {
+              if (unlockedHere.current) { unlockedHere.current = false; document.getElementById('safety-plan-heading')?.focus(); }
+              else unlockButton.current?.focus();
+            }}
           />
         )}
         <section className="living-card space-y-3" aria-labelledby="device-safety-heading">

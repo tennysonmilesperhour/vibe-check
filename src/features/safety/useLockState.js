@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { hasAppLock, isUnlocked, markUnlocked, noteHidden, noteVisible, affectsLock } from '@/lib/app-lock';
+import { coverPage } from './page-cover';
 
 const lockedNow = (userId) => Boolean(userId) && hasAppLock(userId) && !isUnlocked(userId);
-
-// With a lock set, nothing shows while the tab is in the background, dialogs
-// included, so the app switcher's snapshot doesn't show the journal.
-const coverPage = (hidden) => { document.documentElement.style.visibility = hidden ? 'hidden' : ''; };
 
 /**
  * Whether this device's app lock is closed for the person, kept current as the
@@ -36,12 +33,9 @@ export default function useLockState(userId) {
       if (document.visibilityState === 'hidden') {
         if (!hasAppLock(userId)) return;
         noteHidden(userId);
-        coverPage(true);
-      } else {
-        // Uncover first: a hidden page can't take focus, and the lock focuses its
-        // PIN field. Both happen before the next paint, so nothing shows between.
-        coverPage(false);
-        if (hasAppLock(userId) && !noteVisible(userId)) lock();
+        coverPage(); // page-cover removes it when the page is in view again
+      } else if (hasAppLock(userId) && !noteVisible(userId)) {
+        lock();
       }
     };
     const onPageHide = () => { if (hasAppLock(userId)) noteHidden(userId); };

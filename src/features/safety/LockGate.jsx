@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useAuth } from '@/lib/AuthContext';
 import { removeAppLock, pinMatches, failedAttempts, recordFailedAttempt, clearFailedAttempts, waitLabel } from '@/lib/app-lock';
@@ -30,13 +31,26 @@ export function LockScreen({ userId, onUnlock, onForgot, onClosed = () => {}, on
     return () => clearTimeout(timer);
   }, [pausedUntil]);
 
+  const focusStart = () => (inputRef.current && !inputRef.current.disabled ? inputRef.current : titleRef.current)?.focus();
+
   // When a pause ends, go back to the PIN field (unless the person moved on).
   useEffect(() => {
     if (!paused && [titleRef.current, document.body].includes(document.activeElement)) inputRef.current?.focus();
   }, [paused]);
 
-  // A dialog that opens underneath later (say, from the Back button) would
-  // take the top layer, and with it every tap and key. Open again above it.
+  // Opened while the page was hidden (a hidden page can't take focus): focus on return.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible' || document.activeElement?.closest('[data-app-lock]')) return;
+      (inputRef.current && !inputRef.current.disabled ? inputRef.current : titleRef.current)?.focus();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
+  // The pages underneath don't follow the address while locked (see LockGate),
+  // so nothing should open under this screen. If a dialog still does, it would
+  // take the top layer, and with it every tap and key: open again above it.
   const [layer, setLayer] = useState(0);
   useEffect(() => {
     const observer = new MutationObserver((records) => {
@@ -88,9 +102,9 @@ export function LockScreen({ userId, onUnlock, onForgot, onClosed = () => {}, on
           aria-describedby={undefined}
           onOpenAutoFocus={(event) => {
             event.preventDefault();
-            // During a pause the PIN field is disabled; don't land on sign-out instead.
-            (inputRef.current && !inputRef.current.disabled ? inputRef.current : titleRef.current)?.focus();
+            focusStart(); // during a pause the PIN field is disabled; don't land on sign-out instead
           }}
+          onEscapeKeyDown={onCancel ? () => onCancel() : undefined}
           onCloseAutoFocus={(event) => { event.preventDefault(); onClosed(); }}
         >
           <form onSubmit={submit} className="m-auto w-full max-w-sm text-center space-y-4">
@@ -141,18 +155,32 @@ export default function LockGate({ children }) {
   // Once shown they stay mounted through later relocks, keeping unsaved words.
   const [contentReady, setContentReady] = useState(() => !locked);
   useEffect(() => { if (!locked) setContentReady(true); }, [locked]);
+  // While locked, the pages keep the address they had, so the Back button
+  // can't open a dialog underneath. They catch up after unlocking. A location
+  // is always passed (the live one when unlocked): switching between none and
+  // one would change the tree's shape and remount every page, losing words.
+  const location = useLocation();
+  const [shownLocation, setShownLocation] = useState(location);
+  useEffect(() => { if (!locked) setShownLocation(location); }, [locked, location]);
+  const content = typeof children === 'function' ? children(locked ? shownLocation : location) : children;
 
   return (
     <>
-      {contentReady && <div inert={locked ? '' : undefined} aria-hidden={locked || undefined}>{children}</div>}
+      {contentReady && <div inert={locked ? '' : undefined} aria-hidden={locked || undefined}>{content}</div>}
       {locked && (
         <LockScreen
           userId={userId}
           onUnlock={() => { unlock(); setContentReady(true); }}
           // Stay covered until the sign-out lands; then the lock can go.
           onForgot={async () => { await logout('local'); removeAppLock(userId); }}
-          // Only after a real unlock; the lock also reopens itself above new dialogs.
-          onClosed={() => { if (!lockedRef.current && lastFocus.current?.isConnected) lastFocus.current.focus(); }}
+          onClosed={() => {
+            // Only after a real unlock (the lock can reopen itself), and only into
+            // the top dialog if one is open, which otherwise keeps its own focus.
+            const target = lastFocus.current;
+            if (lockedRef.current || !target?.isConnected) return;
+            const dialogs = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')].filter((node) => !node.closest('[data-app-lock]'));
+            if (!dialogs.length || dialogs.at(-1).contains(target)) target.focus();
+          }}
         />
       )}
     </>

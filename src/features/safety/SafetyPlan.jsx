@@ -41,7 +41,7 @@ export default function SafetyPlan() {
     <section className="living-card space-y-5" aria-labelledby="safety-plan-heading">
       <div>
         <p className="sanctuary-eyebrow">FOR HARD MOMENTS</p>
-        <h2 id="safety-plan-heading">Your safety plan</h2>
+        <h2 id="safety-plan-heading" tabIndex={-1} className="outline-none">Your safety plan</h2>
         <p className="living-muted mt-2">Write this when things are calmer, so it's ready when they aren't. Every part is optional and private to your account.</p>
       </div>
       {/* Without the saved plan, a save could replace it, so nothing is editable until it loads.

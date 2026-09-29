@@ -113,8 +113,12 @@ export function noteVisible(userId, now = Date.now()) {
 
 /** Quick exit: lock every account in every tab on this device. */
 export function noteQuickExit(now = Date.now()) {
-  // Always a new value, so other tabs hear it even twice in one millisecond.
-  store('localStorage')?.setItem(QUICK_EXIT_KEY, String(Math.max(now, quickExitAt() + 1)));
+  try {
+    // Always a new value, so other tabs hear it even twice in one millisecond.
+    store('localStorage')?.setItem(QUICK_EXIT_KEY, String(Math.max(now, quickExitAt() + 1)));
+  } catch {
+    // storage full or blocked; the exit itself still happens
+  }
 }
 
 /** Whether a storage change made in another tab can change this tab's lock. */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { chooseSteps, ALL_STEPS } from '../check-in-steps';
+import { chooseSteps, ALL_STEPS, stressAnswered } from '../check-in-steps';
 
 describe('check-in steps follow what the person chose to notice', () => {
   it('asks everything when nothing was chosen', () => {
@@ -15,5 +15,12 @@ describe('check-in steps follow what the person chose to notice', () => {
     const form = { energy_level: 4, person_ids: ['p'], stress_context: { stress_score: 0 } };
     expect(chooseSteps(['Mood'], form)).toEqual(['mood', 'energy', 'emotions', 'activities', 'stress', 'high', 'low', 'reflection']);
     expect(chooseSteps(['Mood'], { stress_context: { state_ids: [] } })).not.toContain('stress');
+  });
+
+  it('does not take bookkeeping for a stress answer', () => {
+    const saved = { stress_context: { visited_steps: ['mood', 'emotions', 'activities'], stress_measure: 'highest-today' } };
+    expect(stressAnswered(saved.stress_context)).toBe(false);
+    expect(chooseSteps(['Relationships'], saved)).not.toContain('stress');
+    expect(stressAnswered({ visited_steps: ['stress'], stress_score: 0 })).toBe(true);
   });
 });

@@ -148,14 +148,16 @@ function unconnectedRecord(rand, dayCount) {
   for (let d = 0; d < dayCount; d += 1) {
     if (rand() < 0.2) continue; // no record that day
     const date = addDaysKey('2025-10-01', d);
-    if (rand() < 0.3) { entries.push({ key: `${d}`, kind: 'day', date, mood_score: 5 }); continue; } // mood only
+    if (rand() < 0.3) { entries.push({ key: `${d}`, kind: 'day', date, mood_score: 5, stress_context: { visited_steps: ['mood'] } }); continue; } // mood only
     const busy = 0.2 + rand() * 1.6;
     const pick = (list) => list.filter((item) => rand() < Math.min(0.95, item.rate * busy)).map((item) => item.id);
     const chosen = pick(states);
+    const statesAsked = rand() >= 0.2;
+    const tagsAsked = rand() >= 0.2;
     entries.push({
       key: `${d}`, kind: 'day', date,
-      stress_context: rand() < 0.2 || !chosen.length ? {} : { state_ids: chosen },
-      ...(rand() < 0.2 ? {} : { person_ids: pick(people), activities: pick(habits) }),
+      stress_context: { ...(statesAsked && chosen.length ? { state_ids: chosen } : {}), visited_steps: ['mood', ...(tagsAsked ? ['activities'] : []), ...(statesAsked ? ['stress'] : [])] },
+      ...(tagsAsked ? { person_ids: pick(people), activities: pick(habits) } : {}),
     });
   }
   return entries;
@@ -291,6 +293,13 @@ describe('connections are compared with comparable days without them', () => {
     // Check-ins that never reached the stress question don't count as calm days.
     const skipped = Array.from({ length: 30 }, (_, d) => ({ key: `skip-${d}`, kind: 'day', date: addDaysKey('2026-04-01', d), person_ids: ['jules'], stress_context: { visited_steps: ['mood', 'activities'] } }));
     expect(shown([...base, ...skipped])).toMatchObject({ days: 15, total: 20 });
+    // Older check-ins without that record count only if created once both questions were asked.
+    const legacy = (key, date, created, extra) => ({ key, kind: 'day', date, created_date: created, person_ids: ['jules'], stress_context: {}, ...extra });
+    const oldEdited = legacy('old', '2026-02-02', '2026-02-02T20:00:00Z', { stress_context: { state_ids: ['on-edge'] } });
+    const oldCalm = Array.from({ length: 20 }, (_, d) => legacy(`calm-${d}`, addDaysKey('2026-02-03', d), `${addDaysKey('2026-02-03', d)}T20:00:00Z`));
+    expect(shown([...base, oldEdited, ...oldCalm])).toMatchObject({ days: 15, total: 20 });
+    const backfilled = legacy('back', '2026-02-01', '2026-09-20T20:00:00Z', { stress_context: { state_ids: ['anger'] } });
+    expect(shown([...base, backfilled])).toMatchObject({ days: 16, total: 21 });
     // Journal moments add no extra chances to a day.
     const moments = Array.from({ length: 30 }, (_, d) => ({ key: `moment-${d}`, kind: 'journal', date: addDaysKey('2026-01-01', d * 2 + 1), person_ids: ['sam'], stress_context: answered(['anger']) }));
     expect(shown([...base, ...moments])).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });

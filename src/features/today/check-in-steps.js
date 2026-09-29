@@ -2,6 +2,11 @@ export const ALL_STEPS = ['mood', 'energy', 'sleep', 'emotions', 'activities', '
 
 const filled = (value) => (Array.isArray(value) ? value.length > 0 : value != null && value !== '');
 
+// Bookkeeping kept beside the stress answers, never an answer itself.
+const STRESS_META = new Set(['visited_steps', 'stress_measure']);
+/** Whether any stress question holds an answer. */
+export const stressAnswered = (context = {}) => Object.entries(context || {}).some(([key, value]) => !STRESS_META.has(key) && filled(value));
+
 /**
  * The check-in asks about what the person chose to notice at the start (no
  * choice means every question). A question that already holds an answer for
@@ -15,7 +20,7 @@ export function chooseSteps(tracking = [], form = {}) {
     energy: filled(form.energy_level),
     sleep: filled(form.sleep_quality),
     activities: filled(form.activities) || filled(form.person_ids),
-    stress: Object.values(form.stress_context || {}).some(filled),
+    stress: stressAnswered(form.stress_context),
   };
   return ALL_STEPS.filter((id) => {
     if (id === 'energy' || id === 'sleep') return wants('Energy & sleep') || has[id];

@@ -15,12 +15,20 @@ export async function fetchLivingData() {
 // query (the full history and the preferences-only one below). A function
 // patch is given the latest stored values, so a list is changed from what is
 // stored now, not from an older copy on this device.
-async function storePreferences(client, userId, patch) {
-  const [row] = await VibePreference.list();
-  const current = row?.values || {};
-  const result = await VibePreference.upsert({ values: { ...current, ...(typeof patch === 'function' ? patch(current) : patch) } }, 'user_id');
-  await client.invalidateQueries({ queryKey: ['living', userId] });
-  return result;
+// Writes from this tab run one at a time, so two quick changes can't both
+// start from the same stored values and drop one another.
+let writes = Promise.resolve();
+function storePreferences(client, userId, patch) {
+  const write = writes.then(async () => {
+    const [row] = await VibePreference.list();
+    const current = row?.values || {};
+    return VibePreference.upsert({ values: { ...current, ...(typeof patch === 'function' ? patch(current) : patch) } }, 'user_id');
+  });
+  writes = write.catch(() => {});
+  return write.then(async (result) => {
+    await client.invalidateQueries({ queryKey: ['living', userId] });
+    return result;
+  });
 }
 
 export function useLivingData() {

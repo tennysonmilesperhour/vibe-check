@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import SkyField from "@/features/shell/SkyField";
 import { ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
 import { EMOTIONS, ACTIVITIES } from "./vocab";
-import { ALL_STEPS, chooseSteps } from "./check-in-steps";
+import { ALL_STEPS, chooseSteps, stressAnswered } from "./check-in-steps";
 import { usePreferences } from "@/features/patterns/useLivingData";
 import { moonPhase } from "@/lib/resonance/moon";
 import { personalDay } from "@/lib/resonance/numerology";
@@ -45,6 +45,11 @@ const formFrom = (existing) => ({
   stress_context: existing?.stress_context ?? {},
 });
 // Words the person typed themselves, beside the preset chips.
+// Which questions were reached is kept in stress_context.visited_steps. It
+// travels with drafts and tab copies, but reaching a question is not an edit:
+// it never makes a draft or a "keep your changes?" prompt on its own.
+const withoutVisits = (value) => ({ ...value, stress_context: Object.fromEntries(Object.entries(value.stress_context || {}).filter(([key]) => key !== 'visited_steps')) });
+const comparable = (value) => JSON.stringify(withoutVisits(value));
 const customFrom = (items = [], presets) => items.filter((item) => !presets.some((preset) => preset.label === item)).join(', ');
 const withCustom = (items, presets, text) => [...new Set([...items.filter((item) => presets.some((preset) => preset.label === item)), ...text.split(',').map((item) => item.trim()).filter(Boolean)])];
 
@@ -99,7 +104,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   }, [stepIndex]);
 
   const restoreForm = (payload) => {
-    setForm((previous) => ({ ...previous, ...payload }));
+    setForm((previous) => {
+      const next = { ...previous, ...payload };
+      const visits = [...new Set([...(previous.stress_context?.visited_steps || []), ...(payload.stress_context?.visited_steps || [])])];
+      return visits.length ? { ...next, stress_context: { ...next.stress_context, visited_steps: visits } } : next;
+    });
     setCustomHabits(customFrom(payload.activities, ACTIVITIES));
     setCustomFeelings(customFrom(payload.emotions, EMOTIONS));
   };
@@ -107,7 +116,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   useEffect(() => {
     let active = true;
     const initial = formFrom(existing);
-    baselineRef.current = JSON.stringify(initial);
+    baselineRef.current = comparable(initial);
     visitStartDraftRef.current = null;
     const buffer = readBuffer(bufferKey);
     // Restore a tab copy that is provably newest; otherwise offer it back
@@ -119,7 +128,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         setRestored(true);
         return true;
       }
-      if (JSON.stringify({ ...shown, ...buffer.value }) !== JSON.stringify(shown)) setHeldBuffer(buffer.value);
+      if (comparable({ ...shown, ...buffer.value }) !== comparable(shown)) setHeldBuffer(buffer.value);
       return false;
     };
     CheckInDraft.filter({ date: dateKey }).then(([draft]) => {
@@ -130,7 +139,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       const shown = draftIsNewer ? { ...initial, ...draft.payload } : initial;
       setServerVersion(latestVersion(existing?.updated_at, draft?.updated_at));
       if (draftIsNewer) {
-        baselineRef.current = JSON.stringify(shown);
+        baselineRef.current = comparable(shown);
         visitStartDraftRef.current = draft.payload;
       }
       if (takeBuffer(shown, existing?.updated_at, draft?.updated_at)) {
@@ -155,7 +164,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // Keep a tab copy immediately and a server draft after a pause, so a tab
   // switch, reload, or dropped connection never takes the words.
   const snapshot = JSON.stringify(form);
-  const dirty = !draftLoading && baselineRef.current !== null && snapshot !== baselineRef.current;
+  const edits = comparable(form);
+  const dirty = !draftLoading && baselineRef.current !== null && edits !== baselineRef.current;
   useWritingBuffer(bufferKey, snapshot, { enabled: dirty && !finishedRef.current, basedOn: serverVersion });
   // Edits taken back to where the visit started leave nothing to restore.
   useEffect(() => {
@@ -170,7 +180,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     autosaveTimerRef.current = setTimeout(() => {
       if (finishedRef.current) return;
       setAutosave('saving');
-      const sent = snapshot;
+      const sent = edits;
       const payload = form;
       chainRef.current = chainRef.current.catch(() => {}).then(async () => {
         if (finishedRef.current) return;
@@ -183,7 +193,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
           setServerVersion(draft.updated_at || null);
           baselineRef.current = sent;
           // The server now holds these words; keep a tab copy only for newer ones.
-          if (JSON.stringify(formRef.current) === sent) clearBuffer(bufferKey);
+          if (comparable(formRef.current) === sent) clearBuffer(bufferKey);
           setAutosave('saved');
         } catch {
           if (finishedRef.current) return;
@@ -298,7 +308,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     }, 'Could not discard the draft');
     if (!done) return;
     const initial = formFrom(existing);
-    baselineRef.current = JSON.stringify(initial);
+    baselineRef.current = comparable(initial);
     visitStartDraftRef.current = null;
     setForm(initial);
     setCustomHabits(customFrom(initial.activities, ACTIVITIES));
@@ -359,8 +369,13 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const stepId = stepOrder[stepIndex];
   // Which questions the person reached, kept with the check-in so patterns
   // only compare days that asked the same things.
-  const visitedRef = useRef(new Set(existing?.stress_context?.visited_steps || []));
-  useEffect(() => { if (stepIds && stepId) visitedRef.current.add(stepId); }, [stepIds, stepId]);
+  useEffect(() => {
+    if (!stepIds || !stepId) return;
+    setForm((previous) => {
+      const visited = previous.stress_context?.visited_steps || [];
+      return visited.includes(stepId) ? previous : { ...previous, stress_context: { ...previous.stress_context, visited_steps: [...visited, stepId] } };
+    });
+  }, [stepIds, stepId]);
   const showAllSteps = () => {
     setStepIds(ALL_STEPS);
     setStepIndex(ALL_STEPS.indexOf(stepId));
@@ -386,8 +401,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         ...new Set([...(form.person_ids || []), ...(form.high_moment?.person_ids || []), ...(form.low_moment?.person_ids || [])]),
       ];
       // An answer means its question was seen, even on an earlier visit.
-      const visited = new Set(visitedRef.current);
-      if (Object.entries(form.stress_context || {}).some(([key, value]) => key !== 'visited_steps' && (Array.isArray(value) ? value.length > 0 : value != null && value !== ''))) visited.add('stress');
+      const visited = new Set(form.stress_context?.visited_steps || []);
+      if (stressAnswered(form.stress_context)) visited.add('stress');
       if ((form.activities || []).length || (form.person_ids || []).length) visited.add('activities');
       const payload = {
         ...form,
@@ -409,7 +424,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
 
     // The day is kept. Nothing below may bring a draft back or report the
     // save as failed.
-    baselineRef.current = JSON.stringify(form);
+    baselineRef.current = comparable(form);
     clearBuffer(bufferKey);
     if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current).catch(() => {});
     await queryClient.invalidateQueries({ queryKey: ['living'] }).catch(() => {});

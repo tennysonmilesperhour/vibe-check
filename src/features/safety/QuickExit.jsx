@@ -7,11 +7,19 @@ import { noteQuickExit } from '@/lib/app-lock';
 export const QUICK_EXIT_URL = 'https://www.google.com/search?q=weather';
 
 export function quickExit() {
-  // Every tab locks again and forgets a recent password check, so coming
-  // back (or Back) asks again.
+  // Nothing stays on screen while the next page loads.
+  document.documentElement.style.visibility = 'hidden';
+  // Every tab, this one included, locks again and forgets a recent password
+  // check, so coming back (or Back) asks again.
   noteQuickExit();
+  window.dispatchEvent(new Event('vibe:lock-changed'));
   allowLeaving();
   window.location.replace(QUICK_EXIT_URL);
+}
+
+// Brought back from the browser's page cache: show the page again (locked, if a lock is set).
+if (typeof window !== 'undefined') {
+  window.addEventListener('pageshow', (event) => { if (event.persisted) document.documentElement.style.visibility = ''; });
 }
 
 /** Leave the app at once for a neutral page. */

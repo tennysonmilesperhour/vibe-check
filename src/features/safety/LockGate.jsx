@@ -7,15 +7,20 @@ import QuickExit from './QuickExit';
 import SupportResources from './SupportResources';
 import useLockState from './useLockState';
 
-const keepOpen = (event) => event.preventDefault();
+const opensDialog = (node) => node instanceof Element && !node.matches('[data-app-lock]')
+  && (node.matches('[role="dialog"], [role="alertdialog"]') || Boolean(node.querySelector('[role="dialog"], [role="alertdialog"]')));
 
-function LockScreen({ userId, onUnlock, onForgot, onClosed }) {
+/** The PIN screen. A modal of its own, above any dialog that was open underneath. */
+export function LockScreen({ userId, onUnlock, onForgot, onClosed = () => {}, onCancel = null }) {
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
+  const [confirmForgot, setConfirmForgot] = useState(false);
   const [pausedUntil, setPausedUntil] = useState(() => failedAttempts(userId).pausedUntil);
   const paused = pausedUntil > Date.now();
+  const inputRef = useRef(null);
+  const titleRef = useRef(null);
 
   useEffect(() => {
     const remaining = pausedUntil - Date.now();
@@ -24,6 +29,22 @@ function LockScreen({ userId, onUnlock, onForgot, onClosed }) {
     const timer = setTimeout(() => { setPausedUntil(0); setError(''); }, remaining);
     return () => clearTimeout(timer);
   }, [pausedUntil]);
+
+  // When a pause ends, go back to the PIN field (unless the person moved on).
+  useEffect(() => {
+    if (!paused && [titleRef.current, document.body].includes(document.activeElement)) inputRef.current?.focus();
+  }, [paused]);
+
+  // A dialog that opens underneath later (say, from the Back button) would
+  // take the top layer, and with it every tap and key. Open again above it.
+  const [layer, setLayer] = useState(0);
+  useEffect(() => {
+    const observer = new MutationObserver((records) => {
+      if (records.some((record) => [...record.addedNodes].some(opensDialog))) setLayer((count) => count + 1);
+    });
+    observer.observe(document.body, { childList: true });
+    return () => observer.disconnect();
+  }, []);
 
   async function submit(event) {
     event.preventDefault();
@@ -56,34 +77,47 @@ function LockScreen({ userId, onUnlock, onForgot, onClosed }) {
     }
   }
 
-  // A modal of its own, so it sits above any dialog that was open underneath
-  // and takes the focus and pointer from it.
   return (
-    <DialogPrimitive.Root open modal>
+    <DialogPrimitive.Root key={layer} open modal>
       <DialogPrimitive.Portal>
+        {/* The overlay carries the scroll lock, so this screen scrolls even over another dialog. */}
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[100] field-wash" />
         <DialogPrimitive.Content
           data-app-lock=""
-          className="fixed inset-0 z-[100] field-wash overflow-y-auto flex px-6 py-10"
+          className="fixed inset-0 z-[100] overflow-y-auto flex px-6 py-10"
           aria-describedby={undefined}
-          onEscapeKeyDown={keepOpen}
-          onPointerDownOutside={keepOpen}
-          onInteractOutside={keepOpen}
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            // During a pause the PIN field is disabled; don't land on sign-out instead.
+            (inputRef.current && !inputRef.current.disabled ? inputRef.current : titleRef.current)?.focus();
+          }}
           onCloseAutoFocus={(event) => { event.preventDefault(); onClosed(); }}
         >
           <form onSubmit={submit} className="m-auto w-full max-w-sm text-center space-y-4">
             <SanctuaryMark size={56} className="mx-auto" />
-            <DialogPrimitive.Title asChild><h1 className="text-4xl">Vibe Check is locked</h1></DialogPrimitive.Title>
+            <DialogPrimitive.Title asChild><h1 ref={titleRef} tabIndex={-1} className="text-4xl outline-none">Vibe Check is locked</h1></DialogPrimitive.Title>
             <label className="living-label block">
               Enter your PIN
-              <input className="living-input mt-2 text-center tracking-[0.4em]" type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={pin} disabled={paused} onChange={(event) => setPin(event.target.value.replace(/\D/g, ''))} />
+              <input ref={inputRef} className="living-input mt-2 text-center tracking-[0.4em]" type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={pin} disabled={paused} onChange={(event) => setPin(event.target.value.replace(/\D/g, ''))} />
             </label>
             {error && <p className="living-error" role="alert">{error}</p>}
             <button type="submit" className="ink-button w-full justify-center" disabled={busy || paused || pin.length < 4}>{busy ? 'Checking…' : 'Unlock'}</button>
             <div className="flex flex-col items-center gap-3 pt-2">
-              <button type="button" className="underline text-sm" disabled={busy} onClick={forgot}>Forgot your PIN? Sign out and remove the lock</button>
+              {confirmForgot ? (
+                <div className="living-inset space-y-3 text-sm">
+                  <p>This signs you out on this device and removes the lock. Anything not saved yet is lost. Your saved journal stays in your account.</p>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    <button type="button" className="living-secondary" disabled={busy} onClick={forgot}>Sign out and remove the lock</button>
+                    <button type="button" className="underline" disabled={busy} onClick={() => setConfirmForgot(false)}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" className="underline text-sm" disabled={busy} onClick={() => setConfirmForgot(true)}>Forgot your PIN?</button>
+              )}
               {/* Shown here rather than on another page, so nothing under the lock is lost. */}
               <button type="button" className="underline text-sm" aria-expanded={showSupport} onClick={() => setShowSupport((open) => !open)}>Need support now?</button>
               <QuickExit className="underline text-sm inline-flex items-center gap-2" />
+              {onCancel && <button type="button" className="underline text-sm" onClick={onCancel}>Not now</button>}
             </div>
             {showSupport && <div className="living-card text-left"><SupportResources /></div>}
           </form>
@@ -101,8 +135,7 @@ function LockScreen({ userId, onUnlock, onForgot, onClosed }) {
 export default function LockGate({ children }) {
   const { user, logout } = useAuth();
   const userId = user?.id;
-  const contentRef = useRef(null);
-  const { locked, unlock, lastFocus } = useLockState(userId, contentRef);
+  const { locked, lockedRef, unlock, lastFocus } = useLockState(userId);
   // Opening locked, the pages wait for the PIN: mounted underneath, one could
   // open a dialog of its own (a draft restored from the address) above the lock.
   // Once shown they stay mounted through later relocks, keeping unsaved words.
@@ -111,14 +144,15 @@ export default function LockGate({ children }) {
 
   return (
     <>
-      {contentReady && <div ref={contentRef} inert={locked ? '' : undefined} aria-hidden={locked || undefined}>{children}</div>}
+      {contentReady && <div inert={locked ? '' : undefined} aria-hidden={locked || undefined}>{children}</div>}
       {locked && (
         <LockScreen
           userId={userId}
           onUnlock={() => { unlock(); setContentReady(true); }}
           // Stay covered until the sign-out lands; then the lock can go.
           onForgot={async () => { await logout('local'); removeAppLock(userId); }}
-          onClosed={() => { if (lastFocus.current?.isConnected) lastFocus.current.focus(); }}
+          // Only after a real unlock; the lock also reopens itself above new dialogs.
+          onClosed={() => { if (!lockedRef.current && lastFocus.current?.isConnected) lastFocus.current.focus(); }}
         />
       )}
     </>

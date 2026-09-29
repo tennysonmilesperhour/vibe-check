@@ -61,8 +61,13 @@ export const SUPPORT_REGIONS = {
 };
 
 // Canadian zones share offsets with US ones, so match them by name first.
-const CANADA_ZONES = /^America\/(Toronto|Montreal|Vancouver|Edmonton|Calgary|Winnipeg|Regina|Swift_Current|Halifax|Glace_Bay|Moncton|Goose_Bay|St_Johns|Whitehorse|Dawson|Dawson_Creek|Fort_Nelson|Creston|Yellowknife|Inuvik|Cambridge_Bay|Rankin_Inlet|Resolute|Iqaluit|Atikokan|Blanc-Sablon)$/;
-const US_ZONES = /^(America\/(New_York|Detroit|Chicago|Denver|Phoenix|Los_Angeles|Anchorage|Juneau|Sitka|Metlakatla|Yakutat|Nome|Adak|Boise|Menominee|Indiana\/.+|Kentucky\/.+|North_Dakota\/.+)|Pacific\/Honolulu|US\/.+)$/;
+// Chrome reports older (CLDR) names for some zones, like America/Indianapolis
+// and America/Coral_Harbour; other browsers report the IANA names. Both are here.
+const CANADA_ZONES = /^(America\/(Toronto|Montreal|Vancouver|Edmonton|Calgary|Winnipeg|Regina|Swift_Current|Halifax|Glace_Bay|Moncton|Goose_Bay|St_Johns|Whitehorse|Dawson|Dawson_Creek|Fort_Nelson|Creston|Yellowknife|Inuvik|Cambridge_Bay|Rankin_Inlet|Resolute|Iqaluit|Pangnirtung|Atikokan|Coral_Harbour|Thunder_Bay|Nipigon|Rainy_River|Blanc-Sablon)|Canada\/.+)$/;
+const US_ZONES = /^(America\/(New_York|Detroit|Chicago|Denver|Phoenix|Los_Angeles|Anchorage|Juneau|Sitka|Metlakatla|Yakutat|Nome|Adak|Atka|Boise|Menominee|Indianapolis|Fort_Wayne|Knox_IN|Louisville|Shiprock|Indiana\/.+|Kentucky\/.+|North_Dakota\/.+)|Pacific\/(Honolulu|Johnston)|US\/.+|Navajo)$/;
+const GB_ZONES = /^(Europe\/(London|Belfast)|GB|GB-Eire)$/;
+const IE_ZONES = /^(Europe\/Dublin|Eire)$/;
+const NZ_ZONES = /^(Pacific\/(Auckland|Chatham)|NZ|NZ-CHAT)$/;
 
 // Zones that say nothing about where someone is.
 const PLACELESS_ZONES = /^(|UTC|GMT|UCT|Universal|Zulu|Etc\/.*)$/;
@@ -77,10 +82,10 @@ const PLACELESS_ZONES = /^(|UTC|GMT|UCT|Universal|Zulu|Etc\/.*)$/;
 export function detectSupportRegion({ timeZone = '', languages = [] } = {}) {
   if (CANADA_ZONES.test(timeZone)) return 'CA';
   if (US_ZONES.test(timeZone)) return 'US';
-  if (timeZone === 'Europe/London' || timeZone === 'Europe/Belfast') return 'GB';
-  if (timeZone === 'Europe/Dublin') return 'IE';
+  if (GB_ZONES.test(timeZone)) return 'GB';
+  if (IE_ZONES.test(timeZone)) return 'IE';
   if (timeZone.startsWith('Australia/')) return 'AU';
-  if (timeZone === 'Pacific/Auckland' || timeZone === 'Pacific/Chatham') return 'NZ';
+  if (NZ_ZONES.test(timeZone)) return 'NZ';
   if (!PLACELESS_ZONES.test(timeZone)) return null;
   for (const language of languages) {
     const region = String(language).split('-')[1]?.toUpperCase();

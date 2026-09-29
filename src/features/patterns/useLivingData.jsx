@@ -25,7 +25,8 @@ export function useLivingData() {
   const client = useQueryClient();
   const queryKey = ['living', user?.id];
   const query = useQuery({ queryKey, queryFn: fetchLivingData, enabled: Boolean(user?.id), staleTime: 0 });
-  const refresh = () => client.invalidateQueries({ queryKey });
+  // Just the history: preferences have their own query and change on their own.
+  const refresh = () => client.invalidateQueries({ queryKey, exact: true });
   const savePreferences = (patch) => storePreferences(client, user?.id, patch);
   return { ...query, refresh, savePreferences };
 }

@@ -44,8 +44,9 @@ export default function SafetyPlan() {
         <h2 id="safety-plan-heading">Your safety plan</h2>
         <p className="living-muted mt-2">Write this when things are calmer, so it's ready when they aren't. Every part is optional and private to your account.</p>
       </div>
-      {/* Without the saved plan, a save could replace it, so nothing is editable until it loads. */}
-      {prefs.isLoading ? <p className="living-muted" role="status">Loading your plan…</p> : prefs.isError ? (
+      {/* Without the saved plan, a save could replace it, so nothing is editable until it loads.
+          A later refresh that fails keeps the loaded plan on screen. */}
+      {prefs.isLoading ? <p className="living-muted" role="status">Loading your plan…</p> : !prefs.data ? (
         <div className="space-y-3" role="alert">
           <p className="living-error">Your safety plan couldn't load. Check your connection.</p>
           <button type="button" className="living-secondary" disabled={prefs.isFetching} onClick={() => prefs.refetch()}>{prefs.isFetching ? 'Trying…' : 'Try again'}</button>
@@ -56,7 +57,7 @@ export default function SafetyPlan() {
           <textarea className="living-input mt-2" rows={2} maxLength={2000} readOnly={busy} value={plan[key] || ''} placeholder={placeholder} onChange={(event) => { markDirty(true); setPlan((current) => ({ ...current, [key]: event.target.value })); }} />
         </label>
       ))}
-      {prefs.isSuccess && <button type="button" className="ink-button" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save my safety plan'}</button>}
+      {prefs.data && <button type="button" className="ink-button" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save my safety plan'}</button>}
       {message && <p className="living-muted" role="status">{message}</p>}
     </section>
   );

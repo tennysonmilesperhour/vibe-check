@@ -13,6 +13,24 @@ describe('detectSupportRegion', () => {
     expect(detectSupportRegion({ timeZone: 'Australia/Perth' })).toBe('AU');
     expect(detectSupportRegion({ timeZone: 'Pacific/Auckland' })).toBe('NZ');
   });
+  it('knows the older zone names Chrome reports as well as the IANA ones', () => {
+    for (const zone of ['America/Indianapolis', 'America/Louisville', 'America/Indiana/Knox', 'America/Fort_Wayne', 'America/Atka', 'Navajo', 'Pacific/Johnston', 'US/Eastern']) {
+      expect(detectSupportRegion({ timeZone: zone, languages: ['en-US'] })).toBe('US');
+    }
+    for (const zone of ['America/Coral_Harbour', 'America/Atikokan', 'America/Thunder_Bay', 'America/Pangnirtung', 'Canada/Pacific']) {
+      expect(detectSupportRegion({ timeZone: zone })).toBe('CA');
+    }
+    expect(detectSupportRegion({ timeZone: 'GB' })).toBe('GB');
+    expect(detectSupportRegion({ timeZone: 'Eire' })).toBe('IE');
+    expect(detectSupportRegion({ timeZone: 'NZ' })).toBe('NZ');
+  });
+  it('matches every zone the browser engine reports for the listed countries', () => {
+    const expected = { 'America/Indiana/Indianapolis': 'US', 'America/Kentucky/Louisville': 'US', 'America/Atikokan': 'CA', 'America/Montreal': 'CA', 'Europe/Belfast': 'GB', 'Australia/ACT': 'AU' };
+    for (const [zone, region] of Object.entries(expected)) {
+      const reported = new Intl.DateTimeFormat('en-US', { timeZone: zone }).resolvedOptions().timeZone;
+      expect(detectSupportRegion({ timeZone: reported })).toBe(region);
+    }
+  });
   it('uses the language region only when the time zone names no place', () => {
     expect(detectSupportRegion({ timeZone: 'UTC', languages: ['en-GB'] })).toBe('GB');
     expect(detectSupportRegion({ timeZone: 'Etc/GMT+5', languages: ['fr-FR', 'en-AU'] })).toBe('AU');

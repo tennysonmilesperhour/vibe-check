@@ -5,6 +5,8 @@ let leavingNow = false;
 export function allowLeaving() {
   leavingNow = true;
 }
+// If the page comes back (the Back button restores it), prompts work again.
+if (typeof window !== 'undefined') window.addEventListener('pageshow', () => { leavingNow = false; });
 
 /** Ask the browser to confirm leaving while `active` (unsaved words on the page). */
 export default function useBeforeUnload(active) {

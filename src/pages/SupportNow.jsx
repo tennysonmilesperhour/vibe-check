@@ -1,18 +1,23 @@
-import { useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
+import { removeAppLock } from '@/lib/app-lock';
 import SupportResources from '@/features/safety/SupportResources';
 import SafetyPlan from '@/features/safety/SafetyPlan';
 import QuickExit from '@/features/safety/QuickExit';
+import { LockScreen } from '@/features/safety/LockGate';
 import useLockState from '@/features/safety/useLockState';
 
 /** Public: reachable signed in or out, from every surface that offers support. */
 export default function SupportNow() {
-  const { user } = useAuth();
-  // This page sits outside the app's lock so it's always reachable; the plan
+  const { user, logout } = useAuth();
+  // This page sits outside the app's lock so it's always reachable. The plan
   // follows the same lock, including the relock after time in the background.
-  const planRef = useRef(null);
-  const { locked } = useLockState(user?.id, planRef);
+  const { locked, unlock } = useLockState(user?.id);
+  const [askPin, setAskPin] = useState(false);
+  // Hidden rather than removed on a relock, so unsaved words stay.
+  const [planReady, setPlanReady] = useState(() => !locked);
+  useEffect(() => { if (!locked) setPlanReady(true); }, [locked]);
   const [params] = useSearchParams();
   const focus = params.get('focus') === 'relationship' ? 'relationship' : 'crisis';
   return (
@@ -31,9 +36,21 @@ export default function SupportNow() {
           <h2 id="support-services-heading">Talk to someone now</h2>
           <SupportResources focus={focus} />
         </section>
-        {user && (locked
-          ? <p className="living-muted">Your safety plan is hidden while Vibe Check is locked. <a className="underline" href="/">Unlock Vibe Check</a> to see it.</p>
-          : <div ref={planRef}><SafetyPlan /></div>)}
+        {user && locked && (
+          <div className="living-card space-y-3">
+            <p>Your safety plan is hidden while Vibe Check is locked.</p>
+            <button type="button" className="living-secondary" onClick={() => setAskPin(true)}>Unlock to see it</button>
+          </div>
+        )}
+        {user && planReady && <div hidden={locked} inert={locked ? '' : undefined}><SafetyPlan /></div>}
+        {user && locked && askPin && (
+          <LockScreen
+            userId={user.id}
+            onUnlock={() => { unlock(); setAskPin(false); }}
+            onForgot={async () => { await logout('local'); removeAppLock(user.id); }}
+            onCancel={() => setAskPin(false)}
+          />
+        )}
         <section className="living-card space-y-3" aria-labelledby="device-safety-heading">
           <h2 id="device-safety-heading">Using Vibe Check safely</h2>
           <ul className="list-disc pl-5 space-y-2 text-sm">

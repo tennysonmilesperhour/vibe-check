@@ -357,6 +357,10 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   }, [stepIds, draftLoading, prefs.isLoading, prefs.data]);
   const stepOrder = stepIds || ALL_STEPS;
   const stepId = stepOrder[stepIndex];
+  // Which questions the person reached, kept with the check-in so patterns
+  // only compare days that asked the same things.
+  const visitedRef = useRef(new Set(existing?.stress_context?.visited_steps || []));
+  useEffect(() => { if (stepIds && stepId) visitedRef.current.add(stepId); }, [stepIds, stepId]);
   const showAllSteps = () => {
     setStepIds(ALL_STEPS);
     setStepIndex(ALL_STEPS.indexOf(stepId));
@@ -381,12 +385,17 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       const personIds = [
         ...new Set([...(form.person_ids || []), ...(form.high_moment?.person_ids || []), ...(form.low_moment?.person_ids || [])]),
       ];
+      // An answer means its question was seen, even on an earlier visit.
+      const visited = new Set(visitedRef.current);
+      if (Object.entries(form.stress_context || {}).some(([key, value]) => key !== 'visited_steps' && (Array.isArray(value) ? value.length > 0 : value != null && value !== ''))) visited.add('stress');
+      if ((form.activities || []).length || (form.person_ids || []).length) visited.add('activities');
       const payload = {
         ...form,
         date: dateKey,
         moon_phase: moon.name,
         ...(birthDate ? { personal_day: personalDay(birthDate, dateKey) } : {}),
         person_ids: personIds,
+        stress_context: { ...form.stress_context, visited_steps: ALL_STEPS.filter((id) => visited.has(id)) },
       };
       // Single atomic write on (user_id, date): a second tab or a re-entered
       // ceremony can't race a read-then-create into a unique violation.

@@ -62,10 +62,13 @@ export function previousPeriod(period, weekStartsOn = 1) {
 
 // A state needs 3 recorded days to be shown at all. A connection with a person
 // or habit is held to more:
-// - Like with like: only days where at least one person (or habit) was tagged
-//   count, so a mood-only day or a skipped question is not a day "without"
-//   anyone. Days are never picked by their states: keeping only days with a
-//   state would make unrelated states look connected.
+// - The same question every day: only daily check-ins that asked about states
+//   and about people and habits count (for older check-ins, those from the
+//   first one with a state onward, when the question existed and was used),
+//   and only their answers, so a day with more journal moments has no extra
+//   chances. Of those, only days with at least one person (or habit) tagged.
+//   Days are never picked by their states: keeping only days with a state
+//   would make unrelated states look connected.
 // - At least 5 such days with it, 5 without, and 3 with both.
 // - The state on at least 20 percentage points more of the days with it, and
 //   at least twice as often.
@@ -75,15 +78,16 @@ export function previousPeriod(period, weekStartsOn = 1) {
 //   enough days to test in this view (Bonferroni).
 // On simulated records where nothing is connected, messy the way real ones
 // are (mood-only days, skipped questions, calm days left blank, busy and
-// quiet days), few people see a connection in any view (see the tests). A
-// strong real one usually shows within a few months. It is still an
-// association in a record, never a cause.
+// quiet days, and a history from before states could be recorded), few
+// people see a connection in any view (see the tests). A strong real one
+// usually shows within a few months. It is still an association in a
+// record, never a cause.
 const MIN_STATE_DAYS = 3;
 const MIN_GROUP_DAYS = 5;
 const MIN_GAP = 0.2;
 const MIN_RATIO = 2;
 const VIEW_ALPHA = 0.02;
-const MAX_STRATUM = 8;
+const MAX_STRATUM = 40;
 
 /**
  * What repeats in the record. Two kinds of card:
@@ -94,16 +98,27 @@ const MAX_STRATUM = 8;
  */
 export function stressPatterns(entries, people = [], feedback = {}) {
   const statesOf = new Map(entries.map((entry) => [entry, entryStates(entry)]));
-  const byDate = new Map();
-  for (const entry of entries) {
-    if (!byDate.has(entry.date)) byDate.set(entry.date, { states: new Set(), people: new Set(), habits: new Set(), entries: [] });
-    const day = byDate.get(entry.date);
-    statesOf.get(entry).filter((id) => id !== 'unsure').forEach((id) => day.states.add(id));
-    entryPeople(entry).forEach((id) => day.people.add(id));
-    (entry.activities || []).forEach((id) => day.habits.add(id));
-    day.entries.push(entry);
-  }
-  const days = [...byDate.values()];
+  const toDays = (list) => {
+    const byDate = new Map();
+    for (const entry of list) {
+      if (!byDate.has(entry.date)) byDate.set(entry.date, { states: new Set(), people: new Set(), habits: new Set(), entries: [] });
+      const day = byDate.get(entry.date);
+      statesOf.get(entry).filter((id) => id !== 'unsure').forEach((id) => day.states.add(id));
+      entryPeople(entry).forEach((id) => day.people.add(id));
+      (entry.activities || []).forEach((id) => day.habits.add(id));
+      day.entries.push(entry);
+    }
+    return [...byDate.values()];
+  };
+  const days = toDays(entries);
+  // Daily check-ins that asked both questions (see above).
+  const checkIns = entries.filter((entry) => entry.kind === 'day');
+  const firstState = checkIns.filter((entry) => statesOf.get(entry).length).map((entry) => entry.date).sort()[0];
+  const askedBoth = (entry) => {
+    const visited = entry.stress_context?.visited_steps;
+    return Array.isArray(visited) ? visited.includes('stress') && visited.includes('activities') : Boolean(firstState) && entry.date >= firstState;
+  };
+  const checkInDays = toDays(checkIns.filter(askedBoth));
   const status = (key) => feedback[key] || 'suggested';
   const sourcesFor = (state, list) => list.flatMap((day) => day.entries.filter((entry) => statesOf.get(entry).includes(state)));
   const states = [...new Set(days.flatMap((day) => [...day.states]))];
@@ -115,8 +130,8 @@ export function stressPatterns(entries, people = [], feedback = {}) {
   }).filter((card) => card.days >= MIN_STATE_DAYS);
 
   const comparable = {
-    person: days.filter((day) => day.people.size > 0),
-    habit: days.filter((day) => day.habits.size > 0),
+    person: checkInDays.filter((day) => day.people.size > 0),
+    habit: checkInDays.filter((day) => day.habits.size > 0),
   };
   const contexts = [
     ...[...new Set(comparable.person.flatMap((day) => [...day.people]))].map((id) => ({ type: 'person', id, label: people.find((person) => person.id === id)?.name || 'A person in your record' })),

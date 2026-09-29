@@ -33,11 +33,17 @@ export default function Analytics() {
   const filters = { start, end, person: params.get('person') || '', habit: params.get('habit') || '', state: params.get('state') || '', search: params.get('search') || '' };
   const filtered = useMemo(() => valid && data ? filterEntries(data.entries, filters) : [], [data, start, end, valid, filters.person, filters.habit, filters.state, filters.search]);
   const chart = useMemo(() => valid ? historyChart(filtered.filter((entry) => entry.kind === 'day'), start, end) : [], [filtered, start, end, valid]);
-  const patterns = useMemo(() => stressPatterns(filtered, data?.people, data?.preferences?.pattern_feedback), [filtered, data]);
+  // Connections are worked out on every day in the date range: filtering days
+  // by a state, person, habit, or words first would pick them by what is being
+  // compared. The filters then narrow which cards show.
+  const inRange = useMemo(() => valid && data ? filterEntries(data.entries, { start, end }) : [], [data, start, end, valid]);
+  const patterns = useMemo(() => stressPatterns(inRange, data?.people, data?.preferences?.pattern_feedback).filter((pattern) => (!filters.state || pattern.state === filters.state)
+    && (!filters.person || (pattern.context.type === 'person' && pattern.context.id === filters.person))
+    && (!filters.habit || (pattern.context.type === 'habit' && pattern.context.id === filters.habit))), [inRange, data, filters.state, filters.person, filters.habit]);
   const habits = [...new Set((data?.entries || []).flatMap((entry) => entry.activities || []))].sort();
   const moods = filtered.filter((entry) => entry.kind === 'day' && entry.mood_score != null).map((entry) => Number(entry.mood_score));
   const recordedDays = new Set(filtered.map((entry) => entry.date)).size;
-  const feedback = (key, value) => living.savePreferences({ pattern_feedback: { ...(data.preferences.pattern_feedback || {}), [key]: value } });
+  const feedback = (key, value) => living.savePreferences((stored) => ({ pattern_feedback: { ...(stored.pattern_feedback || {}), [key]: value } }));
   function change(key, value) {
     setParams((previous) => { const next = new URLSearchParams(previous); if (value) next.set(key, value); else next.delete(key); return next; });
   }

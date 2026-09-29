@@ -161,7 +161,8 @@ function unconnectedRecord(rand, dayCount) {
   return entries;
 }
 const showsConnection = (entries) => stressPatterns(entries).some((pattern) => pattern.context.type !== 'state');
-const answered = (ids) => (ids.length ? { state_ids: ids } : {});
+// A check-in that reached the stress and people-and-habits questions.
+const answered = (ids) => ({ ...(ids.length ? { state_ids: ids } : {}), visited_steps: ['mood', 'activities', 'stress'] });
 
 describe('connections are compared with comparable days without them', () => {
   it('computes the one-sided Fisher exact test', () => {
@@ -209,7 +210,7 @@ describe('connections are compared with comparable days without them', () => {
     // Busy days have coffee and anger; quiet days have tea and nothing else.
     const entries = Array.from({ length: 80 }, (_, d) => {
       const busy = d % 2 === 0;
-      return { key: `${d}`, date: addDaysKey('2026-01-01', d), activities: busy ? ['Coffee', 'Work', 'Gym', 'Calls'] : ['Tea'], stress_context: answered(busy && d % 4 === 0 ? ['anger', 'on-edge'] : busy ? ['on-edge'] : []) };
+      return { key: `${d}`, kind: 'day', date: addDaysKey('2026-01-01', d), activities: busy ? ['Coffee', 'Work', 'Gym', 'Calls'] : ['Tea'], stress_context: answered(busy && d % 4 === 0 ? ['anger', 'on-edge'] : busy ? ['on-edge'] : []) };
     });
     const coffee = stressPatterns(entries).find((pattern) => pattern.key === 'anger:habit:Coffee');
     expect(coffee).toBeUndefined();
@@ -222,7 +223,7 @@ describe('connections are compared with comparable days without them', () => {
       const walk = d % 3 === 0;
       const onEdge = walk ? d % 10 === 0 : d % 5 !== 0;
       const angry = d % 4 === 1;
-      return { key: `${d}`, date: addDaysKey('2025-01-01', d), activities: [walk ? 'Walk' : 'Desk'], stress_context: answered([...(onEdge ? ['on-edge'] : []), ...(angry ? ['anger'] : [])]) };
+      return { key: `${d}`, kind: 'day', date: addDaysKey('2025-01-01', d), activities: [walk ? 'Walk' : 'Desk'], stress_context: answered([...(onEdge ? ['on-edge'] : []), ...(angry ? ['anger'] : [])]) };
     });
     const found = stressPatterns(entries);
     expect(found.find((pattern) => pattern.key === 'anger:habit:Walk')).toBeUndefined();
@@ -233,7 +234,7 @@ describe('connections are compared with comparable days without them', () => {
     const entries = Array.from({ length: 60 }, (_, d) => {
       const withJules = d % 3 === 0; // 20 days with Jules, 40 with Sam
       const angry = withJules ? d % 4 !== 0 : d % 10 === 1; // 15 of 20 with, 4 of 40 without
-      return { key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], stress_context: answered(angry ? ['anger'] : []) };
+      return { key: `${d}`, kind: 'day', date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], stress_context: answered(angry ? ['anger'] : []) };
     });
     const found = stressPatterns(entries, [{ id: 'jules', name: 'Jules' }]).filter((pattern) => pattern.context.type !== 'state');
     expect(found).toHaveLength(1);
@@ -245,16 +246,16 @@ describe('connections are compared with comparable days without them', () => {
     const entries = Array.from({ length: 60 }, (_, d) => {
       const withJules = d % 3 === 0;
       const angry = withJules ? d % 4 !== 0 : d % 10 === 1;
-      return { key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], stress_context: answered(angry ? ['anger'] : []) };
+      return { key: `${d}`, kind: 'day', date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], stress_context: answered(angry ? ['anger'] : []) };
     });
     // Twenty mood-only days change nothing: they are not days without Jules or without anger.
-    const withShortDays = [...entries, ...Array.from({ length: 20 }, (_, d) => ({ key: `short-${d}`, date: addDaysKey('2026-03-15', d), mood_score: 6 }))];
+    const withShortDays = [...entries, ...Array.from({ length: 20 }, (_, d) => ({ key: `short-${d}`, kind: 'day', date: addDaysKey('2026-03-15', d), mood_score: 6 }))];
     const found = stressPatterns(withShortDays).find((pattern) => pattern.key === 'anger:person:jules');
     expect(found).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });
   });
 
   it('keeps a connection the person confirmed, marked as possibly chance, and hides one they dismissed', () => {
-    const entries = Array.from({ length: 12 }, (_, d) => ({ key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: [d < 6 ? 'p' : 'q'], stress_context: answered(d % 2 ? ['anger'] : []) }));
+    const entries = Array.from({ length: 12 }, (_, d) => ({ key: `${d}`, kind: 'day', date: addDaysKey('2026-01-01', d), person_ids: [d < 6 ? 'p' : 'q'], stress_context: answered(d % 2 ? ['anger'] : []) }));
     const connection = (feedback) => stressPatterns(entries, [], feedback).find((pattern) => pattern.key === 'anger:person:p');
     expect(connection({})).toBeUndefined(); // 3 of 6 with, 3 of 6 without: nothing to see
     expect(connection({ 'anger:person:p': 'confirmed' })).toMatchObject({ days: 3, total: 6, without: { days: 3, total: 6 }, significant: false });
@@ -262,7 +263,7 @@ describe('connections are compared with comparable days without them', () => {
   });
 
   it('keeps a confirmed connection in a short view like a week', () => {
-    const week = Array.from({ length: 7 }, (_, d) => ({ key: `${d}`, date: addDaysKey('2026-09-14', d), person_ids: [d < 4 ? 'jules' : 'sam'], stress_context: answered(d < 4 ? ['anger'] : []) }));
+    const week = Array.from({ length: 7 }, (_, d) => ({ key: `${d}`, kind: 'day', date: addDaysKey('2026-09-14', d), person_ids: [d < 4 ? 'jules' : 'sam'], stress_context: answered(d < 4 ? ['anger'] : []) }));
     expect(stressPatterns(week, [], { 'anger:person:jules': 'confirmed' }).find((pattern) => pattern.key === 'anger:person:jules')).toMatchObject({ days: 4, total: 4, without: { days: 0, total: 3 } });
   });
 
@@ -270,9 +271,28 @@ describe('connections are compared with comparable days without them', () => {
     const entries = Array.from({ length: 60 }, (_, d) => {
       const withJules = d % 3 === 0;
       const angry = withJules ? d % 4 !== 0 : d % 10 === 1;
-      return { key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], activities: [d % 2 ? 'Coffee' : 'Tea'], stress_context: answered(angry ? ['anger'] : []) };
+      return { key: `${d}`, kind: 'day', date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], activities: [d % 2 ? 'Coffee' : 'Tea'], stress_context: answered(angry ? ['anger'] : []) };
     });
     const found = stressPatterns(entries, [], { 'anger:habit:Coffee': 'confirmed' }).filter((pattern) => pattern.context.type !== 'state');
     expect(found.map((pattern) => pattern.key)).toEqual(['anger:person:jules', 'anger:habit:Coffee']);
+  });
+  it('only compares check-ins that asked both questions, from when states were recorded', () => {
+    const julesAnger = (d, extra = {}) => {
+      const withJules = d % 3 === 0;
+      const angry = withJules ? d % 4 !== 0 : d % 10 === 1;
+      return { key: `${d}`, kind: 'day', date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], stress_context: answered(angry ? ['anger'] : []), ...extra };
+    };
+    const base = Array.from({ length: 60 }, (_, d) => julesAnger(d));
+    const shown = (entries) => stressPatterns(entries).find((pattern) => pattern.key === 'anger:person:jules');
+    expect(shown(base)).toMatchObject({ days: 15, total: 20 });
+    // A season of Jules before states could be recorded changes nothing.
+    const before = Array.from({ length: 40 }, (_, d) => ({ key: `early-${d}`, kind: 'day', date: addDaysKey('2025-10-01', d), person_ids: ['jules'] }));
+    expect(shown([...before, ...base])).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });
+    // Check-ins that never reached the stress question don't count as calm days.
+    const skipped = Array.from({ length: 30 }, (_, d) => ({ key: `skip-${d}`, kind: 'day', date: addDaysKey('2026-04-01', d), person_ids: ['jules'], stress_context: { visited_steps: ['mood', 'activities'] } }));
+    expect(shown([...base, ...skipped])).toMatchObject({ days: 15, total: 20 });
+    // Journal moments add no extra chances to a day.
+    const moments = Array.from({ length: 30 }, (_, d) => ({ key: `moment-${d}`, kind: 'journal', date: addDaysKey('2026-01-01', d * 2 + 1), person_ids: ['sam'], stress_context: answered(['anger']) }));
+    expect(shown([...base, ...moments])).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });
   });
 });

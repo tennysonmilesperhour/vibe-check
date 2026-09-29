@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry } from '@/api/entities';
@@ -7,8 +8,9 @@ import { GUARD_DAYS, recentHardMoment } from '@/lib/symbolic-guard';
 /**
  * The latest hard moment in the last few days (see symbolic-guard), for
  * readings to wait on. Saves of check-ins and journal moments mark it stale
- * (see useLivingData). checking is true until a current answer is known; if
- * nothing can be read, readings show as usual.
+ * (see useLivingData). checking is true until the first current answer after
+ * the page opens; later refreshes happen behind an open reading and never
+ * blank it. If nothing can be read, offline included, readings show as usual.
  */
 export default function useHardMoment() {
   const { user } = useAuth();
@@ -29,6 +31,10 @@ export default function useHardMoment() {
     enabled: Boolean(user?.id),
     staleTime: 60_000,
   });
-  const checking = !query.isError && (query.isPending || (query.isFetching && query.isStale));
-  return { moment: query.data || null, checking };
+  // Waiting on a request that can answer now: not paused offline, not
+  // disabled, not failed.
+  const unanswered = query.fetchStatus === 'fetching' && (query.isPending || query.isStale);
+  const [answered, setAnswered] = useState(false);
+  useEffect(() => { if (!unanswered) setAnswered(true); }, [unanswered]);
+  return { moment: query.data || null, checking: !answered && unanswered };
 }

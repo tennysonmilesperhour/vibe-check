@@ -17,8 +17,9 @@ const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
 
 // Questions about safety, staying, leaving, or someone's treatment of you.
 // The cards can't weigh those, so the reading says so first. It errs toward
-// saying so: a safety note beside an unrelated question costs little.
-export const RELATIONSHIP_QUESTION = /\b(hurt\w*|abus\w*|unsafe|safe(ty)?|scared|afraid|fear\w*|frighten\w*|threat\w*|partner\w*|husband|wife|boyfriend|girlfriend|spouse|ex|dating|marr\w*|divorc\w*|break ?up|relationship\w*|trust (him|her|them)|loves? me)\b|\b(stay|staying|leave|leaving)\b.*\b(him|her|them|with|home|or)\b/i;
+// saying so: a safety note beside an unrelated question ("Should I leave my
+// job?") costs little, and a missed one can cost a lot.
+export const RELATIONSHIP_QUESTION = /\b(stay\w*|leav\w*|left|go back|hurt\w*|abus\w*|unsafe|safe(ty)?|danger\w*|scared|afraid|fear\w*|frighten\w*|threat\w*|kill\w*|hit|hits|hitting|beat\w*|push(ed|es|ing)?|shov\w*|chok\w*|violen\w*|yell\w*|scream\w*|shout\w*|control\w*|jealous\w*|cheat\w*|partner\w*|husband|wife|boyfriend|girlfriend|spouse|ex|dating|marr\w*|divorc\w*|break ?up|relationship\w*|trust (him|her|them)|loves? me)\b/i;
 
 /**
  * tarotReading({ spreadName, deck, cards, question, resonanceSummary })
@@ -196,8 +197,13 @@ function findTension(signals) {
 
 // ── Relationship synergy reading (two profiles) ───────────────────────────────
 
+// Every synergy reading carries this line. A saved reading without it was
+// made with wording that has since been replaced, so it isn't shown.
+export const SYNERGY_CAVEAT = "A chart cannot establish compatibility or excuse mistreatment.";
+export const currentSynergy = (text) => (text && text.includes(SYNERGY_CAVEAT) ? text : null);
+
 export function synergyReading(mine = {}, theirs = null, name = "this person") {
-  const lived = `We are the plants. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`;
+  const lived = `We are the plants. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? ${SYNERGY_CAVEAT} A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`;
   if (!theirs || Object.keys(theirs).length === 0) {
     return [
       `We don't have ${name}'s chart, and a chart couldn't tell you how ${name} treats you anyway. What you have recorded with ${name} says more than any reading could.`,
@@ -351,9 +357,15 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
   }
 
   if (periodType === "weekly") {
+    const parts = [
+      lp && `Your Life Path ${lp} is linked with ${NUMBERS[lp].core}.`,
+      birth && `You might watch for ${birth.name} in how the days unfold, with ${birth.keywords[0]} as a thread to notice.`,
+      "Choose one thing to move forward this week, and let the rest be lighter where you can.",
+    ].filter(Boolean);
+    if (name) parts[0] = `${name}, ${parts[0].charAt(0).toLowerCase()}${parts[0].slice(1)}`;
     return {
       theme: "The week ahead",
-      wisdom: `${name ? `${name}, this` : "This"} week, ${lp ? `your Life Path ${lp} keeps calling you toward ${NUMBERS[lp].core}. ` : ""}${birth ? `Watch for the pattern of ${birth.name} in how the days unfold, ${birth.keywords[0]} is the thread to follow. ` : ""}Choose one thing to move forward and let the rest be lighter than you think it needs to be.`,
+      wisdom: parts.join(" "),
       contemplation: "What would this week look like if I trusted my own timing?",
     };
   }

@@ -64,6 +64,9 @@ export default function CosmicAddons() {
     // Saving is paused until the real profile has loaded, so a failed load can
     // never be saved over the person's actual profile.
     const [profileLoad, setProfileLoad] = useState('loading'); // loading | ready | error
+    // Readings come from the person's own choices: a saved profile or changes
+    // on this page, never from the page's starting defaults.
+    const [hasSavedProfile, setHasSavedProfile] = useState(false);
     const loomRef = useRef(null);
 
     // Two-way URL sync: back button and refresh keep your place.
@@ -73,8 +76,8 @@ export default function CosmicAddons() {
     const [deepDive, setDeepDive] = useState({ system: null, nonce: 0 });
     const isDirty = JSON.stringify(profile) !== savedSnapshot;
     useBeforeUnload(isDirty);
-    // After a hard moment, readings wait on every tab until the person asks
-    // for them once on this visit.
+    // After a hard moment, every tab with a reading waits until the person
+    // asks for them once on this visit. The Loom's map stays.
     const guard = useHardMoment();
     const [readAnyway, setReadAnyway] = useState(false);
     const guarded = (reading) => (
@@ -97,6 +100,7 @@ export default function CosmicAddons() {
                 const merged = { ...EMPTY_PROFILE, ...user.cosmic_profile };
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
+                setHasSavedProfile(true);
             }
             setProfileLoad('ready');
         } catch {
@@ -113,6 +117,7 @@ export default function CosmicAddons() {
         try {
             await base44.auth.updateMe({ cosmic_profile: profile });
             setSavedSnapshot(JSON.stringify(profile));
+            setHasSavedProfile(true);
             toast({ title: "Cosmic profile saved", description: "Your loom and readings now weave from these systems." });
         } catch (e) {
             toast({ title: "Could not save", description: e?.message, variant: "destructive" });
@@ -327,7 +332,7 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 3: Connections ── */}
                     <TabsContent value="correspondences" className="space-y-6">
-                        <CorrespondenceMap enabledSystems={enabledSystems} profile={profile} />
+                        {guarded(<CorrespondenceMap enabledSystems={enabledSystems} profile={profile} />)}
                     </TabsContent>
 
                     {/* ── Tab 4: Deep Dive ── */}
@@ -346,12 +351,12 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 5: Readings for the day, week, month and year ── */}
                     <TabsContent value="readings" className="space-y-6">
-                        {guarded(<SymbolicReadings profile={profile} profileLoad={profileLoad} />)}
+                        {guarded(<SymbolicReadings profile={hasSavedProfile || isDirty ? profile : null} profileLoad={profileLoad} />)}
                     </TabsContent>
 
                     {/* ── Tab 6: Tarot & Oracle ── */}
                     <TabsContent value="tarot">
-                        {guarded(<TarotTable embedded />)}
+                        {guarded(<TarotTable />)}
                     </TabsContent>
                 </Tabs>
             </div>

@@ -59,7 +59,7 @@ function drawSpread(deckId, spread, seedText) {
 }
 
 /** The tarot & oracle table: honest shuffle, persisted readings, woven interpretation. */
-export default function TarotTable({ embedded = false }) {
+export default function TarotTable() {
   const { toast } = useToast();
   const [deckId, setDeckId] = useState("tarot");
   const [spreadId, setSpreadId] = useState("single");
@@ -137,10 +137,8 @@ export default function TarotTable({ embedded = false }) {
     setInterpreting(false);
   };
 
-  const surface = embedded ? "dusk-surface rounded-[var(--radius)]" : "dusk-surface min-h-screen";
-
   return (
-    <div className={surface}>
+    <div className="dusk-surface rounded-[var(--radius)]">
       <div className="max-w-4xl mx-auto px-6 py-10">
         <header className="text-center">
           <SanctuaryMark size={52} className="mx-auto mb-5 text-[var(--gh-gold)]" />

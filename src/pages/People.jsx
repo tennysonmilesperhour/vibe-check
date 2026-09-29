@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Person, Relationship, Connection, DailyCheckIn, JournalEntry, User } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import PlantVoice from '@/features/shell/PlantVoice';
-import { synergyReading } from "@/lib/wisdom/readings";
+import { synergyReading, currentSynergy } from "@/lib/wisdom/readings";
 import { harmRecordedWith } from "@/lib/symbolic-guard";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
@@ -106,7 +106,7 @@ export default function People() {
 
   /** Refresh a linked friend's cosmic snapshot when theirs is newer, then read synergy. */
   const generateSynergy = async (person, force = false) => {
-    if ((person.synergy_reading && !force) || harmRecordedWith(person, journal)) return;
+    if ((currentSynergy(person.synergy_reading) && !force) || harmRecordedWith(person, journal)) return;
     setSynergyBusy(true);
     try {
       let snapshot = person.cosmic_snapshot;
@@ -280,17 +280,18 @@ export default function People() {
                       type="button"
                       className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
                       style={{ color: "var(--gh-accent)" }}
-                      onClick={() => generateSynergy(detail, !!detail.synergy_reading)}
+                      onClick={() => generateSynergy(detail, true)}
                       disabled={synergyBusy}
                     >
                       <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
-                      {synergyBusy ? "Reading…" : detail.synergy_reading ? "Refresh" : "Generate"}
+                      {synergyBusy ? "Reading…" : currentSynergy(detail.synergy_reading) ? "Refresh" : "Generate"}
                     </button>
                   </div>
-                  {detail.synergy_reading ? (
+                  {currentSynergy(detail.synergy_reading) ? (
                     <p className="text-sm mt-2 whitespace-pre-line" style={{ color: "var(--gh-ink)" }}>{detail.synergy_reading}</p>
                   ) : (
                     <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
+                      {detail.synergy_reading ? "An earlier reading used wording we have since replaced. Generate a new one if you want it. " : ""}
                       A symbolic comparison of your chart with any chart details saved for {detail.name}. It can't tell you how you are treated. Saved here once made.
                     </p>
                   )}

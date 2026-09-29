@@ -6,15 +6,19 @@ import { ORACLE_DECK } from '../../../components/tarot/oracleDeck';
 import { ARCANA } from '../content/tarotArchetype';
 import { CHAKRAS } from '../content/chakras';
 import { ENNEAGRAM } from '../content/enneagram';
-import { HD_AUTHORITIES, HD_TYPES } from '../content/humanDesign';
+import { HD_AUTHORITIES, HD_TYPES, HD_PROFILES } from '../content/humanDesign';
+import { GENE_KEYS } from '../content/geneKeys';
 
 // Lines that told someone recording harm to doubt themselves, promised safety
 // or fate, or treated a feeling as being off course.
 const BYPASSING = /universe (supports|is benevolent)|gift from the universe|meant for you|meant to carry|of your own making|trapped by your own choices|fundamentally well|knocking on your own door|surrender your struggle|I am safe|exact medicine|disguised as a challenge|dashboard lights|unfolding as it should|peace is a choice|stop replaying|evidence arrives after the trust|necessary growth|perfect consequence|blame fate|only you are here to play|how the cards answer/i;
 
-// Lines that pushed toward risk or past someone's own sense of safety, or
-// framed hard things as a teacher.
-const PUSHING = /even where it feels risky|pick alive|scares and excites|act like it|you need to walk through|what needs to end\.|one clean, kind cut|necessary collapse|shadow teacher|it teaches|trust that endings/i;
+// Lines that pushed toward risk or past someone's own sense of safety, framed
+// hard things as necessary or as a teacher, or read a feeling as failure.
+const PUSHING = /even where it feels risky|pick alive|scares and excites|act like it|you need to walk through|what needs to end\.|one clean, kind cut|necessary (collapse|disruption|pause|aloneness)|must fall|shadow teacher|it teaches|trust that endings|new life follows every ending|only real risk|reclaim (your|the) power|power you gave away|forgive, and rise|don't make big decisions|reframe today's worry|repeat:|blocked \w+ energy|raw emotion untempered|lack of faith|inability to move on|no truth in the now|you usually regret|not failures|savior or a scapegoat/i;
+
+// Lines that told the person who they are because of a card or a chart.
+const IDENTITY = /you carry the soul|you are here to|your soul archetype/i;
 
 const card = (id) => FULL_DECK.find((item) => item.id === id);
 const oracle = (id) => ORACLE_DECK.find((item) => item.id === id);
@@ -22,17 +26,19 @@ const texts = (value) => (typeof value === 'string' ? [value] : Array.isArray(va
 
 describe('symbolic readings never talk over harm', () => {
   it('keeps the decks and system texts free of bypassing and self-blame', () => {
-    for (const text of texts([FULL_DECK, ORACLE_DECK, ARCANA, CHAKRAS, ENNEAGRAM, HD_AUTHORITIES, HD_TYPES])) {
+    for (const text of texts([FULL_DECK, ORACLE_DECK, ARCANA, CHAKRAS, ENNEAGRAM, HD_AUTHORITIES, HD_TYPES, HD_PROFILES, GENE_KEYS])) {
       expect(text).not.toMatch(BYPASSING);
       expect(text).not.toMatch(PUSHING);
     }
+    for (const text of texts([ARCANA, HD_TYPES, HD_PROFILES])) expect(text).not.toMatch(IDENTITY);
   });
 
   it('says so first for questions about safety or a relationship, in any word form', () => {
-    for (const question of ['Is he hurting me?', 'He hurts me, what do I do?', 'Should I be leaving him?', 'Should I stay with her?', 'Is my safety at risk at home?', 'Are my relationships healthy?', 'Should we breakup?', 'Can I trust him?', 'Does she love me?']) {
+    for (const question of ['Is he hurting me?', 'He hurts me, what do I do?', 'Should I be leaving him?', 'Should I stay with her?', 'Is my safety at risk at home?', 'Are my relationships healthy?', 'Should we breakup?', 'Can I trust him?', 'Does she love me?',
+      'Should I leave?', 'Should I stay?', 'Am I in danger?', 'Will he kill me?', 'He hit me', 'Is he controlling?', 'He yells at me every night', 'Should I go back?']) {
       expect(question).toMatch(RELATIONSHIP_QUESTION);
     }
-    for (const question of ['Should I leave my job?', 'What should I focus on?', 'Will the project go well?']) {
+    for (const question of ['What should I focus on?', 'Will the project go well?', 'What do I need to know about this week?']) {
       expect(question).not.toMatch(RELATIONSHIP_QUESTION);
     }
   });
@@ -72,13 +78,24 @@ describe('symbolic readings never talk over harm', () => {
   });
 
   it('frames the not-self theme as the person\'s to interpret, and timing as never applying to safety', () => {
+    const safetyLines = (text) => (text.match(/if you are unsafe, you don't have to wait/g) || []).length;
     for (const type of Object.keys(HD_TYPES)) {
-      const reading = JSON.stringify(systemReading('human_design', { type, authority: 'Splenic' }));
+      const reading = JSON.stringify(systemReading('human_design', { type, authority: 'Emotional' }));
       expect(reading).toMatch(/Only you can say what your feelings mean/);
-      expect(reading).toMatch(/if you are unsafe, you don't have to wait/);
+      expect(safetyLines(reading)).toBe(1);
       expect(reading).not.toMatch(BYPASSING);
       // No feeling is read as a sign of being off course.
       expect(reading).not.toMatch(/you (hit|meet) (frustration|anger|disappointment)|turn bitter|not-self signature|proof is in how you feel/i);
     }
+    // An authority alone, without a type, still says it once.
+    for (const { match } of Object.values(HD_AUTHORITIES)) {
+      expect(safetyLines(JSON.stringify(systemReading('human_design', { authority: match[0] })))).toBe(1);
+    }
+  });
+
+  it('never reads a Gene Keys shadow into a feeling or a hard situation', () => {
+    const reading = JSON.stringify(systemReading('gene_keys', { life_work: '55', evolution: '59' }));
+    expect(reading).toMatch(/doesn't mean you have fallen into a shadow/);
+    expect(reading).not.toMatch(/fall into the Shadow|still run you|Awareness itself/);
   });
 });

@@ -447,7 +447,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         const existingAlerts = await BoundaryAlert.list("-created_date", 50);
         newAlerts = dedupeAlerts(candidates, existingAlerts);
         for (const alert of newAlerts) {
-          await BoundaryAlert.create({ ...alert, is_acknowledged: false });
+          await BoundaryAlert.createFor(ownerId, { ...alert, is_acknowledged: false });
         }
       } catch {
         // boundary check must never block the save

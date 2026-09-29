@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/api/supabase';
+import { setOwner } from '@/api/owner';
 import { queryClientInstance } from '@/lib/query-client';
 import { isTransientAuthError, userFromSession, sessionChange } from '@/lib/auth-session';
 import { clearLegacyDrafts } from '@/lib/legacy-drafts';
@@ -40,6 +41,7 @@ export const AuthProvider = ({ children }) => {
       // A cold start with no session (for example, offline) keeps them.
       if (userIdRef.current) clearAllBuffers();
       userIdRef.current = null;
+      setOwner(null);
       setUser(null);
       setAuthError(SIGNED_OUT);
     } else if (change === 'switched') {
@@ -48,6 +50,7 @@ export const AuthProvider = ({ children }) => {
         clearAllBuffers();
       }
       userIdRef.current = next.id;
+      setOwner(next.id);
       setUser(next);
       setAuthError(null);
     }

@@ -78,7 +78,7 @@ export default function SettingsSheet({ open, onOpenChange }) {
       }
       // Only a week start chosen here: this sheet can stay open for hours,
       // and a stored choice from another device must not be written back.
-      const weekChanged = prefs.isSuccess && weekStart !== (prefs.data?.week_start ?? 1);
+      const weekChanged = prefs.data !== undefined && weekStart !== (prefs.data.week_start ?? 1);
       if (weekChanged) await prefs.savePreferences({ week_start: weekStart });
       toast(settingsLoaded
         ? { title: 'Settings saved' }
@@ -134,7 +134,7 @@ export default function SettingsSheet({ open, onOpenChange }) {
         <div><Label>Low mood line: {settings.mood_threshold}</Label><Slider disabled={!settingsLoaded} min={1} max={7} step={1} value={[settings.mood_threshold]} onValueChange={([value]) => setSettings({ ...settings, mood_threshold: value })} className="mt-3" aria-label="Low mood threshold" /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
         <div><Label>Declining run: {settings.consecutive_days} days</Label><Slider disabled={!settingsLoaded} min={2} max={7} step={1} value={[settings.consecutive_days]} onValueChange={([value]) => setSettings({ ...settings, consecutive_days: value })} className="mt-3" aria-label="Consecutive declining days" /></div>
         </>}
-        <label className="living-label">Your week begins<select className="living-input mt-2" value={weekStart} disabled={!prefs.isSuccess} onChange={(event) => setWeekStart(Number(event.target.value))}><option value={1}>Monday</option><option value={0}>Sunday</option></select></label>
+        <label className="living-label">Your week begins<select className="living-input mt-2" value={weekStart} disabled={prefs.data === undefined || saving} onChange={(event) => setWeekStart(Number(event.target.value))}><option value={1}>Monday</option><option value={0}>Sunday</option></select></label>
         <button className="ink-button" onClick={save} disabled={saving || prefs.isLoading}>{saving ? 'Saving…' : 'Save settings'}</button>
       </section>
       <section className="space-y-3 hairline pt-6"><h3 className="font-semibold">Your private record</h3><p className="living-muted text-sm">Check-ins, journal entries, people, and practice responses are saved to your account. Adding someone to your orbit does not invite them or share your entries.</p><p className="living-muted text-sm">Choose a date range and individual entries, remove saved people’s names, and preview the exact contents before downloading. Password encryption is available in the export preview.</p><button className="living-secondary" onClick={() => { onOpenChange(false); navigate('/Analytics?export=1'); }}>Choose & preview an export</button><p className="living-muted text-sm">Edit or delete individual records from their history. Reports update with those changes. Your patterns, full history, and reports stay free.</p></section>

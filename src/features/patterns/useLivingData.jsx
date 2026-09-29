@@ -13,14 +13,19 @@ export async function fetchLivingData() {
 }
 
 // Merges with the latest stored values, in this tab's order (see
-// preference-store). What was stored shows at once, even if the reload of
-// every ['living', user] query after it fails.
-async function storePreferences(client, userId, patch) {
-  const saved = await inOrder((turn) => mergePreferences(preferenceStore(VibePreference, userId), userId, patch, { giveUp: () => turn.late }));
-  client.setQueryData(['living', userId, 'preferences'], saved.values);
-  client.setQueryData(['living', userId], (old) => (old ? { ...old, preferences: saved.values } : old));
-  await client.invalidateQueries({ queryKey: ['living', userId] });
-  return saved;
+// preference-store). What was stored shows at once, in the same order, even
+// if a reload fails: a fetch already under way is dropped rather than let
+// it land older values, and only entries still cached are updated, so a
+// save that returns after a sign-out leaves nothing behind.
+function storePreferences(client, userId, patch) {
+  return inOrder(async () => {
+    const saved = await mergePreferences(preferenceStore(VibePreference, userId), userId, patch);
+    await client.cancelQueries({ queryKey: ['living', userId] });
+    client.setQueryData(['living', userId, 'preferences'], (old) => (old === undefined ? undefined : saved.values));
+    client.setQueryData(['living', userId], (old) => (old === undefined ? undefined : { ...old, preferences: saved.values }));
+    client.invalidateQueries({ queryKey: ['living', userId] }).catch(() => {});
+    return saved;
+  });
 }
 
 export function useLivingData() {

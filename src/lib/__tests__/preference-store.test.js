@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergePreferences, preferenceStore, inOrder, OTHER_ACCOUNT, TOO_LATE, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
+import { mergePreferences, preferenceStore, inOrder, OTHER_ACCOUNT, TOO_SLOW, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
 
 // A stored row that moves its updated_at on every write, like the database,
 // with a pause before each write so changes started together overlap.
@@ -67,7 +67,7 @@ describe('preferences change from many places without losing one another', () =>
     const calls = [];
     const entity = {
       list: async () => [{ id: 'row', user_id: 'me', values: { a: 1 }, updated_at: '2026-09-29T12:00:00.123456+00:00' }],
-      updateWhere: async (criteria, data) => { calls.push({ criteria, data }); return [{ id: 'row', user_id: 'me', values: data.values }]; },
+      updateWhere: async (/** @type {any} */ criteria, /** @type {any} */ data) => { calls.push({ criteria, data }); return [{ id: 'row', user_id: 'me', values: data.values }]; },
       createFor: async () => { throw Object.assign(new Error('duplicate key'), { code: UNIQUE_VIOLATION }); },
     };
     const store = preferenceStore(entity, 'me');
@@ -90,37 +90,15 @@ describe('changes from one tab land in the order they were made', () => {
     expect(order).toEqual(['first', 'second']);
   });
 
-  it('lets the next start when one hangs, timed from when that one began', async () => {
-    /** @type {string[]} */
-    const order = [];
-    const hung = inOrder(() => new Promise(() => {}), 40);
-    const started = Date.now();
-    const next = inOrder(async () => { order.push('next'); return Date.now() - started; }, 40);
-    const after = inOrder(async () => { order.push('after'); return 'after'; }, 40);
-    const waited = await next;
-    expect(waited).toBeGreaterThanOrEqual(35);
-    expect(await after).toBe('after');
-    expect(order).toEqual(['next', 'after']);
-    expect(hung).toBeInstanceOf(Promise);
-  });
-
-  it('lets a newer choice win over one that took too long', async () => {
-    let row = { id: 'row', user_id: 'me', values: {}, updated_at: 0 };
-    let slowOnce = true;
-    const api = {
-      read: async () => ({ ...row }),
-      swap: async (/** @type {any} */ seen, /** @type {any} */ values) => {
-        if (slowOnce && values.feedback === 'confirmed') { slowOnce = false; await new Promise((resolve) => setTimeout(resolve, 80)); }
-        if (row.updated_at !== seen.updated_at) return undefined;
-        row = { ...row, values, updated_at: row.updated_at + 1 };
-        return row;
-      },
-      create: async () => null,
+  it('gives up on a request that takes too long, so later changes still run', async () => {
+    const stalled = {
+      list: (/** @type {any} */ _sort, /** @type {any} */ _limit, /** @type {any} */ _offset, /** @type {any} */ { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')))),
+      updateWhere: async () => [],
+      createFor: async () => null,
     };
-    const first = inOrder((turn) => mergePreferences(api, 'me', { feedback: 'confirmed' }, { giveUp: () => turn.late }), 30);
-    const second = inOrder((turn) => mergePreferences(api, 'me', { feedback: 'dismissed' }, { giveUp: () => turn.late }), 30);
-    await expect(first).rejects.toThrow(TOO_LATE);
-    await second;
-    expect(row.values).toEqual({ feedback: 'dismissed' });
+    const first = inOrder(() => mergePreferences(preferenceStore(stalled, 'me', 30), 'me', { a: 1 }));
+    const next = inOrder(async () => 'next ran');
+    await expect(first).rejects.toThrow(TOO_SLOW);
+    expect(await next).toBe('next ran');
   });
 });

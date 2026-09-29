@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { ArrowRight, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import PageTransition from '@/features/shell/PageTransition';
-import TobaccoGuide from '@/features/shell/TobaccoGuide';
+import PlantVoice from '@/features/shell/PlantVoice';
 import CosmicWisdomCard from '@/components/cosmic/CosmicWisdomCard';
 import { useLivingData } from '@/features/patterns/useLivingData';
 import Journal from '@/features/patterns/Journal';
@@ -56,8 +56,8 @@ export default function Analytics() {
       <label className="living-label">Search your words<input className="living-input mt-2" type="search" value={filters.search} onChange={(e) => change('search', e.target.value)} placeholder="Find a phrase you want to revisit" /></label>
       <p className="living-muted text-xs">{start} – {end} · {filtered.length} of {data.entries.length} saved entries match. Untagged days do not establish that a person or habit was absent.</p>{!valid && <p role="alert" className="living-error">Choose a valid date range through today.</p>}
     </section>}
-    {tab === 'reports' ? <Reports data={data} onChanged={living.refresh} savePreferences={living.savePreferences} onExport={openExport} /> : tab === 'journal' ? <Journal data={data} entries={filtered} onChanged={living.refresh} /> : tab === 'wisdom' ? <><TobaccoGuide>These systems offer another way to reflect. Let your own words and experiences remain the ground beneath each interpretation.</TobaccoGuide><div className="grid md:grid-cols-2 gap-4">{['daily', 'weekly', 'monthly', 'yearly'].map((period) => <CosmicWisdomCard key={period} periodType={period} />)}</div></> : <>
-      <TobaccoGuide>A good day is part of your story. So are the difficult days that came before. Let us look at what repeats, what supports you, and where you want more choice.</TobaccoGuide>
+    {tab === 'reports' ? <Reports data={data} onChanged={living.refresh} savePreferences={living.savePreferences} onExport={openExport} /> : tab === 'journal' ? <Journal data={data} entries={filtered} onChanged={living.refresh} /> : tab === 'wisdom' ? <><PlantVoice>These systems offer another way to reflect. Let your own words and experiences remain the ground beneath each interpretation.</PlantVoice><div className="grid md:grid-cols-2 gap-4">{['daily', 'weekly', 'monthly', 'yearly'].map((period) => <CosmicWisdomCard key={period} periodType={period} />)}</div></> : <>
+      <PlantVoice>A good day is part of your story. So are the difficult days that came before. Let us look at what repeats, what supports you, and where you want more choice.</PlantVoice>
       <div className="living-stats"><div><span>RECORDED DAYS IN VIEW</span><strong>{recordedDays}<small> / {valid ? diffDaysKeys(end, start) + 1 : '—'}</small></strong></div><div><span>DAILY MOOD RANGE</span><strong>{moods.length ? `${Math.min(...moods)}–${Math.max(...moods)}` : '—'}<small>{moods.length ? ' / 10' : ''}</small></strong></div><div><span>DAILY MOOD AVERAGE</span><strong>{moods.length ? (moods.reduce((a, b) => a + b, 0) / moods.length).toFixed(1) : '—'}</strong></div></div>
       {valid && <PatternCalendar entries={filtered} start={start} end={end} weekStart={data.preferences.week_start === 0 ? 0 : 1} />}
       <section className="living-card space-y-5" aria-labelledby="history-chart-heading"><div><h2 id="history-chart-heading">Your days over time</h2><p className="living-muted mt-2">Daily mood, energy, sleep, and recorded stress. Gaps show days without a matching check-in.</p></div>

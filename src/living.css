@@ -21,10 +21,10 @@ textarea.living-input { resize: vertical; }
 .living-page .ink-button, .living-card .ink-button, .living-dialog .ink-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; border-radius: 10px; }
 .living-page button:disabled, .living-dialog button:disabled { opacity: .5; cursor: not-allowed; }
 .living-page button:focus-visible, .living-page a:focus-visible { outline: 2px solid var(--gh-accent); outline-offset: 4px; }
-.tobacco-guide { display: flex; align-items: flex-start; gap: 17px; padding: 25px; border-radius: 16px; color: var(--gh-ink); background: linear-gradient(115deg, var(--woodland-moss), #465238); --gh-ink: #eee7d2; --gh-ink-soft: #e3ddc5; --gh-ink-muted: #d1d6b9; --gh-accent: #eee7d2; border: 1px solid color-mix(in srgb, var(--gh-gold) 65%, transparent); }
-.tobacco-guide-compact { padding: 18px; }
-.tobacco-seal { display: grid; place-items: center; width: 44px; height: 54px; flex-shrink: 0; border: 1px solid var(--gh-gold); border-radius: 50%; color: var(--gh-accent); }
-.tobacco-words { font-size: 1rem; line-height: 1.7; margin-top: 6px; }
+.plant-voice { display: flex; align-items: flex-start; gap: 17px; padding: 25px; border-radius: 16px; color: var(--gh-ink); background: linear-gradient(115deg, var(--woodland-moss), #465238); --gh-ink: #eee7d2; --gh-ink-soft: #e3ddc5; --gh-ink-muted: #d1d6b9; --gh-accent: #eee7d2; border: 1px solid color-mix(in srgb, var(--gh-gold) 65%, transparent); }
+.plant-voice-compact { padding: 18px; }
+.plant-voice-seal { display: grid; place-items: center; width: 44px; height: 54px; flex-shrink: 0; border: 1px solid var(--gh-gold); border-radius: 50%; color: var(--gh-accent); }
+.plant-voice-words { font-size: 1rem; line-height: 1.7; margin-top: 6px; }
 .state-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .state-card { text-align: left; padding: 21px; min-height: 145px; border: 1px solid hsl(var(--border)); border-radius: 14px; background: var(--gh-cream); color: var(--gh-ink); box-shadow: var(--shadow-soft); transition: background .18s, border-color .18s; }
 .state-card strong { display: block; font-family: var(--font-display, Georgia, serif); font-size: 1.35rem; font-weight: 400; margin: 6px 0; }
@@ -72,9 +72,9 @@ textarea.living-input { resize: vertical; }
 @media (max-width: 640px) {
   .living-page { padding: 28px 18px 56px; }
   .living-card { padding: 20px 17px; }
-  .tobacco-guide { padding: 19px 16px; gap: 12px; }
-  .tobacco-seal { width: 33px; height: 44px; }
-  .tobacco-words { font-size: .9rem; }
+  .plant-voice { padding: 19px 16px; gap: 12px; }
+  .plant-voice-seal { width: 33px; height: 44px; }
+  .plant-voice-words { font-size: .9rem; }
   .state-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
   .state-card { padding: 16px; min-height: 150px; }
   .state-card strong { font-size: 1.2rem; }

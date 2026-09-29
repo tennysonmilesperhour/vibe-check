@@ -5,7 +5,7 @@ import { ReportReflection } from '@/api/entities';
 import { reportPeriod, previousPeriod, buildReport, entryText } from '@/lib/living-patterns';
 import { addDaysKey, todayKey } from '@/lib/dates';
 import { practiceById, ALIGNMENTS } from '@/lib/practices';
-import TobaccoGuide from '@/features/shell/TobaccoGuide';
+import PlantVoice from '@/features/shell/PlantVoice';
 import StressPatternCards from './StressPatternCards';
 import { EntryLink } from './Journal';
 
@@ -63,7 +63,7 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
       <button className="living-secondary" type="button" onClick={() => onExport({ start: period.start, end: period.end > todayKey() ? todayKey() : period.end, report })}><Download size={16} />Preview a report export</button>
     </section>
 
-    <TobaccoGuide>{report.days ? <>Let us keep the whole {type === 'monthly' ? 'month' : 'week'} in view. You recorded {report.days} days{report.missing ? ` and left ${report.missing} unrecorded` : ''}. A good moment can sit beside a difficult one. What do you want to remember about the pattern?</> : 'This period has no journal entries yet. Nothing needs to be invented to fill the space. You can begin with one moment or choose a practice for now.'}</TobaccoGuide>
+    <PlantVoice>{report.days ? <>Let us keep the whole {type === 'monthly' ? 'month' : 'week'} in view. You recorded {report.days} days{report.missing ? ` and left ${report.missing} unrecorded` : ''}. A good moment can sit beside a difficult one. What do you want to remember about the pattern?</> : 'This period has no journal entries yet. Nothing needs to be invented to fill the space. You can begin with one moment or choose a practice for now.'}</PlantVoice>
 
     <section className="living-card space-y-4" aria-labelledby="comparison-heading"><h2 id="comparison-heading">Alongside the previous {type === 'monthly' ? 'month' : 'week'}</h2><div className="overflow-x-auto"><table className="living-table"><thead><tr><th>Recorded measure</th><th>This period{report.partial ? ' · partial' : ''}</th><th>{previous.start} – {previous.end}</th></tr></thead><tbody><tr><th>Days with entries</th><td>{report.days} / {report.calendarDays}</td><td>{comparison.days} / {comparison.calendarDays}</td></tr><tr><th>Average daily mood</th><td>{report.moods ? report.moods.mean.toFixed(1) : 'Not recorded'}</td><td>{comparison.moods ? comparison.moods.mean.toFixed(1) : 'Not recorded'}</td></tr><tr><th>Daily mood range</th><td>{report.moods ? `${report.moods.min}–${report.moods.max}` : 'Not recorded'}</td><td>{comparison.moods ? `${comparison.moods.min}–${comparison.moods.max}` : 'Not recorded'}</td></tr><tr><th>Interactions marked unsafe</th><td>{report.interactions.filter((entry) => entry.interaction_feeling === 'unsafe').length} / {report.interactions.length} labeled</td><td>{comparison.interactions.filter((entry) => entry.interaction_feeling === 'unsafe').length} / {comparison.interactions.length} labeled</td></tr></tbody></table></div><p className="living-muted text-xs">Different recording coverage can change these comparisons. An unrecorded experience is unknown.</p></section>
 

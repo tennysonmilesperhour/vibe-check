@@ -5,7 +5,7 @@ Implemented September 8, 2026. The app uses locally served assets; no remote med
 ## Original artwork
 
 - `public/media/sanctuary.webp`: generated with the built-in OpenAI image generation tool, then encoded as WebP (about 276 KB).
-- `src/brand/breath.js`, `src/features/shell/SanctuaryMark.jsx`, and `public/icon.svg`: the approved B1 / Breath tobacco leaf, formed from flowing wave filaments. Used at arrival, in navigation, and in app icons. See [brand assets and regeneration](breath-brand.md).
+- `src/brand/breath.js`, `src/features/shell/SanctuaryMark.jsx`, and `public/icon.svg`: the approved B1 / Breath leaf, formed from flowing wave filaments. Used at arrival, in navigation, and in app icons. See [brand assets and regeneration](breath-brand.md).
 - The tarot card art keeps its existing geometric symbols and now uses forest, sage, cream, and muted gold.
 
 Generation prompt:

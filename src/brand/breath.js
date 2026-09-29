@@ -1,4 +1,4 @@
-/** B1 / Breath: the approved tobacco leaf drawn from flowing wave filaments.
+/** B1 / Breath: the approved leaf drawn from flowing wave filaments.
  * Shared by the React mark and the checked-in SVG/PNG asset generator.
  */
 export const BREATH_VIEWBOX = '245 40 810 885';

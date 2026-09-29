@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Person, Relationship, Connection, DailyCheckIn, JournalEntry, User } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
-import TobaccoGuide from '@/features/shell/TobaccoGuide';
+import PlantVoice from '@/features/shell/PlantVoice';
 import { synergyReading } from "@/lib/wisdom/readings";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
@@ -141,7 +141,7 @@ export default function People() {
         </header>
 
         {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={load}>Retry</button></p>}
-        <div className="mt-6"><TobaccoGuide compact>Keep people here by a name or nickname that works for you. We can return to the experiences you recorded together. Adding someone sends no invitation or notification.</TobaccoGuide></div>
+        <div className="mt-6"><PlantVoice compact>Keep people here by a name or nickname that works for you. We can return to the experiences you recorded together. Adding someone sends no invitation or notification.</PlantVoice></div>
         <PeopleOrbit people={people} entries={entries} onChoose={setDetail} />
 
         {people.length === 0 ? (

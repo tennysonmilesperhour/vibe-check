@@ -13,14 +13,20 @@
 const MAX_ATTEMPTS = 6;
 const REQUEST_MS = 20000;
 export const OTHER_ACCOUNT = 'Not saved: a different account is signed in now.';
-// A read that times out sent nothing; a write that times out may have been
-// stored, and saving the same change again does no harm.
+// A read that times out sent nothing. A write that times out may have been
+// stored: a control shows what is stored once it reloads, so trying again
+// could undo it, while a form keeps the words, and saving them again does no
+// harm.
 export const TOO_SLOW = 'Not saved: the connection was too slow. Please try again.';
-export const UNCONFIRMED = 'The connection was too slow to confirm this was saved. Please try again; saving twice does no harm.';
-const OWN_MESSAGES = new Set([OTHER_ACCOUNT, TOO_SLOW, UNCONFIRMED]);
+export const UNCONFIRMED = 'The connection was too slow to confirm this was saved. What is stored will show here once it reloads.';
+const UNCONFIRMED_FORM = 'The connection was too slow to confirm this was saved. Your words are still here, and saving again does no harm.';
+const OWN_MESSAGES = new Set([OTHER_ACCOUNT, TOO_SLOW]);
 
 /** How a form reports a failed save: the store's own messages stand alone. */
-export const saveProblem = (/** @type {any} */ error) => (OWN_MESSAGES.has(error?.message) ? error.message : `Could not save: ${error?.message}`);
+export function saveProblem(/** @type {any} */ error) {
+  if (error?.message === UNCONFIRMED) return UNCONFIRMED_FORM;
+  return OWN_MESSAGES.has(error?.message) ? error.message : `Could not save: ${error?.message}`;
+}
 // Postgres error codes: a row for this owner already exists; the signed-in
 // account may not write this owner's row.
 export const UNIQUE_VIOLATION = '23505';

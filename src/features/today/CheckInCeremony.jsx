@@ -28,11 +28,13 @@ const AUTOSAVE_RETRY_MS = 10000;
 
 
 // Which questions a kept day asked is bookkeeping in
-// stress_context.visited_steps, written only when the day is kept (see save).
-// The form, drafts and tab copies hold answers alone.
+// stress_context.asked_steps, written only when the day is kept (see save).
+// The form, drafts and tab copies hold answers alone, and drop the
+// visited_steps that preview builds wrote.
+const BOOKKEEPING = ['asked_steps', 'visited_steps'];
 const answersOnly = (value) => {
-  if (!value?.stress_context?.visited_steps) return value;
-  const { visited_steps: _visited, ...stress } = value.stress_context;
+  if (!BOOKKEEPING.some((key) => value?.stress_context?.[key])) return value;
+  const stress = Object.fromEntries(Object.entries(value.stress_context).filter(([key]) => !BOOKKEEPING.includes(key)));
   return { ...value, stress_context: stress };
 };
 
@@ -364,25 +366,24 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // Which questions this visit put to the person, added to what the kept day
   // already recorded (an edit never takes one away), and written only when
   // the day is kept. Patterns compare only days that asked about states and
-  // about people and habits, so the answers must never decide it:
-  // - a question shown only because it already holds an answer (see
-  //   chooseSteps) doesn't count;
-  // - a draft never adds to it, since only visits that change something
-  //   leave one.
-  const visitedRef = useRef(new Set(existing?.stress_context?.visited_steps || []));
-  const askedRef = useRef(ALL_STEPS);
+  // about people and habits, so no answer may decide it: only the person's
+  // usual questions count, not one shown because it already holds an answer
+  // or revealed with "Show all questions", and a draft never adds to it,
+  // since only visits that change something leave one.
+  const askedRef = useRef(/** @type {Set<string> | null} */ (null));
+  if (!askedRef.current) askedRef.current = new Set(existing?.stress_context?.asked_steps || []);
+  const usualRef = useRef(ALL_STEPS);
   useEffect(() => {
     if (stepIds || draftLoading || prefs.isLoading) return;
-    askedRef.current = chooseSteps(tracking);
+    usualRef.current = chooseSteps(tracking);
     setStepIds(chooseSteps(tracking, formRef.current));
   }, [stepIds, draftLoading, prefs.isLoading, prefs.data]);
   const stepOrder = stepIds || ALL_STEPS;
   const stepId = stepOrder[stepIndex];
   useEffect(() => {
-    if (stepIds && stepId && askedRef.current.includes(stepId)) visitedRef.current.add(stepId);
+    if (stepIds && stepId && usualRef.current.includes(stepId)) askedRef.current.add(stepId);
   }, [stepIds, stepId]);
   const showAllSteps = () => {
-    askedRef.current = ALL_STEPS;
     setStepIds(ALL_STEPS);
     setStepIndex(ALL_STEPS.indexOf(stepId));
     // The button goes away; keep focus on the question, whose label gives the new count.
@@ -406,16 +407,14 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       const personIds = [
         ...new Set([...(form.person_ids || []), ...(form.high_moment?.person_ids || []), ...(form.low_moment?.person_ids || [])]),
       ];
-      // A tag answers the people and habits question, on whichever visit.
-      const visited = new Set(visitedRef.current);
-      if ((form.activities || []).length || (form.person_ids || []).length) visited.add('activities');
+      const asked = askedRef.current;
       const payload = {
         ...form,
         date: dateKey,
         moon_phase: moon.name,
         ...(birthDate ? { personal_day: personalDay(birthDate, dateKey) } : {}),
         person_ids: personIds,
-        stress_context: { ...form.stress_context, visited_steps: ALL_STEPS.filter((id) => visited.has(id)) },
+        stress_context: { ...form.stress_context, asked_steps: ALL_STEPS.filter((id) => asked.has(id)) },
       };
       // Single atomic write on (user_id, date): a second tab or a re-entered
       // ceremony can't race a read-then-create into a unique violation.

@@ -64,10 +64,12 @@ export function previousPeriod(period, weekStartsOn = 1) {
 // or habit is held to more:
 // - The same question every day: only daily check-ins that asked about states
 //   and about people and habits count, and only their answers, so a day with
-//   more journal moments has no extra chances. A check-in records which
-//   questions it asked when the day is kept; older ones don't say, and some
-//   were kept before reaching the states question, so they are left out. Of
-//   those, only days with at least one person (or habit) tagged.
+//   more journal moments has no extra chances. A check-in records the usual
+//   questions the person reached on the visits that kept it (asked_steps).
+//   Older ones don't say, and some were kept before reaching the states
+//   question, so they are left out until a visit that keeps them records
+//   it. Of those, only days with at least one person (or habit) tagged. The
+//   counts on a connection are these check-ins, not every recorded day.
 //   Days are never picked by their states: keeping only days with a state
 //   would make unrelated states look connected.
 // - At least 5 such days with it, 5 without, and 3 with both.
@@ -142,8 +144,8 @@ export function stressPatterns(entries, people = [], feedback = {}) {
   const days = recordDays(entries, statesOf);
   // Daily check-ins that recorded asking both questions (see above).
   const askedBoth = (entry) => {
-    const visited = entry.stress_context?.visited_steps;
-    return Array.isArray(visited) && visited.includes('stress') && visited.includes('activities');
+    const asked = entry.stress_context?.asked_steps;
+    return Array.isArray(asked) && asked.includes('stress') && asked.includes('activities');
   };
   const checkInDays = recordDays(entries.filter((entry) => entry.kind === 'day' && askedBoth(entry)), statesOf);
   const states = [...new Set(days.flatMap((day) => [...day.states]))];
@@ -190,8 +192,9 @@ export function stressPatterns(entries, people = [], feedback = {}) {
       && cmhGreater(item.strata) < threshold;
     const { strata: _strata, ...shown } = item;
     return { ...shown, significant };
-  // A connection the person confirmed stays in view with its counts, marked
-  // as not beyond chance when that is so; the choice is theirs.
+  // A connection the person confirmed stays in view with its counts while it
+  // has 3 compared days, marked as not beyond chance when that is so; the
+  // choice is theirs.
   }).filter((item) => item.significant || (item.status === 'confirmed' && item.days >= MIN_STATE_DAYS));
 
   return ranked([...connections, ...cards]);

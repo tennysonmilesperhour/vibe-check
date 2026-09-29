@@ -41,10 +41,7 @@ export default function Analytics() {
   // as its base.
   const inRange = useMemo(() => valid && data ? filterEntries(data.entries, { start, end }) : [], [data, start, end, valid]);
   const rangePatterns = useMemo(() => stressPatterns(inRange, data?.people, data?.preferences?.pattern_feedback), [inRange, data]);
-  const countsNarrowed = Boolean(filters.person || filters.habit || filters.search);
-  const counts = useMemo(() => (countsNarrowed
-    ? stateCards(filterEntries(inRange, { person: filters.person, habit: filters.habit, search: filters.search }), data?.preferences?.pattern_feedback)
-    : rangePatterns.filter((pattern) => pattern.context.type === 'state')), [countsNarrowed, inRange, rangePatterns, filters.person, filters.habit, filters.search, data]);
+  const counts = useMemo(() => stateCards(filterEntries(inRange, { person: filters.person, habit: filters.habit, search: filters.search }), data?.preferences?.pattern_feedback), [inRange, filters.person, filters.habit, filters.search, data]);
   const patterns = useMemo(() => [
     ...rangePatterns.filter((pattern) => pattern.context.type !== 'state' && (!filters.state || pattern.state === filters.state)
       && (!filters.person || (pattern.context.type === 'person' && pattern.context.id === filters.person))

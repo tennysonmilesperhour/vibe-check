@@ -31,5 +31,6 @@ describe('check-in steps follow what the person chose to notice', () => {
     expect(stressAnswered(saved.stress_context)).toBe(false);
     expect(chooseSteps(['Relationships'], saved)).not.toContain('stress');
     expect(stressAnswered({ visited_steps: ['stress'], stress_score: 0 })).toBe(true);
+    expect(stressAnswered({ asked_steps: ['mood', 'activities', 'stress'] })).toBe(false);
   });
 });

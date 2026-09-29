@@ -98,13 +98,24 @@ function makeEntity(table) {
       return outbound(row);
     },
 
-    /** Update every row of the person's that matches (row-level security keeps it to them). */
+    /** Update every row of the person's that matches (row-level security keeps it to them); returns the rows it changed. */
     async updateWhere(criteria, data) {
       let query = supabase.from(table).update(inbound(data));
       for (const [key, value] of Object.entries(criteria)) query = query.eq(key, value);
-      const { error } = await query;
+      const { data: rows, error } = await query.select();
       if (error) throw error;
-      return true;
+      return (rows || []).map(outbound);
+    },
+
+    /** Insert for this owner only: row-level security refuses it for any other signed-in account. */
+    async createFor(user_id, data) {
+      const { data: row, error } = await supabase
+        .from(table)
+        .insert({ ...inbound(data), user_id })
+        .select()
+        .single();
+      if (error) throw error;
+      return outbound(row);
     },
 
     async delete(id) {

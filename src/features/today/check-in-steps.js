@@ -3,7 +3,7 @@ export const ALL_STEPS = ['mood', 'energy', 'sleep', 'emotions', 'activities', '
 const filled = (value) => (Array.isArray(value) ? value.length > 0 : value != null && value !== '');
 
 // Bookkeeping kept beside the stress answers, never an answer itself.
-const STRESS_META = new Set(['visited_steps', 'stress_measure']);
+const STRESS_META = new Set(['asked_steps', 'visited_steps', 'stress_measure']);
 /** Whether any stress question holds an answer. */
 export const stressAnswered = (context = {}) => Object.entries(context || {}).some(([key, value]) => !STRESS_META.has(key) && filled(value));
 

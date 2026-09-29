@@ -149,17 +149,18 @@ function unconnectedRecord(rand, dayCount) {
   for (let d = 0; d < dayCount; d += 1) {
     if (rand() < 0.2) continue; // no record that day
     const date = addDaysKey('2025-10-01', d);
-    if (rand() < 0.3) { entries.push({ key: `${d}`, kind: 'day', date, mood_score: 5, stress_context: { visited_steps: ['mood'] } }); continue; } // mood only
+    if (rand() < 0.3) { entries.push({ key: `${d}`, kind: 'day', date, mood_score: 5, stress_context: { asked_steps: ['mood'] } }); continue; } // mood only
     const busy = 0.2 + rand() * 1.6;
     const pick = (list) => list.filter((item) => rand() < Math.min(0.95, item.rate * busy)).map((item) => item.id);
     const chosen = pick(states);
-    const statesAsked = rand() >= 0.2;
+    // Calm days are kept short before the states question more often.
+    const statesAsked = rand() >= (chosen.length ? 0.1 : 0.35);
     const tagsAsked = rand() >= 0.2;
     const older = rand() < 0.15;
     const visited = ['mood', ...(tagsAsked ? ['activities'] : []), ...(statesAsked ? ['stress'] : [])];
     entries.push({
       key: `${d}`, kind: 'day', date,
-      stress_context: { ...(statesAsked && chosen.length ? { state_ids: chosen } : {}), ...(older ? {} : { visited_steps: visited }) },
+      stress_context: { ...(statesAsked && chosen.length ? { state_ids: chosen } : {}), ...(older ? {} : { asked_steps: visited }) },
       ...(tagsAsked ? { person_ids: pick(people), activities: pick(habits) } : {}),
     });
   }
@@ -167,7 +168,7 @@ function unconnectedRecord(rand, dayCount) {
 }
 const showsConnection = (entries) => stressPatterns(entries).some((pattern) => pattern.context.type !== 'state');
 // A check-in that reached the stress and people-and-habits questions.
-const answered = (ids) => ({ ...(ids.length ? { state_ids: ids } : {}), visited_steps: ['mood', 'activities', 'stress'] });
+const answered = (ids) => ({ ...(ids.length ? { state_ids: ids } : {}), asked_steps: ['mood', 'activities', 'stress'] });
 
 describe('connections are compared with comparable days without them', () => {
   it('computes the one-sided Fisher exact test', () => {
@@ -235,6 +236,21 @@ describe('connections are compared with comparable days without them', () => {
     expect(found.find((pattern) => pattern.key === 'on-edge:habit:Desk')).toMatchObject({ significant: true });
   });
 
+  it('does not link them either when calm days are often kept before the states question', () => {
+    // The same walk data, but most days with no state stop before the
+    // question, so the days compared are mostly days with some state.
+    const entries = Array.from({ length: 200 }, (_, d) => {
+      const walk = d % 3 === 0;
+      const onEdge = walk ? d % 10 === 0 : d % 5 !== 0;
+      const angry = d % 4 === 1;
+      const calm = !onEdge && !angry;
+      const reached = !calm || d % 7 === 0;
+      return { key: `${d}`, kind: 'day', date: addDaysKey('2025-01-01', d), activities: [walk ? 'Walk' : 'Desk'], stress_context: reached ? answered([...(onEdge ? ['on-edge'] : []), ...(angry ? ['anger'] : [])]) : { asked_steps: ['mood', 'activities'] } };
+    });
+    const walkAnger = stressPatterns(entries).find((pattern) => pattern.key === 'anger:habit:Walk');
+    expect(walkAnger?.significant ?? false).toBe(false);
+  });
+
   it('finds a strong connection that is really there, with both counts', () => {
     const entries = Array.from({ length: 60 }, (_, d) => {
       const withJules = d % 3 === 0; // 20 days with Jules, 40 with Sam
@@ -294,15 +310,17 @@ describe('connections are compared with comparable days without them', () => {
     const before = Array.from({ length: 40 }, (_, d) => ({ key: `early-${d}`, kind: 'day', date: addDaysKey('2025-10-01', d), person_ids: ['jules'] }));
     expect(shown([...before, ...base])).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });
     // Check-ins that never reached the stress question don't count as calm days.
-    const skipped = Array.from({ length: 30 }, (_, d) => ({ key: `skip-${d}`, kind: 'day', date: addDaysKey('2026-04-01', d), person_ids: ['jules'], stress_context: { visited_steps: ['mood', 'activities'] } }));
+    const skipped = Array.from({ length: 30 }, (_, d) => ({ key: `skip-${d}`, kind: 'day', date: addDaysKey('2026-04-01', d), person_ids: ['jules'], stress_context: { asked_steps: ['mood', 'activities'] } }));
     expect(shown([...base, ...skipped])).toMatchObject({ days: 15, total: 20 });
     // Older check-ins that don't record it are left out, with or without a
     // state, however recently they were made: some were kept before the
-    // stress question.
+    // stress question. So are those from preview builds, which recorded it
+    // differently.
     const older = (key, date, created, extra) => ({ key, kind: 'day', date, created_date: created, person_ids: ['jules'], stress_context: {}, ...extra });
     const oldEdited = older('old', '2025-12-01', '2025-12-01T20:00:00Z', { stress_context: { state_ids: ['anger'] } });
     const oldCalm = Array.from({ length: 20 }, (_, d) => older(`calm-${d}`, addDaysKey('2025-12-02', d), '2026-09-20T20:00:00Z'));
-    expect(shown([...base, oldEdited, ...oldCalm])).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });
+    const preview = older('preview', '2025-11-30', '2026-09-28T20:00:00Z', { stress_context: { state_ids: ['anger'], visited_steps: ['mood', 'activities', 'stress'] } });
+    expect(shown([...base, oldEdited, ...oldCalm, preview])).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });
     // They still count as recorded days for a state.
     expect(stateCards([...base, oldEdited]).find((card) => card.state === 'anger')).toMatchObject({ days: 20, total: 61 });
     // Journal moments add no extra chances to a day.

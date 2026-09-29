@@ -24,6 +24,11 @@ export default function SomaticPractice() {
   // Saves name the account this page opened in (see CheckInCeremony).
   const { user } = useAuth();
   const ownerId = useRef(user?.id).current;
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const [params, setParams] = useSearchParams();
   const state = stateById(params.get('state'));
   const activeId = params.get('practice');
@@ -86,7 +91,10 @@ export default function SomaticPractice() {
       // before saving a new one, which then asks instead.
       const promiseKept = promiseSaved || await keepPromise().then(() => true, () => false);
       await PracticeSession.createFor(ownerId, { date: todayKey(), practice_id: active.id, state_id: state.id, status, intention, before_notes: before, after_notes: after, outcome: outcome || null, alignment: alignment || null, source_pattern: params.get('pattern') || null, source_entry_keys: (params.get('sources') || '').split(',').filter(Boolean) });
-      const stored = await living.refresh({ withPreferences: true }); closePractice();
+      const stored = await living.refresh({ withPreferences: true });
+      // Someone who left the page meanwhile isn't brought back to it.
+      if (!mounted.current) return;
+      closePractice();
       // Say what now holds: an earlier promise that timed out may still have
       // been stored, and under it this response doesn't hide the practice.
       const hiddenNow = stored ? hiddenPractices(stored.preferences, stored.sessions).includes(active.id) : !promiseKept;
@@ -126,7 +134,7 @@ export default function SomaticPractice() {
     <header><p className="sanctuary-eyebrow">A LITTLE ROOM TO CHOOSE · ALWAYS FREE</p><h1>Come back to yourself.</h1><p className="living-muted mt-3 max-w-xl">Find an action for this moment. Over time, notice what helps you respond in a way that feels like you.</p></header>
     <PlantVoice>{state ? state.invitation : 'We are the plants, here beside you. Begin wherever you are. Choose what feels present, and we will take one small step.'}</PlantVoice>
     {living.isError && <div className="living-error" role="alert">Your saved history could not load. Retry to load practices with your saved preferences. <button className="underline" onClick={() => living.refetch()}>Retry history</button></div>}
-    {living.isStale && <div className="living-error" role="alert">Your saved history couldn't refresh, so what shows may be out of date. <button className="underline" onClick={() => living.refetch()}>Retry history</button></div>}
+    {living.reloadFailed && <div className="living-error" role="alert">Your record couldn't refresh, so what shows may be out of date. <button className="underline" disabled={living.isFetching} onClick={() => living.refetch()}>{living.isFetching ? 'Trying…' : 'Retry'}</button></div>}
     {notice && <p ref={noticeRef} tabIndex={-1} role="status" className="living-success outline-none">{notice}</p>}
     {askStop && <div ref={askStopRef} tabIndex={-1} className="living-inset space-y-3 outline-none" role="group" aria-labelledby="ask-stop-text"><p id="ask-stop-text">Your response is kept. Stop suggesting {practiceById(askStop)?.title.toLowerCase()}? It felt more uncomfortable this time. You can keep it available if it might fit another day.</p><div className="flex flex-wrap gap-3"><button type="button" className="living-secondary" disabled={busy} onClick={() => stopSuggesting(askStop)}>Stop suggesting it</button><button type="button" className="underline text-sm" disabled={busy} onClick={() => { setAskStop(null); announce('It stays available.'); }}>Keep it available</button></div></div>}
     {error && <p role="alert" className="living-error">{error}</p>}

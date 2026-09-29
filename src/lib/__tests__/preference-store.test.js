@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergePreferences, preferenceStore, inOrder, OTHER_ACCOUNT, TOO_SLOW, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
+import { mergePreferences, preferenceStore, inOrder, saveProblem, OTHER_ACCOUNT, TOO_SLOW, UNCONFIRMED, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
 
 // A stored row that moves its updated_at on every write, like the database,
 // with a pause before each write so changes started together overlap.
@@ -105,5 +105,18 @@ describe('changes from one tab land in the order they were made', () => {
     // The request is abandoned too, so it can't go out once the token arrives.
     expect(seen.aborted).toBe(true);
     expect(await next).toBe('next ran');
+  });
+
+  it('says a slow write may have been stored, and a slow read that nothing was', async () => {
+    const slowWrite = {
+      list: async () => [{ id: 'row', user_id: 'me', values: {}, updated_at: 'u' }],
+      updateWhere: () => new Promise(() => {}),
+      createFor: async () => null,
+    };
+    await expect(mergePreferences(preferenceStore(slowWrite, 'me', 30), 'me', { a: 1 })).rejects.toThrow(UNCONFIRMED);
+    expect(saveProblem(new Error(UNCONFIRMED))).toBe(UNCONFIRMED);
+    expect(saveProblem(new Error(OTHER_ACCOUNT))).toBe(OTHER_ACCOUNT);
+    expect(saveProblem(new Error('Failed to fetch'))).toBe('Could not save: Failed to fetch');
+    expect(TOO_SLOW).toMatch(/^Not saved/);
   });
 });

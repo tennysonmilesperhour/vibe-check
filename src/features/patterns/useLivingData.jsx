@@ -65,9 +65,10 @@ export function useLivingData() {
     data,
     isLoading: history.isLoading || preferences.isLoading,
     // A reload that fails keeps what loaded on screen; only a record that
-    // never loaded is an error. isStale says a reload failed since.
+    // never loaded is an error. reloadFailed says a reload failed since.
     isError: !data && (history.isError || preferences.isError),
-    isStale: Boolean(data) && (history.isError || preferences.isError),
+    reloadFailed: Boolean(data) && (history.isError || preferences.isError),
+    isFetching: history.isFetching || preferences.isFetching,
     isSuccess: Boolean(data),
     error: history.error || preferences.error,
     refetch: () => Promise.all([history.refetch(), preferences.refetch()]),

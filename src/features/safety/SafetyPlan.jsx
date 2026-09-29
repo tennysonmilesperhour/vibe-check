@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePreferences } from '@/features/patterns/useLivingData';
 import useBeforeUnload from '@/hooks/use-before-unload';
-import { TOO_SLOW } from '@/lib/preference-store';
+import { saveProblem } from '@/lib/preference-store';
 
 // Structure follows the widely used Stanley-Brown safety plan, in plain words.
 const FIELDS = [
@@ -43,7 +43,7 @@ export default function SafetyPlan() {
       markDirty(false); // the fields are read-only while saving, so nothing newer was typed
       setMessage('Your safety plan is saved to your account.');
     } catch (err) {
-      setMessage(err.message === TOO_SLOW ? err.message : `Could not save: ${err.message}`);
+      setMessage(saveProblem(err));
     }
     setBusy(false);
   }

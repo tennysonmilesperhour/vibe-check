@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen } from 'lucide-react';
 import { usePreferences } from '@/features/patterns/useLivingData';
-import { TOO_SLOW } from '@/lib/preference-store';
+import { saveProblem } from '@/lib/preference-store';
 import PlantVoice from '@/features/shell/PlantVoice';
 import { STRESS_STATES } from '@/lib/practices';
 import { todayKey } from '@/lib/dates';
@@ -50,7 +50,7 @@ export default function DailySupport({ welcome = false }) {
       edited.current = false;
       setSaves((count) => count + 1);
       setMessage('Kept. You can change these whenever you need.');
-    } catch (err) { setMessage(err.message === TOO_SLOW ? err.message : `Could not save: ${err.message}`); }
+    } catch (err) { setMessage(saveProblem(err)); }
     setBusy(false);
   }
   const week = previousPeriod(reportPeriod('weekly', undefined, prefs?.week_start ?? 1), prefs?.week_start ?? 1);

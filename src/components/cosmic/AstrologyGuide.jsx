@@ -4,7 +4,7 @@ import { PLANETS, HOUSES, ASPECTS, ASTROLOGY_SOURCES } from '@/lib/wisdom/conten
 export function AstrologySources() {
   return <details className="astro-disclosure mt-4">
     <summary>Reading roots · Miller &amp; Forrest</summary>
-    <p className="text-sm my-3">These original Vibe Check reflections draw on approachable planetary symbolism and an emphasis on development and choice. Tobacco remains your guide. Explore the authors’ own work for their full teachings.</p>
+    <p className="text-sm my-3">These original Vibe Check reflections draw on approachable planetary symbolism and an emphasis on development and choice. The plants remain your guide. Explore the authors’ own work for their full teachings.</p>
     <ul className="space-y-3">{ASTROLOGY_SOURCES.map(source => <li key={source.title}>
       <a className="underline font-medium" href={source.url} target="_blank" rel="noreferrer">{source.title} · {source.author}</a>
       <p className="text-sm mt-1">{source.context}</p>
@@ -15,9 +15,9 @@ export function AstrologySources() {
 
 export default function AstrologyGuide() {
   return <section className="astro-guide" aria-label="Learn the language of your chart">
-    <p className="text-xs uppercase tracking-widest">Tobacco · The sky as a companion</p>
+    <p className="text-xs uppercase tracking-widest">The plants · The sky as a companion</p>
     <h3 className="font-display text-2xl mt-2">A chart leaves room for choice</h3>
-    <p className="text-sm leading-relaxed mt-3">I can help you approach the sky with curiosity. Begin with the Sun for purpose, the Moon for care, and the Rising sign for how you meet the world. Then look at the rest of the chart together. Let each symbol lead to a question you can carry into your own life.</p>
+    <p className="text-sm leading-relaxed mt-3">We can help you approach the sky with curiosity. Begin with the Sun for purpose, the Moon for care, and the Rising sign for how you meet the world. Then look at the rest of the chart together. Let each symbol lead to a question you can carry into your own life.</p>
     <div className="grid sm:grid-cols-3 gap-3 mt-4">
       {[['Planet · what', 'A function to explore: communicating, caring, acting, or making a commitment.'], ['Sign · how', 'A symbolic style with possibilities and tensions. It does not describe every person who shares it.'], ['House · where', 'An area of life where you can explore a placement. It depends on a calculated chart and house system.']].map(([title, body]) => <div className="astro-note" key={title}><h4 className="font-semibold mb-1">{title}</h4><p className="text-sm">{body}</p></div>)}
     </div>

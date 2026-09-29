@@ -4,7 +4,7 @@ Direction recorded September 8, 2026. Applies to the live astrology profile, dee
 
 ## Editorial direction
 
-The user named Susan Miller's *Planets and Possibilities* and Steven Forrest's *The Inner Sky* as influences. Vibe Check uses original language, with Tobacco as its narrator. Adopt accessible explanations of planetary symbolism, practical possibilities in everyday life, psychological development, and personal choice. Do not imitate either author's distinctive prose or present the reading as authored or endorsed by them.
+The user named Susan Miller's *Planets and Possibilities* and Steven Forrest's *The Inner Sky* as influences. Vibe Check uses original language, with the plants as narrator. Adopt accessible explanations of planetary symbolism, practical possibilities in everyday life, psychological development, and personal choice. Do not imitate either author's distinctive prose or present the reading as authored or endorsed by them.
 
 Public context reviewed:
 

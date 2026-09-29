@@ -5,8 +5,8 @@ A private record of your days, with the whole pattern in view.
 Vibe Check's [product foundation](docs/design/product-foundation.md) makes
 daily reflection, the orbit, relationship and habit charts, full history,
 and weekly and monthly reports with somatic practices matched to stress
-patterns the free baseline for everyone. Tobacco guides the experience as
-the voice of the plants, helping users notice patterns and practice responses
+patterns the free baseline for everyone. The plants guide the experience
+as one collective voice, helping users notice patterns and practice responses
 that fit their own needs and values. Optional paid systems add
 deeper interpretations; the core experience requires no external AI account.
 
@@ -70,12 +70,12 @@ screen.
 - `supabase/migrations/` — schema, applied via the Supabase CLI or MCP
   (`supabase db push` / `apply_migration`).
 - `docs/` — specs, plans, and roadmaps (see
-  `docs/roadmap/2026-07-16-function-and-beauty-plan.md` for current state).
+  `docs/roadmap/2026-09-29-expert-review-plan.md` for the current plan).
 
 ## Design language
 
 The [plant voice direction](docs/design/plant-voice.md) gives the app its
-narrative: Tobacco introduces the systems as the spokesperson for the plants,
+narrative: the plants speak together as one guide and introduce the systems,
 with optional plant companions for deeper chakra reflections. The current chakra pairings are authored reflective invitations, not medical or universal traditional claims.
 
 The current direction is **Nature Sanctuary**, with the September 8 woodland

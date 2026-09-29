@@ -19,7 +19,7 @@ import Loom from "@/features/loom/Loom";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
-import TobaccoGuide from '@/features/shell/TobaccoGuide';
+import PlantVoice from '@/features/shell/PlantVoice';
 import { PlantCompanions } from '@/features/practice/SomaticPractice';
 
 const EMPTY_PROFILE = {
@@ -133,7 +133,7 @@ export default function CosmicAddons() {
     return (
         <div className="p-6 space-y-8 min-h-screen relative">
             <div className="max-w-4xl mx-auto relative z-10">
-                <div className="mb-8 space-y-6"><TobaccoGuide>We can explore these systems together, if you are curious. They offer perspectives for reflection. Your own experiences, needs, and choices remain yours to define.</TobaccoGuide><p className="living-muted">An optional deeper layer. Your journal, full pattern history, reports, and everyday practices stay free without setting up any system.</p><PlantCompanions /></div>
+                <div className="mb-8 space-y-6"><PlantVoice>We can explore these systems together, if you are curious. They offer perspectives for reflection. Your own experiences, needs, and choices remain yours to define.</PlantVoice><p className="living-muted">An optional deeper layer. Your journal, full pattern history, reports, and everyday practices stay free without setting up any system.</p><PlantCompanions /></div>
 
                 {/* Header */}
                 {/* ── The Loom: hero of the cosmos ── */}

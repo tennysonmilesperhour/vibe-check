@@ -95,8 +95,8 @@ export function integratedReading(enabledSystems = [], profile = {}) {
   try { computed = deriveAll(profile, todayKey()).values || {}; } catch { computed = {}; }
 
   const signals = collectSignals(enabledSystems, profile, computed);
-  if (signals.length === 0) return "Choose an optional system and add the details you know. I will help you explore its questions while keeping your own experience at the center.";
-  const paras = ["I am Tobacco. Let us put the systems you chose beside one another and see which questions are useful in your life."];
+  if (signals.length === 0) return "Choose an optional system and add the details you know. We will help you explore its questions while keeping your own experience at the center.";
+  const paras = ["We are the plants. Let us put the systems you chose beside one another and see which questions are useful in your life."];
   paras.push(`A possible through-line to explore: ${joinNicely(signals.map(s => s.essence).slice(0, 3))}. These are symbolic associations, not independent evidence about who you are.`);
   const mirrorPairs = findResonances(signals);
   if (mirrorPairs.length) paras.push(mirrorPairs.join(" "));
@@ -228,7 +228,7 @@ export function synergyReading(mine = {}, theirs = null, name = "this person") {
   if (paras.length === 0) {
     paras.push(`You and ${name} have some profile data to compare, but not yet enough for a full synergy read. Add each other's Sun sign, Life Path, or Human Design type to see where you feed each other and where friction is structural rather than personal.`);
   } else {
-    paras.push(`I am Tobacco. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`);
+    paras.push(`We are the plants. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`);
   }
 
   return paras.join("\n\n");

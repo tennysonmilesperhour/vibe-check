@@ -16,7 +16,7 @@ Access to that record, its charts, and useful weekly and monthly reviews is free
 
 | Stage | What the person does | What the app provides |
 | --- | --- | --- |
-| Arrive and sign in | Learn the free promise, then create or access a private account. | A brief Tobacco welcome and a direct route to the first check-in. |
+| Arrive and sign in | Learn the free promise, then create or access a private account. | A brief welcome from the plants and a direct route to the first check-in. |
 | Choose what to notice | Optionally choose relationships, habits, mood, energy, sleep, or a personal intention. Add people by a private name or nickname. | A small set of editable tracking choices. Birth details and system profiles are optional later. |
 | Check in daily | Record how the day felt, then add any people, habits, moments, or notes that matter. | A quick saved record and a clear way to continue journaling. |
 | Return to the orbit | Open a person or habit and look at the entries associated with it. | A visual overview, a dated timeline, charts, and links back to the original words. |
@@ -118,7 +118,7 @@ Recommendations must not infer a trauma diagnosis or nervous-system state from m
 
 Provide a free “Help me with what I'm feeling” entry point from Today, check-ins, and reports. A person can choose confusion, fight or flight, anger, shutdown, emotional numbness, procrastination, or “mixed / unsure,” and describe another experience in their own words. These are user-selected descriptions, not diagnoses or automatic nervous-system classifications. Confusion here means feeling mentally tangled or overwhelmed; numbness means feeling emotionally disconnected.
 
-Offer one short action at a time, with a visible duration, an alternative, and a stop option. Start with the person's current selection; use their confirmed patterns and practice feedback to refine suggestions. Access requires neither a completed journal entry nor enough history for a report. Keep Tobacco's introduction brief and narration optional so someone can reach an action with little reading.
+Offer one short action at a time, with a visible duration, an alternative, and a stop option. Start with the person's current selection; use their confirmed patterns and practice feedback to refine suggestions. Access requires neither a completed journal entry nor enough history for a report. Keep the plants' introduction brief and narration optional so someone can reach an action with little reading.
 
 The following are proposed starting options for the reviewed practice library. Their purpose is to help someone find more clarity, connection, or choice; no action guarantees a state will disappear.
 
@@ -144,16 +144,16 @@ After an action, ask “What changed, if anything?” Offer relevant responses s
 | All personal history, charts, comparisons, and entry filters | Deeper chakra and plant companion experiences |
 | Weekly and monthly reports with an accessible archive | Additional authored symbolic readings or personalization |
 | Stress pattern recognition, immediate actions for a selected state, relevant somatic recommendations, complete practice instructions, and response and alignment history | Extended optional courses and facilitated practice journeys |
-| Core Tobacco guidance for recording and reviewing life | Optional advanced AI interpretation, if added later |
+| Core guidance from the plants for recording and reviewing life | Optional advanced AI interpretation, if added later |
 | Data export, user-controlled sharing, and privacy controls | Specific packaging and prices remain undecided |
 
 Losing a subscription leaves the free baseline available. Distress, a difficult relationship pattern, or an unsafe interaction must never trigger an upgrade pitch. Basic understanding of the user's own record stays accessible in every tier.
 
-## Tobacco and the plants
+## The plants' voice
 
-The [plant voice](plant-voice.md) and [Nature Sanctuary](nature-sanctuary.md) remain the character and setting of the app. Tobacco first helps the user record, notice, remember, and reflect. It introduces other systems when the user chooses them.
+The [plant voice](plant-voice.md) and [Nature Sanctuary](nature-sanctuary.md) remain the character and setting of the app. The plants speak together as one guide. They first help the user record, notice, remember, and reflect, and introduce other systems when the user chooses them.
 
-Tobacco's observations stay close to the person's words and the visible data. It can ask about a boundary or invite a pause. It must not reframe mistreatment as a spiritual lesson the user needs to endure, dismiss a harmful event as incompatibility, or use a positive reading to contradict the user's account.
+The plants' observations stay close to the person's words and the visible data. They can ask about a boundary or invite a pause. They must not reframe mistreatment as a spiritual lesson the user needs to endure, dismiss a harmful event as incompatibility, or use a positive reading to contradict the user's account.
 
 The free experience should feel complete and cared for. A user who never opens Cosmos still receives the app's central benefit. Optional plant companions add a distinct reflective perspective when someone wants to go further.
 
@@ -178,7 +178,7 @@ The inspected checkout already has check-ins, people, charts, and a computed wee
 1. Make the free journal, people/habit history, and long-range charts complete. Preserve both difficult and positive entries and distinguish missing data.
 2. Build weekly and monthly reports from the full period, including journal content, source links, an archive, stress pattern recognition, practices matched to those patterns, and user-reported response and alignment history. Make the same practice library accessible immediately for user-selected states. Ensure both paths work without paid AI.
 3. Complete privacy controls and previewable, selective exports alongside the core experience.
-4. Apply Tobacco's voice to the entire free journey, then add optional paid system depth and consider AI interoperability.
+4. Apply the plants' voice to the entire free journey, then add optional paid system depth and consider AI interoperability.
 
 Accept the baseline when a free user can record an experience, revisit it months later from a person or habit chart, understand what a report is based on, and export the record. A sequence of difficult entries followed by one good day must retain the full sequence in charts and reports. Cancelling a paid upgrade must preserve those capabilities.
 

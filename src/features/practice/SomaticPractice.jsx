@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight, Clock3, Leaf, Check, X } from 'lucide-react';
 import { PracticeSession } from '@/api/entities';
 import { useLivingData } from '@/features/patterns/useLivingData';
-import TobaccoGuide from '@/features/shell/TobaccoGuide';
+import PlantVoice from '@/features/shell/PlantVoice';
 import { STRESS_STATES, PRACTICES, PRACTICE_SOURCES, ALIGNMENTS, OUTCOMES, stateById, practiceById, recommendPractices, PLANT_COMPANIONS } from '@/lib/practices';
 import { todayKey } from '@/lib/dates';
 
@@ -88,7 +88,7 @@ export default function SomaticPractice() {
 
   return <div className="living-page space-y-8">
     <header><p className="sanctuary-eyebrow">A LITTLE ROOM TO CHOOSE · ALWAYS FREE</p><h1>Come back to yourself.</h1><p className="living-muted mt-3 max-w-xl">Find an action for this moment. Over time, notice what helps you respond in a way that feels like you.</p></header>
-    <TobaccoGuide>{state ? state.invitation : 'I am Tobacco, your guide here and a voice for the plants. Begin wherever you are. Choose what feels present, and we will take one small step.'}</TobaccoGuide>
+    <PlantVoice>{state ? state.invitation : 'We are the plants, here beside you. Begin wherever you are. Choose what feels present, and we will take one small step.'}</PlantVoice>
     {living.isError && <div className="living-error" role="alert">Your saved history could not load. Retry to load practices with your saved preferences. <button className="underline" onClick={() => living.refetch()}>Retry history</button></div>}
     {notice && <p role="status" className="living-success">{notice}</p>}
     {error && <p role="alert" className="living-error">{error}</p>}

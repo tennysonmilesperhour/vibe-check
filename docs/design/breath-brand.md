@@ -1,6 +1,6 @@
 # B1 / Breath identity
 
-Selected by the user on September 8, 2026. The brand mark is one green tobacco
+Selected by the user on September 8, 2026. The brand mark is one green
 leaf made from organic wave filaments, paired with the app's lowercase
 Instrument Serif wordmark. It replaces the earlier botanical sun emblem.
 

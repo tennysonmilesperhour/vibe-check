@@ -42,10 +42,10 @@ function placementText(p) {
 export function astrologyReading(data = {}, computed = {}) {
   const placements = astrologyPlacements(data, computed);
   const aspects = astrologyAspects(data);
-  if (!placements.length && !aspects.length) return 'I am Tobacco. We can begin with what you know. Enter a placement from your birth chart in Profile Details, or add a birth date for an approximate Sun sign. Leave anything unknown blank. I will use these symbols as questions you can explore, with your own experience as the guide.';
+  if (!placements.length && !aspects.length) return 'We are the plants. We can begin with what you know. Enter a placement from your birth chart in Profile Details, or add a birth date for an approximate Sun sign. Leave anything unknown blank. We will use these symbols as questions you can explore, with your own experience as the guide.';
   const sections = [];
   const add = (h, p) => sections.push(`${h.toUpperCase()}\n${p}`);
-  add('Tobacco · A chart you can grow with', 'I am Tobacco. I watch plants grow in different conditions. A familiar form still leaves room for an individual life. Let us approach your chart with that same attention: what possibilities interest you, what tensions do you recognize, and what would you like to choose? Astrology offers a symbolic language for that conversation. Your experience has the final say.');
+  add('The plants · A chart you can grow with', 'We are the plants. We grow in many different conditions, and a familiar form still leaves room for an individual life. Let us approach your chart with that same attention: what possibilities interest you, what tensions do you recognize, and what would you like to choose? Astrology offers a symbolic language for that conversation. Your experience has the final say.');
   const known = placements.map(p => `${p.label} in ${p.sign}${p.source !== 'entered' ? ` (${p.source})` : ''}`).join('; ') || 'No signs entered';
   add('What this reading uses', `${known}. ${placements.some(p => p.source === 'source unconfirmed') ? 'Your saved Sun has no source information and may have been estimated by an earlier version. Confirm it against an accurate chart in Profile Details. ' : ''}${placements.some(p => p.estimated) ? 'The Sun is estimated from calendar dates; near a sign boundary, check an accurate birth chart. ' : ''}Other placements are those you entered. Houses and aspects appear only when entered; unknown details remain open. This is a natal reflection, with no calculated transits or predictions of events.`);
   for (const p of placements) add(`${p.label} in ${p.sign}${p.house ? ` · House ${p.house.number}` : ''}`, placementText(p));
@@ -60,7 +60,7 @@ export function astrologyReading(data = {}, computed = {}) {
   const focusPlacement = moon || sun || placements[0];
   const focus = focusPlacement || aspects[0].a;
   add('One small experiment', `${focus.action} ${focusPlacement?.zodiac.practice || ''} At your next check-in, record what happened, how you felt, and whether you had more room to choose. You can disagree with the reading and change the experiment.`);
-  add('Keep your own record close', 'I will return with you to the whole pattern. A warm day does not erase the difficult days before it. No placement makes mistreatment necessary, excuses harm, or obliges you to stay in a relationship. Your boundaries and what you have lived matter more than a chart.');
+  add('Keep your own record close', 'We will return with you to the whole pattern. A warm day does not erase the difficult days before it. No placement makes mistreatment necessary, excuses harm, or obliges you to stay in a relationship. Your boundaries and what you have lived matter more than a chart.');
   if (typeof data.custom_notes === 'string' && data.custom_notes.trim()) add('Your own notes', data.custom_notes);
   add('Further reading', 'Susan Miller · Planets and Possibilities\nSteven Forrest · The Inner Sky\nOriginal Vibe Check reflections informed by approachable planetary symbolism and an emphasis on development and choice. These are not excerpts or readings written by either author.');
   return sections.join('\n\n');
@@ -81,7 +81,7 @@ export function astrologyPeriodWisdom(periodType, data, computed, date = new Dat
   }[type];
   return {
     theme: `${p.label} · ${p.focus}`,
-    wisdom: `I am Tobacco. Let us give ${p.focus} some attention ${cadence}. Your ${p.label} in ${p.sign} offers ${p.zodiac.style} as a possibility to explore${p.house ? `, especially around ${p.house.context}` : ''}.\n\n${p.action}\n\n${review}`,
+    wisdom: `We are the plants. Let us give ${p.focus} some attention ${cadence}. Your ${p.label} in ${p.sign} offers ${p.zodiac.style} as a possibility to explore${p.house ? `, especially around ${p.house.context}` : ''}.\n\n${p.action}\n\n${review}`,
     contemplation: `${p.question} What would feel more like a choice of your own?`,
     basis: `Based on ${p.label} in ${p.sign}${p.estimated ? ' (approximate Sun)' : p.source === 'source unconfirmed' ? ' (saved Sun; source unconfirmed)' : ' as entered'}. A rotating natal reflection for ${cadence}; no transits or event forecast are calculated.`,
   };

@@ -29,7 +29,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, isPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const { user, isLoadingAuth, isLoadingPublicSettings, authError, isPasswordRecovery, clearPasswordRecovery } = useAuth();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -57,9 +57,10 @@ const AuthenticatedApp = () => {
     }
   }
 
-  // Render the main app
+  // Render the main app. A different account starts it afresh, so no open
+  // form can save one person's words into another's account.
   return (
-    <LockGate>
+    <LockGate key={user?.id}>
     {(frozenLocation) => (
     <Suspense fallback={<div className="min-h-screen field-wash" aria-busy="true" />}>
     <Routes location={frozenLocation}>

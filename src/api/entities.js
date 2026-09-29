@@ -77,14 +77,7 @@ function makeEntity(table) {
     },
 
     async create(data) {
-      const user_id = await currentUserId();
-      const { data: row, error } = await supabase
-        .from(table)
-        .insert({ ...inbound(data), user_id })
-        .select()
-        .single();
-      if (error) throw error;
-      return outbound(row);
+      return this.createFor(await currentUserId(), data);
     },
 
     async update(id, data) {

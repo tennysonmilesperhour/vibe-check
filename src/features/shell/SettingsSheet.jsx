@@ -77,10 +77,13 @@ export default function SettingsSheet({ open, onOpenChange }) {
         await base44.auth.updateMe({ boundary_settings: settings });
         savedSettings.current = settings;
       }
-      await living.savePreferences({ week_start: weekStart });
+      // Only a week start chosen here: this sheet can stay open for hours,
+      // and a stored choice from another device must not be written back.
+      const weekChanged = weekStart !== (living.data?.preferences?.week_start ?? 1);
+      if (weekChanged) await living.savePreferences({ week_start: weekStart });
       toast(settingsLoaded
         ? { title: 'Settings saved' }
-        : { title: 'Week start saved', description: 'Your low-mood lines were not changed because they have not loaded yet.' });
+        : { title: weekChanged ? 'Week start saved' : 'Nothing was changed', description: 'Your low-mood lines were not changed because they have not loaded yet.' });
     } catch (err) { setError(err.message); }
     setSaving(false);
   }

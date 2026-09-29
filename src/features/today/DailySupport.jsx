@@ -26,15 +26,24 @@ export default function DailySupport({ welcome = false }) {
   // A refresh never replaces what the person is still writing here.
   const edited = useRef(false);
   const edit = (setter) => (value) => { edited.current = true; setter(value); };
+  // What these fields held when editing began: only what changed since is
+  // saved, so a change made on another device meanwhile stays.
+  const loaded = useRef({});
+  const [saves, setSaves] = useState(0);
+  // Also once a save finishes: what is stored may hold changes from elsewhere.
   useEffect(() => {
     if (edited.current) return;
+    loaded.current = { intention: prefs?.intention || '', personal_values: prefs?.personal_values || [], tracking: prefs?.tracking || [] };
     setIntention(prefs?.intention || ''); setTracking(prefs?.tracking || []); setValuesText((prefs?.personal_values || []).join('\n'));
-  }, [prefs]);
+  }, [prefs, saves]);
   async function save() {
     setBusy(true); setMessage('');
     try {
-      await living.savePreferences({ intention: intention.trim(), personal_values: values, tracking, tracking_shapes_check_in: true, welcome_complete: true });
+      const next = { intention: intention.trim(), personal_values: values, tracking };
+      const changed = Object.fromEntries(Object.entries(next).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(loaded.current[key])));
+      await living.savePreferences({ ...changed, tracking_shapes_check_in: true, welcome_complete: true });
       edited.current = false;
+      setSaves((count) => count + 1);
       setMessage('Kept. You can change these whenever you need.');
     } catch (err) { setMessage(`Could not save: ${err.message}`); }
     setBusy(false);

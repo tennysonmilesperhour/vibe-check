@@ -14,18 +14,19 @@ export default function StressPatternCards({ patterns, data, onFeedback, max = 6
   }
   // One useful context per state avoids repeating the same observation on many cards.
   const unique = patterns.filter((pattern, index) => patterns.findIndex((other) => other.state === pattern.state) === index).slice(0, max);
-  return <section className="space-y-4" aria-labelledby="stress-patterns-heading"><div><p className="sanctuary-eyebrow">NOTICE · PRACTICE · RETURN</p><h2 id="stress-patterns-heading">What repeats in your record</h2><p className="living-muted mt-2">Counts of the states you chose. A person or habit appears only when a state shows up clearly more often on check-ins with it than on comparable check-ins without. Only daily check-ins that recorded reaching the stress question are compared, so this usually takes a few months of records. You decide whether it fits.</p></div>
+  return <section className="space-y-4" aria-labelledby="stress-patterns-heading"><div><p className="sanctuary-eyebrow">NOTICE · PRACTICE · RETURN</p><h2 id="stress-patterns-heading">What repeats in your record</h2><p className="living-muted mt-2">Counts of the states you chose. A person or habit appears when a state shows up clearly more often on compared check-ins with it than on those without, or when you said it fits. Compared check-ins are daily ones that recorded reaching both the people and habits question and the stress question, and tag at least one person (or habit), so this usually takes a few months of records. You decide whether it fits.</p></div>
     {error && <p className="living-error" role="alert">{error}</p>}
     {!unique.length && <div className="living-inset"><p>No state you chose repeats on three or more days in this view.</p><p className="living-muted mt-2">You can still choose a practice for what feels present now.</p><Link className="living-text-link mt-3" to="/Practice?tab=somatic">Find a practice <ArrowRight size={15} /></Link></div>}
     <div className="grid lg:grid-cols-2 gap-4">{unique.map((pattern) => {
       const state = stateById(pattern.state);
       const connection = pattern.context.type !== 'state';
+      const others = pattern.context.type === 'person' ? 'other people' : 'other habits';
       const practice = recommendPractices(pattern.state, data.sessions, hiddenPractices(data.preferences, data.sessions)).find((option) => !option.uncomfortable);
       const target = new URLSearchParams({ tab: 'somatic', state: pattern.state, pattern: pattern.key, sources: pattern.entries.map((entry) => entry.key).slice(0, 10).join(',') });
       if (practice) target.set('practice', practice.id);
       return <article key={pattern.key} className="living-card space-y-4"><div><span className="living-tag">{pattern.status === 'confirmed' ? 'You confirmed this' : connection ? 'Shows up more with this' : 'What you recorded'}</span><h3 className="mt-3">{state?.label}{connection ? ` · ${pattern.context.label}` : ''}</h3>
         <p className="living-muted mt-2">{connection
-          ? `${state?.label} on ${pattern.days} of the ${pattern.total} check-ins with ${pattern.context.label} that reached the stress question${pattern.without.total ? `, and on ${pattern.without.days} of ${pattern.without.total} such check-ins without.` : '. There are no such check-ins without them in this view.'}`
+          ? `${state?.label} on ${pattern.days} of the ${pattern.total} compared check-ins with ${pattern.context.label}${pattern.without.total ? `, and on ${pattern.without.days} of the ${pattern.without.total} with ${others} but not ${pattern.context.label}.` : `. None in this view tag ${others} without ${pattern.context.label}.`}`
           : `You chose ${state?.label} on ${pattern.days} of the ${pattern.total} days recorded in this view.`}</p></div>
         {connection && <p className="text-sm">{pattern.significant
           ? "In this view, that gap is larger than chance would easily explain. It doesn't show a cause, and the days behind it can hold other things too."

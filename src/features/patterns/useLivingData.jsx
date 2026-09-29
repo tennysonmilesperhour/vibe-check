@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry, PracticeSession, ReportReflection, VibePreference, Person } from '@/api/entities';
 import { timelineEntries } from '@/lib/living-patterns';
-import { mergePreferences, OTHER_ACCOUNT, ROW_SECURITY, UNIQUE_VIOLATION } from '@/lib/preference-store';
+import { inOrder, mergePreferences, preferenceStore } from '@/lib/preference-store';
 
 export async function fetchLivingData() {
   const [checkIns, journal, sessions, reflections, preferences, people] = await Promise.all([
@@ -12,19 +12,11 @@ export async function fetchLivingData() {
   return { checkIns, journal, sessions, reflections, preferences: preferences[0]?.values || {}, people, entries: timelineEntries(checkIns, journal) };
 }
 
-// Merges with the latest stored values (see preference-store), then refreshes
-// every ['living', user] query: the full history and the preferences-only one
-// below.
+// Merges with the latest stored values, in this tab's order (see
+// preference-store), then refreshes every ['living', user] query: the full
+// history and the preferences-only one below.
 async function storePreferences(client, userId, patch) {
-  const saved = await mergePreferences({
-    read: async () => (await VibePreference.list())[0],
-    swap: async (row, values) => (await VibePreference.updateWhere({ id: row.id, user_id: userId, updated_at: row.updated_at }, { values }))[0],
-    create: (values) => VibePreference.createFor(userId, { values }).catch((error) => {
-      if (error?.code === UNIQUE_VIOLATION) return null;
-      if (error?.code === ROW_SECURITY) throw new Error(OTHER_ACCOUNT);
-      throw error;
-    }),
-  }, userId, patch);
+  const saved = await inOrder(() => mergePreferences(preferenceStore(VibePreference, userId), userId, patch));
   await client.invalidateQueries({ queryKey: ['living', userId] });
   return saved;
 }

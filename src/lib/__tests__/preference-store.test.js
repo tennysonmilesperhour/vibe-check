@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergePreferences, OTHER_ACCOUNT } from '../preference-store';
+import { mergePreferences, preferenceStore, inOrder, OTHER_ACCOUNT, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
 
 // A stored row that moves its updated_at on every write, like the database,
 // with a pause before each write so changes started together overlap.
@@ -60,5 +60,47 @@ describe('preferences change from many places without losing one another', () =>
   it('gives up with a clear message rather than writing over a busy row', async () => {
     const api = { read: async () => ({ id: 'row', user_id: 'me', values: {}, updated_at: 0 }), swap: async () => undefined, create: async () => null };
     await expect(mergePreferences(api, 'me', { quick_exit: true })).rejects.toThrow('changing somewhere else');
+  });
+
+  it('writes only when the row is unchanged and belongs to this account', async () => {
+    /** @type {any[]} */
+    const calls = [];
+    const entity = {
+      list: async () => [{ id: 'row', user_id: 'me', values: { a: 1 }, updated_at: '2026-09-29T12:00:00.123456+00:00' }],
+      updateWhere: async (criteria, data) => { calls.push({ criteria, data }); return [{ id: 'row', user_id: 'me', values: data.values }]; },
+      createFor: async () => { throw Object.assign(new Error('duplicate key'), { code: UNIQUE_VIOLATION }); },
+    };
+    const store = preferenceStore(entity, 'me');
+    await mergePreferences(store, 'me', { b: 2 });
+    expect(calls).toEqual([{ criteria: { id: 'row', user_id: 'me', updated_at: '2026-09-29T12:00:00.123456+00:00' }, data: { values: { a: 1, b: 2 } } }]);
+    // A row made meanwhile is read again rather than reported as an error.
+    expect(await store.create({})).toBeNull();
+    const refused = preferenceStore({ ...entity, createFor: async () => { throw Object.assign(new Error('row-level security'), { code: ROW_SECURITY }); } }, 'me');
+    await expect(refused.create({})).rejects.toThrow(OTHER_ACCOUNT);
+  });
+});
+
+describe('changes from one tab land in the order they were made', () => {
+  it('runs each after the one before it', async () => {
+    /** @type {string[]} */
+    const order = [];
+    const slow = inOrder(() => new Promise((resolve) => setTimeout(() => { order.push('first'); resolve('first'); }, 30)));
+    const fast = inOrder(async () => { order.push('second'); return 'second'; });
+    expect(await Promise.all([slow, fast])).toEqual(['first', 'second']);
+    expect(order).toEqual(['first', 'second']);
+  });
+
+  it('lets the next start when one hangs, timed from when that one began', async () => {
+    /** @type {string[]} */
+    const order = [];
+    const hung = inOrder(() => new Promise(() => {}), 40);
+    const started = Date.now();
+    const next = inOrder(async () => { order.push('next'); return Date.now() - started; }, 40);
+    const after = inOrder(async () => { order.push('after'); return 'after'; }, 40);
+    const waited = await next;
+    expect(waited).toBeGreaterThanOrEqual(35);
+    expect(await after).toBe('after');
+    expect(order).toEqual(['next', 'after']);
+    expect(hung).toBeInstanceOf(Promise);
   });
 });

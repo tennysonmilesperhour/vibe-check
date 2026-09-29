@@ -24,12 +24,21 @@ export default function SafetyPlan() {
   const dirtyRef = useRef(false);
   const markDirty = (value) => { dirtyRef.current = value; setDirty(value); };
   const serverPlan = prefs.data?.safety_plan;
-  useEffect(() => { if (!dirtyRef.current) setPlan(serverPlan || {}); }, [serverPlan]);
+  // The plan as it stood when this editing began: only fields changed since
+  // are saved, so a field saved from another device meanwhile stays.
+  const loadedRef = useRef(serverPlan || {});
+  // Also once a save finishes: the stored plan may hold fields from elsewhere.
+  useEffect(() => {
+    if (dirtyRef.current) return;
+    loadedRef.current = serverPlan || {};
+    setPlan(serverPlan || {});
+  }, [serverPlan, dirty]);
   useBeforeUnload(dirty);
   async function save() {
     setBusy(true); setMessage('');
     try {
-      await prefs.savePreferences({ safety_plan: plan });
+      const changed = Object.fromEntries(Object.entries(plan).filter(([key, value]) => value !== (loadedRef.current[key] ?? '')));
+      await prefs.savePreferences((stored) => ({ safety_plan: { ...(stored.safety_plan || {}), ...changed } }));
       markDirty(false); // the fields are read-only while saving, so nothing newer was typed
       setMessage('Your safety plan is saved to your account.');
     } catch (err) {

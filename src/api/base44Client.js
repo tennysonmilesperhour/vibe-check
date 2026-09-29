@@ -3,15 +3,22 @@
 // that surface alive on top of Supabase so call sites did not have to change.
 import { supabase } from './supabase';
 import entities from './entities';
+import { isTransientAuthError } from '../lib/auth-session';
 
 async function me() {
   const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError && isTransientAuthError(authError)) {
+    throw Object.assign(new Error('Could not reach your account just now.'), { status: 0, transient: true });
+  }
   if (authError || !authData?.user) throw Object.assign(new Error('Not signed in'), { status: 401 });
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', authData.user.id)
     .maybeSingle();
+  // Never hand back an empty profile because the request failed: a caller
+  // could save that emptiness over the real one.
+  if (profileError) throw Object.assign(new Error('Could not load your profile just now.'), { status: 0, transient: true });
   return {
     id: authData.user.id,
     email: authData.user.email,

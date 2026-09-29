@@ -14,7 +14,13 @@ import { personalDay } from "@/lib/resonance/numerology";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
 import { computeStreak, isMilestone } from "@/lib/streaks";
 import { todayKey } from "@/lib/dates";
+import { useAuth } from "@/lib/AuthContext";
+import { readBuffer, writeBuffer, clearBuffer, bufferIsNewer } from "@/lib/writing-buffer";
+import useBeforeUnload from "@/hooks/use-before-unload";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+
+// Autosave waits for a pause in typing before writing the server draft.
+const AUTOSAVE_DELAY_MS = 1500;
 
 const STEP_IDS = ["mood", "energy", "sleep", "emotions", "activities", "stress", "high", "low", "reflection"];
 
@@ -32,7 +38,15 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const [draftId, setDraftId] = useState(null);
   const [draftMessage, setDraftMessage] = useState('');
   const [customHabits, setCustomHabits] = useState((existing?.activities || []).filter((item) => !ACTIVITIES.some((preset) => preset.label === item)).join(', '));
+  const [autosave, setAutosave] = useState('idle'); // idle | saving | saved | offline
   const stepRegionRef = useRef(null);
+  const { user } = useAuth();
+  const bufferKey = user?.id ? `ceremony:${user.id}:${dateKey}` : null;
+  // What the server already holds; anything different is unsaved.
+  const baselineRef = useRef(null);
+  const draftIdRef = useRef(null);
+  const pendingDraftRef = useRef(null);
+  const finishedRef = useRef(false);
 
   // Keyboard and screen-reader users track progress: each step change moves
   // focus to the new step's region (which carries the question heading).
@@ -53,27 +67,77 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     stress_context: existing?.stress_context ?? {},
   }));
 
+  const restoreForm = (payload) => {
+    setForm((previous) => ({ ...previous, ...payload }));
+    setCustomHabits((payload.activities || []).filter((item) => !ACTIVITIES.some((preset) => preset.label === item)).join(', '));
+  };
+
   useEffect(() => {
     let active = true;
+    baselineRef.current = JSON.stringify(form);
+    const buffer = readBuffer(bufferKey);
     CheckInDraft.filter({ date: dateKey }).then(([draft]) => {
-      if (!active || !draft) return;
-      setDraftId(draft.id);
-      if (!existing || draft.updated_at > existing.updated_at) {
-        setForm((previous) => ({ ...previous, ...draft.payload }));
-        setCustomHabits((draft.payload.activities || []).filter((item) => !ACTIVITIES.some((preset) => preset.label === item)).join(', '));
+      if (!active) return;
+      if (draft) {
+        setDraftId(draft.id);
+        draftIdRef.current = draft.id;
+      }
+      if (bufferIsNewer(buffer, existing?.updated_at, draft?.updated_at)) {
+        restoreForm(buffer.value.form);
+        setDraftMessage('Your unsaved check-in is here.');
+      } else if (draft && (!existing || draft.updated_at > existing.updated_at)) {
+        restoreForm(draft.payload);
+        baselineRef.current = JSON.stringify({ ...JSON.parse(baselineRef.current), ...draft.payload });
         setDraftMessage('Your saved draft is here.');
       }
-    }).catch(() => { if (active) setDraftMessage('Could not check for a saved draft. Reload before continuing if you were resuming one.'); }).finally(() => { if (active) setDraftLoading(false); });
+    }).catch(() => {
+      if (!active) return;
+      if (buffer) restoreForm(buffer.value.form);
+      setDraftMessage(buffer ? 'Your unsaved check-in is here. We could not reach your saved drafts, so keep this tab open until it saves.' : 'Could not check for a saved draft. Reload before continuing if you were resuming one.');
+    }).finally(() => { if (active) setDraftLoading(false); });
     return () => { active = false; };
-  }, [dateKey, existing?.id]);
+  }, [dateKey, existing?.id, bufferKey]);
+
+  // Keep a tab copy immediately and a server draft after a pause, so a tab
+  // switch, reload, or dropped connection never takes the words.
+  const snapshot = JSON.stringify(form);
+  const dirty = !draftLoading && baselineRef.current !== null && snapshot !== baselineRef.current;
+  useEffect(() => {
+    if (!dirty || finishedRef.current) return undefined;
+    writeBuffer(bufferKey, { form });
+    const timer = setTimeout(async () => {
+      setAutosave('saving');
+      const request = CheckInDraft.upsert({ date: dateKey, payload: form });
+      pendingDraftRef.current = request;
+      try {
+        const draft = await request;
+        if (finishedRef.current) return;
+        draftIdRef.current = draft.id;
+        setDraftId(draft.id);
+        baselineRef.current = snapshot;
+        setAutosave('saved');
+      } catch {
+        if (!finishedRef.current) setAutosave('offline');
+      }
+    }, AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [snapshot, dirty, dateKey, bufferKey]);
+
+  useBeforeUnload(dirty && !finishedRef.current);
 
   async function saveDraft() {
     setSaving(true);
     try {
+      finishedRef.current = true;
+      await pendingDraftRef.current?.catch(() => {});
       await CheckInDraft.upsert({ date: dateKey, payload: form });
+      clearBuffer(bufferKey);
       toast({ title: 'Draft saved', description: 'Return to this date to continue.' });
       onCancel?.();
-    } catch (err) { toast({ title: 'Could not save the draft', description: err.message, variant: 'destructive' }); }
+    } catch (err) {
+      finishedRef.current = false;
+      toast({ title: 'Could not save the draft', description: err.message, variant: 'destructive' });
+    }
     setSaving(false);
   }
 
@@ -92,6 +156,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
 
   const save = async () => {
     setSaving(true);
+    finishedRef.current = true;
+    await pendingDraftRef.current?.catch(() => {});
     try {
       const me = await base44.auth.me();
       const birthDate = me?.cosmic_profile?.birth_date || null;
@@ -110,7 +176,9 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       // Single atomic write on (user_id, date): a second tab or a re-entered
       // ceremony can't race a read-then-create into a unique violation.
       const saved = await DailyCheckIn.upsert(payload);
-      if (draftId) await CheckInDraft.delete(draftId).catch(() => {});
+      clearBuffer(bufferKey);
+      const savedDraftId = draftIdRef.current || draftId;
+      if (savedDraftId) await CheckInDraft.delete(savedDraftId).catch(() => {});
       await queryClient.invalidateQueries({ queryKey: ['living'] });
 
       // Automatic boundary pass — the old app made you press a button on another page.
@@ -146,7 +214,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
 
       onDone?.(saved, { newAlerts });
     } catch (e) {
-      toast({ title: "Could not save", description: e?.message || "Please try again.", variant: "destructive" });
+      finishedRef.current = false;
+      toast({ title: "Could not save", description: e?.message || "Please try again. Your words are still here.", variant: "destructive" });
     }
     setSaving(false);
   };
@@ -182,7 +251,10 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         </div>
         <div className="flex justify-between items-center mt-4 text-sm" style={{ color: "rgba(255,253,246,0.8)" }}>
           <span>{stepIndex + 1} of {STEP_IDS.length}</span>
-          <button type="button" onClick={saveDraft} disabled={saving} className="underline underline-offset-4">{saving ? 'Saving…' : 'Save draft and close'}</button>
+          <span className="flex items-center gap-4">
+            <span role="status" aria-live="polite" className="text-xs">{autosave === 'saving' ? 'Saving draft…' : autosave === 'saved' && !dirty ? 'Draft saved' : autosave === 'offline' ? 'Not saved yet. Your words stay in this tab.' : ''}</span>
+            <button type="button" onClick={saveDraft} disabled={saving} className="underline underline-offset-4">{saving ? 'Saving…' : 'Save draft and close'}</button>
+          </span>
         </div>
         <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.</p>
         {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}</p>}

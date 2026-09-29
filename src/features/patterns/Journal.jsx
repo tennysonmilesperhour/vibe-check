@@ -11,6 +11,7 @@ import { stateById, ALIGNMENTS } from '@/lib/practices';
 import { useAuth } from '@/lib/AuthContext';
 import { readBuffer, clearBuffer, bufferRestorable } from '@/lib/writing-buffer';
 import useWritingBuffer from '@/hooks/use-writing-buffer';
+import SupportCard from '@/features/safety/SupportCard';
 import useBeforeUnload from '@/hooks/use-before-unload';
 
 export function EntryLink({ entry, children }) {
@@ -107,7 +108,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
       clearBuffer(bufferKey);
       baselineRef.current = null;
       setConfirmClose(false);
-      await onSaved?.(); onClose();
+      await onSaved?.(payload); onClose();
     } catch (err) { setError(err.message || 'Could not save. Your words are still here.'); }
     setBusy(false);
   }
@@ -138,6 +139,9 @@ export default function Journal({ data, entries, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [limit, setLimit] = useState(20);
+  // After someone records an unsafe interaction or a crossed boundary, offer
+  // support quietly beside their words; they decide whether to open it.
+  const [supportFor, setSupportFor] = useState(null);
   const selectedKey = params.get('entry');
   const selected = data.entries.find((entry) => entry.key === selectedKey);
   const open = params.get('compose') === '1' || Boolean(editing);
@@ -154,13 +158,14 @@ export default function Journal({ data, entries, onChanged }) {
   return <section className="space-y-5" aria-labelledby="journal-heading">
     <div className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR WORDS, KEPT TOGETHER</p><h2 id="journal-heading">Journal & history</h2><p className="living-muted mt-2">{entries.length} entries in this view. A good day belongs beside everything that came before.</p></div><button className="ink-button" onClick={compose}><Plus size={16} />Keep a moment</button></div>
     {error && <p className="living-error" role="alert">{error}</p>}
+    {supportFor && <SupportCard focus="relationship" title={supportFor === 'unsafe' ? 'You marked that interaction as unsafe.' : 'You noted that a boundary was not respected.'} onDismiss={() => setSupportFor(null)}>Your record is kept exactly as you wrote it. If it would help to talk it through or plan for your safety, these services are free and confidential.</SupportCard>}
     {drafts.length > 0 && <div className="living-inset"><p className="living-label mb-2">Saved drafts</p><div className="living-chips">{drafts.map((draft) => <button key={draft.id} className="living-chip" onClick={() => setEditing(draft)}>Resume {draft.date} draft</button>)}</div></div>}
     {selectedKey && !selected && <p className="living-muted">This entry is no longer in your saved history.</p>}
     {selected && <div><p className="living-label mb-2">Entry opened from your report or chart</p><EntryCard entry={selected} people={data.people} selected onEdit={edit} onDelete={setDeleting} /></div>}
     {entries.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} onEdit={edit} onDelete={setDeleting} />)}
     {!entries.length && <p className="living-muted py-6">No entries match this view. Adjust the filters or keep a new moment.</p>}
     {entries.length > limit && <button className="living-secondary" onClick={() => setLimit((count) => count + 20)}>Show more history</button>}
-    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} onClose={close} onSaved={onChanged} />
+    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} onClose={close} onSaved={async (saved) => { await onChanged(); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} />
     <Dialog open={Boolean(deleting)} onOpenChange={(isOpen) => { if (!isOpen && !busy) setDeleting(null); }}><DialogContent><DialogHeader><DialogTitle>Delete this entry?</DialogTitle><DialogDescription>This removes the entry from your journal, charts, and reports. This cannot be undone.</DialogDescription></DialogHeader><div className="flex gap-3"><button className="living-secondary" onClick={() => setDeleting(null)}>Keep it</button><button className="ink-button" disabled={busy} onClick={remove}>{busy ? 'Deleting…' : 'Delete entry'}</button></div></DialogContent></Dialog>
   </section>;
 }

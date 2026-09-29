@@ -26,11 +26,15 @@ function friendlyAuthError(err) {
  * The front door: email + password sign in / sign up, or a magic link.
  * Rendered inline whenever there is no session.
  */
+const NEUTRAL_SIGNUP_NOTICE = "Check your email. If this address is new, there's a link to confirm your account. If you already have an account, sign in or reset your password instead.";
+
 export default function AuthGate() {
   const [mode, setMode] = useState("signin"); // signin | signup | magic | reset
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  // Vibe Check is for adults; sign-up asks for confirmation.
+  const [adult, setAdult] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
   const [error, setError] = useState(null);
@@ -50,36 +54,42 @@ export default function AuthGate() {
         if (err) throw err;
         setNotice("Check your email. The link brings you back here to set a new password.");
       } else if (mode === "magic") {
+        // A magic link creates the account when the address is new, so it asks the same question.
+        if (!adult) throw new Error("Please confirm you are 18 or older to continue.");
         const { error: err } = await supabase.auth.signInWithOtp({
           email,
           // Come back to whatever origin the person is actually using, not the
           // project's configured Site URL (which may be a dev localhost).
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: window.location.origin, data: { adult_confirmed_at: new Date().toISOString() } },
         });
         if (err) throw err;
         setNotice("Check your email. The link signs you straight in.");
       } else if (mode === "signup") {
+        if (!adult) throw new Error("Please confirm you are 18 or older to create an account.");
         const { data, error: err } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { full_name: name.trim() || undefined },
+            data: { full_name: name.trim() || undefined, adult_confirmed_at: new Date().toISOString() },
             // Without this, the confirmation email's link falls back to the
             // project Site URL and can bounce testers to a dead localhost page.
             emailRedirectTo: window.location.origin,
           },
         });
-        if (err) throw err;
-        // Supabase returns a user with an empty `identities` array when the
-        // email already exists (it hides this to prevent account enumeration).
-        if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-          setError("An account with this email already exists. Try signing in instead.");
+        // One message whether or not the address already has an account, so
+        // nobody can use this form to learn whether someone else uses Vibe Check.
+        // With email confirmation on (keep it on), Supabase hides existing
+        // accounts; with it off it says so, and that answer is folded in here.
+        if (err?.code === "user_already_exists") {
+          setNotice(NEUTRAL_SIGNUP_NOTICE);
+        } else if (err) {
+          throw err;
         } else if (data?.session) {
           // Confirmation is off: the signup already signed us in. The auth
           // listener will pick up the session and render the app.
           setNotice("You're in. One moment…");
         } else {
-          setNotice("Account created. Check your email to confirm, then come back and sign in.");
+          setNotice(NEUTRAL_SIGNUP_NOTICE);
         }
       } else {
         const { error: err } = await supabase.auth.signInWithPassword({ email, password });
@@ -133,6 +143,7 @@ export default function AuthGate() {
               <div className="auth-label-row"><Label htmlFor="auth-password">Password</Label>{mode === "signin" && <button type="button" onClick={() => changeMode("reset")}>Forgot password?</button>}</div>
               <Input id="auth-password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"} />
             </div>}
+            {(mode === "signup" || mode === "magic") && <label className="flex items-start gap-3 text-sm text-left"><input type="checkbox" className="mt-1 h-4 w-4 shrink-0" checked={adult} onChange={(e) => setAdult(e.target.checked)} required /><span>I am 18 or older and agree to the <a className="underline" href="/terms">Terms</a> and <a className="underline" href="/privacy">Privacy policy</a>.</span></label>}
             {error && <p className="auth-notice auth-error" role="alert">{error}</p>}
             {notice && <p className="auth-notice" role="status">{notice}</p>}
             <button type="submit" className="ink-button auth-submit" disabled={busy || !isSupabaseConfigured}>
@@ -147,7 +158,7 @@ export default function AuthGate() {
           <p className="auth-footnote">Your journal, full history, charts, weekly and monthly reports, and everyday practices are free. No AI account required.</p>
         </div>
           <div className="welcome-pillars" aria-label="A place to reflect"><span><Leaf size={18} aria-hidden="true" />Daily rituals</span><span><Sprout size={18} aria-hidden="true" />Personal growth</span><span><Orbit size={18} aria-hidden="true" />Inner connection</span></div>
-          <nav className="flex flex-wrap justify-center gap-5 text-xs py-3" aria-label="App information"><a className="underline underline-offset-4 py-2" href="/privacy">Privacy</a><a className="underline underline-offset-4 py-2" href="/terms">Terms</a><a className="underline underline-offset-4 py-2" href="/support">Support</a></nav>
+          <nav className="flex flex-wrap justify-center gap-5 text-xs py-3" aria-label="App information"><a className="underline underline-offset-4 py-2" href="/privacy">Privacy</a><a className="underline underline-offset-4 py-2" href="/terms">Terms</a><a className="underline underline-offset-4 py-2" href="/support">Support</a><a className="underline underline-offset-4 py-2" href="/support-now">Support now</a></nav>
       </section>
     </main>
   );

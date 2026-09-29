@@ -10,7 +10,8 @@ import {
     Menu,
     X,
     UserPlus,
-    Settings2
+    Settings2,
+    LifeBuoy
 } from "lucide-react";
 import InviteModal from "@/components/InviteModal";
 import SettingsSheet from "@/features/shell/SettingsSheet";
@@ -20,6 +21,8 @@ import { DailyCheckIn } from "@/entities/all";
 import { todayKey } from "@/lib/dates";
 import { moonPhase } from "@/lib/resonance/moon";
 import { computeStreak, streakLabel } from "@/lib/streaks";
+import { usePreferences } from "@/features/patterns/useLivingData";
+import QuickExit from "@/features/safety/QuickExit";
 
 // Five surfaces, five jobs, five distinct icons.
 const navigationItems = [
@@ -129,6 +132,8 @@ export default function Layout({ children }) {
     const [inviteOpen, setInviteOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [streak, setStreak] = useState(null);
+    // Quick exit is opt-in (Settings), so it never surprises anyone.
+    const quickExitOn = Boolean(usePreferences().data?.quick_exit);
 
     // The footer shows the real run. Re-check when the route changes so a
     // just-saved check-in is reflected without a reload.
@@ -163,6 +168,11 @@ export default function Layout({ children }) {
                 <SidebarHeader />
                 <NavLinks location={location} onNavigate={() => {}} />
                 <div className="px-3 pb-2 space-y-1">
+                    <Link to="/support-now" className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)', borderRadius: 'calc(var(--radius) - 3px)' }}>
+                        <LifeBuoy className="w-4 h-4" aria-hidden="true" />
+                        Support now
+                    </Link>
+                    {quickExitOn && <QuickExit className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium" />}
                     <button onClick={() => setInviteOpen(true)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
                         style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
@@ -228,6 +238,7 @@ export default function Layout({ children }) {
                 </div>
                 <NavLinks location={location} onNavigate={() => setMobileOpen(false)} />
                 <div className="px-3 pb-2 space-y-1">
+                    <Link to="/support-now" onClick={() => setMobileOpen(false)} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><LifeBuoy size={16} aria-hidden="true" />Support now</Link>
                     <button onClick={() => { setMobileOpen(false); setSettingsOpen(true); }} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><Settings2 size={16} aria-hidden="true" />Settings</button>
                     <button onClick={() => { setMobileOpen(false); setInviteOpen(true); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
@@ -258,6 +269,7 @@ export default function Layout({ children }) {
                     <span className="font-display text-lg" style={{ color: 'var(--gh-ink)' }}>
                         vibe check
                     </span>
+                    {quickExitOn && <QuickExit className="ml-auto inline-flex items-center gap-2 px-3 py-2 text-sm" label="Exit" />}
                 </header>
 
                 <div className="flex-1 overflow-auto">

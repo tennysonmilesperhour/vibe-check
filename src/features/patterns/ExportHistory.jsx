@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { filterEntries, buildReport, validDateKey } from '@/lib/living-patterns';
 import { encryptJson } from '@/lib/crypto';
 import { todayKey } from '@/lib/dates';
+import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 
 export default function ExportHistory({ data, initial, onClose }) {
   const [start, setStart] = useState(initial.start || data.entries.at(-1)?.date || todayKey());
@@ -16,6 +17,10 @@ export default function ExportHistory({ data, initial, onClose }) {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(false);
   const [error, setError] = useState('');
+  // The preview and the download ask for the password (unless confirmed
+  // recently), so someone holding an unlocked device can't walk away with it.
+  const [identityOk, setIdentityOk] = useState(false);
+  const confirmIdentity = useCallback(() => setIdentityOk(true), []);
   const valid = validDateKey(start) && validDateKey(end) && start <= end && end <= todayKey();
   const candidates = filterEntries(data.entries, { start, end });
   const payload = useMemo(() => {
@@ -65,7 +70,9 @@ export default function ExportHistory({ data, initial, onClose }) {
       {!valid && <p className="living-error" role="alert">Choose a valid date range through today.</p>}
       {error && <p className="living-error" role="alert">{error}</p>}
       <button className="living-secondary" disabled={!valid} onClick={() => setPreview(true)}>Preview complete export</button>
-      {preview && <><pre className="export-preview" aria-label="Complete export preview">{JSON.stringify(payload, null, 2)}</pre><button className="ink-button" disabled={busy || !valid} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted JSON' : 'Download JSON'}</button><p className="living-muted text-xs">A portable copy for your own records or a tool you choose. No external account is required.</p></>}
+      {preview && (identityOk
+        ? <><pre className="export-preview" aria-label="Complete export preview">{JSON.stringify(payload, null, 2)}</pre><button className="ink-button" disabled={busy || !valid} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted JSON' : 'Download JSON'}</button><p className="living-muted text-xs">A portable copy for your own records or a tool you choose. No external account is required.</p></>
+        : <ConfirmIdentity action="see and download your export" onConfirmed={confirmIdentity} />)}
     </div>
   </DialogContent></Dialog>;
 }

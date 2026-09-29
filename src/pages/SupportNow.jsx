@@ -1,0 +1,73 @@
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
+import { removeAppLock } from '@/lib/app-lock';
+import SupportResources from '@/features/safety/SupportResources';
+import SafetyPlan from '@/features/safety/SafetyPlan';
+import QuickExit from '@/features/safety/QuickExit';
+import { LockScreen } from '@/features/safety/LockGate';
+import useLockState from '@/features/safety/useLockState';
+
+/** Public: reachable signed in or out, from every surface that offers support. */
+export default function SupportNow() {
+  const { user, logout } = useAuth();
+  // This page sits outside the app's lock so it's always reachable. The plan
+  // follows the same lock, including the relock after time in the background.
+  const { locked, unlock } = useLockState(user?.id);
+  const [askPin, setAskPin] = useState(false);
+  const unlockButton = useRef(null);
+  const unlockedHere = useRef(false);
+  // Hidden rather than removed on a relock, so unsaved words stay.
+  const [planReady, setPlanReady] = useState(() => !locked);
+  useEffect(() => { if (!locked) setPlanReady(true); }, [locked]);
+  const [params] = useSearchParams();
+  const focus = params.get('focus') === 'relationship' ? 'relationship' : 'crisis';
+  return (
+    <div className="field-wash min-h-screen">
+      <main className="living-page space-y-8">
+        <div className="flex flex-wrap justify-between items-center gap-3">
+          <a href="/" className="touch-link text-sm underline underline-offset-4">Back to Vibe Check</a>
+          <QuickExit />
+        </div>
+        <header>
+          <p className="sanctuary-eyebrow">SUPPORT NOW</p>
+          <h1>You don't have to hold this alone.</h1>
+          <p className="living-muted mt-3 max-w-xl">If you are thinking about harming yourself, or you are not safe with someone, these free services can help right now. You choose whether to contact them.</p>
+        </header>
+        <section className="living-card space-y-4" aria-labelledby="support-services-heading">
+          <h2 id="support-services-heading">Talk to someone now</h2>
+          <SupportResources focus={focus} />
+        </section>
+        {user && locked && (
+          <div className="living-card space-y-3">
+            <p>Your safety plan is hidden while Vibe Check is locked.</p>
+            <button ref={unlockButton} type="button" className="living-secondary" onClick={() => setAskPin(true)}>Unlock to see it</button>
+          </div>
+        )}
+        {user && planReady && <div hidden={locked} inert={locked ? '' : undefined}><SafetyPlan /></div>}
+        {user && locked && askPin && (
+          <LockScreen
+            userId={user.id}
+            onUnlock={() => { unlockedHere.current = true; unlock(); setAskPin(false); }}
+            onForgot={async () => { await logout('local'); removeAppLock(user.id); }}
+            onCancel={() => setAskPin(false)}
+            // Back to where the person was: the plan after unlocking, the button after "Not now".
+            onClosed={() => {
+              if (unlockedHere.current) { unlockedHere.current = false; document.getElementById('safety-plan-heading')?.focus(); }
+              else unlockButton.current?.focus();
+            }}
+          />
+        )}
+        <section className="living-card space-y-3" aria-labelledby="device-safety-heading">
+          <h2 id="device-safety-heading">Using Vibe Check safely</h2>
+          <ul className="list-disc pl-5 space-y-2 text-sm">
+            <li>If someone else can use or check this device, turn on the app lock in Settings. It hides your journal from a quick look; it can't protect a device someone else controls or monitors.</li>
+            <li>Quick exit leaves Vibe Check at once for a neutral page. It doesn't erase your browser history.</li>
+            <li>If you think your phone, computer, or accounts are being watched, a safer device (a library computer or a trusted friend's phone) may be better for contacting support. The services above can help you plan.</li>
+            <li><a className="underline" href="https://www.techsafety.org" target="_blank" rel="noreferrer">Technology safety guides from the National Network to End Domestic Violence</a></li>
+          </ul>
+        </section>
+      </main>
+    </div>
+  );
+}

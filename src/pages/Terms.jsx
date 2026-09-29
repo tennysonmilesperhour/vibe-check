@@ -3,11 +3,11 @@ import LegalPage from "@/features/shell/LegalPage";
 
 export default function Terms() {
   return (
-    <LegalPage title="Terms of use" updated="September 8, 2026">
-      <p>Vibe Check helps you record personal reflections and explore patterns. By using the app, you agree to use it lawfully and to keep your account credentials secure.</p>
+    <LegalPage title="Terms of use" updated="September 29, 2026">
+      <p>Vibe Check helps you record personal reflections and explore patterns. By using the app, you agree to use it lawfully and to keep your account credentials secure. You must be 18 or older to create an account.</p>
 
       <h2>Reflection and entertainment only</h2>
-      <p>Scores, patterns, tarot, astrology, numerology, and symbolic readings are provided for personal reflection and entertainment. They are not medical, psychological, legal, financial, or other professional advice. Do not use the app for emergency decisions.</p>
+      <p>Scores, patterns, tarot, astrology, numerology, and symbolic readings are provided for personal reflection and entertainment. They are not medical, psychological, legal, financial, or other professional advice. Do not use the app for emergency decisions. If you are in danger or crisis, contact local emergency services or one of the free services on the <a className="touch-link underline" href="/support-now">Support now</a> page.</p>
 
       <h2>Reflective material</h2>
       <p>Patterns and symbolic interpretations may be incomplete or may not fit your experience. You decide what is useful. Cosmic profile fields that require specialist chart calculations must be entered or verified by you; unknown placements remain open.</p>

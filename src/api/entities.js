@@ -98,6 +98,15 @@ function makeEntity(table) {
       return outbound(row);
     },
 
+    /** Update every row of the person's that matches (row-level security keeps it to them). */
+    async updateWhere(criteria, data) {
+      let query = supabase.from(table).update(inbound(data));
+      for (const [key, value] of Object.entries(criteria)) query = query.eq(key, value);
+      const { error } = await query;
+      if (error) throw error;
+      return true;
+    },
+
     async delete(id) {
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) throw error;

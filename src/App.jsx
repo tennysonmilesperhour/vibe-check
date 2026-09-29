@@ -10,6 +10,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AuthGate from '@/features/shell/AuthGate';
 import PasswordReset from '@/features/shell/PasswordReset';
 import OfflineGate from '@/features/shell/OfflineGate';
+import LockGate from '@/features/safety/LockGate';
 import AppErrorBoundary from '@/components/AppErrorBoundary';
 import RouteErrorBoundary from '@/components/RouteErrorBoundary';
 import UpdateToast from '@/features/shell/UpdateToast';
@@ -19,6 +20,7 @@ const { Pages, Layout, mainPage } = pagesConfig;
 const Privacy = lazy(() => import('@/pages/Privacy'));
 const Terms = lazy(() => import('@/pages/Terms'));
 const Support = lazy(() => import('@/pages/Support'));
+const SupportNow = lazy(() => import('@/pages/SupportNow'));
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
@@ -57,8 +59,10 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <LockGate>
+    {(frozenLocation) => (
     <Suspense fallback={<div className="min-h-screen field-wash" aria-busy="true" />}>
-    <Routes>
+    <Routes location={frozenLocation}>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
           <RouteErrorBoundary key="/"><MainPage /></RouteErrorBoundary>
@@ -87,6 +91,8 @@ const AuthenticatedApp = () => {
       <Route path="*" element={<PageNotFound />} />
     </Routes>
     </Suspense>
+    )}
+    </LockGate>
   );
 };
 
@@ -103,6 +109,7 @@ function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/support" element={<Support />} />
+                <Route path="/support-now" element={<SupportNow />} />
                 <Route path="*" element={<AuthenticatedApp />} />
               </Routes>
             </Suspense>

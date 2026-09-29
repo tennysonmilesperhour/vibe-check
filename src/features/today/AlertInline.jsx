@@ -1,10 +1,11 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { BoundaryAlert } from "@/entities/all";
 import { HandHeart } from "lucide-react";
 
 /**
- * Gentle, in-place boundary alerts — acknowledgeable right here,
- * instead of being displayed on one page and actionable on another.
+ * Gentle low-mood notices (opt-in in Settings), with a next step beside each:
+ * a practice for this moment or support options. Dismissable in place.
  */
 export default function AlertInline({ alerts, onAcknowledged }) {
   if (!alerts?.length) return null;
@@ -19,7 +20,7 @@ export default function AlertInline({ alerts, onAcknowledged }) {
   };
 
   return (
-    <section aria-label="Boundary notices" className="space-y-2">
+    <section aria-label="Gentle notices" className="space-y-2">
       {alerts.map((alert) => (
         <div
           key={alert.id}
@@ -29,14 +30,13 @@ export default function AlertInline({ alerts, onAcknowledged }) {
           <HandHeart className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "var(--gh-accent)" }} aria-hidden="true" />
           <div className="flex-1">
             <p className="text-sm" style={{ color: "var(--gh-ink)" }}>{alert.message}</p>
-            <button
-              type="button"
-              onClick={() => acknowledge(alert)}
-              className="mt-2 text-xs font-bold underline underline-offset-4"
-              style={{ color: "var(--gh-accent)" }}
-            >
-              I see this
-            </button>
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold" style={{ color: "var(--gh-accent)" }}>
+              <Link className="underline underline-offset-4 py-1" to="/Practice?tab=somatic">Try a practice for this moment</Link>
+              <Link className="underline underline-offset-4 py-1" to="/support-now">Support options</Link>
+              <button type="button" onClick={() => acknowledge(alert)} className="underline underline-offset-4 py-1">
+                Dismiss
+              </button>
+            </div>
           </div>
         </div>
       ))}

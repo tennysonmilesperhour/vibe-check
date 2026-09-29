@@ -62,28 +62,28 @@ export function previousPeriod(period, weekStartsOn = 1) {
 
 // A state needs 3 recorded days to be shown at all. A connection with a person
 // or habit is held to more:
-// - Like with like: only days where the person answered the states question
-//   (a state, or "None of these") and tagged at least one person (or habit)
-//   count. A day without tags is a day without an answer, not a day without
-//   the person or the state.
+// - Like with like: only days where at least one person (or habit) was tagged
+//   count, so a mood-only day or a skipped question is not a day "without"
+//   anyone. Days are never picked by their states: keeping only days with a
+//   state would make unrelated states look connected.
 // - At least 5 such days with it, 5 without, and 3 with both.
 // - The state on at least 20 percentage points more of the days with it, and
-//   at least twice as often. Days when someone tags more of everything make
-//   small, broad overlaps; a real connection is a large one.
+//   at least twice as often.
 // - A one-sided Fisher exact test, and a Cochran-Mantel-Haenszel test within
-//   days whose records are similarly busy, that both hold after
-//   dividing 2% across every pair that had enough days to test in this view
-//   (Bonferroni).
-// On simulated records where nothing is connected, with mood-only days,
-// skipped questions, and busy and quiet days, fewer than 1 in 50 people see
-// a connection in a view, and fewer than 1 in 20 across a year of ranges and
-// monthly reports (see the tests). A strong real one usually shows within a
-// few months. It is still an association in a record, never a cause.
+//   days whose records are similarly busy (how many tags and other states
+//   they carry), that both hold after dividing 2% across every pair with
+//   enough days to test in this view (Bonferroni).
+// On simulated records where nothing is connected, messy the way real ones
+// are (mood-only days, skipped questions, calm days left blank, busy and
+// quiet days), few people see a connection in any view (see the tests). A
+// strong real one usually shows within a few months. It is still an
+// association in a record, never a cause.
 const MIN_STATE_DAYS = 3;
 const MIN_GROUP_DAYS = 5;
 const MIN_GAP = 0.2;
 const MIN_RATIO = 2;
 const VIEW_ALPHA = 0.02;
+const MAX_STRATUM = 8;
 
 /**
  * What repeats in the record. Two kinds of card:
@@ -96,12 +96,9 @@ export function stressPatterns(entries, people = [], feedback = {}) {
   const statesOf = new Map(entries.map((entry) => [entry, entryStates(entry)]));
   const byDate = new Map();
   for (const entry of entries) {
-    if (!byDate.has(entry.date)) byDate.set(entry.date, { states: new Set(), answered: false, people: new Set(), habits: new Set(), entries: [] });
+    if (!byDate.has(entry.date)) byDate.set(entry.date, { states: new Set(), people: new Set(), habits: new Set(), entries: [] });
     const day = byDate.get(entry.date);
-    const chosen = statesOf.get(entry);
-    // "None of these" is an answer too: a calm day, not a skipped question.
-    if (chosen.length || entry.stress_context?.none_present) day.answered = true;
-    chosen.filter((id) => id !== 'unsure').forEach((id) => day.states.add(id));
+    statesOf.get(entry).filter((id) => id !== 'unsure').forEach((id) => day.states.add(id));
     entryPeople(entry).forEach((id) => day.people.add(id));
     (entry.activities || []).forEach((id) => day.habits.add(id));
     day.entries.push(entry);
@@ -118,8 +115,8 @@ export function stressPatterns(entries, people = [], feedback = {}) {
   }).filter((card) => card.days >= MIN_STATE_DAYS);
 
   const comparable = {
-    person: days.filter((day) => day.answered && day.people.size > 0),
-    habit: days.filter((day) => day.answered && day.habits.size > 0),
+    person: days.filter((day) => day.people.size > 0),
+    habit: days.filter((day) => day.habits.size > 0),
   };
   const contexts = [
     ...[...new Set(comparable.person.flatMap((day) => [...day.people]))].map((id) => ({ type: 'person', id, label: people.find((person) => person.id === id)?.name || 'A person in your record' })),
@@ -128,19 +125,17 @@ export function stressPatterns(entries, people = [], feedback = {}) {
   const candidates = [];
   for (const context of contexts) {
     const field = context.type === 'person' ? 'people' : 'habits';
-    const otherField = context.type === 'person' ? 'habits' : 'people';
     const withDays = comparable[context.type].filter((day) => day[field].has(context.id));
     const withoutDays = comparable[context.type].filter((day) => !day[field].has(context.id));
     const bigEnough = withDays.length >= MIN_GROUP_DAYS && withoutDays.length >= MIN_GROUP_DAYS;
     for (const state of states) {
       const shared = withDays.filter((day) => day.states.has(state));
       const otherwise = withoutDays.filter((day) => day.states.has(state)).length;
-      // Strata: how busy the day's record is, read from the other kind of tag
-      // (habits for a person, people for a habit) and the other states. Tags of
-      // the same kind can't be used: a day with one person tagged would then
-      // always sit apart from a day with someone else.
-      const stratumOf = (day) => Math.min(4, day[otherField].size + day.states.size - (day.states.has(state) ? 1 : 0));
-      const strata = Array.from({ length: 5 }, () => ({ a: 0, b: 0, c: 0, d: 0 }));
+      // Strata: how busy the day's record is. Every tag counts, the one being
+      // tested included, so a day with only Jules and a day with only Sam sit
+      // together; the state being tested does not count.
+      const stratumOf = (day) => Math.min(MAX_STRATUM, day.people.size + day.habits.size + day.states.size - (day.states.has(state) ? 1 : 0));
+      const strata = Array.from({ length: MAX_STRATUM + 1 }, () => ({ a: 0, b: 0, c: 0, d: 0 }));
       for (const day of withDays) strata[stratumOf(day)][day.states.has(state) ? 'a' : 'b'] += 1;
       for (const day of withoutDays) strata[stratumOf(day)][day.states.has(state) ? 'c' : 'd'] += 1;
       const key = `${state}:${context.type}:${context.id}`;

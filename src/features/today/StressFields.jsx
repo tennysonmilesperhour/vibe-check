@@ -6,11 +6,9 @@ export default function StressFields({ value = {}, onChange, compact = false, wh
   const personalValues = usePreferences().data?.personal_values || [];
   const update = (patch) => onChange({ ...value, ...patch });
   const toggle = (field, id) => update({ [field]: (value[field] || []).includes(id) ? value[field].filter((item) => item !== id) : [...(value[field] || []), id] });
-  // Choosing a state and choosing "None of these" exclude each other.
-  const toggleState = (id) => { const next = (value.state_ids || []).includes(id) ? value.state_ids.filter((item) => item !== id) : [...(value.state_ids || []), id]; update({ state_ids: next, none_present: next.length ? undefined : value.none_present }); };
   return <div className="stress-fields space-y-5">
     <fieldset><legend className="living-label">What feels present? <span className="font-normal">Optional</span></legend>
-      <div className="living-chips">{STRESS_STATES.map((state) => <button type="button" key={state.id} className="living-chip" aria-pressed={(value.state_ids || []).includes(state.id)} onClick={() => toggleState(state.id)}>{state.label}</button>)}<button type="button" className="living-chip" aria-pressed={Boolean(value.none_present)} onClick={() => update({ none_present: value.none_present ? undefined : true, state_ids: [] })}>None of these</button></div>
+      <div className="living-chips">{STRESS_STATES.map((state) => <button type="button" key={state.id} className="living-chip" aria-pressed={(value.state_ids || []).includes(state.id)} onClick={() => toggle('state_ids', state.id)}>{state.label}</button>)}</div>
     </fieldset>
     {!compact && <>
       <label className="living-label">{when === 'day' ? 'Highest stress today' : 'Stress in this moment'} <select className="living-input mt-2" value={value.stress_score ?? ''} onChange={(e) => update({ stress_score: e.target.value === '' ? null : Number(e.target.value), ...(when === 'day' ? { stress_measure: e.target.value === '' ? undefined : 'highest-today' } : {}) })}><option value="">Not recorded</option>{Array.from({ length: 11 }, (_, n) => <option key={n} value={n}>{n} / 10{n === 0 ? ' · none' : n === 10 ? ' · very high' : ''}</option>)}</select></label>

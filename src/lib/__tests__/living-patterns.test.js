@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { timelineEntries, entryStates, filterEntries, stressPatterns, reportPeriod, previousPeriod, buildReport, historyChart, validDateKey } from '../living-patterns';
-import { recommendPractices, PRACTICES, STRESS_STATES } from '../practices';
+import { recommendPractices, PRACTICES, STRESS_STATES, hiddenPractices, hiddenPracticesPatch } from '../practices';
 import { fetchAllPages } from '../crypto';
 import { fisherGreater, cmhGreater } from '../pattern-stats';
 import { addDaysKey } from '../dates';
@@ -98,6 +98,17 @@ describe('stress patterns and practice relevance', () => {
     const both = recommendPractices('on-edge', [{ practice_id: 'orient', outcome: 'More uncomfortable' }]);
     expect(both.map((practice) => practice.id)).toEqual(['comfortable-breath', 'orient']);
   });
+  it('keeps the earlier promise for older uncomfortable responses, and changes the stored list, not a copy', () => {
+    const sessions = [{ practice_id: 'orient', outcome: 'More uncomfortable' }];
+    expect(hiddenPractices({}, sessions)).toEqual(['orient']);
+    expect(hiddenPractices({ uncomfortable_hidden_v1: true, hidden_practices: [] }, sessions)).toEqual([]);
+    // Written out once, from what is stored now.
+    expect(hiddenPracticesPatch(sessions)({ hidden_practices: ['small-start'] })).toEqual({ hidden_practices: ['small-start', 'orient'], uncomfortable_hidden_v1: true });
+    // Already written out elsewhere (and orient unhidden there): nothing comes back.
+    expect(hiddenPracticesPatch(sessions)({ uncomfortable_hidden_v1: true, hidden_practices: ['familiar-sense'] })).toEqual({ hidden_practices: ['familiar-sense'], uncomfortable_hidden_v1: true });
+    const unhide = hiddenPracticesPatch(sessions, (list) => list.filter((id) => id !== 'orient'));
+    expect(unhide({})).toEqual({ hidden_practices: [], uncomfortable_hidden_v1: true });
+  });
   it('says why a practice is offered and puts what helped first', () => {
     const offered = recommendPractices('on-edge', [{ practice_id: 'comfortable-breath', outcome: 'More settled' }, { practice_id: 'comfortable-breath', outcome: 'Clearer' }]);
     expect(offered[0]).toMatchObject({ id: 'comfortable-breath', helped: 2 });
@@ -127,8 +138,8 @@ function mulberry32(seed) {
 
 // A record where states, people, and habits are independent, so any
 // connection found is false. It is also messy the way real records are:
-// mood-only days, skipped questions, and busy days that carry more of every
-// tag than quiet ones.
+// mood-only days, skipped questions, calm days left blank, and busy days
+// that carry more of every tag than quiet ones.
 function unconnectedRecord(rand, dayCount) {
   const states = ['confusion', 'on-edge', 'anger', 'shutdown', 'numbness', 'procrastination'].map((id) => ({ id, rate: 0.03 + rand() * 0.3 }));
   const people = Array.from({ length: 2 + Math.floor(rand() * 5) }, (_, i) => ({ id: `p${i}`, rate: 0.1 + rand() * 0.5 }));
@@ -143,14 +154,14 @@ function unconnectedRecord(rand, dayCount) {
     const chosen = pick(states);
     entries.push({
       key: `${d}`, kind: 'day', date,
-      stress_context: rand() < 0.2 ? {} : chosen.length ? { state_ids: chosen } : { none_present: true },
+      stress_context: rand() < 0.2 || !chosen.length ? {} : { state_ids: chosen },
       ...(rand() < 0.2 ? {} : { person_ids: pick(people), activities: pick(habits) }),
     });
   }
   return entries;
 }
 const showsConnection = (entries) => stressPatterns(entries).some((pattern) => pattern.context.type !== 'state');
-const answered = (ids) => (ids.length ? { state_ids: ids } : { none_present: true });
+const answered = (ids) => (ids.length ? { state_ids: ids } : {});
 
 describe('connections are compared with comparable days without them', () => {
   it('computes the one-sided Fisher exact test', () => {
@@ -204,6 +215,20 @@ describe('connections are compared with comparable days without them', () => {
     expect(coffee).toBeUndefined();
   });
 
+  it('does not link a state to a habit because the habit lowers a different state', () => {
+    // A walk makes "on edge" rarer; anger has nothing to do with it. Picking
+    // only days with some state would make anger look tied to walking.
+    const entries = Array.from({ length: 200 }, (_, d) => {
+      const walk = d % 3 === 0;
+      const onEdge = walk ? d % 10 === 0 : d % 5 !== 0;
+      const angry = d % 4 === 1;
+      return { key: `${d}`, date: addDaysKey('2025-01-01', d), activities: [walk ? 'Walk' : 'Desk'], stress_context: answered([...(onEdge ? ['on-edge'] : []), ...(angry ? ['anger'] : [])]) };
+    });
+    const found = stressPatterns(entries);
+    expect(found.find((pattern) => pattern.key === 'anger:habit:Walk')).toBeUndefined();
+    expect(found.find((pattern) => pattern.key === 'on-edge:habit:Desk')).toMatchObject({ significant: true });
+  });
+
   it('finds a strong connection that is really there, with both counts', () => {
     const entries = Array.from({ length: 60 }, (_, d) => {
       const withJules = d % 3 === 0; // 20 days with Jules, 40 with Sam
@@ -216,7 +241,7 @@ describe('connections are compared with comparable days without them', () => {
     expect(found[0].context.label).toBe('Jules');
   });
 
-  it('leaves out days where a question went unanswered', () => {
+  it('leaves out days without any person tagged', () => {
     const entries = Array.from({ length: 60 }, (_, d) => {
       const withJules = d % 3 === 0;
       const angry = withJules ? d % 4 !== 0 : d % 10 === 1;

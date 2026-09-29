@@ -12,10 +12,13 @@ export async function fetchLivingData() {
 }
 
 // Merges with the latest stored values, then refreshes every ['living', user]
-// query (the full history and the preferences-only one below).
+// query (the full history and the preferences-only one below). A function
+// patch is given the latest stored values, so a list is changed from what is
+// stored now, not from an older copy on this device.
 async function storePreferences(client, userId, patch) {
   const [row] = await VibePreference.list();
-  const result = await VibePreference.upsert({ values: { ...(row?.values || {}), ...patch } }, 'user_id');
+  const current = row?.values || {};
+  const result = await VibePreference.upsert({ values: { ...current, ...(typeof patch === 'function' ? patch(current) : patch) } }, 'user_id');
   await client.invalidateQueries({ queryKey: ['living', userId] });
   return result;
 }

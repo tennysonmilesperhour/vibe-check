@@ -4,7 +4,7 @@ import { ArrowRight, Clock3, Leaf, Check, X } from 'lucide-react';
 import { PracticeSession } from '@/api/entities';
 import { useLivingData } from '@/features/patterns/useLivingData';
 import PlantVoice from '@/features/shell/PlantVoice';
-import { STRESS_STATES, PRACTICES, PRACTICE_SOURCES, ALIGNMENTS, OUTCOMES, stateById, practiceById, recommendPractices, hiddenPractices, UNCOMFORTABLE_KEPT_HIDDEN, PLANT_COMPANIONS } from '@/lib/practices';
+import { STRESS_STATES, PRACTICES, PRACTICE_SOURCES, ALIGNMENTS, OUTCOMES, stateById, practiceById, recommendPractices, hiddenPractices, hiddenPracticesPatch, UNCOMFORTABLE_KEPT_HIDDEN, PLANT_COMPANIONS } from '@/lib/practices';
 import { todayKey } from '@/lib/dates';
 import useBeforeUnload from '@/hooks/use-before-unload';
 
@@ -37,17 +37,21 @@ export default function SomaticPractice() {
   // After a practice felt more uncomfortable: ask, rather than hide it for them.
   const [askStop, setAskStop] = useState(null);
   const askStopRef = useRef(null);
+  const noticeRef = useRef(null);
   useEffect(() => { if (askStop) askStopRef.current?.focus(); }, [askStop]);
+  // When the prompt closes, focus goes to what it said, not to the top of the page.
+  const announce = (text) => { setNotice(text); requestAnimationFrame(() => noticeRef.current?.focus()); };
   const data = living.data;
   const sessions = data?.sessions || [];
   const hidden = hiddenPractices(data?.preferences, sessions);
   const blocked = new Set(hidden);
   // Save the earlier promise as explicit hidden entries, once, so it shows
-  // under Hidden practices with Unhide.
+  // under Hidden practices with Unhide. The patch works from what is stored,
+  // so another device's newer choices are never overwritten.
   const promiseSaved = Boolean(data?.preferences?.[UNCOMFORTABLE_KEPT_HIDDEN]);
+  const keepPromise = () => living.savePreferences(hiddenPracticesPatch(sessions));
   useEffect(() => {
-    if (!living.isSuccess || promiseSaved) return;
-    living.savePreferences({ hidden_practices: hidden, [UNCOMFORTABLE_KEPT_HIDDEN]: true }).catch(() => {});
+    if (living.isSuccess && !promiseSaved) keepPromise().catch(() => {});
   }, [living.isSuccess, promiseSaved]);
   const suggestions = state ? recommendPractices(state.id, sessions, hidden) : [];
   const active = living.isSuccess && activeId && !blocked.has(activeId) ? practiceById(activeId) : null;
@@ -74,9 +78,13 @@ export default function SomaticPractice() {
     if (!active || !state) return;
     setBusy(true); setError('');
     try {
+      // The promise covers responses from before this visit only: settle it
+      // before saving a new one, which then asks instead.
+      const promiseKept = promiseSaved || await keepPromise().then(() => true, () => false);
       await PracticeSession.create({ date: todayKey(), practice_id: active.id, state_id: state.id, status, intention, before_notes: before, after_notes: after, outcome: outcome || null, alignment: alignment || null, source_pattern: params.get('pattern') || null, source_entry_keys: (params.get('sources') || '').split(',').filter(Boolean) });
       await living.refresh(); closePractice();
-      if (outcome === 'More uncomfortable') { setNotice(''); setAskStop(active.id); }
+      if (outcome === 'More uncomfortable' && promiseKept) { setNotice(''); setAskStop(active.id); }
+      else if (outcome === 'More uncomfortable') setNotice('Your response is kept. This practice will no longer be suggested.');
       else setNotice('Your experience is kept. It will be included in your weekly and monthly reports.');
     } catch (err) { setError(err.message || 'Could not save. Your words are still here; please try again.'); }
     setBusy(false);
@@ -84,13 +92,13 @@ export default function SomaticPractice() {
   // From the prompt: hide it, without touching any practice now open.
   async function stopSuggesting(id) {
     setBusy(true); setError('');
-    try { await living.savePreferences({ hidden_practices: [...new Set([...hidden, id])] }); setAskStop(null); setNotice(`${practiceById(id)?.title} won't be suggested. You can unhide it below.`); }
+    try { await living.savePreferences(hiddenPracticesPatch(sessions, (list) => [...new Set([...list, id])])); setAskStop(null); announce(`${practiceById(id)?.title} won't be suggested. You can unhide it below.`); }
     catch (err) { setError(err.message); }
     setBusy(false);
   }
   async function hidePractice(id) {
     setBusy(true); setError('');
-    try { await living.savePreferences({ hidden_practices: [...new Set([...hidden, id])] }); closePractice(); setAskStop(null); setNotice('This practice is hidden from recommendations.'); }
+    try { await living.savePreferences(hiddenPracticesPatch(sessions, (list) => [...new Set([...list, id])])); closePractice(); setAskStop(null); setNotice('This practice is hidden from recommendations.'); }
     catch (err) { setError(err.message); }
     setBusy(false);
   }
@@ -111,8 +119,8 @@ export default function SomaticPractice() {
     <header><p className="sanctuary-eyebrow">A LITTLE ROOM TO CHOOSE · ALWAYS FREE</p><h1>Come back to yourself.</h1><p className="living-muted mt-3 max-w-xl">Find an action for this moment. Over time, notice what helps you respond in a way that feels like you.</p></header>
     <PlantVoice>{state ? state.invitation : 'We are the plants, here beside you. Begin wherever you are. Choose what feels present, and we will take one small step.'}</PlantVoice>
     {living.isError && <div className="living-error" role="alert">Your saved history could not load. Retry to load practices with your saved preferences. <button className="underline" onClick={() => living.refetch()}>Retry history</button></div>}
-    {notice && <p role="status" className="living-success">{notice}</p>}
-    {askStop && <div ref={askStopRef} tabIndex={-1} className="living-inset space-y-3 outline-none" role="group" aria-labelledby="ask-stop-text"><p id="ask-stop-text">Your response is kept. Stop suggesting {practiceById(askStop)?.title.toLowerCase()}? It felt more uncomfortable this time. You can keep it available if it might fit another day.</p><div className="flex flex-wrap gap-3"><button type="button" className="living-secondary" disabled={busy} onClick={() => stopSuggesting(askStop)}>Stop suggesting it</button><button type="button" className="underline text-sm" disabled={busy} onClick={() => { setAskStop(null); setNotice('It stays available.'); }}>Keep it available</button></div></div>}
+    {notice && <p ref={noticeRef} tabIndex={-1} role="status" className="living-success outline-none">{notice}</p>}
+    {askStop && <div ref={askStopRef} tabIndex={-1} className="living-inset space-y-3 outline-none" role="group" aria-labelledby="ask-stop-text"><p id="ask-stop-text">Your response is kept. Stop suggesting {practiceById(askStop)?.title.toLowerCase()}? It felt more uncomfortable this time. You can keep it available if it might fit another day.</p><div className="flex flex-wrap gap-3"><button type="button" className="living-secondary" disabled={busy} onClick={() => stopSuggesting(askStop)}>Stop suggesting it</button><button type="button" className="underline text-sm" disabled={busy} onClick={() => { setAskStop(null); announce('It stays available.'); }}>Keep it available</button></div></div>}
     {error && <p role="alert" className="living-error">{error}</p>}
     <section aria-labelledby="current-feeling-heading"><h2 id="current-feeling-heading" className="mb-4">What feels present?</h2><div className="state-grid">{STRESS_STATES.map((item, index) => <button key={item.id} type="button" className="state-card" aria-pressed={state?.id === item.id} onClick={() => chooseState(item.id)}><span className="state-number" aria-hidden="true">0{index + 1}</span><strong>{item.label}</strong><span>{item.description}</span></button>)}</div><p className="living-muted text-xs mt-3">Choose your own description. These words do not diagnose a condition.</p><p className="mt-4"><Link className="living-text-link" to="/support-now">I might not be safe right now <ArrowRight size={15} /></Link></p></section>
     {state && !living.isSuccess && <p className="living-muted" role="status">{living.isError ? 'Retry your history to use your practice preferences.' : 'Checking your practice preferences…'}</p>}
@@ -144,7 +152,7 @@ export default function SomaticPractice() {
         {deleting === session.id && <div className="living-inset mt-3"><p className="text-sm mb-2">Remove this practice entry from history and reports?</p><button className="living-secondary" onClick={() => removeSession(session.id)} disabled={busy}>Delete practice entry</button> <button className="underline text-sm" onClick={() => setDeleting(null)}>Keep it</button></div>}
       </article>)}
       {sessions.length > showHistory && <button className="living-secondary" onClick={() => setShowHistory((count) => count + 20)}>Show more practice history</button>}
-      {hidden.length > 0 && <details><summary className="text-sm cursor-pointer">Hidden practices ({hidden.length})</summary><div className="mt-3 space-y-2">{hidden.map((id) => <div className="flex justify-between gap-3 text-sm" key={id}><span>{practiceById(id)?.title || id}</span><button type="button" className="underline" disabled={busy} onClick={async () => { setBusy(true); try { await living.savePreferences({ hidden_practices: hidden.filter((item) => item !== id) }); } catch (err) { setError(err.message); } setBusy(false); }}>Unhide</button></div>)}<p className="living-muted text-xs mt-2">Hidden practices are not suggested. Unhide one to see it again.</p></div></details>}
+      {hidden.length > 0 && <details><summary className="text-sm cursor-pointer">Hidden practices ({hidden.length})</summary><div className="mt-3 space-y-2">{hidden.map((id) => <div className="flex justify-between gap-3 text-sm" key={id}><span>{practiceById(id)?.title || id}</span><button type="button" className="underline" disabled={busy} onClick={async () => { setBusy(true); try { await living.savePreferences(hiddenPracticesPatch(sessions, (list) => list.filter((item) => item !== id))); } catch (err) { setError(err.message); } setBusy(false); }}>Unhide</button></div>)}<p className="living-muted text-xs mt-2">Hidden practices are not suggested. Unhide one to see it again.</p></div></details>}
     </section>
     <PlantCompanions />
     <p className="living-muted text-xs flex items-start gap-2"><Leaf size={16} className="shrink-0" />These are optional body-based and practical invitations. If a practice increases discomfort, stop or choose another. Your safety and your account of what happened come first.</p>

@@ -48,12 +48,24 @@ export const HELPFUL_OUTCOMES = ['Clearer', 'More connected', 'More able to begi
 // Unhide available) until the preference below is set. Later responses ask.
 export const UNCOMFORTABLE_KEPT_HIDDEN = 'uncomfortable_hidden_v1';
 
+const uncomfortableIds = (sessions) => sessions.filter((s) => s.outcome === 'More uncomfortable').map((s) => s.practice_id);
+
 /** Hidden practice ids, honoring the earlier promise for older responses. */
 export function hiddenPractices(preferences = {}, sessions = []) {
   const hidden = preferences.hidden_practices || [];
   if (preferences[UNCOMFORTABLE_KEPT_HIDDEN]) return hidden;
-  return [...new Set([...hidden, ...sessions.filter((s) => s.outcome === 'More uncomfortable').map((s) => s.practice_id)])];
+  return [...new Set([...hidden, ...uncomfortableIds(sessions)])];
 }
+
+/**
+ * A preferences patch (a function of the stored values) that writes the hidden
+ * list out explicitly, once, keeping the earlier promise for `sessions`, and
+ * applies `change` to it. Every change to the hidden list goes through here.
+ */
+export const hiddenPracticesPatch = (sessions, change = (list) => list) => (stored) => ({
+  hidden_practices: change(hiddenPractices(stored, sessions)),
+  [UNCOMFORTABLE_KEPT_HIDDEN]: true,
+});
 const times = (n) => (n === 1 ? 'once' : `${n} times`);
 
 /**

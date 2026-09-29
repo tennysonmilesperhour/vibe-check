@@ -314,6 +314,13 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   function acceptHeldBuffer() {
     editedRef.current = true;
     restoreForm(heldBuffer);
+    // Any question those words answer is asked again, so nothing is kept unseen.
+    if (stepIds) {
+      const needed = chooseSteps(tracking, { ...formRef.current, ...heldBuffer });
+      const next = ALL_STEPS.filter((id) => stepIds.includes(id) || needed.includes(id));
+      setStepIndex(Math.max(0, next.indexOf(stepIds[stepIndex])));
+      setStepIds(next);
+    }
     setHeldBuffer(null);
     setDraftMessage('Your unsaved words from this tab are back.');
   }
@@ -341,13 +348,21 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       [key]: f[key].includes(label) ? f[key].filter((x) => x !== label) : [...f[key], label],
     }));
 
+  // Choices saved before the check-in followed them didn't ask for that, so
+  // only choices saved since shape it.
+  const tracking = prefs.data?.tracking_shapes_check_in ? prefs.data.tracking || [] : [];
   useEffect(() => {
     if (stepIds || draftLoading || prefs.isLoading) return;
-    setStepIds(chooseSteps(prefs.data?.tracking, formRef.current));
+    setStepIds(chooseSteps(tracking, formRef.current));
   }, [stepIds, draftLoading, prefs.isLoading, prefs.data]);
   const stepOrder = stepIds || ALL_STEPS;
   const stepId = stepOrder[stepIndex];
-  const showAllSteps = () => { setStepIds(ALL_STEPS); setStepIndex(ALL_STEPS.indexOf(stepId)); };
+  const showAllSteps = () => {
+    setStepIds(ALL_STEPS);
+    setStepIndex(ALL_STEPS.indexOf(stepId));
+    // The button goes away; keep focus on the question, whose label gives the new count.
+    requestAnimationFrame(() => stepRegionRef.current?.focus());
+  };
   const depth = Math.min(4, 1 + Math.floor(stepIndex / 2));
   const canAdvance = stepId === "mood" ? form.mood_score != null : true;
 
@@ -458,7 +473,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
             <button type="button" onClick={saveDraft} disabled={saving} className="underline underline-offset-4">{saving ? 'Saving…' : 'Save draft and close'}</button>
           </span>
         </div>
-        <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <button type="button" className="underline underline-offset-4 ml-3" onClick={showAllSteps}>Show all questions</button>}</p>
+        <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <> Some questions are left out to match what you chose to notice. <button type="button" className="underline underline-offset-4" onClick={showAllSteps}>Show all questions</button></>}</p>
         {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="underline underline-offset-4 ml-3" disabled={saving} onClick={discardRestored}>Discard draft</button>}</p>}
         {heldBuffer && (
           <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>

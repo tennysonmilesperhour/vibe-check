@@ -41,6 +41,19 @@ export const stateById = (id) => STRESS_STATES.find((state) => state.id === id);
 export const practiceById = (id) => PRACTICES.find((practice) => practice.id === id);
 
 export const HELPFUL_OUTCOMES = ['Clearer', 'More connected', 'More able to begin', 'More settled'];
+
+// Until September 2026 a "More uncomfortable" response hid a practice by
+// itself, and people were told it would no longer be suggested. That promise
+// holds: those practices count as hidden (and are saved as hidden, with
+// Unhide available) until the preference below is set. Later responses ask.
+export const UNCOMFORTABLE_KEPT_HIDDEN = 'uncomfortable_hidden_v1';
+
+/** Hidden practice ids, honoring the earlier promise for older responses. */
+export function hiddenPractices(preferences = {}, sessions = []) {
+  const hidden = preferences.hidden_practices || [];
+  if (preferences[UNCOMFORTABLE_KEPT_HIDDEN]) return hidden;
+  return [...new Set([...hidden, ...sessions.filter((s) => s.outcome === 'More uncomfortable').map((s) => s.practice_id)])];
+}
 const times = (n) => (n === 1 ? 'once' : `${n} times`);
 
 /**

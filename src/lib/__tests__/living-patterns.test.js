@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { timelineEntries, entryStates, filterEntries, stressPatterns, reportPeriod, previousPeriod, buildReport, historyChart, validDateKey } from '../living-patterns';
 import { recommendPractices, PRACTICES, STRESS_STATES } from '../practices';
 import { fetchAllPages } from '../crypto';
-import { fisherGreater } from '../pattern-stats';
+import { fisherGreater, cmhGreater } from '../pattern-stats';
 import { addDaysKey } from '../dates';
 
 afterEach(() => vi.useRealTimers());
@@ -24,6 +24,10 @@ describe('a whole history, including difficult moments', () => {
     const chart = historyChart([day('1', '2026-03-07', 3), day('2', '2026-03-09', 9, { stress_context: { stress_score: 0 } })], '2026-03-07', '2026-03-09');
     expect(chart.map((point) => point.mood)).toEqual([3, null, 9]);
     expect(chart[2].stress).toBe(0);
+  });
+  it('tells the two kinds of check-in stress apart', () => {
+    const chart = historyChart([day('1', '2026-09-27', 5, { stress_context: { stress_score: 3 } }), day('2', '2026-09-28', 5, { stress_context: { stress_score: 7, stress_measure: 'highest-today' } })], '2026-09-27', '2026-09-28');
+    expect(chart.map((point) => point.stressKind)).toEqual(['at-check-in', 'highest-today']);
   });
   it('paginates beyond 120 and 1,000 records', async () => {
     const all = Array.from({ length: 1227 }, (_, id) => ({ id }));
@@ -121,28 +125,34 @@ function mulberry32(seed) {
   };
 }
 
-// A record where states, people, and habits are independent: any connection found is false.
+// A record where states, people, and habits are independent, so any
+// connection found is false. It is also messy the way real records are:
+// mood-only days, skipped questions, and busy days that carry more of every
+// tag than quiet ones.
 function unconnectedRecord(rand, dayCount) {
-  const states = ['confusion', 'on-edge', 'anger', 'shutdown', 'numbness', 'procrastination'].map((id) => ({ id, rate: 0.05 + rand() * 0.35 }));
-  const people = Array.from({ length: 2 + Math.floor(rand() * 4) }, (_, i) => ({ id: `p${i}`, rate: 0.1 + rand() * 0.45 }));
-  const habits = Array.from({ length: 3 + Math.floor(rand() * 6) }, (_, i) => ({ id: `h${i}`, rate: 0.1 + rand() * 0.55 }));
+  const states = ['confusion', 'on-edge', 'anger', 'shutdown', 'numbness', 'procrastination'].map((id) => ({ id, rate: 0.03 + rand() * 0.3 }));
+  const people = Array.from({ length: 2 + Math.floor(rand() * 5) }, (_, i) => ({ id: `p${i}`, rate: 0.1 + rand() * 0.5 }));
+  const habits = Array.from({ length: 3 + Math.floor(rand() * 12) }, (_, i) => ({ id: `h${i}`, rate: 0.1 + rand() * 0.55 }));
   const entries = [];
   for (let d = 0; d < dayCount; d += 1) {
-    if (rand() < 0.2) continue; // a day without a record
-    const moments = rand() < 0.25 ? 2 : 1;
-    for (let k = 0; k < moments; k += 1) {
-      entries.push({
-        key: `${d}:${k}`, kind: k ? 'journal' : 'day', date: addDaysKey('2026-01-01', d),
-        stress_context: { state_ids: states.filter((state) => rand() < state.rate / moments).map((state) => state.id) },
-        person_ids: people.filter((person) => rand() < person.rate / moments).map((person) => person.id),
-        activities: habits.filter((habit) => rand() < habit.rate / moments).map((habit) => habit.id),
-      });
-    }
+    if (rand() < 0.2) continue; // no record that day
+    const date = addDaysKey('2025-10-01', d);
+    if (rand() < 0.3) { entries.push({ key: `${d}`, kind: 'day', date, mood_score: 5 }); continue; } // mood only
+    const busy = 0.2 + rand() * 1.6;
+    const pick = (list) => list.filter((item) => rand() < Math.min(0.95, item.rate * busy)).map((item) => item.id);
+    const chosen = pick(states);
+    entries.push({
+      key: `${d}`, kind: 'day', date,
+      stress_context: rand() < 0.2 ? {} : chosen.length ? { state_ids: chosen } : { none_present: true },
+      ...(rand() < 0.2 ? {} : { person_ids: pick(people), activities: pick(habits) }),
+    });
   }
   return entries;
 }
+const showsConnection = (entries) => stressPatterns(entries).some((pattern) => pattern.context.type !== 'state');
+const answered = (ids) => (ids.length ? { state_ids: ids } : { none_present: true });
 
-describe('connections are compared with the days without them', () => {
+describe('connections are compared with comparable days without them', () => {
   it('computes the one-sided Fisher exact test', () => {
     // 3 of 4 days with it, 1 of 4 without: (C(4,3)C(4,1) + C(4,4)C(4,0)) / C(8,4) = 17/70.
     expect(fisherGreater(3, 4, 1, 4)).toBeCloseTo(17 / 70, 10);
@@ -150,23 +160,55 @@ describe('connections are compared with the days without them', () => {
     expect(fisherGreater(5, 5, 0, 5)).toBeCloseTo(1 / 252, 10);
   });
 
-  it('shows a connection to fewer than 1 in 20 people whose records have none', () => {
+  it('computes the stratified test, and sees no link where each stratum has none', () => {
+    expect(cmhGreater([{ a: 10, b: 10, c: 10, d: 10 }])).toBeGreaterThan(0.5);
+    expect(cmhGreater([{ a: 18, b: 2, c: 2, d: 18 }])).toBeLessThan(0.0001);
+    // Crude: 12 of 20 vs 4 of 20. Within each stratum the rates are equal.
+    expect(cmhGreater([{ a: 10, b: 5, c: 2, d: 1 }, { a: 2, b: 3, c: 2, d: 15 }])).toBeGreaterThan(0.2);
+  });
+
+  it('shows a connection to fewer than 1 in 50 people whose records have none, per view', () => {
     const rand = mulberry32(20260929);
     for (const dayCount of [30, 90]) {
       const people = 300;
       let falseAlarms = 0;
-      for (let i = 0; i < people; i += 1) {
-        if (stressPatterns(unconnectedRecord(rand, dayCount)).some((pattern) => pattern.context.type !== 'state')) falseAlarms += 1;
-      }
-      expect(falseAlarms / people).toBeLessThan(0.05);
+      for (let i = 0; i < people; i += 1) if (showsConnection(unconnectedRecord(rand, dayCount))) falseAlarms += 1;
+      expect(falseAlarms / people).toBeLessThan(0.02);
     }
+  });
+
+  it('shows one to fewer than 1 in 20 across a year of ranges and monthly reports', () => {
+    const rand = mulberry32(7);
+    const people = 100;
+    let falseAlarms = 0;
+    for (let i = 0; i < people; i += 1) {
+      const entries = unconnectedRecord(rand, 365);
+      const end = addDaysKey('2025-10-01', 364);
+      const views = [30, 90, 365].map((span) => entries.filter((entry) => entry.date > addDaysKey(end, -span)));
+      for (let month = 0; month < 12; month += 1) {
+        const start = addDaysKey('2025-10-01', month * 30);
+        views.push(entries.filter((entry) => entry.date >= start && entry.date < addDaysKey(start, 30)));
+      }
+      if (views.some(showsConnection)) falseAlarms += 1;
+    }
+    expect(falseAlarms / people).toBeLessThan(0.05);
+  });
+
+  it('does not read busy days, which carry more of everything, as a connection', () => {
+    // Busy days have coffee and anger; quiet days have tea and nothing else.
+    const entries = Array.from({ length: 80 }, (_, d) => {
+      const busy = d % 2 === 0;
+      return { key: `${d}`, date: addDaysKey('2026-01-01', d), activities: busy ? ['Coffee', 'Work', 'Gym', 'Calls'] : ['Tea'], stress_context: answered(busy && d % 4 === 0 ? ['anger', 'on-edge'] : busy ? ['on-edge'] : []) };
+    });
+    const coffee = stressPatterns(entries).find((pattern) => pattern.key === 'anger:habit:Coffee');
+    expect(coffee).toBeUndefined();
   });
 
   it('finds a strong connection that is really there, with both counts', () => {
     const entries = Array.from({ length: 60 }, (_, d) => {
-      const withJules = d % 3 === 0; // 20 days with Jules
+      const withJules = d % 3 === 0; // 20 days with Jules, 40 with Sam
       const angry = withJules ? d % 4 !== 0 : d % 10 === 1; // 15 of 20 with, 4 of 40 without
-      return { key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: withJules ? ['jules'] : [], stress_context: { state_ids: angry ? ['anger'] : [] } };
+      return { key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], stress_context: answered(angry ? ['anger'] : []) };
     });
     const found = stressPatterns(entries, [{ id: 'jules', name: 'Jules' }]).filter((pattern) => pattern.context.type !== 'state');
     expect(found).toHaveLength(1);
@@ -174,11 +216,38 @@ describe('connections are compared with the days without them', () => {
     expect(found[0].context.label).toBe('Jules');
   });
 
-  it('keeps a connection the person confirmed, and hides one they dismissed', () => {
-    const entries = Array.from({ length: 12 }, (_, d) => ({ key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: d < 6 ? ['p'] : [], stress_context: { state_ids: d % 2 ? ['anger'] : [] } }));
-    const connection = (feedback) => stressPatterns(entries, [], feedback).find((pattern) => pattern.context.type === 'person');
+  it('leaves out days where a question went unanswered', () => {
+    const entries = Array.from({ length: 60 }, (_, d) => {
+      const withJules = d % 3 === 0;
+      const angry = withJules ? d % 4 !== 0 : d % 10 === 1;
+      return { key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], stress_context: answered(angry ? ['anger'] : []) };
+    });
+    // Twenty mood-only days change nothing: they are not days without Jules or without anger.
+    const withShortDays = [...entries, ...Array.from({ length: 20 }, (_, d) => ({ key: `short-${d}`, date: addDaysKey('2026-03-15', d), mood_score: 6 }))];
+    const found = stressPatterns(withShortDays).find((pattern) => pattern.key === 'anger:person:jules');
+    expect(found).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });
+  });
+
+  it('keeps a connection the person confirmed, marked as possibly chance, and hides one they dismissed', () => {
+    const entries = Array.from({ length: 12 }, (_, d) => ({ key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: [d < 6 ? 'p' : 'q'], stress_context: answered(d % 2 ? ['anger'] : []) }));
+    const connection = (feedback) => stressPatterns(entries, [], feedback).find((pattern) => pattern.key === 'anger:person:p');
     expect(connection({})).toBeUndefined(); // 3 of 6 with, 3 of 6 without: nothing to see
     expect(connection({ 'anger:person:p': 'confirmed' })).toMatchObject({ days: 3, total: 6, without: { days: 3, total: 6 }, significant: false });
     expect(connection({ 'anger:person:p': 'dismissed' })).toBeUndefined();
+  });
+
+  it('keeps a confirmed connection in a short view like a week', () => {
+    const week = Array.from({ length: 7 }, (_, d) => ({ key: `${d}`, date: addDaysKey('2026-09-14', d), person_ids: [d < 4 ? 'jules' : 'sam'], stress_context: answered(d < 4 ? ['anger'] : []) }));
+    expect(stressPatterns(week, [], { 'anger:person:jules': 'confirmed' }).find((pattern) => pattern.key === 'anger:person:jules')).toMatchObject({ days: 4, total: 4, without: { days: 0, total: 3 } });
+  });
+
+  it('lists a connection beyond chance before one kept only because it was confirmed', () => {
+    const entries = Array.from({ length: 60 }, (_, d) => {
+      const withJules = d % 3 === 0;
+      const angry = withJules ? d % 4 !== 0 : d % 10 === 1;
+      return { key: `${d}`, date: addDaysKey('2026-01-01', d), person_ids: [withJules ? 'jules' : 'sam'], activities: [d % 2 ? 'Coffee' : 'Tea'], stress_context: answered(angry ? ['anger'] : []) };
+    });
+    const found = stressPatterns(entries, [], { 'anger:habit:Coffee': 'confirmed' }).filter((pattern) => pattern.context.type !== 'state');
+    expect(found.map((pattern) => pattern.key)).toEqual(['anger:person:jules', 'anger:habit:Coffee']);
   });
 });

@@ -66,7 +66,11 @@ function makeEntity(table) {
      * Fixes the read-then-write race two tabs could hit on daily check-ins.
      */
     async upsert(data, onConflict = 'user_id,date') {
-      const user_id = await currentUserId();
+      return this.upsertFor(await currentUserId(), data, onConflict);
+    },
+
+    /** Upsert for this owner only: row-level security refuses it for any other signed-in account. */
+    async upsertFor(user_id, data, onConflict = 'user_id,date') {
       const { data: row, error } = await supabase
         .from(table)
         .upsert({ ...inbound(data), user_id }, { onConflict })

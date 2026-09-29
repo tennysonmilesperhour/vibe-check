@@ -12,6 +12,7 @@
 
 const MAX_ATTEMPTS = 6;
 export const OTHER_ACCOUNT = 'Not saved: a different account is signed in now.';
+export const TOO_LATE = 'This took too long to save, and your settings changed meanwhile. Please try again.';
 // Postgres error codes: a row for this owner already exists; the signed-in
 // account may not write this owner's row.
 export const UNIQUE_VIOLATION = '23505';
@@ -26,10 +27,13 @@ const pause = (attempt) => new Promise((resolve) => setTimeout(resolve, 40 * att
  *   when it had moved. create: the first row; null when one appeared meanwhile.
  * @param {string | undefined} userId the account the change was made in
  * @param {object | ((stored: any) => object)} patch
+ * @param {{ giveUp?: () => boolean }} [options] giveUp: true once a newer
+ *   change may have started, so this one must not land over it.
  */
-export async function mergePreferences(store, userId, patch) {
+export async function mergePreferences(store, userId, patch, { giveUp } = {}) {
   if (!userId) throw new Error('Sign in to save this.');
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    if (attempt && giveUp?.()) throw new Error(TOO_LATE);
     if (attempt) await pause(attempt);
     const row = await store.read();
     if (row && row.user_id !== userId) throw new Error(OTHER_ACCOUNT);
@@ -59,24 +63,26 @@ export function preferenceStore(entity, userId) {
 }
 
 // Changes from this tab also go one at a time, in the order they were made,
-// so a later choice about the same thing always lands after an earlier one.
-// One that hangs holds the next back for WAIT_MS at most, counted from when
-// it began; the compare-and-swap still keeps both changes.
+// so a later choice about the same thing lands after an earlier one. One that
+// hangs holds the next back for WAIT_MS at most, counted from when it began.
+// From then on it is late: if it finds the settings changed, it gives up
+// rather than land over the newer change (see giveUp above).
 const WAIT_MS = 15000;
 let tail = Promise.resolve();
 /**
  * @template T
- * @param {() => Promise<T>} work
+ * @param {(turn: { late: boolean }) => Promise<T>} work
  * @returns {Promise<T>}
  */
 export function inOrder(work, waitMs = WAIT_MS) {
+  const turn = { late: false };
   /** @type {ReturnType<typeof setTimeout> | undefined} */
   let timer;
   /** @type {() => void} */
   let begin = () => {};
   const begun = new Promise((resolve) => { begin = () => resolve(undefined); });
-  const result = tail.then(() => { begin(); return work(); });
-  const waited = begun.then(() => new Promise((resolve) => { timer = setTimeout(resolve, waitMs); }));
+  const result = tail.then(() => { begin(); return work(turn); });
+  const waited = begun.then(() => new Promise((resolve) => { timer = setTimeout(() => { turn.late = true; resolve(undefined); }, waitMs); }));
   tail = Promise.race([result.catch(() => {}), waited]).then(() => clearTimeout(timer));
   return result;
 }

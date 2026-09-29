@@ -13,10 +13,12 @@ export async function fetchLivingData() {
 }
 
 // Merges with the latest stored values, in this tab's order (see
-// preference-store), then refreshes every ['living', user] query: the full
-// history and the preferences-only one below.
+// preference-store). What was stored shows at once, even if the reload of
+// every ['living', user] query after it fails.
 async function storePreferences(client, userId, patch) {
-  const saved = await inOrder(() => mergePreferences(preferenceStore(VibePreference, userId), userId, patch));
+  const saved = await inOrder((turn) => mergePreferences(preferenceStore(VibePreference, userId), userId, patch, { giveUp: () => turn.late }));
+  client.setQueryData(['living', userId, 'preferences'], saved.values);
+  client.setQueryData(['living', userId], (old) => (old ? { ...old, preferences: saved.values } : old));
   await client.invalidateQueries({ queryKey: ['living', userId] });
   return saved;
 }

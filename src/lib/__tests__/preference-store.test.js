@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergePreferences, preferenceStore, inOrder, OTHER_ACCOUNT, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
+import { mergePreferences, preferenceStore, inOrder, OTHER_ACCOUNT, TOO_LATE, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
 
 // A stored row that moves its updated_at on every write, like the database,
 // with a pause before each write so changes started together overlap.
@@ -102,5 +102,25 @@ describe('changes from one tab land in the order they were made', () => {
     expect(await after).toBe('after');
     expect(order).toEqual(['next', 'after']);
     expect(hung).toBeInstanceOf(Promise);
+  });
+
+  it('lets a newer choice win over one that took too long', async () => {
+    let row = { id: 'row', user_id: 'me', values: {}, updated_at: 0 };
+    let slowOnce = true;
+    const api = {
+      read: async () => ({ ...row }),
+      swap: async (/** @type {any} */ seen, /** @type {any} */ values) => {
+        if (slowOnce && values.feedback === 'confirmed') { slowOnce = false; await new Promise((resolve) => setTimeout(resolve, 80)); }
+        if (row.updated_at !== seen.updated_at) return undefined;
+        row = { ...row, values, updated_at: row.updated_at + 1 };
+        return row;
+      },
+      create: async () => null,
+    };
+    const first = inOrder((turn) => mergePreferences(api, 'me', { feedback: 'confirmed' }, { giveUp: () => turn.late }), 30);
+    const second = inOrder((turn) => mergePreferences(api, 'me', { feedback: 'dismissed' }, { giveUp: () => turn.late }), 30);
+    await expect(first).rejects.toThrow(TOO_LATE);
+    await second;
+    expect(row.values).toEqual({ feedback: 'dismissed' });
   });
 });

@@ -65,6 +65,9 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const bufferKey = user?.id ? `ceremony:${user.id}:${dateKey}` : null;
+  // Every write names the account this check-in opened in, so a write still
+  // under way when another account signs in is refused, never kept there.
+  const ownerId = useRef(user?.id).current;
   const [stepIndex, setStepIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [draftLoading, setDraftLoading] = useState(true);
@@ -187,7 +190,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       chainRef.current = chainRef.current.catch(() => {}).then(async () => {
         if (finishedRef.current) return;
         try {
-          const draft = await CheckInDraft.upsert({ date: dateKey, payload });
+          const draft = await CheckInDraft.upsertFor(ownerId, { date: dateKey, payload });
           // Record the id even if the final save started meanwhile, so it can
           // delete this draft once the day is kept.
           draftIdRef.current = draft.id;
@@ -263,7 +266,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         onCancel?.();
         return;
       }
-      const draft = await CheckInDraft.upsert({ date: dateKey, payload: form });
+      const draft = await CheckInDraft.upsertFor(ownerId, { date: dateKey, payload: form });
       draftIdRef.current = draft.id;
       clearBuffer(bufferKey);
       toast({ title: 'Draft saved', description: 'Return to this date to continue.' });
@@ -295,7 +298,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // Leave-prompt "Discard changes": undo this visit only. A draft saved on an
   // earlier visit is put back; a draft this visit created is removed.
   const discardVisit = () => changeDrafts(async () => {
-    if (visitStartDraftRef.current) await CheckInDraft.upsert({ date: dateKey, payload: visitStartDraftRef.current });
+    if (visitStartDraftRef.current) await CheckInDraft.upsertFor(ownerId, { date: dateKey, payload: visitStartDraftRef.current });
     else if (draftIdRef.current) {
       await CheckInDraft.delete(draftIdRef.current);
       draftIdRef.current = null;
@@ -418,7 +421,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       };
       // Single atomic write on (user_id, date): a second tab or a re-entered
       // ceremony can't race a read-then-create into a unique violation.
-      saved = await DailyCheckIn.upsert(payload);
+      saved = await DailyCheckIn.upsertFor(ownerId, payload);
     } catch (e) {
       resumeAutosave();
       toast({ title: "Could not save", description: e?.message || "Please try again. Your words are still here.", variant: "destructive" });

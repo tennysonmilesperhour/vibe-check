@@ -58,6 +58,8 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
   const baselineRef = useRef(null);
   const touchedRef = useRef(false);
   const { user } = useAuth();
+  // New entries name the account the composer opened in (see CheckInCeremony).
+  const ownerId = useRef(user?.id).current;
   // New entries started from a prompt get their own key, so a prompt is never
   // replaced by older free-form words (and vice versa).
   const bufferKey = user?.id ? `composer:${user.id}:${existing?.id || (prompt ? `prompt-${promptKey(prompt)}` : 'new')}` : null;
@@ -104,7 +106,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
     setBusy(true); setError('');
     try {
       const payload = { date: form.date, occurred_at: form.time ? new Date(`${form.date}T${form.time}:00`).toISOString() : null, emotions: [...new Set(form.emotions_text.split(',').map((value) => value.trim()).filter(Boolean))], kind: form.kind, notes: form.notes, mood_score: form.mood_score, person_ids: form.person_ids || [], activities: [...new Set(form.activities_text.split(',').map((value) => value.trim()).filter(Boolean))], stress_context: form.stress_context || {}, interaction_feeling: form.kind === 'interaction' ? form.interaction_feeling || null : null, boundary_respected: form.kind === 'interaction' ? form.boundary_respected || null : null, is_draft: asDraft };
-      if (existing?.id) await JournalEntry.update(existing.id, payload); else await JournalEntry.create(payload);
+      if (existing?.id) await JournalEntry.update(existing.id, payload); else await JournalEntry.createFor(ownerId, payload);
       clearBuffer(bufferKey);
       baselineRef.current = null;
       setConfirmClose(false);

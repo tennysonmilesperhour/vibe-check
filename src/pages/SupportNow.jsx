@@ -11,15 +11,6 @@ import useLockState from '@/features/safety/useLockState';
 /** Public: reachable signed in or out, from every surface that offers support. */
 export default function SupportNow() {
   const { user, logout } = useAuth();
-  // This page sits outside the app's lock so it's always reachable. The plan
-  // follows the same lock, including the relock after time in the background.
-  const { locked, unlock } = useLockState(user?.id);
-  const [askPin, setAskPin] = useState(false);
-  const unlockButton = useRef(null);
-  const unlockedHere = useRef(false);
-  // Hidden rather than removed on a relock, so unsaved words stay.
-  const [planReady, setPlanReady] = useState(() => !locked);
-  useEffect(() => { if (!locked) setPlanReady(true); }, [locked]);
   const [params] = useSearchParams();
   const focus = params.get('focus') === 'relationship' ? 'relationship' : 'crisis';
   return (
@@ -38,26 +29,8 @@ export default function SupportNow() {
           <h2 id="support-services-heading">Talk to someone now</h2>
           <SupportResources focus={focus} />
         </section>
-        {user && locked && (
-          <div className="living-card space-y-3">
-            <p>Your safety plan is hidden while Vibe Check is locked.</p>
-            <button ref={unlockButton} type="button" className="living-secondary" onClick={() => setAskPin(true)}>Unlock to see it</button>
-          </div>
-        )}
-        {user && planReady && <div hidden={locked} inert={locked ? '' : undefined}><SafetyPlan /></div>}
-        {user && locked && askPin && (
-          <LockScreen
-            userId={user.id}
-            onUnlock={() => { unlockedHere.current = true; unlock(); setAskPin(false); }}
-            onForgot={async () => { await logout('local'); removeAppLock(user.id); }}
-            onCancel={() => setAskPin(false)}
-            // Back to where the person was: the plan after unlocking, the button after "Not now".
-            onClosed={() => {
-              if (unlockedHere.current) { unlockedHere.current = false; document.getElementById('safety-plan-heading')?.focus(); }
-              else unlockButton.current?.focus();
-            }}
-          />
-        )}
+        {/* Another account starts afresh: its own lock, and none of these words. */}
+        {user && <PlanForAccount key={user.id} user={user} logout={logout} />}
         <section className="living-card space-y-3" aria-labelledby="device-safety-heading">
           <h2 id="device-safety-heading">Using Vibe Check safely</h2>
           <ul className="list-disc pl-5 space-y-2 text-sm">
@@ -70,4 +43,38 @@ export default function SupportNow() {
       </main>
     </div>
   );
+}
+
+function PlanForAccount({ user, logout }) {
+  // This page sits outside the app's lock so it's always reachable. The plan
+  // follows the same lock, including the relock after time in the background.
+  const { locked, unlock } = useLockState(user.id);
+  const [askPin, setAskPin] = useState(false);
+  const unlockButton = useRef(null);
+  const unlockedHere = useRef(false);
+  // Hidden rather than removed on a relock, so unsaved words stay.
+  const [planReady, setPlanReady] = useState(() => !locked);
+  useEffect(() => { if (!locked) setPlanReady(true); }, [locked]);
+  return <>
+    {locked && (
+      <div className="living-card space-y-3">
+        <p>Your safety plan is hidden while Vibe Check is locked.</p>
+        <button ref={unlockButton} type="button" className="living-secondary" onClick={() => setAskPin(true)}>Unlock to see it</button>
+      </div>
+    )}
+    {planReady && <div hidden={locked} inert={locked ? '' : undefined}><SafetyPlan /></div>}
+    {locked && askPin && (
+      <LockScreen
+        userId={user.id}
+        onUnlock={() => { unlockedHere.current = true; unlock(); setAskPin(false); }}
+        onForgot={async () => { await logout('local'); removeAppLock(user.id); }}
+        onCancel={() => setAskPin(false)}
+        // Back to where the person was: the plan after unlocking, the button after "Not now".
+        onClosed={() => {
+          if (unlockedHere.current) { unlockedHere.current = false; document.getElementById('safety-plan-heading')?.focus(); }
+          else unlockButton.current?.focus();
+        }}
+      />
+    )}
+  </>;
 }

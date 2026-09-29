@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight, Clock3, Leaf, Check, X } from 'lucide-react';
 import { PracticeSession } from '@/api/entities';
 import { useLivingData } from '@/features/patterns/useLivingData';
+import { useAuth } from '@/lib/AuthContext';
 import PlantVoice from '@/features/shell/PlantVoice';
 import { STRESS_STATES, PRACTICES, PRACTICE_SOURCES, ALIGNMENTS, OUTCOMES, stateById, practiceById, recommendPractices, hiddenPractices, hiddenPracticesPatch, UNCOMFORTABLE_KEPT_HIDDEN, PLANT_COMPANIONS } from '@/lib/practices';
 import { todayKey } from '@/lib/dates';
@@ -20,6 +21,9 @@ export function PlantCompanions() {
 
 export default function SomaticPractice() {
   const living = useLivingData();
+  // Saves name the account this page opened in (see CheckInCeremony).
+  const { user } = useAuth();
+  const ownerId = useRef(user?.id).current;
   const [params, setParams] = useSearchParams();
   const state = stateById(params.get('state'));
   const activeId = params.get('practice');
@@ -81,7 +85,7 @@ export default function SomaticPractice() {
       // The promise covers responses from before this visit only: settle it
       // before saving a new one, which then asks instead.
       const promiseKept = promiseSaved || await keepPromise().then(() => true, () => false);
-      await PracticeSession.create({ date: todayKey(), practice_id: active.id, state_id: state.id, status, intention, before_notes: before, after_notes: after, outcome: outcome || null, alignment: alignment || null, source_pattern: params.get('pattern') || null, source_entry_keys: (params.get('sources') || '').split(',').filter(Boolean) });
+      await PracticeSession.createFor(ownerId, { date: todayKey(), practice_id: active.id, state_id: state.id, status, intention, before_notes: before, after_notes: after, outcome: outcome || null, alignment: alignment || null, source_pattern: params.get('pattern') || null, source_entry_keys: (params.get('sources') || '').split(',').filter(Boolean) });
       await living.refresh(); closePractice();
       if (outcome === 'More uncomfortable' && promiseKept) { setNotice(''); setAskStop(active.id); }
       else if (outcome === 'More uncomfortable') setNotice('Your response is kept. This practice will no longer be suggested.');

@@ -92,14 +92,18 @@ describe('changes from one tab land in the order they were made', () => {
 
   it('gives up on a request that takes too long, so later changes still run', async () => {
     // Like the client waiting for a sign-in token: it doesn't answer the abort.
+    /** @type {any} */
+    let seen;
     const stalled = {
-      list: () => new Promise(() => {}),
+      list: (/** @type {any} */ _sort, /** @type {any} */ _limit, /** @type {any} */ _offset, /** @type {any} */ options) => { seen = options.signal; return new Promise(() => {}); },
       updateWhere: async () => [],
       createFor: async () => null,
     };
     const first = inOrder(() => mergePreferences(preferenceStore(stalled, 'me', 30), 'me', { a: 1 }));
     const next = inOrder(async () => 'next ran');
     await expect(first).rejects.toThrow(TOO_SLOW);
+    // The request is abandoned too, so it can't go out once the token arrives.
+    expect(seen.aborted).toBe(true);
     expect(await next).toBe('next ran');
   });
 });

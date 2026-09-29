@@ -13,7 +13,7 @@
 const MAX_ATTEMPTS = 6;
 const REQUEST_MS = 20000;
 export const OTHER_ACCOUNT = 'Not saved: a different account is signed in now.';
-export const TOO_SLOW = 'Saving took too long, so it may not have been saved. Check your connection and try again.';
+export const TOO_SLOW = 'The connection was too slow to confirm this was saved. It may still have saved; what is stored will show here once it reloads.';
 // Postgres error codes: a row for this owner already exists; the signed-in
 // account may not write this owner's row.
 export const UNIQUE_VIOLATION = '23505';

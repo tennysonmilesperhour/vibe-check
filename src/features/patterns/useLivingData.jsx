@@ -16,22 +16,26 @@ export async function fetchLivingData() {
 }
 
 const preferencesKey = (userId) => ['living', userId, 'preferences'];
+const combine = (history, preferences) => (history && preferences !== undefined ? { ...history, preferences } : undefined);
 
 // Merges with the latest stored values, in this tab's order (see
-// preference-store). The stored row shows at once, even if a reload fails,
-// but only while its entry is still cached, so a save that returns after a
-// sign-out leaves nothing behind. Every save then reloads the preferences,
-// one that failed too: a request abandoned as too slow may still have been
-// stored, and the screen should match what is.
+// preference-store). Then, whether it worked or not: any read begun before
+// the change landed, a first load too, is dropped so it can't land after it;
+// the stored row shows at once, but only while its entry is still cached, so
+// a save that returns after a sign-out leaves nothing behind; and the
+// preferences reload, since a request abandoned as too slow may still have
+// been stored and the screen should match what is.
 function storePreferences(client, userId, patch) {
+  const key = preferencesKey(userId);
   return inOrder(async () => {
+    let saved;
     try {
-      const saved = await mergePreferences(preferenceStore(VibePreference, userId), userId, patch);
-      client.setQueryData(preferencesKey(userId), (old) => (old === undefined ? undefined : saved.values));
+      saved = await mergePreferences(preferenceStore(VibePreference, userId), userId, patch);
       return saved;
     } finally {
-      // Replaces any fetch already under way, which could hold older values.
-      client.invalidateQueries({ queryKey: preferencesKey(userId), exact: true, refetchType: 'all' }).catch(() => {});
+      await client.cancelQueries({ queryKey: key, exact: true });
+      if (saved) client.setQueryData(key, (old) => (old === undefined ? undefined : saved.values));
+      client.invalidateQueries({ queryKey: key, exact: true, refetchType: 'all' }).catch(() => {});
     }
   });
 }
@@ -43,27 +47,27 @@ export function useLivingData() {
   const queryKey = ['living', user?.id];
   const history = useQuery({ queryKey, queryFn: fetchLivingData, enabled: Boolean(user?.id), staleTime: 0 });
   const preferences = usePreferences();
-  const data = useMemo(
-    () => (history.data && preferences.data !== undefined ? { ...history.data, preferences: preferences.data } : undefined),
-    [history.data, preferences.data],
-  );
-  // Reloads both and returns what they hold now, for a decision that must
-  // rest on what is stored.
-  const refresh = async () => {
-    await Promise.all([
-      client.invalidateQueries({ queryKey, exact: true }),
-      client.invalidateQueries({ queryKey: preferencesKey(user?.id), exact: true }),
-    ]);
-    const stored = client.getQueryData(queryKey);
-    const values = client.getQueryData(preferencesKey(user?.id));
-    return stored && values !== undefined ? { ...stored, preferences: values } : undefined;
+  const data = useMemo(() => combine(history.data, preferences.data), [history.data, preferences.data]);
+  // Reloads the history (and the preferences, when asked) and returns what is
+  // stored now, or nothing when a reload failed or waits for the network, so
+  // a decision never rests on an older copy.
+  const refresh = async ({ withPreferences = false } = {}) => {
+    const started = Date.now();
+    const keys = withPreferences ? [queryKey, preferencesKey(user?.id)] : [queryKey];
+    await Promise.all(keys.map((key) => client.invalidateQueries({ queryKey: key, exact: true })));
+    const fresh = keys.every((key) => {
+      const state = client.getQueryState(key);
+      return state?.status === 'success' && state.dataUpdatedAt >= started;
+    });
+    return fresh ? combine(client.getQueryData(queryKey), client.getQueryData(preferencesKey(user?.id))) : undefined;
   };
   return {
     data,
     isLoading: history.isLoading || preferences.isLoading,
     // A reload that fails keeps what loaded on screen; only a record that
-    // never loaded is an error.
+    // never loaded is an error. isStale says a reload failed since.
     isError: !data && (history.isError || preferences.isError),
+    isStale: Boolean(data) && (history.isError || preferences.isError),
     isSuccess: Boolean(data),
     error: history.error || preferences.error,
     refetch: () => Promise.all([history.refetch(), preferences.refetch()]),

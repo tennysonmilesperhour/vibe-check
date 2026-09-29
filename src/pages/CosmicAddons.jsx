@@ -21,6 +21,7 @@ import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
 import PlantVoice from '@/features/shell/PlantVoice';
 import { PlantCompanions } from '@/features/practice/SomaticPractice';
+import useBeforeUnload from '@/hooks/use-before-unload';
 
 const EMPTY_PROFILE = {
     first_name: "",
@@ -56,6 +57,9 @@ export default function CosmicAddons() {
     const [profile, setProfile] = useState(EMPTY_PROFILE);
     const [savedSnapshot, setSavedSnapshot] = useState(JSON.stringify(EMPTY_PROFILE));
     const [isSaving, setIsSaving] = useState(false);
+    // Saving is paused until the real profile has loaded, so a failed load can
+    // never be saved over the person's actual profile.
+    const [profileLoad, setProfileLoad] = useState('loading'); // loading | ready | error
     const loomRef = useRef(null);
 
     // Two-way URL sync: back button and refresh keep your place.
@@ -64,6 +68,7 @@ export default function CosmicAddons() {
     // taps on the same system re-trigger the expand-and-scroll.
     const [deepDive, setDeepDive] = useState({ system: null, nonce: 0 });
     const isDirty = JSON.stringify(profile) !== savedSnapshot;
+    useBeforeUnload(isDirty);
 
     // Loom "Deep dive into X" → jump to the Deep Dive tab, open that system.
     const openDeepDive = (system) => {
@@ -74,6 +79,7 @@ export default function CosmicAddons() {
     useEffect(() => { loadProfile(); }, []);
 
     const loadProfile = async () => {
+        setProfileLoad('loading');
         try {
             const user = await base44.auth.me();
             if (user?.cosmic_profile) {
@@ -81,12 +87,17 @@ export default function CosmicAddons() {
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
             }
+            setProfileLoad('ready');
         } catch {
-            // unauthenticated mount: the gate handles it
+            setProfileLoad('error');
         }
     };
 
     const saveProfile = async () => {
+        if (profileLoad !== 'ready') {
+            toast({ title: "Your saved profile has not loaded", description: "Saving is paused so it cannot overwrite your profile. Try loading it again.", variant: "destructive" });
+            return;
+        }
         setIsSaving(true);
         try {
             await base44.auth.updateMe({ cosmic_profile: profile });
@@ -133,7 +144,7 @@ export default function CosmicAddons() {
     return (
         <div className="p-6 space-y-8 min-h-screen relative">
             <div className="max-w-4xl mx-auto relative z-10">
-                <div className="mb-8 space-y-6"><PlantVoice>We can explore these systems together, if you are curious. They offer perspectives for reflection. Your own experiences, needs, and choices remain yours to define.</PlantVoice><p className="living-muted">An optional deeper layer. Your journal, full pattern history, reports, and everyday practices stay free without setting up any system.</p><PlantCompanions /></div>
+                {profileLoad === 'error' && <p className="living-error mb-6" role="alert">We could not load your saved profile. Saving is paused so nothing overwrites it. <button type="button" className="underline" onClick={loadProfile}>Try again</button></p>}<div className="mb-8 space-y-6"><PlantVoice>We can explore these systems together, if you are curious. They offer perspectives for reflection. Your own experiences, needs, and choices remain yours to define.</PlantVoice><p className="living-muted">An optional deeper layer. Your journal, full pattern history, reports, and everyday practices stay free without setting up any system.</p><PlantCompanions /></div>
 
                 {/* Header */}
                 {/* ── The Loom: hero of the cosmos ── */}
@@ -179,6 +190,7 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 1: Toggle Systems ── */}
                     <TabsContent value="systems" className="space-y-6">
+                    <fieldset disabled={profileLoad !== 'ready'} className="space-y-6 min-w-0 border-0 p-0 m-0" aria-busy={profileLoad === 'loading'}>
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Choose your systems</h3>
                             <p className="text-sm mb-2" style={{ color: 'var(--gh-ink-muted)' }}>
@@ -243,10 +255,12 @@ export default function CosmicAddons() {
                                 {isSaving ? 'Saving…' : 'Save your cosmos'}
                             </button>
                         </div>
+                    </fieldset>
                     </TabsContent>
 
                     {/* ── Tab 2: Profile Detail Forms ── */}
                     <TabsContent value="profile" className="space-y-6">
+                    <fieldset disabled={profileLoad !== 'ready'} className="space-y-6 min-w-0 border-0 p-0 m-0" aria-busy={profileLoad === 'loading'}>
                         {/* Sacred Geometry Blueprint */}
                         <div className="p-6 flex flex-col items-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Your cosmic blueprint</h3>
@@ -295,6 +309,7 @@ export default function CosmicAddons() {
                                 </button>
                             </div>
                         )}
+                    </fieldset>
                     </TabsContent>
 
                     {/* ── Tab 3: Connections ── */}

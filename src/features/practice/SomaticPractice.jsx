@@ -6,6 +6,7 @@ import { useLivingData } from '@/features/patterns/useLivingData';
 import PlantVoice from '@/features/shell/PlantVoice';
 import { STRESS_STATES, PRACTICES, PRACTICE_SOURCES, ALIGNMENTS, OUTCOMES, stateById, practiceById, recommendPractices, PLANT_COMPANIONS } from '@/lib/practices';
 import { todayKey } from '@/lib/dates';
+import useBeforeUnload from '@/hooks/use-before-unload';
 
 export function PlantCompanions() {
   const [chosen, setChosen] = useState(null);
@@ -39,6 +40,7 @@ export default function SomaticPractice() {
   const blocked = new Set([...hidden, ...sessions.filter((s) => s.outcome === 'More uncomfortable').map((s) => s.practice_id)]);
   const suggestions = state ? recommendPractices(state.id, sessions, hidden) : [];
   const active = living.isSuccess && activeId && !blocked.has(activeId) ? practiceById(activeId) : null;
+  useBeforeUnload(Boolean(active) && Boolean(before.trim() || after.trim()));
 
   useEffect(() => {
     setBefore(''); setAfter(''); setOutcome(''); setAlignment('');

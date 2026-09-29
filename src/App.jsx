@@ -9,7 +9,9 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AuthGate from '@/features/shell/AuthGate';
 import PasswordReset from '@/features/shell/PasswordReset';
+import OfflineGate from '@/features/shell/OfflineGate';
 import AppErrorBoundary from '@/components/AppErrorBoundary';
+import RouteErrorBoundary from '@/components/RouteErrorBoundary';
 import UpdateToast from '@/features/shell/UpdateToast';
 import './living.css';
 
@@ -45,6 +47,8 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
+    } else if (authError.type === 'offline') {
+      return <OfflineGate />;
     } else if (authError.type === 'auth_required') {
       // Inline sign-in: the golden hour front door
       return <AuthGate />;
@@ -57,7 +61,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
+          <RouteErrorBoundary key="/"><MainPage /></RouteErrorBoundary>
         </LayoutWrapper>
       } />
       {Object.entries(Pages).map(([path, Page]) => (
@@ -66,7 +70,7 @@ const AuthenticatedApp = () => {
           path={`/${path}`}
           element={
             <LayoutWrapper currentPageName={path}>
-              <Page />
+              <RouteErrorBoundary key={path}><Page /></RouteErrorBoundary>
             </LayoutWrapper>
           }
         />

@@ -1,8 +1,9 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/api/supabase';
 import { queryClientInstance } from '@/lib/query-client';
-import { base44 } from '@/api/base44Client';
+import { isTransientAuthError, userFromSession, sessionChange } from '@/lib/auth-session';
 import { clearLegacyDrafts } from '@/lib/legacy-drafts';
+import { clearAllBuffers } from '@/lib/writing-buffer';
 
 // Supabase-backed auth, preserving the context contract the app already
 // consumes (App.jsx, ProtectedRoute): user / isAuthenticated / isLoadingAuth /
@@ -10,67 +11,121 @@ import { clearLegacyDrafts } from '@/lib/legacy-drafts';
 // plus authChecked / checkUserAuth.
 const AuthContext = createContext();
 
+const SIGNED_OUT = { type: 'auth_required', message: 'Sign in to continue' };
+const OFFLINE = { type: 'offline', message: 'Your account could not be reached' };
+const STARTUP_PATIENCE_MS = 6000;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
   const [authError, setAuthError] = useState(null);
   // True while the session came from a password-reset email link; the app
   // shows the new-password screen until it's cleared.
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const userIdRef = useRef(null);
 
-  const checkUserAuth = useCallback(async ({ silent = false } = {}) => {
-    if (!silent) setIsLoadingAuth(true);
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        setIsAuthenticated(true);
-        setAuthError(null);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-        setAuthError({ type: 'auth_required', message: 'Sign in to continue' });
-      }
-    } catch (error) {
+  // State comes from the local session. Once the first answer is known the
+  // loading state never returns, so the page tree stays mounted and writing in
+  // progress survives tab switches, token refreshes, and network blips.
+  // Supabase re-announces SIGNED_IN whenever a tab becomes visible again; for
+  // the same person that changes nothing here.
+  const applySession = useCallback((session) => {
+    const change = sessionChange(userIdRef.current, session);
+    const next = userFromSession(session);
+    if (change === 'signed-out') {
+      queryClientInstance.clear();
+      clearLegacyDrafts();
+      // Unsaved words are cleared only when someone signed in here signs out.
+      // A cold start with no session (for example, offline) keeps them.
+      if (userIdRef.current) clearAllBuffers();
+      userIdRef.current = null;
       setUser(null);
-      setIsAuthenticated(false);
-      setAuthError({ type: 'auth_required', message: error?.message || 'Sign in to continue' });
+      setAuthError(SIGNED_OUT);
+    } else if (change === 'switched') {
+      if (userIdRef.current) {
+        queryClientInstance.clear();
+        clearAllBuffers();
+      }
+      userIdRef.current = next.id;
+      setUser(next);
+      setAuthError(null);
     }
-    setIsLoadingAuth(false);
     setAuthChecked(true);
+    setIsLoadingAuth(false);
   }, []);
+
+  // An unreachable server at startup (for example, a phone reopening a tab
+  // offline after its token expired) is not a sign-out: show the offline
+  // state and keep everything on the device.
+  const showOffline = useCallback(() => {
+    setAuthError(OFFLINE);
+    setAuthChecked(true);
+    setIsLoadingAuth(false);
+  }, []);
+
+  const checkUserAuth = useCallback(async () => {
+    // Supabase retries a failed token refresh for up to 30 seconds before it
+    // answers. Show the connection screen sooner; a late success still signs
+    // the person in through applySession.
+    const slow = setTimeout(() => { if (!userIdRef.current) showOffline(); }, STARTUP_PATIENCE_MS);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (!data?.session && error && isTransientAuthError(error)) {
+        if (!userIdRef.current) showOffline();
+        return;
+      }
+      applySession(data?.session ?? null);
+    } catch (error) {
+      if (isTransientAuthError(error)) {
+        if (!userIdRef.current) showOffline();
+      } else {
+        applySession(null);
+      }
+    } finally {
+      clearTimeout(slow);
+    }
+  }, [applySession, showOffline]);
 
   useEffect(() => {
     checkUserAuth();
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      // Never call supabase from inside this callback: it runs while the
-      // client holds its auth lock, and further auth calls deadlock the app
-      // (the post-login blank screen). Defer to the next tick instead.
+      // Only set React state here. Calling supabase inside this callback runs
+      // while the client holds its auth lock and deadlocks the app.
+      // The first answer comes from checkUserAuth, which can tell an offline
+      // start apart from a real absence of a session.
+      if (event === 'INITIAL_SESSION') return;
       if (event === 'PASSWORD_RECOVERY') setIsPasswordRecovery(true);
-      if (session) setTimeout(() => { checkUserAuth({ silent: event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED' }); }, 0);
-      else {
-        queryClientInstance.clear();
-        clearLegacyDrafts();
-        setUser(null);
-        setIsAuthenticated(false);
-        setAuthError({ type: 'auth_required', message: 'Sign in to continue' });
-        setAuthChecked(true);
-        setIsLoadingAuth(false);
-      }
+      applySession(session);
     });
     return () => sub?.subscription?.unsubscribe();
-  }, [checkUserAuth]);
+  }, [checkUserAuth, applySession]);
+
+  // While offline, try again as soon as the connection returns.
+  useEffect(() => {
+    if (authError?.type !== 'offline') return undefined;
+    const onOnline = () => { checkUserAuth(); };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [authError, checkUserAuth]);
+
+  // Confirm the session with the server in the background. Only a definite
+  // rejection (for example, a deleted account) signs the person out; an
+  // unreachable server changes nothing.
+  useEffect(() => {
+    if (!user?.id) return undefined;
+    let active = true;
+    supabase.auth.getUser().then(({ error }) => {
+      if (!active || !error || isTransientAuthError(error)) return;
+      supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [user?.id]);
 
   const logout = async (scope = 'local') => {
     const { error } = await supabase.auth.signOut({ scope });
     if (error) throw error;
-    clearLegacyDrafts();
-    queryClientInstance.clear();
-    setUser(null);
-    setIsAuthenticated(false);
+    applySession(null);
   };
 
   // With in-app sign-in there is nowhere to redirect; the gate renders inline.
@@ -80,7 +135,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated,
+        isAuthenticated: Boolean(user),
         isLoadingAuth,
         isLoadingPublicSettings: false,
         authChecked,

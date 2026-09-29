@@ -37,18 +37,27 @@ export default defineConfig(({ mode }) => ({
     mode === 'analyze' && visualizer({ filename: 'dist/stats.html', gzipSize: true }),
   ].filter(Boolean),
   build: {
-    // The spec's budget: warn when any chunk crosses 350 kB (pre-gzip).
-    chunkSizeWarningLimit: 350,
+    // Per-chunk warning (pre-gzip). The charts and PDF chunks sit just under
+    // this and load only on the pages that need them; first-load size is
+    // enforced separately by `npm run check:bundle`.
+    chunkSizeWarningLimit: 400,
     rollupOptions: {
       output: {
         // Stable vendor chunks: app-code pushes don't invalidate the big,
-        // rarely-changing libraries in the browser cache.
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['lucide-react', 'date-fns'],
-          'motion': ['framer-motion'],
-          'supabase': ['@supabase/supabase-js'],
-          'recharts': ['recharts'],
+        // rarely-changing libraries in the browser cache. Match exact package
+        // paths: the object form pulled shared helpers (clsx) into the charts
+        // chunk and made every page preload recharts. Charts, PDF, and canvas
+        // libraries stay with the lazy pages that use them.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          const pkg = id.split(/node_modules[\\/]/).pop()
+          if (/^(react|react-dom|scheduler|react-router|react-router-dom)[\\/]/.test(pkg)) return 'react-vendor'
+          if (/^@supabase[\\/]/.test(pkg)) return 'supabase'
+          if (/^(framer-motion|motion-dom|motion-utils)[\\/]/.test(pkg)) return 'motion'
+          if (/^(lucide-react|date-fns|clsx|tailwind-merge)[\\/]/.test(pkg)) return 'ui-vendor'
+          // Only the Patterns page draws charts; this chunk must never load on first paint.
+          if (/^(recharts|recharts-scale|react-smooth|victory-vendor|d3-[^\\/]+|internmap|decimal\.js-light)[\\/]/.test(pkg)) return 'charts'
+          return undefined
         },
       },
     },

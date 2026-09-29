@@ -8,6 +8,7 @@ import { practiceById, ALIGNMENTS } from '@/lib/practices';
 import PlantVoice from '@/features/shell/PlantVoice';
 import StressPatternCards from './StressPatternCards';
 import { EntryLink } from './Journal';
+import useBeforeUnload from '@/hooks/use-before-unload';
 
 export default function Reports({ data, onChanged, savePreferences, onExport }) {
   const [params, setParams] = useSearchParams();
@@ -25,6 +26,7 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
   const [momentsShown, setMomentsShown] = useState(6);
   const [themeEdit, setThemeEdit] = useState(null);
   useEffect(() => { setReflection(saved?.notes || ''); setError(''); setMomentsShown(6); }, [period.start, type, saved?.notes]);
+  useBeforeUnload(reflection !== (saved?.notes || ''));
 
   const archive = useMemo(() => {
     const dates = [...data.entries.map((entry) => entry.date), ...data.sessions.map((entry) => entry.date), ...data.reflections.filter((entry) => entry.period_type === type).map((entry) => entry.period_key)].sort();

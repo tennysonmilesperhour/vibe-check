@@ -214,10 +214,35 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
 
   useBeforeUnload(dirty && !finishedRef.current);
 
+  /**
+   * Never write over a draft this tab has not seen. Returns a reason to stop,
+   * or null when it's safe to write. The words stay in the tab either way.
+   */
+  async function unseenDraftBlocks() {
+    if (draftKnownRef.current) return null;
+    let serverDraft;
+    try {
+      [serverDraft] = await CheckInDraft.filter({ date: dateKey });
+    } catch {
+      return 'Saved drafts are out of reach';
+    }
+    if (serverDraft && isNewerVersion(serverDraft.updated_at, existing?.updated_at)) return 'This day already has a saved draft';
+    draftKnownRef.current = true;
+    if (serverDraft) draftIdRef.current = serverDraft.id;
+    return null;
+  }
+
   async function saveDraft() {
     setSaving(true);
     try {
       await settleAutosave();
+      const blocked = await unseenDraftBlocks();
+      if (blocked) {
+        toast({ title: blocked, description: 'Your words are kept in this tab. Reopen the day to continue or compare.' });
+        setSaving(false);
+        onCancel?.();
+        return;
+      }
       const draft = await CheckInDraft.upsert({ date: dateKey, payload: form });
       draftIdRef.current = draft.id;
       clearBuffer(bufferKey);

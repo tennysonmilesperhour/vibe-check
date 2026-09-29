@@ -44,13 +44,17 @@ export default function SettingsSheet({ open, onOpenChange }) {
   }, [open, loadAttempt]);
   useEffect(() => { setWeekStart(living.data?.preferences?.week_start ?? 1); }, [living.data?.preferences?.week_start]);
   async function save() {
-    setSaving(true); setError('');
+    setSaving(true);
+    // Keep the "thresholds not loaded" notice and its retry visible.
+    if (settingsLoaded) setError('');
     try {
       // Thresholds save only once the real ones loaded; the week start does
       // not depend on them.
       if (settingsLoaded) await base44.auth.updateMe({ boundary_settings: settings });
       await living.savePreferences({ week_start: weekStart });
-      toast({ title: 'Settings saved' });
+      toast(settingsLoaded
+        ? { title: 'Settings saved' }
+        : { title: 'Week start saved', description: 'Your low-mood lines were not changed because they have not loaded yet.' });
     } catch (err) { setError(err.message); }
     setSaving(false);
   }

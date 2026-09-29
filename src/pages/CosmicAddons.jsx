@@ -16,6 +16,8 @@ import AstrologyGuide from "@/components/cosmic/AstrologyGuide";
 import SystemReports from "@/components/cosmic/SystemReport";
 import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";
 import Loom from "@/features/loom/Loom";
+import TarotTable from "@/features/cosmos/TarotTable";
+import SymbolicReadings from "@/features/cosmos/SymbolicReadings";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
@@ -180,12 +182,14 @@ export default function CosmicAddons() {
                 )}
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="mb-6 w-full grid grid-cols-4"
+                    <TabsList className="mb-6 w-full h-auto grid grid-cols-3 sm:grid-cols-6"
                         style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                         <TabsTrigger value="systems">Systems</TabsTrigger>
                         <TabsTrigger value="profile">My Profile</TabsTrigger>
                         <TabsTrigger value="correspondences">Connections</TabsTrigger>
                         <TabsTrigger value="deepdive">Deep Dive</TabsTrigger>
+                        <TabsTrigger value="readings">Readings</TabsTrigger>
+                        <TabsTrigger value="tarot">Tarot & Oracle</TabsTrigger>
                     </TabsList>
 
                     {/* ── Tab 1: Toggle Systems ── */}
@@ -327,6 +331,16 @@ export default function CosmicAddons() {
                         {enabledSystems.includes("astrology") && <AstrologyGuide />}
                         <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile}
                             openSystem={deepDive.system} openNonce={deepDive.nonce} />
+                    </TabsContent>
+
+                    {/* ── Tab 5: Readings for the day, week, month and year ── */}
+                    <TabsContent value="readings" className="space-y-6">
+                        <SymbolicReadings />
+                    </TabsContent>
+
+                    {/* ── Tab 6: Tarot & Oracle ── */}
+                    <TabsContent value="tarot">
+                        <TarotTable embedded />
                     </TabsContent>
                 </Tabs>
             </div>

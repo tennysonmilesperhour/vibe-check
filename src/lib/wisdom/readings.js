@@ -1,6 +1,6 @@
 // The dynamic half of the local wisdom engine: readings that weave live data
-// (a tarot spread, a week of check-ins, two profiles, today's sky) rather than
-// static per-system content. Still zero API calls.
+// (a tarot spread, two profiles, today's sky) rather than static per-system
+// content. They never read the journal. Still zero API calls.
 import { todayKey } from "@/lib/dates";
 import { deriveAll } from "@/lib/resonance/derive";
 import { astrologyPeriodWisdom, astrologyPlacements } from "./astrology";
@@ -15,19 +15,27 @@ const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
 
 // ── Tarot / Oracle spread reading ────────────────────────────────────────────
 
+// Questions about staying, leaving, or someone's treatment of you. The cards
+// can't weigh those, so the reading says so first.
+const RELATIONSHIP_QUESTION = /\b(stay|leave|safe|unsafe|hurt|abus\w*|partner|husband|wife|boyfriend|girlfriend|marr\w*|divorce|break up|relationship|trust (him|her|them))\b/i;
+
 /**
- * tarotReading({ spreadName, deck, cards, question, week, resonanceSummary })
- * cards: [{ card, position, reversed }]. Weaves the spread into one story.
+ * tarotReading({ spreadName, deck, cards, question, resonanceSummary })
+ * cards: [{ card, position, reversed }]. Weaves the spread into one story of
+ * images to reflect on; it never answers the question for the person.
  */
-export function tarotReading({ spreadName = "spread", deck = "tarot", cards = [], question = "", week = "", resonanceSummary = "" } = {}) {
+export function tarotReading({ spreadName = "spread", deck = "tarot", cards = [], question = "", resonanceSummary = "" } = {}) {
   if (!cards.length) return "";
   const paras = [];
 
   // Opening
   const opener = question
-    ? `You came to the ${spreadName} holding a question: "${question}". Here is how the cards answer it.`
-    : `You laid the ${spreadName} with an open question. Here is the story the cards are telling.`;
+    ? `You came to the ${spreadName} holding a question: "${question}". The cards can't answer it for you. Here is what they offer to think with.`
+    : `You laid the ${spreadName} with an open question. Here is what the cards offer to think with.`;
   paras.push(opener);
+  if (question && RELATIONSHIP_QUESTION.test(question)) {
+    paras.push("No reading can tell you whether someone is safe to be with or whether to stay. What you have recorded, how you are treated, and the people you trust can. If you are not safe, support is here whenever you want it.");
+  }
 
   // Position-by-position, woven
   const lines = cards.map(({ card, position, reversed }) => {
@@ -49,24 +57,20 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
   if (cards.length > 1) {
     synthesis.push(
       majors >= Math.ceil(cards.length / 2)
-        ? "Taken together, this is a spread heavy with Major Arcana, so the forces at play are larger than everyday choices, this is soul-level weather, not just passing mood."
-        : "Read as one picture, the cards point less to fate and more to the daily, workable choices in front of you."
+        ? "Taken together, this spread holds many Major Arcana, which tarot readers link to larger themes than everyday choices. You decide whether any of them fit."
+        : "Read as one picture, the cards point to daily, workable choices more than to large themes."
     );
     if (reversedCount === 0 && deck === "tarot") {
-      synthesis.push("Nothing here is reversed; the energy is moving cleanly, without much internal blockage.");
+      synthesis.push("Nothing here is reversed, so each card is read in its upright sense.");
     } else if (reversedCount >= Math.ceil(cards.length / 2)) {
-      synthesis.push("Several cards arrived reversed, which suggests the work right now is inward, something turned in on itself, waiting to be acknowledged before it can move.");
+      synthesis.push("Several cards arrived reversed. Many readers take that as a turn inward: is there something you would like to acknowledge before deciding anything?");
     }
     paras.push(synthesis.join(" "));
   }
 
-  // Weave the real week where it genuinely connects
-  if (week) {
-    paras.push(`This lands in a real life, not a vacuum. Reading your recent days (${week}), let the cards speak to what has actually been moving in you rather than to a story on paper.`);
-  }
   if (resonanceSummary) {
     const firstLine = resonanceSummary.split("\n").find((l) => l.trim());
-    if (firstLine) paras.push(`It also rhymes with your own chart. ${firstLine.replace(/^[-*]\s*/, "")} The spread is not separate from your blueprint; it is today's expression of it.`);
+    if (firstLine) paras.push(`It also sits beside your own chart: ${firstLine.replace(/^[-*]\s*/, "")} Keep what is useful and leave the rest.`);
   }
 
   // Closing line
@@ -78,7 +82,7 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
 
 function buildCarry(cards) {
   const last = cards[cards.length - 1];
-  const focus = cards.find((c) => c.position.toLowerCase().includes("advice") || c.position.toLowerCase().includes("action") || c.position.toLowerCase().includes("outcome")) || last;
+  const focus = cards.find((c) => /advice|action|could lead|outcome/i.test(c.position)) || last;
   const kw = (focus.card.keywords || [])[0] || "presence";
   const options = [
     `let ${kw} be the thread you follow this week.`,
@@ -191,10 +195,11 @@ function findTension(signals) {
 // ── Relationship synergy reading (two profiles) ───────────────────────────────
 
 export function synergyReading(mine = {}, theirs = null, name = "this person") {
+  const lived = `We are the plants. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`;
   if (!theirs || Object.keys(theirs).length === 0) {
     return [
-      `${name}'s chart is a mystery for now, and that is its own kind of information. When one side of a connection is unknown, the work is to stay curious rather than to fill the blank with assumptions.`,
-      `What you can do is bring your own blueprint consciously. Lead with what you know steadies you, and let ${name} reveal themselves in their own time. Ask more than you conclude. The synergy will show itself in how you actually feel around them, not in any chart you could read.`,
+      `We don't have ${name}'s chart, and a chart couldn't tell you how ${name} treats you anyway. What you have recorded with ${name} says more than any reading could.`,
+      lived,
     ].join("\n\n");
   }
 
@@ -214,22 +219,21 @@ export function synergyReading(mine = {}, theirs = null, name = "this person") {
   // number rhythm
   if (myLP && theirLP) {
     paras.push(myLP === theirLP
-      ? `You share a Life Path (${myLP}, the ${NUMBERS[myLP].title}). Walking the same road, you understand each other's deepest motive instinctively, but you may also mirror each other's blind spots. The gift is recognition; the caution is that two people avoiding the same lesson can quietly enable it.`
-      : `Your Life Paths, ${myLP} and ${theirLP}, are different roads, and that difference is a resource. Where you bring ${NUMBERS[myLP].core}, ${name} brings ${NUMBERS[theirLP].core}. Friction here is structural, not personal: you are simply built for different things, and the relationship works when each of you covers what the other cannot.`);
+      ? `You share a Life Path (${myLP}, the ${NUMBERS[myLP].title}). Numerology would say you may recognize each other's motives; whether that is true is for your own experience to show.`
+      : `Your Life Paths, ${myLP} and ${theirLP}, are different. Numerology links yours with ${NUMBERS[myLP].core} and ${name}'s with ${NUMBERS[theirLP].core}. That can open a conversation about what each of you values; it doesn't explain or excuse how either of you acts.`);
   }
 
   // energetic mechanics
   if (myType && theirType) {
     paras.push(myType === theirType
-      ? `You are both ${myType}s, so you run on the same energetic clock, which brings deep mutual understanding and the risk of two people waiting for the same thing. Name your rhythms out loud so you do not both stall.`
-      : `Energetically you are wired differently, a ${myType} and a ${theirType}. Your strategies for engaging life, ${HD_TYPES[myType].strategy} versus ${HD_TYPES[theirType].strategy}, mean you naturally move at different speeds. This is a strength once you stop reading it as one of you being wrong.`);
+      ? `Human Design would call you both ${myType}s, with the same suggested strategy. If it helps, talk about how each of you likes to decide and to rest.`
+      : `Human Design would call you a ${myType} and ${name} a ${theirType}, with different suggested strategies: ${HD_TYPES[myType].strategy} and ${HD_TYPES[theirType].strategy}. If it helps, talk about how each of you likes to decide. A difference in design never makes one person's hurt the other's fault.`);
   }
 
   if (paras.length === 0) {
-    paras.push(`You and ${name} have some profile data to compare, but not yet enough for a full synergy read. Add each other's Sun sign, Life Path, or Human Design type to see where you feed each other and where friction is structural rather than personal.`);
-  } else {
-    paras.push(`We are the plants. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`);
+    paras.push(`There isn't enough in both profiles to compare yet: a Sun sign, Life Path, or Human Design type for each of you.`);
   }
+  paras.push(lived);
 
   return paras.join("\n\n");
 }
@@ -370,7 +374,7 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
     wisdom: py && NUMBERS[py]
       ? `This is a personal ${py} year for you, the season of the ${NUMBERS[py].title.toLowerCase()}. ${NUMBERS[py].personalYear} ${lp ? `Underneath the year runs your lifelong Life Path ${lp}: ${NUMBERS[lp].core}.` : ""}`
       : `Look back at what mattered this year and choose what you want to carry forward. ${lp ? `Your Life Path ${lp} names the longer arc: ${NUMBERS[lp].core}.` : ""}`,
-    contemplation: "If this whole year had one lesson, what would it be?",
+    contemplation: "If this year had one theme, what would you call it?",
   };
 }
 

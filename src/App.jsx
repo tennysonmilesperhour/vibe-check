@@ -86,9 +86,9 @@ const AuthenticatedApp = () => {
       <Route path="/Boundaries" element={<Navigate to="/Today" replace />} />
       <Route path="/Relationships" element={<Navigate to="/People" replace />} />
       <Route path="/Constellation" element={<Navigate to="/People" replace />} />
-      <Route path="/TarotReading" element={<Navigate to="/Practice" replace />} />
+      <Route path="/TarotReading" element={<Navigate to="/CosmicAddons?tab=tarot" replace />} />
       <Route path="/HealingBoard" element={<Navigate to="/Practice?tab=healing" replace />} />
-      <Route path="/CosmicWisdom" element={<Navigate to="/Analytics?tab=wisdom" replace />} />
+      <Route path="/CosmicWisdom" element={<Navigate to="/CosmicAddons?tab=readings" replace />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
     </Suspense>

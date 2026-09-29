@@ -75,7 +75,7 @@ export const HD_AUTHORITIES = {
   lunar: {
     match: ["lunar", "reflector"],
     label: "Lunar Authority",
-    text: "Your authority unfolds across a full lunar cycle, about 28 days. Clarity is not available in a moment; it ripens as you move through the whole month and talk the decision through with people you trust. Give every significant choice its lunar month. What feels clear on day one may look entirely different by day twenty, and that longer view is your genius.",
+    text: "Your authority unfolds across a full lunar cycle, about 28 days. Clarity is not available in a moment; it ripens as you move through the whole month and talk the decision through with people you trust. Give every significant choice its lunar month. What feels clear on day one may look entirely different by day twenty. No system's timing applies to your safety: if you are unsafe, you don't have to wait.",
   },
 };
 

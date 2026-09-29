@@ -7,7 +7,7 @@ export const CHAKRAS = {
     theme: "safety, survival, belonging, and the right to be here",
     balanced: "grounded, stable, secure in your body and your place in the world, able to trust that you will be okay",
     blocked: "anxiety, restlessness, fear about money or survival, feeling ungrounded or unwelcome in your own life",
-    practices: "walk barefoot on the earth, eat root vegetables and warm grounding food, move your body, tend your home and finances, use red and the note C, and repeat: I am safe, I belong, I am here.",
+    practices: "walk barefoot on the earth, eat root vegetables and warm grounding food, move your body, tend your home and finances, use red and the note C, and, if it fits, say something true for you, such as: I belong here.",
   },
   sacral: {
     name: "Sacral", sanskrit: "Svadhisthana", color: "orange", element: "Water", location: "lower belly",

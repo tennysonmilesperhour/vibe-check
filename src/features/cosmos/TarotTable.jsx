@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Reading, DailyCheckIn } from "@/entities/all";
+import { Reading } from "@/entities/all";
 import { tarotReading } from "@/lib/wisdom/readings";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
@@ -11,6 +11,8 @@ import { ORACLE_DECK } from "@/components/tarot/oracleDeck";
 import { todayKey } from "@/lib/dates";
 import { resonanceGraph, summarizeGraph } from "@/lib/resonance/graph";
 import { Shuffle, Eye, BookOpen, RotateCcw } from "lucide-react";
+import ReadingPause from "./ReadingPause";
+import useHardMoment from "./useHardMoment";
 
 const duskInk = "var(--gh-dusk-ink)";
 const duskInkSoft = "rgba(245,229,216,0.7)";
@@ -59,8 +61,10 @@ function drawSpread(deckId, spread, seedText) {
 }
 
 /** The tarot & oracle table: honest shuffle, persisted readings, woven interpretation. */
-export default function TarotTable() {
+export default function TarotTable({ embedded = false }) {
   const { toast } = useToast();
+  const hard = useHardMoment();
+  const [showAnyway, setShowAnyway] = useState(false);
   const [deckId, setDeckId] = useState("tarot");
   const [spreadId, setSpreadId] = useState("single");
   const [question, setQuestion] = useState("");
@@ -117,21 +121,18 @@ export default function TarotTable() {
     try {
       const me = await base44.auth.me().catch(() => null);
       const resonance = me?.cosmic_profile ? summarizeGraph(resonanceGraph(me.cosmic_profile, todayKey())) : "";
-      const recent = await DailyCheckIn.list("-date", 7).catch(() => []);
-      const week = recent.map((c) => `${c.date}: mood ${c.mood_score}${c.emotions?.length ? `, felt ${c.emotions.join("/")}` : ""}`).join("; ");
 
-      // Woven locally from the cards, your week, and your chart — no API.
+      // Woven locally from the cards and your chart, never from your journal.
       const result = tarotReading({
         spreadName: spread.name,
         deck: deckId,
         cards: drawn,
         question: question.trim(),
-        week,
         resonanceSummary: resonance,
       });
       setInterpretation(result);
       if (savedReading?.id) {
-        await Reading.update(savedReading.id, { interpretation: result, linked_checkin_date: todayKey() }).catch(() => {});
+        await Reading.update(savedReading.id, { interpretation: result }).catch(() => {});
       }
     } catch (e) {
       toast({ title: "The reading resisted", description: e?.message || "Try again in a moment.", variant: "destructive" });
@@ -139,14 +140,22 @@ export default function TarotTable() {
     setInterpreting(false);
   };
 
+  const surface = embedded ? "dusk-surface rounded-[var(--radius)]" : "dusk-surface min-h-screen";
+  if (hard.data && !showAnyway) {
+    return <div className={surface}><div className="max-w-4xl mx-auto px-6 py-10"><ReadingPause moment={hard.data} onShowAnyway={() => setShowAnyway(true)} /></div></div>;
+  }
+
   return (
-    <div className="dusk-surface min-h-screen">
+    <div className={surface}>
       <div className="max-w-4xl mx-auto px-6 py-10">
         <header className="text-center">
           <SanctuaryMark size={52} className="mx-auto mb-5 text-[var(--gh-gold)]" />
           <h1 className="text-4xl md:text-5xl" style={{ color: duskInk }}>The table is set</h1>
           <p className="text-sm mt-2" style={{ color: duskInkSoft }}>
             {deckId === "tarot" ? "78 cards, reversals included" : "44 oracle cards, always upright"}
+          </p>
+          <p className="text-xs mt-3 max-w-xl mx-auto" style={{ color: duskInkSoft }}>
+            Tarot began as a card game in fifteenth-century Italy; this deck follows the Rider-Waite-Smith deck of 1909. The meanings are written for Vibe Check as prompts for reflection, not predictions. No reading can decide whether someone is safe to be with.
           </p>
         </header>
 

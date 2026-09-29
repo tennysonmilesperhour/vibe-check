@@ -66,7 +66,7 @@ export const ARCANA = {
   "Wheel of Fortune": {
     keywords: ["cycles", "fate", "turning points", "flow"],
     archetype: "You carry the soul of the Wheel, the one who understands the turning of cycles. Your gift is a sense of timing and the faith to move with fortune's turns rather than against them. You are here to embrace change as the nature of things and to find the still center within the spinning wheel.",
-    shadow: "As a shadow teacher, the Wheel asks whether you resist change, cling to a single season, or blame fate for what is yours to move. It teaches you to flow with the cycles and take responsibility within them.",
+    shadow: "As a shadow teacher, the Wheel asks how you meet change: holding on to one season, or noticing what is yours to move and what is not. Not everything that happens to you is yours to carry.",
     year: "A year of turning points and shifting fortune. Change is the theme; stay adaptable and trust the cycle. What comes around is often better than expected.",
   },
   "Justice": {
@@ -85,7 +85,7 @@ export const ARCANA = {
     keywords: ["endings", "transformation", "release", "rebirth"],
     archetype: "You carry the soul of Death, the great transformer. Your gift is the courage to let things end so that something truer can be born. You are here to move through profound transformations, to release what has completed its purpose, and to trust the rebirth on the other side.",
     shadow: "As a shadow teacher, Death asks whether you cling to what is already over, fearing endings. It teaches you to let go with grace and to trust that endings clear the way.",
-    year: "A year of endings and transformation. Something is completing to make room for the new; release it consciously. This is deep change, not loss for its own sake.",
+    year: "A year associated with endings and change. If something is completing, you can grieve it and choose what to carry forward. Loss can simply be loss; you do not have to find the gift in it.",
   },
   "Temperance": {
     keywords: ["balance", "alchemy", "moderation", "integration"],
@@ -96,18 +96,18 @@ export const ARCANA = {
   "The Devil": {
     keywords: ["shadow", "attachment", "liberation", "the material"],
     archetype: "You carry the soul of the Devil, the one who knows the chains and the key. Your gift is honesty about desire, power, and the shadow, and the potential to liberate yourself from what binds you. You are here to face your attachments and addictions consciously and to reclaim the power you gave away.",
-    shadow: "As a shadow teacher, the Devil is the deepest mirror, asking what enslaves you, what you pretend not to want, where you feel trapped by your own choices. It teaches that the chains are looser than they look.",
+    shadow: "As a shadow teacher, the Devil asks what feels binding: habits you could loosen, and ties that someone else holds in place. Seeing which is which is not a failure of yours.",
     year: "A year to face what binds you. Attachments, patterns, or shadow material come up for reckoning; naming the chain is the start of freedom. Reclaim your power.",
   },
   "The Tower": {
     keywords: ["upheaval", "revelation", "breakthrough", "sudden truth"],
     archetype: "You carry the soul of the Tower, the one who breaks false structures so truth can stand. Your gift is the lightning of sudden revelation and the strange freedom that follows collapse. You are here to let what is false fall away, sometimes shockingly, and to build again on solid ground.",
     shadow: "As a shadow teacher, the Tower asks whether you cling to structures you know are false, delaying the necessary collapse. It teaches you to let the false fall and to trust what remains.",
-    year: "A year of upheaval and revelation. Something built on shaky ground may break; though disruptive, it clears illusion and frees you. Truth arrives suddenly.",
+    year: "A year associated with upheaval and sudden clarity. If something breaks, it is fine to be shaken by it; clarity and loss can arrive together.",
   },
   "The Star": {
     keywords: ["hope", "renewal", "faith", "guidance"],
-    archetype: "You carry the soul of the Star, the one who brings hope after the dark. Your gift is faith, healing, and a serene trust that the universe is benevolent. You are here to inspire, to renew, and to hold the light for others while staying open and unguarded.",
+    archetype: "You carry the image of the Star, the one who brings hope after the dark. Its gifts are faith, renewal, and a steady hope, offered to others without giving up the care and boundaries you need yourself.",
     shadow: "As a shadow teacher, the Star asks whether you have lost faith, guard your heart against hope, or pour out for others while running dry. It teaches you to be replenished by the same well you offer.",
     year: "A year of hope, healing, and renewal. After difficulty, faith returns; open up, replenish, and follow your guiding star. Serenity and inspiration are available.",
   },

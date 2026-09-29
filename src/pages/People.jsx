@@ -43,7 +43,8 @@ export default function People() {
     try {
       await migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
       const [ppl, ci, entries, me] = await Promise.all([Person.all(), DailyCheckIn.all("-date"), JournalEntry.all('-date'), base44.auth.me().catch(() => null)]);
-      setUsesCosmos((me?.cosmic_profile?.enabled_systems || []).length > 0);
+      // A failed account read keeps what was known, so readings don't vanish.
+      if (me) setUsesCosmos((me.cosmic_profile?.enabled_systems || []).length > 0);
       setPeople(ppl);
       setCheckIns(ci);
       setJournal(entries.filter((entry) => !entry.is_draft));
@@ -267,7 +268,7 @@ export default function People() {
                   <div className="hairline pt-4">
                     <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>NO SYNERGY READING</p>
                     <p className="text-sm mt-2" style={{ color: "var(--gh-ink)" }}>
-                      You recorded feeling unsafe with {detail.name}, or a boundary that wasn't respected. A chart can't weigh that, so no reading is offered. Your entries with {detail.name} stay in your history.{" "}
+                      A moment you recorded with {detail.name} in it is marked unsafe, or as one where a boundary wasn't respected. A chart can't weigh that, so no reading is offered. Your entries with {detail.name} stay in your history.{" "}
                       <Link to="/support-now?focus=relationship" className="underline underline-offset-4" style={{ color: "var(--gh-accent)" }}>Support for relationships</Link>
                     </p>
                   </div>

@@ -15,7 +15,7 @@ export default function ReadingPause({ moment, onShowAnyway }) {
         {' '}A symbolic reading can't weigh what happened, and your own record comes first.
       </p>
       <div className="flex flex-wrap gap-x-5 gap-y-2">
-        <Link className="living-text-link" to="/support-now">Support now</Link>
+        <Link className="living-text-link" to={moment.kind === 'harm' ? '/support-now?focus=relationship' : '/support-now'}>Support now</Link>
         <Link className="living-text-link" to="/Practice?tab=somatic">A practice for this moment</Link>
         <Link className="living-text-link" to="/Analytics?tab=journal&range=7">Your recent entries</Link>
       </div>

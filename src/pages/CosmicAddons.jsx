@@ -18,6 +18,8 @@ import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";
 import Loom from "@/features/loom/Loom";
 import TarotTable from "@/features/cosmos/TarotTable";
 import SymbolicReadings from "@/features/cosmos/SymbolicReadings";
+import GuardedReading from "@/features/cosmos/GuardedReading";
+import useHardMoment from "@/features/cosmos/useHardMoment";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
@@ -71,6 +73,13 @@ export default function CosmicAddons() {
     const [deepDive, setDeepDive] = useState({ system: null, nonce: 0 });
     const isDirty = JSON.stringify(profile) !== savedSnapshot;
     useBeforeUnload(isDirty);
+    // After a hard moment, readings wait on every tab until the person asks
+    // for them once on this visit.
+    const guard = useHardMoment();
+    const [readAnyway, setReadAnyway] = useState(false);
+    const guarded = (reading) => (
+        <GuardedReading guard={guard} readAnyway={readAnyway} onReadAnyway={() => setReadAnyway(true)}>{reading}</GuardedReading>
+    );
 
     // Loom "Deep dive into X" → jump to the Deep Dive tab, open that system.
     const openDeepDive = (system) => {
@@ -323,24 +332,26 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 4: Deep Dive ── */}
                     <TabsContent value="deepdive" className="space-y-6">
-                        <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-                            <p className="text-sm" style={{ color: 'var(--gh-ink-soft)' }}>
-                                Explore the systems you have chosen through your profile details, reflective questions, and small experiments. You can save each reading as a PDF.
-                            </p>
-                        </div>
-                        {enabledSystems.includes("astrology") && <AstrologyGuide />}
-                        <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile}
-                            openSystem={deepDive.system} openNonce={deepDive.nonce} />
+                        {guarded(<>
+                            <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
+                                <p className="text-sm" style={{ color: 'var(--gh-ink-soft)' }}>
+                                    Explore the systems you have chosen through your profile details, reflective questions, and small experiments. You can save each reading as a PDF.
+                                </p>
+                            </div>
+                            {enabledSystems.includes("astrology") && <AstrologyGuide />}
+                            <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile}
+                                openSystem={deepDive.system} openNonce={deepDive.nonce} />
+                        </>)}
                     </TabsContent>
 
                     {/* ── Tab 5: Readings for the day, week, month and year ── */}
                     <TabsContent value="readings" className="space-y-6">
-                        <SymbolicReadings />
+                        {guarded(<SymbolicReadings profile={profile} profileLoad={profileLoad} />)}
                     </TabsContent>
 
                     {/* ── Tab 6: Tarot & Oracle ── */}
                     <TabsContent value="tarot">
-                        <TarotTable embedded />
+                        {guarded(<TarotTable embedded />)}
                     </TabsContent>
                 </Tabs>
             </div>

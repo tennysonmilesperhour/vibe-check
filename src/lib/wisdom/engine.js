@@ -38,10 +38,10 @@ function humanDesignReading(data) {
 
   if (type) {
     const t = HD_TYPES[type];
-    sections.push({ h: `You are a ${type}`, p: t.body });
+    sections.push({ h: `Your type: ${type}`, p: t.body });
     sections.push({
       h: "Your strategy",
-      p: `Human Design suggests the strategy ${t.strategy}. It names ${t.signature} as this type's signature and ${t.notSelf} as its not-self theme. Only you can say what your feelings mean: ${t.notSelf} can be a fitting response to how you are treated, not a sign that you are off course. No strategy's timing applies to your safety; if you are unsafe, you don't have to wait for anything.`,
+      p: `Human Design suggests the strategy ${t.strategy}. It names ${t.signature} as this type's signature and ${t.notSelf} as its not-self theme. Only you can say what your feelings mean: ${t.notSelf} can be a fitting response to how you are treated, and it doesn't mean you are off course. No strategy's timing applies to your safety; if you are unsafe, you don't have to wait for anything.`,
     });
   }
   if (auth) {
@@ -57,7 +57,7 @@ function humanDesignReading(data) {
 
   sections.push({
     h: "Living it",
-    p: `Human Design is an experiment, not a belief. For the next week, ${type ? `practice your strategy, ${HD_TYPES[type].strategy}` : "practice waiting for the right timing before you commit"}, on one real decision and watch what happens in your body. The proof is in how you feel, not in the theory.`,
+    p: `If you want to test Human Design, try ${type ? `its suggested strategy, ${HD_TYPES[type].strategy},` : "giving yourself a little more time before you commit"} on one real decision this week that you can safely take time over. Afterward, notice what was useful and what wasn't. You decide what counts.`,
   });
 
   return format(sections);

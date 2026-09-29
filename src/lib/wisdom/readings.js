@@ -15,9 +15,10 @@ const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
 
 // ── Tarot / Oracle spread reading ────────────────────────────────────────────
 
-// Questions about staying, leaving, or someone's treatment of you. The cards
-// can't weigh those, so the reading says so first.
-const RELATIONSHIP_QUESTION = /\b(stay|leave|safe|unsafe|hurt|abus\w*|partner|husband|wife|boyfriend|girlfriend|marr\w*|divorce|break up|relationship|trust (him|her|them))\b/i;
+// Questions about safety, staying, leaving, or someone's treatment of you.
+// The cards can't weigh those, so the reading says so first. It errs toward
+// saying so: a safety note beside an unrelated question costs little.
+export const RELATIONSHIP_QUESTION = /\b(hurt\w*|abus\w*|unsafe|safe(ty)?|scared|afraid|fear\w*|frighten\w*|threat\w*|partner\w*|husband|wife|boyfriend|girlfriend|spouse|ex|dating|marr\w*|divorc\w*|break ?up|relationship\w*|trust (him|her|them)|loves? me)\b|\b(stay|staying|leave|leaving)\b.*\b(him|her|them|with|home|or)\b/i;
 
 /**
  * tarotReading({ spreadName, deck, cards, question, resonanceSummary })
@@ -30,23 +31,19 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
 
   // Opening
   const opener = question
-    ? `You came to the ${spreadName} holding a question: "${question}". The cards can't answer it for you. Here is what they offer to think with.`
-    : `You laid the ${spreadName} with an open question. Here is what the cards offer to think with.`;
+    ? `You laid out "${spreadName}" with a question in mind: "${question}". The cards can't answer it for you. Here is what they offer to think with.`
+    : `You laid out "${spreadName}" with an open question. Here is what the cards offer to think with.`;
   paras.push(opener);
   if (question && RELATIONSHIP_QUESTION.test(question)) {
     paras.push("No reading can tell you whether someone is safe to be with or whether to stay. What you have recorded, how you are treated, and the people you trust can. If you are not safe, support is here whenever you want it.");
   }
 
-  // Position-by-position, woven
+  // Position by position, each named first so any label reads cleanly
   const lines = cards.map(({ card, position, reversed }) => {
     const meaning = reversed && card.reversed ? card.reversed : card.meaning;
     const kw = (card.keywords || []).slice(0, 2).join(" and ");
-    const connector = pick(
-      ["In the place of", "Sitting in", "Holding the position of", "Standing as"],
-      card.id + position.length
-    );
     const rev = reversed ? ", reversed," : "";
-    return `${connector} ${position}, ${card.name}${rev} speaks of ${kw}: ${lowerFirst(meaning)}`;
+    return `${position}: ${card.name}${rev}${kw ? ` speaks of ${kw}` : ""}. ${meaning}`;
   });
   paras.push(lines.join(" "));
 
@@ -69,25 +66,30 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
   }
 
   if (resonanceSummary) {
-    const firstLine = resonanceSummary.split("\n").find((l) => l.trim());
-    if (firstLine) paras.push(`It also sits beside your own chart: ${firstLine.replace(/^[-*]\s*/, "")} Keep what is useful and leave the rest.`);
+    // The first line from the chart itself; today's sky is not the person's chart.
+    const chartLine = resonanceSummary.split("\n")
+      .map((l) => l.trim().replace(/^[-*]\s*/, "").replace(/^RESONANCE:\s*/, ""))
+      .find((l) => l && !l.startsWith("TODAY:"));
+    if (chartLine) paras.push(`It also sits beside your own chart: ${chartLine.replace(/[.!?]?$/, ".")} Keep what is useful and leave the rest.`);
   }
 
   // Closing line
   const closer = buildCarry(cards);
-  paras.push(`Carry this: ${closer}`);
+  paras.push(`Something to carry, if it fits: ${closer}`);
 
   return paras.join("\n\n");
 }
 
+// Card names can be phrases ("Choose the Living Option"), so they are never
+// used as the subject of a sentence here.
 function buildCarry(cards) {
   const last = cards[cards.length - 1];
   const focus = cards.find((c) => /advice|action|could lead|outcome/i.test(c.position)) || last;
   const kw = (focus.card.keywords || [])[0] || "presence";
   const options = [
-    `let ${kw} be the thread you follow this week.`,
-    `the invitation is ${kw}, in small, real ways, starting today.`,
-    `${lowerFirst(focus.card.name)} is asking for ${kw}. Give it that.`,
+    `${kw}. Where might it show up for you this week?`,
+    `${kw}, in small, real ways. What could that look like today?`,
+    `${kw}, the thread of ${focus.card.name}. Notice where you meet it.`,
   ];
   return pick(options, focus.card.id);
 }
@@ -425,7 +427,6 @@ function slope(a) {
   return den ? num / den : 0;
 }
 function tally(arr) { const o = {}; arr.forEach((x) => { if (x) o[x] = (o[x] || 0) + 1; }); return o; }
-function lowerFirst(s) { return s ? s.charAt(0).toLowerCase() + s.slice(1) : s; }
 function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function joinNicely(arr) {
   const a = arr.filter(Boolean);

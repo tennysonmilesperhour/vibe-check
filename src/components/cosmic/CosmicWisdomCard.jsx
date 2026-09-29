@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { periodWisdom } from "@/lib/wisdom/readings";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { getPeriodKey, todayKey } from "@/lib/dates";
 import { resonanceGraph } from "@/lib/resonance/graph";
-import { createPageUrl } from "@/utils";
 import { tint } from "./systemMeta";
 
 // Read receipts live client-side now that wisdom is composed locally.
@@ -25,46 +23,24 @@ const PERIOD_LABEL = {
     yearly: "This year",
 };
 
-export default function CosmicWisdomCard({ periodType = "daily" }) {
+/** One period's reading, from the profile it is given (on Cosmos, the one being edited, saved or not). */
+export default function CosmicWisdomCard({ periodType = "daily", profile }) {
     const label = PERIOD_LABEL[periodType] || PERIOD_LABEL.daily;
-    const [wisdom, setWisdom] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [expanded, setExpanded] = useState(false);
-    const [hasProfile, setHasProfile] = useState(false);
-
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            setLoading(true);
-            try {
-                const user = await base44.auth.me();
-                const profile = user?.cosmic_profile || {};
-                if (cancelled) return;
-                if ((profile.enabled_systems || []).length === 0) { setLoading(false); return; }
-                setHasProfile(true);
-                const w = composeWisdom(profile, periodType);
-                setWisdom({ ...w, is_read: isReadLocal(periodType, getPeriodKey(periodType)) });
-            } catch {
-                // unauthenticated mount: the gate handles it
-            }
-            if (!cancelled) setLoading(false);
-        })();
-        return () => { cancelled = true; };
-    }, [periodType]);
+    const [isRead, setIsRead] = useState(() => isReadLocal(periodType, getPeriodKey(periodType)));
+    const hasProfile = (profile?.enabled_systems || []).length > 0;
+    const composed = useMemo(() => (hasProfile ? composeWisdom(profile, periodType) : null), [hasProfile, profile, periodType]);
+    const wisdom = composed && { ...composed, is_read: isRead };
 
     const markRead = () => {
         if (wisdom && !wisdom.is_read) {
             try { localStorage.setItem(readKey(periodType, getPeriodKey(periodType)), "1"); } catch { /* best-effort */ }
-            setWisdom(prev => ({ ...prev, is_read: true }));
+            setIsRead(true);
         }
         setExpanded(e => !e);
     };
 
     const isUnread = wisdom && !wisdom.is_read;
-
-    if (loading) {
-        return <div className="p-5" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }} aria-busy="true" />;
-    }
 
     // The inviting blank state: no systems woven yet.
     if (!hasProfile) {
@@ -77,7 +53,7 @@ export default function CosmicWisdomCard({ periodType = "daily" }) {
                 <p className="text-sm mt-1" style={{ color: "var(--gh-ink-soft)" }}>
                     Add your birth date and the systems you work with; your reflections will use the details you provide.
                 </p>
-                <Link to={createPageUrl("CosmicAddons")} className="ink-button inline-block text-sm mt-4">
+                <Link to="/CosmicAddons?tab=systems" className="ink-button inline-block text-sm mt-4">
                     Weave your cosmos
                 </Link>
             </div>

@@ -4,7 +4,7 @@ import TarotTable from "@/features/practice/TarotTable";
 import HealingBoard from "./HealingBoard";
 import SomaticPractice from '@/features/practice/SomaticPractice';
 
-/** Active inner work: the tarot table and the healing board, one roof. */
+/** Active inner work: practices for this moment, tarot and oracle, and the practice board. */
 export default function Practice() {
   const [tab, setTab] = useSearchParamState("tab", "somatic");
 

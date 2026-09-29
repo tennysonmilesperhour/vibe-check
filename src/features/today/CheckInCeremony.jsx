@@ -9,10 +9,12 @@ import { useToast } from "@/components/ui/use-toast";
 import SkyField from "@/features/shell/SkyField";
 import { ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
 import { EMOTIONS, ACTIVITIES } from "./vocab";
+import { ALL_STEPS, chooseSteps } from "./check-in-steps";
+import { usePreferences } from "@/features/patterns/useLivingData";
 import { moonPhase } from "@/lib/resonance/moon";
 import { personalDay } from "@/lib/resonance/numerology";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
-import { computeStreak, isMilestone } from "@/lib/streaks";
+import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { todayKey } from "@/lib/dates";
 import { useAuth } from "@/lib/AuthContext";
 import { readBuffer, clearBuffer, bufferRestorable, latestVersion, isNewerVersion } from "@/lib/writing-buffer";
@@ -24,11 +26,10 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 const AUTOSAVE_DELAY_MS = 1500;
 const AUTOSAVE_RETRY_MS = 10000;
 
-const STEP_IDS = ["mood", "energy", "sleep", "emotions", "activities", "stress", "high", "low", "reflection"];
 
 /**
- * The evening ritual: one question per screen, the sky deepening as you go.
- * Saves as a single DailyCheckIn; runs boundary detection; celebrates streaks.
+ * The daily check-in, at any time of day: one question per screen, the sky
+ * deepening as you go. Saves as a single DailyCheckIn; runs opt-in notices.
  */
 const formFrom = (existing) => ({
   mood_score: existing?.mood_score ?? null,
@@ -43,7 +44,9 @@ const formFrom = (existing) => ({
   person_ids: existing?.person_ids ?? [],
   stress_context: existing?.stress_context ?? {},
 });
-const customHabitsFrom = (activities = []) => activities.filter((item) => !ACTIVITIES.some((preset) => preset.label === item)).join(', ');
+// Words the person typed themselves, beside the preset chips.
+const customFrom = (items = [], presets) => items.filter((item) => !presets.some((preset) => preset.label === item)).join(', ');
+const withCustom = (items, presets, text) => [...new Set([...items.filter((item) => presets.some((preset) => preset.label === item)), ...text.split(',').map((item) => item.trim()).filter(Boolean)])];
 
 export default function CheckInCeremony({ dateKey = todayKey(), existing = null, onDone, onCancel }) {
   const { toast } = useToast();
@@ -65,7 +68,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // record it, so a restore compares server times and never the device clock.
   const [serverVersion, setServerVersion] = useState(existing?.updated_at || null);
   const [form, setForm] = useState(() => formFrom(existing));
-  const [customHabits, setCustomHabits] = useState(() => customHabitsFrom(existing?.activities));
+  const [customHabits, setCustomHabits] = useState(() => customFrom(existing?.activities, ACTIVITIES));
+  const [customFeelings, setCustomFeelings] = useState(() => customFrom(existing?.emotions, EMOTIONS));
+  // Which questions to ask, settled once the draft and preferences have loaded.
+  const prefs = usePreferences();
+  const [stepIds, setStepIds] = useState(null);
   const stepRegionRef = useRef(null);
   const formRef = useRef(form);
   // What the server already holds; anything different is unsaved.
@@ -93,7 +100,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
 
   const restoreForm = (payload) => {
     setForm((previous) => ({ ...previous, ...payload }));
-    setCustomHabits(customHabitsFrom(payload.activities));
+    setCustomHabits(customFrom(payload.activities, ACTIVITIES));
+    setCustomFeelings(customFrom(payload.emotions, EMOTIONS));
   };
 
   useEffect(() => {
@@ -293,7 +301,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     baselineRef.current = JSON.stringify(initial);
     visitStartDraftRef.current = null;
     setForm(initial);
-    setCustomHabits(customHabitsFrom(initial.activities));
+    setCustomHabits(customFrom(initial.activities, ACTIVITIES));
+    setCustomFeelings(customFrom(initial.emotions, EMOTIONS));
     setServerVersion(existing?.updated_at || null);
     setRestored(false);
     setAutosave('idle');
@@ -332,11 +341,17 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       [key]: f[key].includes(label) ? f[key].filter((x) => x !== label) : [...f[key], label],
     }));
 
-  const stepId = STEP_IDS[stepIndex];
+  useEffect(() => {
+    if (stepIds || draftLoading || prefs.isLoading) return;
+    setStepIds(chooseSteps(prefs.data?.tracking, formRef.current));
+  }, [stepIds, draftLoading, prefs.isLoading, prefs.data]);
+  const stepOrder = stepIds || ALL_STEPS;
+  const stepId = stepOrder[stepIndex];
+  const showAllSteps = () => { setStepIds(ALL_STEPS); setStepIndex(ALL_STEPS.indexOf(stepId)); };
   const depth = Math.min(4, 1 + Math.floor(stepIndex / 2));
   const canAdvance = stepId === "mood" ? form.mood_score != null : true;
 
-  const progress = (stepIndex + 1) / STEP_IDS.length;
+  const progress = (stepIndex + 1) / stepOrder.length;
 
   const save = async () => {
     setSaving(true);
@@ -393,20 +408,14 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       }
     }
 
-    // Streak celebration (respect reduced motion).
+    // A plain acknowledgement: no confetti and no run to keep, since a hard
+    // day recorded honestly counts the same as any other.
+    const title = existing ? "This day is updated" : "The day is kept";
     try {
-      const recent = await DailyCheckIn.list("-date", 120);
-      const streak = computeStreak(recent, todayKey());
-      if (isMilestone(streak) && !reduced && !existing) {
-        const confetti = (await import("canvas-confetti")).default;
-        confetti({ particleCount: 90, spread: 75, origin: { y: 0.7 }, colors: ["#929B78", "#B59B79", "#A58E66", "#E9E2CD"] });
-      }
-      toast({
-        title: existing ? "Today, updated" : "The day is kept",
-        description: streak > 1 ? `${streak} evenings in a row.` : "Your first evening of a new run.",
-      });
+      const label = daysKeptLabel(daysKeptThisMonth(await DailyCheckIn.list("-date", 31), todayKey()), todayKey());
+      toast(label ? { title, description: `${label}.` } : { title });
     } catch {
-      toast({ title: existing ? "Today, updated" : "The day is kept" });
+      toast({ title });
     }
 
     setSaving(false);
@@ -417,17 +426,17 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     mood: <ScaleStep field="mood_score" question="How did today feel?" value={form.mood_score} onChange={set("mood_score")} />,
     energy: <ScaleStep field="energy_level" question="How was your energy?" value={form.energy_level} onChange={set("energy_level")} />,
     sleep: <ScaleStep field="sleep_quality" question="How did you sleep?" value={form.sleep_quality} onChange={set("sleep_quality")} />,
-    emotions: <ChipsStep question="Which feelings moved through?" hint="Choose any that visited, even briefly." options={EMOTIONS} selected={form.emotions} onToggle={toggleIn("emotions")} />,
-    activities: <><ChipsStep question="What did you give time to?" options={ACTIVITIES} selected={form.activities} onToggle={toggleIn("activities")} /><div className="ceremony-stress space-y-4"><label className="living-label">Your own habits or activities<input className="living-input mt-2" value={customHabits} maxLength={1000} placeholder="Coffee, late work, a walk… separated by commas" onChange={(e) => { const text = e.target.value; setCustomHabits(text); edit((previous) => ({ ...previous, activities: [...new Set([...previous.activities.filter((item) => ACTIVITIES.some((preset) => preset.label === item)), ...text.split(',').map((item) => item.trim()).filter(Boolean)])] })); }} /></label><div><p className="living-label mb-2">People in your day · optional</p><PersonPicker value={form.person_ids} onChange={set('person_ids')} /></div></div></>,
-    stress: <><h1 className="text-4xl md:text-5xl" style={{ color: 'var(--gh-cream)' }}>Where did you feel stress?</h1><p className="mt-3" style={{ color: 'var(--gh-cream)' }}>Optional. Keep the cues, your response, and what you needed.</p><div className="ceremony-stress"><StressFields value={form.stress_context} onChange={set('stress_context')} /></div></>,
+    emotions: <><ChipsStep question="Which feelings moved through?" hint="Choose any that visited, even briefly." options={EMOTIONS} selected={form.emotions} onToggle={toggleIn("emotions")} /><div className="ceremony-stress"><label className="living-label">In your own words<input className="living-input mt-2" value={customFeelings} maxLength={1000} placeholder="Any feeling, in the words that fit, separated by commas" onChange={(e) => { const text = e.target.value; setCustomFeelings(text); edit((previous) => ({ ...previous, emotions: withCustom(previous.emotions, EMOTIONS, text) })); }} /></label></div></>,
+    activities: <><ChipsStep question="What did you give time to?" options={ACTIVITIES} selected={form.activities} onToggle={toggleIn("activities")} /><div className="ceremony-stress space-y-4"><label className="living-label">Your own habits or activities<input className="living-input mt-2" value={customHabits} maxLength={1000} placeholder="Coffee, late work, a walk… separated by commas" onChange={(e) => { const text = e.target.value; setCustomHabits(text); edit((previous) => ({ ...previous, activities: withCustom(previous.activities, ACTIVITIES, text) })); }} /></label><div><p className="living-label mb-2">People in your day · optional</p><PersonPicker value={form.person_ids} onChange={set('person_ids')} /></div></div></>,
+    stress: <><h1 className="text-4xl md:text-5xl" style={{ color: 'var(--gh-cream)' }}>Where did you feel stress?</h1><p className="mt-3" style={{ color: 'var(--gh-cream)' }}>Optional. Keep the cues, your response, and what you needed.</p><div className="ceremony-stress"><StressFields value={form.stress_context} onChange={set('stress_context')} when="day" /></div></>,
     high: <MomentStep kind="high" question="What was the high point?" value={form.high_moment} onChange={set("high_moment")} />,
     low: <MomentStep kind="low" question="What was the hardest moment?" value={form.low_moment} onChange={set("low_moment")} />,
     reflection: <ReflectionStep value={{ gratitude: form.gratitude, notes: form.notes }} onChange={(v) => edit((f) => ({ ...f, ...v }))} />,
-  }), [form, customHabits]);
+  }), [form, customHabits, customFeelings]);
 
-  const isLast = stepIndex === STEP_IDS.length - 1;
+  const isLast = stepIndex === stepOrder.length - 1;
 
-  if (draftLoading) return <div className="living-page" role="status">Opening your check-in…</div>;
+  if (draftLoading || !stepIds) return <div className="living-page" role="status">Opening your check-in…</div>;
 
   return (
     <SkyField depth={depth} className="min-h-screen ceremony-surface">
@@ -443,13 +452,13 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
           />
         </div>
         <div className="flex justify-between items-center mt-4 text-sm" style={{ color: "rgba(255,253,246,0.8)" }}>
-          <span>{stepIndex + 1} of {STEP_IDS.length}</span>
+          <span>{stepIndex + 1} of {stepOrder.length}</span>
           <span className="flex items-center gap-4">
             <span role="status" aria-live="polite" className="text-xs">{autosave === 'saving' ? 'Saving draft…' : autosave === 'saved' && !dirty ? 'Draft saved' : autosave === 'offline' ? 'Not saved yet. Your words stay in this tab.' : autosave === 'local' ? 'Kept in this tab' : ''}</span>
             <button type="button" onClick={saveDraft} disabled={saving} className="underline underline-offset-4">{saving ? 'Saving…' : 'Save draft and close'}</button>
           </span>
         </div>
-        <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.</p>
+        <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <button type="button" className="underline underline-offset-4 ml-3" onClick={showAllSteps}>Show all questions</button>}</p>
         {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="underline underline-offset-4 ml-3" disabled={saving} onClick={discardRestored}>Discard draft</button>}</p>}
         {heldBuffer && (
           <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>
@@ -466,7 +475,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
               ref={stepRegionRef}
               tabIndex={-1}
               role="group"
-              aria-label={`Step ${stepIndex + 1} of ${STEP_IDS.length}`}
+              aria-label={`Step ${stepIndex + 1} of ${stepOrder.length}`}
               initial={{ opacity: 0, x: reduced ? 0 : 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: reduced ? 0 : -24 }}

@@ -7,13 +7,13 @@ export const PRACTICE_SOURCES = {
 };
 
 export const STRESS_STATES = [
-  { id: 'confusion', label: 'Confusion', description: 'Too much to untangle', invitation: 'We can begin with what is clear enough for one next step.', tags: ['Overwhelmed', 'Confused'], practices: ['one-clear-thing', 'orient'] },
-  { id: 'on-edge', label: 'Fight or flight', description: 'On edge or ready to react', invitation: 'Let us make a little room to notice what you need right now.', tags: ['Anxious', 'On edge', 'Stressed'], practices: ['orient', 'comfortable-breath'] },
-  { id: 'anger', label: 'Anger', description: 'Heat, frustration, or a crossed line', invitation: 'Your anger has room here. You can take time before choosing a response.', tags: ['Angry', 'Frustrated'], practices: ['space-before-response', 'comfortable-movement'] },
-  { id: 'shutdown', label: 'Shutdown', description: 'Everything feels hard to begin', invitation: 'A small movement or a moment of care is enough to begin with.', tags: ['Shut down', 'Shutdown'], practices: ['small-movement', 'one-care-action'] },
-  { id: 'numbness', label: 'Emotional numbness', description: 'Distant or disconnected', invitation: 'You do not have to force a feeling. We can notice one familiar thing.', tags: ['Numb', 'Disconnected'], practices: ['familiar-sense', 'one-care-action'] },
-  { id: 'procrastination', label: 'Procrastination', description: 'Putting off a step that matters', invitation: 'Let us find what is in the way, then make the first step smaller.', tags: ['Procrastinating', 'Avoiding'], practices: ['small-start', 'name-the-obstacle'] },
-  { id: 'unsure', label: 'Mixed or unsure', description: 'I do not have a word for it yet', invitation: 'You can start without finding the right word.', tags: [], practices: ['orient', 'one-care-action'] },
+  { id: 'confusion', label: 'Confusion', description: 'Too much to untangle', invitation: 'We can begin with what is clear enough for one next step.', practices: ['one-clear-thing', 'decision-pause', 'orient'] },
+  { id: 'on-edge', label: 'Fight or flight', description: 'On edge or ready to react', invitation: 'Let us make a little room to notice what you need right now.', practices: ['orient', 'comfortable-breath'] },
+  { id: 'anger', label: 'Anger', description: 'Heat, frustration, or a crossed line', invitation: 'Your anger has room here. You can take time before choosing a response.', practices: ['space-before-response', 'comfortable-movement'] },
+  { id: 'shutdown', label: 'Shutdown', description: 'Everything feels hard to begin', invitation: 'A small movement or a moment of care is enough to begin with.', practices: ['small-movement', 'one-care-action'] },
+  { id: 'numbness', label: 'Emotional numbness', description: 'Distant or disconnected', invitation: 'You do not have to force a feeling. We can notice one familiar thing.', practices: ['familiar-sense', 'one-care-action'] },
+  { id: 'procrastination', label: 'Procrastination', description: 'Putting off a step that matters', invitation: 'Let us find what is in the way, then make the first step smaller.', practices: ['small-start', 'name-the-obstacle'] },
+  { id: 'unsure', label: 'Mixed or unsure', description: 'I do not have a word for it yet', invitation: 'You can start without finding the right word.', practices: ['orient', 'one-care-action'] },
 ];
 
 export const BODY_CUES = ['Tight shoulders', 'Tense jaw', 'Restlessness', 'Heavy body', 'Chest tension', 'Stomach tension', 'Low energy', 'Hard to notice'];
@@ -40,11 +40,26 @@ export const PRACTICES = [
 export const stateById = (id) => STRESS_STATES.find((state) => state.id === id);
 export const practiceById = (id) => PRACTICES.find((practice) => practice.id === id);
 
-/** Recommendations honor explicit hiding and unwelcome responses across the history. */
+export const HELPFUL_OUTCOMES = ['Clearer', 'More connected', 'More able to begin', 'More settled'];
+const times = (n) => (n === 1 ? 'once' : `${n} times`);
+
+/**
+ * Practices for a state, each with the reason it is offered. Hidden practices
+ * are left out. One that felt more uncomfortable before stays available, last
+ * and saying so: whether to stop suggesting it is the person's call.
+ */
 export function recommendPractices(stateId, sessions = [], hidden = []) {
-  const blocked = new Set([...hidden, ...sessions.filter((s) => s.outcome === 'More uncomfortable' || s.status === 'hidden').map((s) => s.practice_id)]);
-  const candidates = stateById(stateId)?.practices || stateById('unsure').practices;
-  return candidates.filter((id) => !blocked.has(id)).map(practiceById).filter(Boolean);
+  const state = stateById(stateId) || stateById('unsure');
+  const hiddenIds = new Set([...hidden, ...sessions.filter((s) => s.status === 'hidden').map((s) => s.practice_id)]);
+  return state.practices.filter((id) => !hiddenIds.has(id)).map(practiceById).filter(Boolean).map((practice, order) => {
+    const responses = sessions.filter((s) => s.practice_id === practice.id);
+    const uncomfortable = responses.filter((s) => s.outcome === 'More uncomfortable').length;
+    const helped = responses.filter((s) => HELPFUL_OUTCOMES.includes(s.outcome)).length;
+    const reason = uncomfortable ? `You noted feeling more uncomfortable after this ${times(uncomfortable)}. It's here in case it fits now.`
+      : helped ? `Offered for ${state.label.toLowerCase()}. You noted it helped ${times(helped)}.`
+        : `Offered for ${state.label.toLowerCase()}.`;
+    return { ...practice, reason, uncomfortable, helped, order };
+  }).sort((a, b) => Number(a.uncomfortable > 0) - Number(b.uncomfortable > 0) || b.helped - a.helped || a.order - b.order);
 }
 
 export const PLANT_COMPANIONS = [

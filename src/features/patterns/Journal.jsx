@@ -31,7 +31,7 @@ export function EntryCard({ entry, people = [], selected = false, onEdit, onDele
     {entry.notes && <p className="whitespace-pre-wrap mt-4">{entry.notes}</p>}
     {entry.gratitude && <p className="whitespace-pre-wrap mt-3"><span className="living-label">Gratitude · </span>{entry.gratitude}</p>}
     {(entry.activities?.length > 0 || entry.emotions?.length > 0) && <p className="living-muted text-sm mt-3">{[...(entry.emotions || []), ...(entry.activities || [])].join(' · ')}</p>}
-    {entryStates(entry).length > 0 && <p className="living-muted text-sm mt-3">Recorded feelings: {entryStates(entry).map((id) => stateById(id)?.label).join(' · ')}</p>}
+    {entryStates(entry).length > 0 && <p className="living-muted text-sm mt-3">What felt present: {entryStates(entry).map((id) => stateById(id)?.label).join(' · ')}</p>}
     {context.body_cues?.length > 0 && <p className="text-sm mt-3"><strong>Body cues:</strong> {context.body_cues.join(', ')}</p>}
     {[['situation', 'What happened before'], ['response', 'My response'], ['need', 'What I needed']].map(([field, label]) => context[field] ? <p className="text-sm whitespace-pre-wrap mt-3" key={field}><strong>{label}: </strong>{context[field]}</p> : null)}
     {context.alignment && <p className="text-sm mt-3"><strong>How it felt:</strong> {ALIGNMENTS.find((a) => a.id === context.alignment)?.label}</p>}

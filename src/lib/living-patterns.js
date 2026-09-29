@@ -1,7 +1,8 @@
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from 'date-fns';
 import { dateKey, todayKey, parseLocalDate, diffDaysKeys, addDaysKey } from './dates';
-import { STRESS_STATES } from './practices';
+import { STRESS_STATES, HELPFUL_OUTCOMES } from './practices';
 import { entryPeople, samePersonId } from './people';
+import { fisherGreater } from './pattern-stats';
 
 export { entryPeople };
 
@@ -17,11 +18,14 @@ export function timelineEntries(checkIns = [], journal = []) {
   ].filter((entry) => validDateKey(entry.date)).sort((a, b) => b.date.localeCompare(a.date) || (b.occurred_at || b.created_at || '').localeCompare(a.occurred_at || a.created_at || '') || a.key.localeCompare(b.key));
 }
 
-/** @param {any} entry */
+/**
+ * Only the states the person chose. A feeling word like "Anxious" is theirs;
+ * it is never relabeled as a state (say, fight or flight) on their behalf.
+ * @param {any} entry
+ */
 export function entryStates(entry) {
   const explicit = entry.stress_context?.state_ids || [];
-  const fromTags = STRESS_STATES.filter((state) => state.tags.some((tag) => (entry.emotions || []).some((emotion) => emotion.toLowerCase() === tag.toLowerCase()))).map((state) => state.id);
-  return [...new Set([...explicit, ...fromTags])].filter((id) => STRESS_STATES.some((state) => state.id === id));
+  return [...new Set(explicit)].filter((id) => STRESS_STATES.some((state) => state.id === id));
 }
 
 /** @param {any} entry */
@@ -56,27 +60,72 @@ export function previousPeriod(period, weekStartsOn = 1) {
   return reportPeriod(period.type, dateKey(period.type === 'monthly' ? subMonths(date, 1) : subWeeks(date, 1)), weekStartsOn);
 }
 
-/** @param {any[]} entries @param {any[]} people @param {any} feedback */
+// A state needs 3 recorded days to be shown at all. A connection with a person
+// or habit also needs 5 days with it and 5 without, a higher rate with it,
+// and a one-sided Fisher exact test that holds after dividing 5% across every
+// connection checked in the view (Bonferroni). On random records, fewer than
+// 1 in 20 people then see any connection at all (see the tests).
+const MIN_STATE_DAYS = 3;
+const MIN_GROUP_DAYS = 5;
+const FAMILY_ALPHA = 0.05;
+
+/**
+ * What repeats in the record. Two kinds of card:
+ * - a state card: how many recorded days include a state the person chose;
+ * - a connection: a state that shows up clearly more often on days with a
+ *   person or habit than on days without, with both counts shown.
+ * @param {any[]} entries @param {any[]} people @param {any} feedback
+ */
 export function stressPatterns(entries, people = [], feedback = {}) {
-  const groups = new Map();
+  const byDate = new Map();
   for (const entry of entries) {
-    for (const state of entryStates(entry).filter((id) => id !== 'unsure')) {
-      const contexts = [{ type: 'state', id: '', label: '' },
-        ...entryPeople(entry).map((id) => ({ type: 'person', id, label: people.find((person) => person.id === id)?.name || 'A person in your record' })),
-        ...(entry.activities || []).map((id) => ({ type: 'habit', id, label: id }))];
-      for (const context of contexts) {
-        const key = `${state}:${context.type}:${context.id}`;
-        if (!groups.has(key)) groups.set(key, { key, state, context, entries: [] });
-        groups.get(key).entries.push(entry);
-      }
+    if (!byDate.has(entry.date)) byDate.set(entry.date, { states: new Set(), people: new Set(), habits: new Set(), entries: [] });
+    const day = byDate.get(entry.date);
+    entryStates(entry).filter((id) => id !== 'unsure').forEach((id) => day.states.add(id));
+    entryPeople(entry).forEach((id) => day.people.add(id));
+    (entry.activities || []).forEach((id) => day.habits.add(id));
+    day.entries.push(entry);
+  }
+  const days = [...byDate.values()];
+  const statuses = (key) => feedback[key] || 'suggested';
+  const sourcesFor = (state, list) => list.flatMap((day) => day.entries.filter((entry) => entryStates(entry).includes(state)));
+  const states = [...new Set(days.flatMap((day) => [...day.states]))];
+  const contexts = [
+    ...[...new Set(days.flatMap((day) => [...day.people]))].map((id) => ({ type: 'person', id, label: people.find((person) => person.id === id)?.name || 'A person in your record', has: (day) => day.people.has(id) })),
+    ...[...new Set(days.flatMap((day) => [...day.habits]))].map((id) => ({ type: 'habit', id, label: id, has: (day) => day.habits.has(id) })),
+  ];
+
+  const cards = states.map((state) => {
+    const stateDays = days.filter((day) => day.states.has(state));
+    const key = `${state}:state:`;
+    return { key, state, context: { type: 'state', id: '', label: '' }, entries: sourcesFor(state, stateDays), days: stateDays.length, total: days.length, status: statuses(key) };
+  }).filter((card) => card.days >= MIN_STATE_DAYS);
+
+  const tested = [];
+  for (const state of states) {
+    for (const { has, ...context } of contexts) {
+      const withDays = days.filter(has);
+      const withoutDays = days.filter((day) => !has(day));
+      const shared = withDays.filter((day) => day.states.has(state));
+      if (withDays.length < MIN_GROUP_DAYS || withoutDays.length < MIN_GROUP_DAYS || shared.length < MIN_STATE_DAYS) continue;
+      const otherwise = withoutDays.filter((day) => day.states.has(state)).length;
+      const key = `${state}:${context.type}:${context.id}`;
+      tested.push({
+        key, state, context, entries: sourcesFor(state, shared), days: shared.length, total: withDays.length,
+        without: { days: otherwise, total: withoutDays.length },
+        p: fisherGreater(shared.length, withDays.length, otherwise, withoutDays.length), status: statuses(key),
+      });
     }
   }
-  return [...groups.values()].map((group) => {
-    const days = new Set(group.entries.map((entry) => entry.date)).size;
-    const comparable = group.context.type === 'person' ? entries.filter((entry) => entryPeople(entry).includes(group.context.id))
-      : group.context.type === 'habit' ? entries.filter((entry) => (entry.activities || []).includes(group.context.id)) : entries;
-    return { ...group, days, total: comparable.length, status: feedback[group.key] || 'suggested' };
-  }).filter((group) => group.days >= 3 && group.status !== 'dismissed')
+  const threshold = FAMILY_ALPHA / Math.max(1, tested.length);
+  // A connection the person confirmed stays in view with its counts, marked
+  // as not beyond chance when that is so; the choice is theirs.
+  const connections = tested
+    .map((item) => ({ ...item, significant: item.p < threshold && item.days / item.total > item.without.days / item.without.total }))
+    .filter((item) => item.significant || item.status === 'confirmed');
+
+  return [...connections, ...cards]
+    .filter((item) => item.status !== 'dismissed')
     .sort((a, b) => (b.context.type !== 'state' ? 1 : 0) - (a.context.type !== 'state' ? 1 : 0) || b.days - a.days || a.key.localeCompare(b.key));
 }
 
@@ -107,7 +156,7 @@ export function buildReport(entries, period, sessions = [], people = [], feedbac
     practiceSessions,
     practices: practiceIds.map((id) => {
       const attempts = practiceSessions.filter((session) => session.practice_id === id);
-      return { id, attempts, withFeedback: attempts.filter((session) => session.outcome), helpful: attempts.filter((session) => ['Clearer', 'More connected', 'More able to begin', 'More settled'].includes(session.outcome)), uncomfortable: attempts.filter((session) => session.outcome === 'More uncomfortable') };
+      return { id, attempts, withFeedback: attempts.filter((session) => session.outcome), helpful: attempts.filter((session) => HELPFUL_OUTCOMES.includes(session.outcome)), uncomfortable: attempts.filter((session) => session.outcome === 'More uncomfortable') };
     }),
   };
 }

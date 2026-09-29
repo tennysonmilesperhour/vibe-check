@@ -14,8 +14,8 @@ export default function PageNotFound() {
                     This page isn't on the map
                 </h1>
                 <p className="mt-3 text-sm" style={{ color: "var(--gh-ink-soft)" }}>
-                    {pageName ? <>Nothing lives at "{pageName}".</> : "Nothing lives here."} The
-                    evening, though, is right where you left it.
+                    {pageName ? <>Nothing lives at "{pageName}".</> : "Nothing lives here."} Your
+                    record is right where you left it.
                 </p>
                 <Link to={createPageUrl("Today")} className="ink-button inline-block mt-8 text-sm">
                     Return to Today

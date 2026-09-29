@@ -47,10 +47,10 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
     } catch (err) { setError(err.message); }
     setBusy(false);
   }
-  const feedback = (key, value) => savePreferences({ pattern_feedback: { ...(data.preferences.pattern_feedback || {}), [key]: value } });
+  const feedback = (key, value) => savePreferences((stored) => ({ pattern_feedback: { ...(stored.pattern_feedback || {}), [key]: value } }));
   async function saveTheme(key, value) {
     setBusy(true); setError('');
-    try { await savePreferences({ theme_labels: { ...(data.preferences.theme_labels || {}), [key]: value } }); setThemeEdit(null); }
+    try { await savePreferences((stored) => ({ theme_labels: { ...(stored.theme_labels || {}), [key]: value } })); setThemeEdit(null); }
     catch (err) { setError(err.message); }
     setBusy(false);
   }

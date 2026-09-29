@@ -67,16 +67,7 @@ export default function HealingBoard() {
 
     const getItemsByCategory = (category) => healingItems.filter(item => item.category === category);
 
-    const getCategoryAverage = (category) => {
-        const items = getItemsByCategory(category);
-        if (items.length === 0) return 0;
-        return items.reduce((sum, item) => sum + item.progress_level, 0) / items.length;
-    };
 
-    const getOverallProgress = () => {
-        if (healingItems.length === 0) return 0;
-        return healingItems.reduce((sum, item) => sum + item.progress_level, 0) / healingItems.length;
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -138,32 +129,26 @@ export default function HealingBoard() {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--gh-ink-muted)' }}>Growth</p>
-                    <h1 className="text-4xl mb-3" style={{ color: 'var(--gh-ink)' }}>Healing Board</h1>
+                    <h1 className="text-4xl mb-3" style={{ color: 'var(--gh-ink)' }}>Practice board</h1>
                     <p className="text-base max-w-2xl mx-auto" style={{ color: 'var(--gh-ink-soft)' }}>
-                        Track your journey of growth through devotions, empowerments, integrity lines, and gifts.
+                        Keep what you are growing in view: devotions, empowerments, integrity lines, and gifts. It is yours to describe, not a score.
                     </p>
                 </div>
 
                 {/* Overall Progress */}
                 <div className="p-8 text-center mb-8" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 6px)' }}>
                     <h3 className="text-2xl mb-1" style={{ color: 'var(--gh-ink)' }}>
-                        Your unique essence
+                        What you are growing
                     </h3>
-                    <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>Overall healing progress</p>
-                    <div className="max-w-md mx-auto mb-6">
-                        <div className="font-display text-5xl mb-3" style={{ color: 'var(--gh-accent)' }}>
-                            {getOverallProgress().toFixed(0)}%
-                        </div>
-                        <Progress value={getOverallProgress()} className="h-2" />
-                    </div>
+                    <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>Growth isn't a percentage. These are the areas you chose to keep in view.</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                         {Object.entries(categoryInfo).map(([category, info]) => (
                             <div key={category} className="text-center p-3"
                                 style={{ background: info.bg, border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
                                 <info.icon className="w-5 h-5 mx-auto mb-1" style={{ color: 'var(--gh-accent)' }} />
                                 <div className="text-xs font-medium mb-1" style={{ color: 'var(--gh-ink-soft)' }}>{info.title}</div>
-                                <div className="text-xl font-bold" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>
-                                    {getCategoryAverage(category).toFixed(0)}%
+                                <div className="text-xl font-bold" style={{ color: 'var(--gh-ink)' }}>
+                                    {getItemsByCategory(category).length}
                                 </div>
                             </div>
                         ))}
@@ -229,8 +214,8 @@ export default function HealingBoard() {
                                 </div>
                                 <div className="mb-3">
                                     <div className="flex justify-between items-center mb-1">
-                                        <span className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>Progress</span>
-                                        <span className="text-sm font-bold" style={{ color: 'var(--gh-accent)' }}>{item.progress_level}%</span>
+                                        <span className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>Your sense of it</span>
+                                        <span className="text-sm font-bold" style={{ color: 'var(--gh-accent)' }}>{item.progress_level} of 100</span>
                                     </div>
                                     <Progress value={item.progress_level} className="h-1.5" />
                                 </div>
@@ -294,10 +279,11 @@ export default function HealingBoard() {
                                     placeholder="Describe this area of growth..." rows={3} className="mt-1" />
                             </div>
                             <div>
-                                <Label style={{ color: 'var(--gh-ink-soft)' }}>Progress Level ({formData.progress_level}%)</Label>
+                                <Label style={{ color: 'var(--gh-ink-soft)' }}>How far along does this feel to you? ({formData.progress_level} of 100)</Label>
                                 <Slider min={0} max={100} step={1} value={[formData.progress_level]}
                                     onValueChange={([v]) => setFormData({...formData, progress_level: v})}
-                                    className="mt-3" aria-label="Progress level" />
+                                    className="mt-3" aria-label="How far along this feels to you" />
+                                <p className="text-xs mt-2" style={{ color: 'var(--gh-ink-muted)' }}>Your own sense, for you alone. It isn't added up or compared.</p>
                             </div>
                             <div>
                                 <Label htmlFor="reflection" style={{ color: 'var(--gh-ink-soft)' }}>Reflection Notes</Label>

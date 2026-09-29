@@ -25,13 +25,13 @@ export function EntryCard({ entry, people = [], selected = false, onEdit, onDele
   const context = entry.stress_context || {};
   return <article ref={ref} className={`living-card journal-entry ${selected ? 'journal-entry-selected' : ''}`} id={`entry-${entry.id}`}>
     <div className="flex flex-wrap justify-between items-start gap-3"><div><p className="sanctuary-eyebrow">{entry.kind === 'day' ? 'DAILY CHECK-IN' : entry.interaction_feeling ? 'INTERACTION' : 'JOURNAL'}{entry.is_demo ? ' · DEMO' : ''}</p><h3 className="mt-1">{entry.date}</h3></div><div className="flex gap-3">{onEdit && <button type="button" className="living-icon-button" aria-label={`Edit entry from ${entry.date}`} onClick={() => onEdit(entry)}><Pencil size={16} /></button>}{onDelete && <button type="button" className="living-icon-button" aria-label={`Delete entry from ${entry.date}`} onClick={() => onDelete(entry)}><Trash2 size={16} /></button>}</div></div>
-    <div className="living-chips mt-3">{entry.mood_score != null && <span className="living-tag">{entry.kind === 'day' ? 'Day mood' : 'Moment mood'} {entry.mood_score}/10</span>}{context.stress_score != null && <span className="living-tag">Stress {context.stress_score}/10</span>}{entry.interaction_feeling && <span className={`living-tag ${entry.interaction_feeling === 'unsafe' ? 'living-tag-alert' : ''}`}>Interaction: {entry.interaction_feeling}</span>}{entry.boundary_respected && <span className="living-tag">Boundary respected: {entry.boundary_respected}</span>}{names.map((name, i) => <span className="living-tag" key={`${name}:${i}`}>{name}</span>)}</div>
+    <div className="living-chips mt-3">{entry.mood_score != null && <span className="living-tag">{entry.kind === 'day' ? 'Day mood' : 'Moment mood'} {entry.mood_score}/10</span>}{context.stress_score != null && <span className="living-tag">{context.stress_measure === 'highest-today' ? 'Highest stress' : entry.kind === 'day' ? 'Stress at check-in' : 'Stress'} {context.stress_score}/10</span>}{entry.interaction_feeling && <span className={`living-tag ${entry.interaction_feeling === 'unsafe' ? 'living-tag-alert' : ''}`}>Interaction: {entry.interaction_feeling}</span>}{entry.boundary_respected && <span className="living-tag">Boundary respected: {entry.boundary_respected}</span>}{names.map((name, i) => <span className="living-tag" key={`${name}:${i}`}>{name}</span>)}</div>
     {entry.high_moment?.description && <div className="mt-4"><p className="living-label">A supportive moment</p><p className="whitespace-pre-wrap mt-1">{entry.high_moment.description}</p></div>}
     {entry.low_moment?.description && <div className="mt-4"><p className="living-label">A difficult moment</p><p className="whitespace-pre-wrap mt-1">{entry.low_moment.description}</p></div>}
     {entry.notes && <p className="whitespace-pre-wrap mt-4">{entry.notes}</p>}
     {entry.gratitude && <p className="whitespace-pre-wrap mt-3"><span className="living-label">Gratitude · </span>{entry.gratitude}</p>}
     {(entry.activities?.length > 0 || entry.emotions?.length > 0) && <p className="living-muted text-sm mt-3">{[...(entry.emotions || []), ...(entry.activities || [])].join(' · ')}</p>}
-    {entryStates(entry).length > 0 && <p className="living-muted text-sm mt-3">Recorded feelings: {entryStates(entry).map((id) => stateById(id)?.label).join(' · ')}</p>}
+    {entryStates(entry).length > 0 && <p className="living-muted text-sm mt-3">What felt present: {entryStates(entry).map((id) => stateById(id)?.label).join(' · ')}</p>}
     {context.body_cues?.length > 0 && <p className="text-sm mt-3"><strong>Body cues:</strong> {context.body_cues.join(', ')}</p>}
     {[['situation', 'What happened before'], ['response', 'My response'], ['need', 'What I needed']].map(([field, label]) => context[field] ? <p className="text-sm whitespace-pre-wrap mt-3" key={field}><strong>{label}: </strong>{context[field]}</p> : null)}
     {context.alignment && <p className="text-sm mt-3"><strong>How it felt:</strong> {ALIGNMENTS.find((a) => a.id === context.alignment)?.label}</p>}
@@ -58,6 +58,8 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
   const baselineRef = useRef(null);
   const touchedRef = useRef(false);
   const { user } = useAuth();
+  // New entries name the account the composer opened in (see CheckInCeremony).
+  const ownerId = useRef(user?.id).current;
   // New entries started from a prompt get their own key, so a prompt is never
   // replaced by older free-form words (and vice versa).
   const bufferKey = user?.id ? `composer:${user.id}:${existing?.id || (prompt ? `prompt-${promptKey(prompt)}` : 'new')}` : null;
@@ -104,7 +106,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
     setBusy(true); setError('');
     try {
       const payload = { date: form.date, occurred_at: form.time ? new Date(`${form.date}T${form.time}:00`).toISOString() : null, emotions: [...new Set(form.emotions_text.split(',').map((value) => value.trim()).filter(Boolean))], kind: form.kind, notes: form.notes, mood_score: form.mood_score, person_ids: form.person_ids || [], activities: [...new Set(form.activities_text.split(',').map((value) => value.trim()).filter(Boolean))], stress_context: form.stress_context || {}, interaction_feeling: form.kind === 'interaction' ? form.interaction_feeling || null : null, boundary_respected: form.kind === 'interaction' ? form.boundary_respected || null : null, is_draft: asDraft };
-      if (existing?.id) await JournalEntry.update(existing.id, payload); else await JournalEntry.create(payload);
+      if (existing?.id) await JournalEntry.update(existing.id, payload); else await JournalEntry.createFor(ownerId, payload);
       clearBuffer(bufferKey);
       baselineRef.current = null;
       setConfirmClose(false);

@@ -9,10 +9,12 @@ import { useToast } from "@/components/ui/use-toast";
 import SkyField from "@/features/shell/SkyField";
 import { ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
 import { EMOTIONS, ACTIVITIES } from "./vocab";
+import { ALL_STEPS, chooseSteps } from "./check-in-steps";
+import { usePreferences } from "@/features/patterns/useLivingData";
 import { moonPhase } from "@/lib/resonance/moon";
 import { personalDay } from "@/lib/resonance/numerology";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
-import { computeStreak, isMilestone } from "@/lib/streaks";
+import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { todayKey } from "@/lib/dates";
 import { useAuth } from "@/lib/AuthContext";
 import { readBuffer, clearBuffer, bufferRestorable, latestVersion, isNewerVersion } from "@/lib/writing-buffer";
@@ -24,13 +26,23 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 const AUTOSAVE_DELAY_MS = 1500;
 const AUTOSAVE_RETRY_MS = 10000;
 
-const STEP_IDS = ["mood", "energy", "sleep", "emotions", "activities", "stress", "high", "low", "reflection"];
+
+// Which questions a kept day asked is bookkeeping in
+// stress_context.asked_steps, written only when the day is kept (see save).
+// The form, drafts and tab copies hold answers alone, and drop the
+// visited_steps that preview builds wrote.
+const BOOKKEEPING = ['asked_steps', 'visited_steps'];
+const answersOnly = (value) => {
+  if (!BOOKKEEPING.some((key) => value?.stress_context?.[key])) return value;
+  const stress = Object.fromEntries(Object.entries(value.stress_context).filter(([key]) => !BOOKKEEPING.includes(key)));
+  return { ...value, stress_context: stress };
+};
 
 /**
- * The evening ritual: one question per screen, the sky deepening as you go.
- * Saves as a single DailyCheckIn; runs boundary detection; celebrates streaks.
+ * The daily check-in, at any time of day: one question per screen, the sky
+ * deepening as you go. Saves as a single DailyCheckIn; runs opt-in notices.
  */
-const formFrom = (existing) => ({
+const formFrom = (existing) => answersOnly({
   mood_score: existing?.mood_score ?? null,
   energy_level: existing?.energy_level ?? null,
   sleep_quality: existing?.sleep_quality ?? null,
@@ -43,7 +55,9 @@ const formFrom = (existing) => ({
   person_ids: existing?.person_ids ?? [],
   stress_context: existing?.stress_context ?? {},
 });
-const customHabitsFrom = (activities = []) => activities.filter((item) => !ACTIVITIES.some((preset) => preset.label === item)).join(', ');
+// Words the person typed themselves, beside the preset chips.
+const customFrom = (items = [], presets) => items.filter((item) => !presets.some((preset) => preset.label === item)).join(', ');
+const withCustom = (items, presets, text) => [...new Set([...items.filter((item) => presets.some((preset) => preset.label === item)), ...text.split(',').map((item) => item.trim()).filter(Boolean)])];
 
 export default function CheckInCeremony({ dateKey = todayKey(), existing = null, onDone, onCancel }) {
   const { toast } = useToast();
@@ -51,6 +65,9 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const bufferKey = user?.id ? `ceremony:${user.id}:${dateKey}` : null;
+  // Every write names the account this check-in opened in, so a write still
+  // under way when another account signs in is refused, never kept there.
+  const ownerId = useRef(user?.id).current;
   const [stepIndex, setStepIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [draftLoading, setDraftLoading] = useState(true);
@@ -65,7 +82,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // record it, so a restore compares server times and never the device clock.
   const [serverVersion, setServerVersion] = useState(existing?.updated_at || null);
   const [form, setForm] = useState(() => formFrom(existing));
-  const [customHabits, setCustomHabits] = useState(() => customHabitsFrom(existing?.activities));
+  const [customHabits, setCustomHabits] = useState(() => customFrom(existing?.activities, ACTIVITIES));
+  const [customFeelings, setCustomFeelings] = useState(() => customFrom(existing?.emotions, EMOTIONS));
+  // Which questions to ask, settled once the draft and preferences have loaded.
+  const prefs = usePreferences();
+  const [stepIds, setStepIds] = useState(null);
   const stepRegionRef = useRef(null);
   const formRef = useRef(form);
   // What the server already holds; anything different is unsaved.
@@ -92,8 +113,10 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   }, [stepIndex]);
 
   const restoreForm = (payload) => {
-    setForm((previous) => ({ ...previous, ...payload }));
-    setCustomHabits(customHabitsFrom(payload.activities));
+    const answers = answersOnly(payload);
+    setForm((previous) => ({ ...previous, ...answers }));
+    setCustomHabits(customFrom(answers.activities, ACTIVITIES));
+    setCustomFeelings(customFrom(answers.emotions, EMOTIONS));
   };
 
   useEffect(() => {
@@ -111,7 +134,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         setRestored(true);
         return true;
       }
-      if (JSON.stringify({ ...shown, ...buffer.value }) !== JSON.stringify(shown)) setHeldBuffer(buffer.value);
+      if (JSON.stringify({ ...shown, ...answersOnly(buffer.value) }) !== JSON.stringify(shown)) setHeldBuffer(buffer.value);
       return false;
     };
     CheckInDraft.filter({ date: dateKey }).then(([draft]) => {
@@ -119,7 +142,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       draftKnownRef.current = true;
       if (draft) draftIdRef.current = draft.id;
       const draftIsNewer = Boolean(draft) && isNewerVersion(draft.updated_at, existing?.updated_at);
-      const shown = draftIsNewer ? { ...initial, ...draft.payload } : initial;
+      const shown = draftIsNewer ? { ...initial, ...answersOnly(draft.payload) } : initial;
       setServerVersion(latestVersion(existing?.updated_at, draft?.updated_at));
       if (draftIsNewer) {
         baselineRef.current = JSON.stringify(shown);
@@ -167,7 +190,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       chainRef.current = chainRef.current.catch(() => {}).then(async () => {
         if (finishedRef.current) return;
         try {
-          const draft = await CheckInDraft.upsert({ date: dateKey, payload });
+          const draft = await CheckInDraft.upsertFor(ownerId, { date: dateKey, payload });
           // Record the id even if the final save started meanwhile, so it can
           // delete this draft once the day is kept.
           draftIdRef.current = draft.id;
@@ -243,7 +266,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         onCancel?.();
         return;
       }
-      const draft = await CheckInDraft.upsert({ date: dateKey, payload: form });
+      const draft = await CheckInDraft.upsertFor(ownerId, { date: dateKey, payload: form });
       draftIdRef.current = draft.id;
       clearBuffer(bufferKey);
       toast({ title: 'Draft saved', description: 'Return to this date to continue.' });
@@ -275,7 +298,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // Leave-prompt "Discard changes": undo this visit only. A draft saved on an
   // earlier visit is put back; a draft this visit created is removed.
   const discardVisit = () => changeDrafts(async () => {
-    if (visitStartDraftRef.current) await CheckInDraft.upsert({ date: dateKey, payload: visitStartDraftRef.current });
+    if (visitStartDraftRef.current) await CheckInDraft.upsertFor(ownerId, { date: dateKey, payload: visitStartDraftRef.current });
     else if (draftIdRef.current) {
       await CheckInDraft.delete(draftIdRef.current);
       draftIdRef.current = null;
@@ -293,7 +316,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     baselineRef.current = JSON.stringify(initial);
     visitStartDraftRef.current = null;
     setForm(initial);
-    setCustomHabits(customHabitsFrom(initial.activities));
+    setCustomHabits(customFrom(initial.activities, ACTIVITIES));
+    setCustomFeelings(customFrom(initial.emotions, EMOTIONS));
     setServerVersion(existing?.updated_at || null);
     setRestored(false);
     setAutosave('idle');
@@ -305,6 +329,13 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   function acceptHeldBuffer() {
     editedRef.current = true;
     restoreForm(heldBuffer);
+    // Any question those words answer is asked again, so nothing is kept unseen.
+    if (stepIds) {
+      const needed = chooseSteps(tracking, { ...formRef.current, ...heldBuffer });
+      const next = ALL_STEPS.filter((id) => stepIds.includes(id) || needed.includes(id));
+      setStepIndex(Math.max(0, next.indexOf(stepIds[stepIndex])));
+      setStepIds(next);
+    }
     setHeldBuffer(null);
     setDraftMessage('Your unsaved words from this tab are back.');
   }
@@ -332,11 +363,39 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       [key]: f[key].includes(label) ? f[key].filter((x) => x !== label) : [...f[key], label],
     }));
 
-  const stepId = STEP_IDS[stepIndex];
+  // Choices saved before the check-in followed them didn't ask for that, so
+  // only choices saved since shape it.
+  const tracking = prefs.data?.tracking_shapes_check_in ? prefs.data.tracking || [] : [];
+  // Which questions this visit put to the person, added to what the kept day
+  // already recorded (an edit never takes one away), and written only when
+  // the day is kept. Patterns compare only days that asked about states and
+  // about people and habits, so no answer may decide it: only the person's
+  // usual questions count, not one shown because it already holds an answer
+  // or revealed with "Show all questions", and a draft never adds to it,
+  // since only visits that change something leave one.
+  const askedRef = useRef(/** @type {Set<string> | null} */ (null));
+  if (!askedRef.current) askedRef.current = new Set(existing?.stress_context?.asked_steps || []);
+  const usualRef = useRef(ALL_STEPS);
+  useEffect(() => {
+    if (stepIds || draftLoading || prefs.isLoading) return;
+    usualRef.current = chooseSteps(tracking);
+    setStepIds(chooseSteps(tracking, formRef.current));
+  }, [stepIds, draftLoading, prefs.isLoading, prefs.data]);
+  const stepOrder = stepIds || ALL_STEPS;
+  const stepId = stepOrder[stepIndex];
+  useEffect(() => {
+    if (stepIds && stepId && usualRef.current.includes(stepId)) askedRef.current.add(stepId);
+  }, [stepIds, stepId]);
+  const showAllSteps = () => {
+    setStepIds(ALL_STEPS);
+    setStepIndex(ALL_STEPS.indexOf(stepId));
+    // The button goes away; keep focus on the question, whose label gives the new count.
+    requestAnimationFrame(() => stepRegionRef.current?.focus());
+  };
   const depth = Math.min(4, 1 + Math.floor(stepIndex / 2));
   const canAdvance = stepId === "mood" ? form.mood_score != null : true;
 
-  const progress = (stepIndex + 1) / STEP_IDS.length;
+  const progress = (stepIndex + 1) / stepOrder.length;
 
   const save = async () => {
     setSaving(true);
@@ -351,16 +410,18 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       const personIds = [
         ...new Set([...(form.person_ids || []), ...(form.high_moment?.person_ids || []), ...(form.low_moment?.person_ids || [])]),
       ];
+      const asked = askedRef.current;
       const payload = {
         ...form,
         date: dateKey,
         moon_phase: moon.name,
         ...(birthDate ? { personal_day: personalDay(birthDate, dateKey) } : {}),
         person_ids: personIds,
+        stress_context: { ...form.stress_context, asked_steps: ALL_STEPS.filter((id) => asked.has(id)) },
       };
       // Single atomic write on (user_id, date): a second tab or a re-entered
       // ceremony can't race a read-then-create into a unique violation.
-      saved = await DailyCheckIn.upsert(payload);
+      saved = await DailyCheckIn.upsertFor(ownerId, payload);
     } catch (e) {
       resumeAutosave();
       toast({ title: "Could not save", description: e?.message || "Please try again. Your words are still here.", variant: "destructive" });
@@ -386,27 +447,21 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         const existingAlerts = await BoundaryAlert.list("-created_date", 50);
         newAlerts = dedupeAlerts(candidates, existingAlerts);
         for (const alert of newAlerts) {
-          await BoundaryAlert.create({ ...alert, is_acknowledged: false });
+          await BoundaryAlert.createFor(ownerId, { ...alert, is_acknowledged: false });
         }
       } catch {
         // boundary check must never block the save
       }
     }
 
-    // Streak celebration (respect reduced motion).
+    // A plain acknowledgement: no confetti and no run to keep, since a hard
+    // day recorded honestly counts the same as any other.
+    const title = existing ? "This day is updated" : "The day is kept";
     try {
-      const recent = await DailyCheckIn.list("-date", 120);
-      const streak = computeStreak(recent, todayKey());
-      if (isMilestone(streak) && !reduced && !existing) {
-        const confetti = (await import("canvas-confetti")).default;
-        confetti({ particleCount: 90, spread: 75, origin: { y: 0.7 }, colors: ["#929B78", "#B59B79", "#A58E66", "#E9E2CD"] });
-      }
-      toast({
-        title: existing ? "Today, updated" : "The day is kept",
-        description: streak > 1 ? `${streak} evenings in a row.` : "Your first evening of a new run.",
-      });
+      const label = daysKeptLabel(daysKeptThisMonth(await DailyCheckIn.list("-date", 31), todayKey()), todayKey());
+      toast(label ? { title, description: `${label}.` } : { title });
     } catch {
-      toast({ title: existing ? "Today, updated" : "The day is kept" });
+      toast({ title });
     }
 
     setSaving(false);
@@ -417,17 +472,17 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     mood: <ScaleStep field="mood_score" question="How did today feel?" value={form.mood_score} onChange={set("mood_score")} />,
     energy: <ScaleStep field="energy_level" question="How was your energy?" value={form.energy_level} onChange={set("energy_level")} />,
     sleep: <ScaleStep field="sleep_quality" question="How did you sleep?" value={form.sleep_quality} onChange={set("sleep_quality")} />,
-    emotions: <ChipsStep question="Which feelings moved through?" hint="Choose any that visited, even briefly." options={EMOTIONS} selected={form.emotions} onToggle={toggleIn("emotions")} />,
-    activities: <><ChipsStep question="What did you give time to?" options={ACTIVITIES} selected={form.activities} onToggle={toggleIn("activities")} /><div className="ceremony-stress space-y-4"><label className="living-label">Your own habits or activities<input className="living-input mt-2" value={customHabits} maxLength={1000} placeholder="Coffee, late work, a walk… separated by commas" onChange={(e) => { const text = e.target.value; setCustomHabits(text); edit((previous) => ({ ...previous, activities: [...new Set([...previous.activities.filter((item) => ACTIVITIES.some((preset) => preset.label === item)), ...text.split(',').map((item) => item.trim()).filter(Boolean)])] })); }} /></label><div><p className="living-label mb-2">People in your day · optional</p><PersonPicker value={form.person_ids} onChange={set('person_ids')} /></div></div></>,
-    stress: <><h1 className="text-4xl md:text-5xl" style={{ color: 'var(--gh-cream)' }}>Where did you feel stress?</h1><p className="mt-3" style={{ color: 'var(--gh-cream)' }}>Optional. Keep the cues, your response, and what you needed.</p><div className="ceremony-stress"><StressFields value={form.stress_context} onChange={set('stress_context')} /></div></>,
+    emotions: <><ChipsStep question="Which feelings moved through?" hint="Choose any that visited, even briefly." options={EMOTIONS} selected={form.emotions} onToggle={toggleIn("emotions")} /><div className="ceremony-stress"><label className="living-label">In your own words<input className="living-input mt-2" value={customFeelings} maxLength={1000} placeholder="Any feeling, in the words that fit, separated by commas" onChange={(e) => { const text = e.target.value; setCustomFeelings(text); edit((previous) => ({ ...previous, emotions: withCustom(previous.emotions, EMOTIONS, text) })); }} /></label></div></>,
+    activities: <><ChipsStep question="What did you give time to?" options={ACTIVITIES} selected={form.activities} onToggle={toggleIn("activities")} /><div className="ceremony-stress space-y-4"><label className="living-label">Your own habits or activities<input className="living-input mt-2" value={customHabits} maxLength={1000} placeholder="Coffee, late work, a walk… separated by commas" onChange={(e) => { const text = e.target.value; setCustomHabits(text); edit((previous) => ({ ...previous, activities: withCustom(previous.activities, ACTIVITIES, text) })); }} /></label><div><p className="living-label mb-2">People in your day · optional</p><PersonPicker value={form.person_ids} onChange={set('person_ids')} /></div></div></>,
+    stress: <><h1 className="text-4xl md:text-5xl" style={{ color: 'var(--gh-cream)' }}>Where did you feel stress?</h1><p className="mt-3" style={{ color: 'var(--gh-cream)' }}>Optional. Keep the cues, your response, and what you needed.</p><div className="ceremony-stress"><StressFields value={form.stress_context} onChange={set('stress_context')} when="day" /></div></>,
     high: <MomentStep kind="high" question="What was the high point?" value={form.high_moment} onChange={set("high_moment")} />,
     low: <MomentStep kind="low" question="What was the hardest moment?" value={form.low_moment} onChange={set("low_moment")} />,
     reflection: <ReflectionStep value={{ gratitude: form.gratitude, notes: form.notes }} onChange={(v) => edit((f) => ({ ...f, ...v }))} />,
-  }), [form, customHabits]);
+  }), [form, customHabits, customFeelings]);
 
-  const isLast = stepIndex === STEP_IDS.length - 1;
+  const isLast = stepIndex === stepOrder.length - 1;
 
-  if (draftLoading) return <div className="living-page" role="status">Opening your check-in…</div>;
+  if (draftLoading || !stepIds) return <div className="living-page" role="status">Opening your check-in…</div>;
 
   return (
     <SkyField depth={depth} className="min-h-screen ceremony-surface">
@@ -443,13 +498,13 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
           />
         </div>
         <div className="flex justify-between items-center mt-4 text-sm" style={{ color: "rgba(255,253,246,0.8)" }}>
-          <span>{stepIndex + 1} of {STEP_IDS.length}</span>
+          <span>{stepIndex + 1} of {stepOrder.length}</span>
           <span className="flex items-center gap-4">
             <span role="status" aria-live="polite" className="text-xs">{autosave === 'saving' ? 'Saving draft…' : autosave === 'saved' && !dirty ? 'Draft saved' : autosave === 'offline' ? 'Not saved yet. Your words stay in this tab.' : autosave === 'local' ? 'Kept in this tab' : ''}</span>
             <button type="button" onClick={saveDraft} disabled={saving} className="underline underline-offset-4">{saving ? 'Saving…' : 'Save draft and close'}</button>
           </span>
         </div>
-        <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.</p>
+        <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <> Some questions are left out to match what you chose to notice. <button type="button" className="underline underline-offset-4" onClick={showAllSteps}>Show all questions</button></>}</p>
         {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="underline underline-offset-4 ml-3" disabled={saving} onClick={discardRestored}>Discard draft</button>}</p>}
         {heldBuffer && (
           <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>
@@ -466,7 +521,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
               ref={stepRegionRef}
               tabIndex={-1}
               role="group"
-              aria-label={`Step ${stepIndex + 1} of ${STEP_IDS.length}`}
+              aria-label={`Step ${stepIndex + 1} of ${stepOrder.length}`}
               initial={{ opacity: 0, x: reduced ? 0 : 24 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: reduced ? 0 : -24 }}

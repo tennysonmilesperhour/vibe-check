@@ -13,7 +13,7 @@ import StressPatternCards from '@/features/patterns/StressPatternCards';
 import ExportHistory from '@/features/patterns/ExportHistory';
 import PatternCalendar from '@/features/patterns/PatternCalendar';
 import { todayKey, addDaysKey, parseLocalDate, diffDaysKeys } from '@/lib/dates';
-import { filterEntries, historyChart, stressPatterns, validDateKey } from '@/lib/living-patterns';
+import { filterEntries, historyChart, stateCards, stressPatterns, validDateKey } from '@/lib/living-patterns';
 import { STRESS_STATES } from '@/lib/practices';
 
 const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', 'Year'], ['all', 'All time'], ['custom', 'Custom']];
@@ -33,11 +33,25 @@ export default function Analytics() {
   const filters = { start, end, person: params.get('person') || '', habit: params.get('habit') || '', state: params.get('state') || '', search: params.get('search') || '' };
   const filtered = useMemo(() => valid && data ? filterEntries(data.entries, filters) : [], [data, start, end, valid, filters.person, filters.habit, filters.state, filters.search]);
   const chart = useMemo(() => valid ? historyChart(filtered.filter((entry) => entry.kind === 'day'), start, end) : [], [filtered, start, end, valid]);
-  const patterns = useMemo(() => stressPatterns(filtered, data?.people, data?.preferences?.pattern_feedback), [filtered, data]);
+  // Connections are worked out on every day in the date range: filtering days
+  // by a state, person, habit, or words first would pick them by what is being
+  // compared. The filters then narrow which connections show. State cards are
+  // plain counts of the days the person, habit, and words filters leave; the
+  // feeling filter only picks which card shows, so its count keeps every day
+  // as its base.
+  const inRange = useMemo(() => valid && data ? filterEntries(data.entries, { start, end }) : [], [data, start, end, valid]);
+  const rangePatterns = useMemo(() => stressPatterns(inRange, data?.people, data?.preferences?.pattern_feedback), [inRange, data]);
+  const counts = useMemo(() => stateCards(filterEntries(inRange, { person: filters.person, habit: filters.habit, search: filters.search }), data?.preferences?.pattern_feedback), [inRange, filters.person, filters.habit, filters.search, data]);
+  const patterns = useMemo(() => [
+    ...rangePatterns.filter((pattern) => pattern.context.type !== 'state' && (!filters.state || pattern.state === filters.state)
+      && (!filters.person || (pattern.context.type === 'person' && pattern.context.id === filters.person))
+      && (!filters.habit || (pattern.context.type === 'habit' && pattern.context.id === filters.habit))),
+    ...counts.filter((pattern) => !filters.state || pattern.state === filters.state),
+  ], [rangePatterns, counts, filters.state, filters.person, filters.habit]);
   const habits = [...new Set((data?.entries || []).flatMap((entry) => entry.activities || []))].sort();
   const moods = filtered.filter((entry) => entry.kind === 'day' && entry.mood_score != null).map((entry) => Number(entry.mood_score));
   const recordedDays = new Set(filtered.map((entry) => entry.date)).size;
-  const feedback = (key, value) => living.savePreferences({ pattern_feedback: { ...(data.preferences.pattern_feedback || {}), [key]: value } });
+  const feedback = (key, value) => living.savePreferences((stored) => ({ pattern_feedback: { ...(stored.pattern_feedback || {}), [key]: value } }));
   function change(key, value) {
     setParams((previous) => { const next = new URLSearchParams(previous); if (value) next.set(key, value); else next.delete(key); return next; });
   }
@@ -62,6 +76,7 @@ export default function Analytics() {
       {valid && <PatternCalendar entries={filtered} start={start} end={end} weekStart={data.preferences.week_start === 0 ? 0 : 1} />}
       <section className="living-card space-y-5" aria-labelledby="history-chart-heading"><div><h2 id="history-chart-heading">Your days over time</h2><p className="living-muted mt-2">Daily mood, energy, sleep, and recorded stress. Gaps show days without a matching check-in.</p></div>
         {chart.some((point) => point.mood != null || point.stress != null) ? <><div className="flex flex-wrap gap-4 text-xs" aria-label="Chart legend">{[['Mood', 'var(--gh-accent)', 'solid'], ['Energy', 'var(--plot-energy)', 'dashed'], ['Sleep', 'var(--plot-sleep)', 'dotted'], ['Stress', 'var(--plot-stress)', 'dashed']].map(([label, color, style]) => <span key={label} className="inline-flex items-center gap-2"><span aria-hidden="true" style={{ width: 18, borderTop: `2px ${style} ${color}` }} />{label}</span>)}</div><ResponsiveContainer width="100%" height={290}><LineChart accessibilityLayer data={chart} margin={{ top: 10, right: 10, bottom: 0, left: -25 }}><XAxis dataKey="date" tickFormatter={(value) => format(parseLocalDate(value), 'MMM d')} minTickGap={45} tick={{ fontSize: 11 }} /><YAxis domain={[0, 10]} tick={{ fontSize: 11 }} /><Tooltip labelFormatter={(value) => String(value)} contentStyle={{ borderRadius: 12, background: 'var(--gh-cream)', fontSize: 12 }} /><Line type="linear" dataKey="mood" name="Daily mood" stroke="var(--gh-accent)" strokeWidth={2} connectNulls={false} dot={chart.length < 40 ? { r: 2 } : false} /><Line type="linear" dataKey="energy" name="Energy" stroke="var(--plot-energy)" strokeDasharray="6 3" connectNulls={false} dot={false} /><Line type="linear" dataKey="sleep" name="Sleep" stroke="var(--plot-sleep)" strokeDasharray="2 3" connectNulls={false} dot={false} /><Line type="linear" dataKey="stress" name="Recorded stress" stroke="var(--plot-stress)" strokeDasharray="8 3" connectNulls={false} dot={false} /></LineChart></ResponsiveContainer><details><summary className="living-text-link cursor-pointer">Read chart values as a table</summary><div className="max-h-72 overflow-auto mt-4"><table className="living-table"><thead><tr><th>Date</th><th>Mood</th><th>Energy</th><th>Sleep</th><th>Stress</th></tr></thead><tbody>{chart.map((point) => <tr key={point.date}><th>{point.date}</th>{['mood', 'energy', 'sleep', 'stress'].map((field) => <td key={field}>{point[field] ?? 'Not recorded'}</td>)}</tr>)}</tbody></table></div></details></> : <p className="living-muted py-8">No daily scores in this view. Journal moments and individual interaction feelings are available below.</p>}
+        {chart.some((point) => point.stressKind === 'at-check-in') && chart.some((point) => point.stressKind === 'highest-today') && <p className="living-muted text-xs">This view mixes two kinds of check-in stress: older check-ins rated stress at that moment, newer ones rate the day's highest. Each check-in in your journal says which.</p>}
         <Link className="living-text-link" to={`/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal' })}`}>Read the entries behind this view <ArrowRight size={15} /></Link>
       </section>
       {filtered.some((entry) => entry.interaction_feeling) && <section className="living-card space-y-4"><h2>How interactions felt</h2><p className="living-muted">Your labels for individual encounters, kept separate from the day’s mood.</p><div className="living-chips">{['supportive', 'strained', 'unsafe', 'mixed', 'unsure'].map((feeling) => <span key={feeling} className={`living-tag ${feeling === 'unsafe' ? 'living-tag-alert' : ''}`}>{feeling}: {filtered.filter((entry) => entry.interaction_feeling === feeling).length}</span>)}</div><Link className="living-text-link" to={`/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal' })}`}>Read these moments <ArrowRight size={15} /></Link></section>}

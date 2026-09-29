@@ -5,10 +5,10 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
 import { format } from "date-fns";
-import { todayKey, parseLocalDate, hoursSince } from "@/lib/dates";
+import { todayKey, parseLocalDate } from "@/lib/dates";
 import { moonPhase } from "@/lib/resonance/moon";
 import MoonGlyph from "@/features/loom/MoonGlyph";
-import { computeStreak, streakLabel } from "@/lib/streaks";
+import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { migratePeople } from "@/lib/people";
 import { Person, Relationship, Connection } from "@/entities/all";
 import SkyField from "@/features/shell/SkyField";
@@ -30,8 +30,8 @@ export default function Today() {
   const [loading, setLoading] = useState(true);
   const [entry, setEntry] = useState(null);
   const [alerts, setAlerts] = useState([]);
-  const [streak, setStreak] = useState(0);
-  const [lastEntryAt, setLastEntryAt] = useState(null);
+  const [keptDays, setKeptDays] = useState(0);
+  const [hasHistory, setHasHistory] = useState(false);
   const [mode, setMode] = useState("landing"); // landing | ceremony | peek
   // ?date=yyyy-MM-dd lets you write a past day (never a future one).
   const [dateParam, setDateParam] = useSearchParamState("date", "");
@@ -65,8 +65,8 @@ export default function Today() {
       setEntry(today);
       // Notices are opt-in. Turning them on marks older ones as seen (Settings).
       setAlerts(me?.boundary_settings?.notices_enabled ? openAlerts : []);
-      setStreak(computeStreak(checkIns, todayKey()));
-      if (!today && checkIns[0]?.created_date) setLastEntryAt(checkIns[0].created_date);
+      setKeptDays(daysKeptThisMonth(checkIns, todayKey()));
+      setHasHistory(checkIns.length > 0);
     } catch (err) {
       setLoadError(err.message || 'Could not load your check-ins.');
     }
@@ -78,12 +78,6 @@ export default function Today() {
     // one-time data migration, safe to call every mount
     migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
   }, [load]);
-
-  // Ambient tab title: a quiet nudge while today is unwritten.
-  useEffect(() => {
-    document.title = !loading && !entry ? "Vibe Check — your evening awaits" : "Vibe Check";
-    return () => { document.title = "Vibe Check"; };
-  }, [loading, entry]);
 
   const moon = moonPhase(todayKey());
   const dateLine = format(parseLocalDate(todayKey()), "EEEE, MMMM d");
@@ -109,11 +103,11 @@ export default function Today() {
 
   // ── pre-check-in: the invitation (first-run gets the welcome) ──
   if (!entry && mode !== "peek") {
-    const isFirstRun = !lastEntryAt && streak === 0;
+    const isFirstRun = !hasHistory;
     return (
       <><SkyField className="today-invitation" film>
         <PageTransition className="today-content">
-          <div className="today-date"><span>{dateLine}</span><span>{moon.name}{lastEntryAt ? ` · ${hoursSince(lastEntryAt)} hours since your last entry` : ""}</span></div>
+          <div className="today-date"><span>{dateLine}</span><span>{moon.name}</span></div>
           <div className="today-heading">
             <p className="sanctuary-eyebrow">A MOMENT, JUST FOR YOU</p>
             <h1>{isFirstRun ? "Welcome to your sanctuary." : "Come back to yourself."}</h1>
@@ -122,7 +116,7 @@ export default function Today() {
               <button type="button" className="cream-button gap-5" onClick={() => setMode("ceremony")}>{isFirstRun ? "Begin your first check-in" : "Begin check-in"}<ArrowRight size={16} aria-hidden="true" /></button>
               <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>Explore your reflections</button>
             </div>
-            {streak > 0 && <p className="mt-6 text-xs">{streakLabel(streak)} kept. There is room for tonight.</p>}
+            {keptDays > 0 && <p className="mt-6 text-xs">{daysKeptLabel(keptDays, todayKey())}. Any time today works.</p>}
           </div>
           <nav className="today-paths" aria-label="Explore your sanctuary">
             <Link to={createPageUrl("Analytics")}><Sprout size={24} aria-hidden="true" /><strong>Your patterns</strong><span>See what helps you grow.</span></Link>
@@ -141,7 +135,7 @@ export default function Today() {
         <header>
           <div className="reflection-header"><div><p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p><h1>A little more understanding.</h1></div><SanctuaryMark size={62} /></div>
           <p className="text-sm" style={{ color: "var(--gh-ink-muted)" }}>
-            {dateLine} · <span className="inline-flex items-center gap-1.5"><MoonGlyph name={moon.name} illumination={moon.illumination} />{moon.name}</span> · {streakLabel(streak)}
+            {dateLine} · <span className="inline-flex items-center gap-1.5"><MoonGlyph name={moon.name} illumination={moon.illumination} />{moon.name}</span>{keptDays > 0 && ` · ${daysKeptLabel(keptDays, todayKey())}`}
           </p>
           {!entry && (
             <div className="mt-4 p-4 flex items-center justify-between" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}>

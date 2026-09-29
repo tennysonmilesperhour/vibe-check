@@ -20,7 +20,7 @@ import MoonGlyph from "@/features/loom/MoonGlyph";
 import { DailyCheckIn } from "@/entities/all";
 import { todayKey } from "@/lib/dates";
 import { moonPhase } from "@/lib/resonance/moon";
-import { computeStreak, streakLabel } from "@/lib/streaks";
+import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { usePreferences } from "@/features/patterns/useLivingData";
 import QuickExit from "@/features/safety/QuickExit";
 
@@ -104,9 +104,9 @@ function SidebarHeader() {
     );
 }
 
-function SidebarFooterContent({ streak }) {
-    // Something true instead of a placeholder: tonight's actual moon and the
-    // real streak. streak === null means the check-ins have not loaded (yet).
+function SidebarFooterContent({ keptDays }) {
+    // Something true instead of a placeholder: today's actual moon and the days
+    // kept this month. keptDays === null means the check-ins have not loaded (yet).
     const moon = moonPhase(todayKey());
     return (
         <div className="p-3" style={{ borderTop: '1px solid hsl(var(--border))' }}>
@@ -115,9 +115,9 @@ function SidebarFooterContent({ streak }) {
                 <MoonGlyph name={moon.name} illumination={moon.illumination} size={22} color="var(--gh-ink-soft)" />
                 <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium" style={{ color: 'var(--gh-ink)' }}>{moon.name}</p>
-                    {streak !== null && (
+                    {keptDays > 0 && (
                         <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>
-                            {streak > 0 ? `${streakLabel(streak)} kept` : 'Begin tonight'}
+                            {daysKeptLabel(keptDays, todayKey())}
                         </p>
                     )}
                 </div>
@@ -131,17 +131,17 @@ export default function Layout({ children }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const [streak, setStreak] = useState(null);
+    const [keptDays, setKeptDays] = useState(null);
     // Quick exit is opt-in (Settings), so it never surprises anyone.
     const quickExitOn = Boolean(usePreferences().data?.quick_exit);
 
-    // The footer shows the real run. Re-check when the route changes so a
-    // just-saved check-in is reflected without a reload.
+    // The footer shows the days kept this month. Re-check when the route
+    // changes so a just-saved check-in is reflected without a reload.
     useEffect(() => {
         let cancelled = false;
-        DailyCheckIn.list("-date", 120)
-            .then((checkIns) => { if (!cancelled) setStreak(computeStreak(checkIns, todayKey())); })
-            .catch(() => { if (!cancelled) setStreak(null); });
+        DailyCheckIn.list("-date", 31)
+            .then((checkIns) => { if (!cancelled) setKeptDays(daysKeptThisMonth(checkIns, todayKey())); })
+            .catch(() => { if (!cancelled) setKeptDays(null); });
         return () => { cancelled = true; };
     }, [location.pathname]);
 
@@ -186,7 +186,7 @@ export default function Layout({ children }) {
                         Settings
                     </button>
                 </div>
-                <SidebarFooterContent streak={streak} />
+                <SidebarFooterContent keptDays={keptDays} />
             </aside>
 
             {/* ── Mobile overlay backdrop ── */}
@@ -247,7 +247,7 @@ export default function Layout({ children }) {
                         Invite a Friend
                     </button>
                 </div>
-                <SidebarFooterContent streak={streak} />
+                <SidebarFooterContent keptDays={keptDays} />
             </aside>
 
             {/* ── Main content ── */}

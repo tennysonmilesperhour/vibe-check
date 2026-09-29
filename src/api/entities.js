@@ -3,6 +3,7 @@
 // .update / .delete exactly as before; this layer translates.
 // RLS scopes every query to the signed-in user; user_id is stamped on insert.
 import { supabase } from './supabase';
+import { currentOwner } from './owner';
 import { fetchAllPages } from '../lib/crypto';
 
 const SORTABLE = { date: 'date', created_date: 'created_at', updated_date: 'updated_at' };
@@ -34,14 +35,20 @@ async function currentUserId() {
 
 function makeEntity(table) {
   return {
-    async list(sort = '-created_date', limit = 100, offset = 0) {
+    /**
+     * @param {string} [sort] @param {number} [limit] @param {number} [offset]
+     * @param {{ signal?: AbortSignal }} [options] signal: abandons the request.
+     */
+    async list(sort = '-created_date', limit = 100, offset = 0, { signal } = {}) {
       const { column, ascending } = parseSort(sort);
-      const { data, error } = await supabase
+      let query = supabase
         .from(table)
         .select('*')
         .order(column, { ascending })
         .order('id', { ascending: true })
         .range(offset, offset + limit - 1);
+      if (signal) query = query.abortSignal(signal);
+      const { data, error } = await query;
       if (error) throw error;
       return (data || []).map(outbound);
     },
@@ -66,7 +73,11 @@ function makeEntity(table) {
      * Fixes the read-then-write race two tabs could hit on daily check-ins.
      */
     async upsert(data, onConflict = 'user_id,date') {
-      const user_id = await currentUserId();
+      return this.upsertFor(currentOwner() || await currentUserId(), data, onConflict);
+    },
+
+    /** Upsert for this owner only: row-level security refuses it for any other signed-in account. */
+    async upsertFor(user_id, data, onConflict = 'user_id,date') {
       const { data: row, error } = await supabase
         .from(table)
         .upsert({ ...inbound(data), user_id }, { onConflict })
@@ -77,14 +88,7 @@ function makeEntity(table) {
     },
 
     async create(data) {
-      const user_id = await currentUserId();
-      const { data: row, error } = await supabase
-        .from(table)
-        .insert({ ...inbound(data), user_id })
-        .select()
-        .single();
-      if (error) throw error;
-      return outbound(row);
+      return this.createFor(currentOwner() || await currentUserId(), data);
     },
 
     async update(id, data) {
@@ -98,13 +102,29 @@ function makeEntity(table) {
       return outbound(row);
     },
 
-    /** Update every row of the person's that matches (row-level security keeps it to them). */
-    async updateWhere(criteria, data) {
+    /** Update every row of the person's that matches (row-level security keeps it to them); returns the rows it changed. */
+    /** @param {any} criteria @param {any} data @param {{ signal?: AbortSignal }} [options] */
+    async updateWhere(criteria, data, { signal } = {}) {
       let query = supabase.from(table).update(inbound(data));
       for (const [key, value] of Object.entries(criteria)) query = query.eq(key, value);
-      const { error } = await query;
+      let selected = query.select();
+      if (signal) selected = selected.abortSignal(signal);
+      const { data: rows, error } = await selected;
       if (error) throw error;
-      return true;
+      return (rows || []).map(outbound);
+    },
+
+    /** Insert for this owner only: row-level security refuses it for any other signed-in account. */
+    /** @param {string} user_id @param {any} data @param {{ signal?: AbortSignal }} [options] */
+    async createFor(user_id, data, { signal } = {}) {
+      let query = supabase
+        .from(table)
+        .insert({ ...inbound(data), user_id })
+        .select();
+      if (signal) query = query.abortSignal(signal);
+      const { data: row, error } = await query.single();
+      if (error) throw error;
+      return outbound(row);
     },
 
     async delete(id) {

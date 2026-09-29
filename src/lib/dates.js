@@ -46,7 +46,3 @@ export function diffDaysKeys(a, b) {
   return differenceInCalendarDays(parseLocalDate(a), parseLocalDate(b));
 }
 
-/** Human context line helper: hours since a given ISO datetime, floored. */
-export function hoursSince(isoDateTime) {
-  return Math.max(0, Math.floor((Date.now() - new Date(isoDateTime).getTime()) / 3600000));
-}

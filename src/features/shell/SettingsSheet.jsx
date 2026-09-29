@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { BoundaryAlert } from '@/api/entities';
 import { useAuth } from '@/lib/AuthContext';
-import { useLivingData, usePreferences } from '@/features/patterns/useLivingData';
+import { usePreferences } from '@/features/patterns/useLivingData';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -22,7 +22,6 @@ export default function SettingsSheet({ open, onOpenChange }) {
   const { toast } = useToast();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
-  const living = useLivingData();
   const prefs = usePreferences();
   const [settings, setSettings] = useState(DEFAULTS);
   const [weekStart, setWeekStart] = useState(1);
@@ -61,7 +60,7 @@ export default function SettingsSheet({ open, onOpenChange }) {
     }).catch((err) => { if (active) setError(err.message); });
     return () => { active = false; };
   }, [open, loadAttempt]);
-  useEffect(() => { setWeekStart(living.data?.preferences?.week_start ?? 1); }, [living.data?.preferences?.week_start]);
+  useEffect(() => { setWeekStart(prefs.data?.week_start ?? 1); }, [prefs.data?.week_start]);
   async function save() {
     setSaving(true);
     // Keep the "thresholds not loaded" notice and its retry visible.
@@ -77,10 +76,13 @@ export default function SettingsSheet({ open, onOpenChange }) {
         await base44.auth.updateMe({ boundary_settings: settings });
         savedSettings.current = settings;
       }
-      await living.savePreferences({ week_start: weekStart });
+      // Only a week start chosen here: this sheet can stay open for hours,
+      // and a stored choice from another device must not be written back.
+      const weekChanged = prefs.data !== undefined && weekStart !== (prefs.data.week_start ?? 1);
+      if (weekChanged) await prefs.savePreferences({ week_start: weekStart });
       toast(settingsLoaded
         ? { title: 'Settings saved' }
-        : { title: 'Week start saved', description: 'Your low-mood lines were not changed because they have not loaded yet.' });
+        : { title: weekChanged ? 'Week start saved' : 'Nothing was changed', description: 'Your low-mood lines were not changed because they have not loaded yet.' });
     } catch (err) { setError(err.message); }
     setSaving(false);
   }
@@ -132,8 +134,8 @@ export default function SettingsSheet({ open, onOpenChange }) {
         <div><Label>Low mood line: {settings.mood_threshold}</Label><Slider disabled={!settingsLoaded} min={1} max={7} step={1} value={[settings.mood_threshold]} onValueChange={([value]) => setSettings({ ...settings, mood_threshold: value })} className="mt-3" aria-label="Low mood threshold" /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
         <div><Label>Declining run: {settings.consecutive_days} days</Label><Slider disabled={!settingsLoaded} min={2} max={7} step={1} value={[settings.consecutive_days]} onValueChange={([value]) => setSettings({ ...settings, consecutive_days: value })} className="mt-3" aria-label="Consecutive declining days" /></div>
         </>}
-        <label className="living-label">Your week begins<select className="living-input mt-2" value={weekStart} onChange={(event) => setWeekStart(Number(event.target.value))}><option value={1}>Monday</option><option value={0}>Sunday</option></select></label>
-        <button className="ink-button" onClick={save} disabled={saving || living.isLoading}>{saving ? 'Saving…' : 'Save settings'}</button>
+        <label className="living-label">Your week begins<select className="living-input mt-2" value={weekStart} disabled={prefs.data === undefined || saving} onChange={(event) => setWeekStart(Number(event.target.value))}><option value={1}>Monday</option><option value={0}>Sunday</option></select></label>
+        <button className="ink-button" onClick={save} disabled={saving || prefs.isLoading}>{saving ? 'Saving…' : 'Save settings'}</button>
       </section>
       <section className="space-y-3 hairline pt-6"><h3 className="font-semibold">Your private record</h3><p className="living-muted text-sm">Check-ins, journal entries, people, and practice responses are saved to your account. Adding someone to your orbit does not invite them or share your entries.</p><p className="living-muted text-sm">Choose a date range and individual entries, remove saved people’s names, and preview the exact contents before downloading. Password encryption is available in the export preview.</p><button className="living-secondary" onClick={() => { onOpenChange(false); navigate('/Analytics?export=1'); }}>Choose & preview an export</button><p className="living-muted text-sm">Edit or delete individual records from their history. Reports update with those changes. Your patterns, full history, and reports stay free.</p></section>
       <section className="space-y-3 hairline pt-6"><h3 className="font-semibold">On a shared device</h3><label className="flex items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={quickExitChoice ?? Boolean(prefs.data?.quick_exit)} disabled={!prefs.isSuccess || quickExitChoice !== null} onChange={(event) => changeQuickExit(event.target.checked)} /><span><span className="font-medium block">Show a quick exit button</span><span className="living-muted text-xs block mt-1">Leaves Vibe Check at once for a neutral page. It doesn't erase your browser history.</span></span></label><p className="living-muted text-sm">Sign out to close access to your account on this device. Downloaded files and browser history remain on the device.</p><div className="flex flex-wrap gap-3"><button className="living-secondary" disabled={saving} onClick={() => signOut('local')}>Sign out on this device</button><button className="living-secondary" disabled={saving} onClick={() => signOut('global')}>Sign out on all devices</button></div><p className="living-muted text-xs">Other sessions are revoked immediately; an already issued access token may remain valid until it expires.</p></section>

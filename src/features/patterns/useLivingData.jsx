@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry, PracticeSession, ReportReflection, VibePreference, Person } from '@/api/entities';
 import { timelineEntries } from '@/lib/living-patterns';
+import { inOrder, mergePreferences, preferenceStore } from '@/lib/preference-store';
 
 export async function fetchLivingData() {
   const [checkIns, journal, sessions, reflections, preferences, people] = await Promise.all([
@@ -11,13 +12,20 @@ export async function fetchLivingData() {
   return { checkIns, journal, sessions, reflections, preferences: preferences[0]?.values || {}, people, entries: timelineEntries(checkIns, journal) };
 }
 
-// Merges with the latest stored values, then refreshes every ['living', user]
-// query (the full history and the preferences-only one below).
-async function storePreferences(client, userId, patch) {
-  const [row] = await VibePreference.list();
-  const result = await VibePreference.upsert({ values: { ...(row?.values || {}), ...patch } }, 'user_id');
-  await client.invalidateQueries({ queryKey: ['living', userId] });
-  return result;
+// Merges with the latest stored values, in this tab's order (see
+// preference-store). What was stored shows at once, in the same order, even
+// if a reload fails: a fetch already under way is dropped rather than let
+// it land older values, and only entries still cached are updated, so a
+// save that returns after a sign-out leaves nothing behind.
+function storePreferences(client, userId, patch) {
+  return inOrder(async () => {
+    const saved = await mergePreferences(preferenceStore(VibePreference, userId), userId, patch);
+    await client.cancelQueries({ queryKey: ['living', userId] });
+    client.setQueryData(['living', userId, 'preferences'], (old) => (old === undefined ? undefined : saved.values));
+    client.setQueryData(['living', userId], (old) => (old === undefined ? undefined : { ...old, preferences: saved.values }));
+    client.invalidateQueries({ queryKey: ['living', userId] }).catch(() => {});
+    return saved;
+  });
 }
 
 export function useLivingData() {

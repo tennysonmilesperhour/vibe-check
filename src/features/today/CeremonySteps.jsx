@@ -1,7 +1,7 @@
 import React from "react";
 import PersonPicker from "@/features/people/PersonPicker";
 import { Textarea } from "@/components/ui/textarea";
-import { SCALE_WORDS } from "./vocab";
+import { SCALE_WORDS, SCALE_ANCHORS } from "./vocab";
 import VocabularyIcon from "./VocabularyIcon";
 
 const cream = "var(--gh-cream)";
@@ -10,6 +10,7 @@ const creamSoft = "rgba(255,253,246,0.75)";
 /** 1-10 tap dial with a large serif readout. One question per screen. */
 export function ScaleStep({ field, question, value, onChange }) {
   const words = SCALE_WORDS[field] || [];
+  const anchors = SCALE_ANCHORS[field];
   return (
     <div>
       <h1 className="text-4xl md:text-6xl" style={{ color: cream, maxWidth: "14ch", lineHeight: 0.98 }}>
@@ -23,7 +24,7 @@ export function ScaleStep({ field, question, value, onChange }) {
           <span className="pb-3 text-lg" style={{ color: creamSoft }}>{words[value]}</span>
         )}
       </div>
-      <div className="mt-6 grid grid-cols-5 sm:grid-cols-10 gap-1.5 max-w-xl" role="radiogroup" aria-label={question}>
+      <div className="mt-6 grid grid-cols-5 sm:grid-cols-10 gap-1.5 max-w-xl" role="radiogroup" aria-label={question} aria-describedby={anchors ? `${field}-anchors` : undefined}>
         {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
@@ -44,6 +45,11 @@ export function ScaleStep({ field, question, value, onChange }) {
           </button>
         ))}
       </div>
+      {anchors && (
+        <p id={`${field}-anchors`} className="mt-2 flex justify-between max-w-xl text-sm" style={{ color: creamSoft }}>
+          <span>1 means {anchors[0]}</span><span>10 means {anchors[1]}</span>
+        </p>
+      )}
     </div>
   );
 }

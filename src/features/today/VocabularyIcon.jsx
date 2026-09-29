@@ -3,7 +3,7 @@ import {
   Sun, HandHeart, Waves, Flame, Heart, Sprout, Award, Palette,
   Wind, Droplet, CloudLightning, Moon, CircleDashed, Orbit, Mountain, Zap,
   Footprints, Flower2, Feather, Leaf, Users, PenTool, BookOpen, Armchair,
-  Wheat, Music2, SunMoon, MessagesSquare,
+  Wheat, Music2, SunMoon, MessagesSquare, Smile, CloudSun, Shield, HeartCrack, EyeOff, Scale,
 } from "lucide-react";
 
 const SYMBOLS = {
@@ -13,6 +13,7 @@ const SYMBOLS = {
   orbit: Orbit, mountain: Mountain, zap: Zap, footprints: Footprints, flower: Flower2,
   feather: Feather, leaf: Leaf, users: Users, "pen-tool": PenTool, "book-open": BookOpen,
   armchair: Armchair, wheat: Wheat, music: Music2, "sun-moon": SunMoon, messages: MessagesSquare,
+  smile: Smile, "cloud-sun": CloudSun, shield: Shield, "heart-crack": HeartCrack, "eye-off": EyeOff, scale: Scale,
 };
 
 /** A consistent fine-line symbol; the adjacent vocabulary label carries meaning. */

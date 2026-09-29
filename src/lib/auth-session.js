@@ -2,12 +2,14 @@
 
 /**
  * A network failure is not a sign-out. Supabase reports unreachable servers as
- * AuthRetryableFetchError (or with no status); only a real rejection means the
- * session is gone.
+ * AuthRetryableFetchError (or with no status); timeouts, rate limits, and
+ * server errors are temporary too. Only a real rejection means the session is
+ * gone.
  */
 export function isTransientAuthError(error) {
   if (!error) return false;
-  return error.name === 'AuthRetryableFetchError' || !error.status || error.status >= 500;
+  const { name, status } = error;
+  return name === 'AuthRetryableFetchError' || !status || status === 408 || status === 429 || status >= 500;
 }
 
 export const userFromSession = (session) => (session?.user ? { id: session.user.id, email: session.user.email ?? null } : null);

@@ -21,6 +21,7 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 // Autosave waits for a pause in typing before writing the server draft.
 const AUTOSAVE_DELAY_MS = 1500;
+const AUTOSAVE_RETRY_MS = 10000;
 
 const STEP_IDS = ["mood", "energy", "sleep", "emotions", "activities", "stress", "high", "low", "reflection"];
 
@@ -35,10 +36,10 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const [stepIndex, setStepIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [draftLoading, setDraftLoading] = useState(true);
-  const [draftId, setDraftId] = useState(null);
   const [draftMessage, setDraftMessage] = useState('');
   const [customHabits, setCustomHabits] = useState((existing?.activities || []).filter((item) => !ACTIVITIES.some((preset) => preset.label === item)).join(', '));
   const [autosave, setAutosave] = useState('idle'); // idle | saving | saved | offline
+  const [retry, setRetry] = useState(0);
   const stepRegionRef = useRef(null);
   const { user } = useAuth();
   const bufferKey = user?.id ? `ceremony:${user.id}:${dateKey}` : null;
@@ -47,6 +48,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const draftIdRef = useRef(null);
   const pendingDraftRef = useRef(null);
   const finishedRef = useRef(false);
+  const autosaveTimerRef = useRef(null);
+  const retryTimerRef = useRef(null);
 
   // Keyboard and screen-reader users track progress: each step change moves
   // focus to the new step's region (which carries the question heading).
@@ -79,7 +82,6 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     CheckInDraft.filter({ date: dateKey }).then(([draft]) => {
       if (!active) return;
       if (draft) {
-        setDraftId(draft.id);
         draftIdRef.current = draft.id;
       }
       if (bufferIsNewer(buffer, existing?.updated_at, draft?.updated_at)) {
@@ -105,31 +107,53 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   useEffect(() => {
     if (!dirty || finishedRef.current) return undefined;
     writeBuffer(bufferKey, { form });
-    const timer = setTimeout(async () => {
+    autosaveTimerRef.current = setTimeout(async () => {
+      if (finishedRef.current) return;
       setAutosave('saving');
       const request = CheckInDraft.upsert({ date: dateKey, payload: form });
       pendingDraftRef.current = request;
       try {
         const draft = await request;
-        if (finishedRef.current) return;
+        // Record the id even if the final save started meanwhile, so it can
+        // delete this draft once the check-in is kept.
         draftIdRef.current = draft.id;
-        setDraftId(draft.id);
+        if (finishedRef.current) return;
         baselineRef.current = snapshot;
         setAutosave('saved');
       } catch {
-        if (!finishedRef.current) setAutosave('offline');
+        if (finishedRef.current) return;
+        setAutosave('offline');
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = setTimeout(() => setRetry((count) => count + 1), AUTOSAVE_RETRY_MS);
       }
     }, AUTOSAVE_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [snapshot, dirty, dateKey, bufferKey]);
+    return () => clearTimeout(autosaveTimerRef.current);
+  }, [snapshot, dirty, dateKey, bufferKey, retry]);
+
+  // Retry a failed autosave as soon as the connection returns.
+  useEffect(() => {
+    const onOnline = () => setRetry((count) => count + 1);
+    window.addEventListener('online', onOnline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      clearTimeout(retryTimerRef.current);
+    };
+  }, []);
+
+  /** Stop any scheduled autosave and wait for one already in flight. */
+  async function settleAutosave() {
+    finishedRef.current = true;
+    clearTimeout(autosaveTimerRef.current);
+    clearTimeout(retryTimerRef.current);
+    await pendingDraftRef.current?.catch(() => {});
+  }
 
   useBeforeUnload(dirty && !finishedRef.current);
 
   async function saveDraft() {
     setSaving(true);
     try {
-      finishedRef.current = true;
-      await pendingDraftRef.current?.catch(() => {});
+      await settleAutosave();
       await CheckInDraft.upsert({ date: dateKey, payload: form });
       clearBuffer(bufferKey);
       toast({ title: 'Draft saved', description: 'Return to this date to continue.' });
@@ -156,10 +180,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
 
   const save = async () => {
     setSaving(true);
-    finishedRef.current = true;
-    await pendingDraftRef.current?.catch(() => {});
+    await settleAutosave();
     try {
-      const me = await base44.auth.me();
+      // The profile only adds an optional personal-day number; never let a
+      // profile hiccup block keeping the day.
+      const me = await base44.auth.me().catch(() => null);
       const birthDate = me?.cosmic_profile?.birth_date || null;
       const moon = moonPhase(dateKey);
       const personIds = [
@@ -177,8 +202,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       // ceremony can't race a read-then-create into a unique violation.
       const saved = await DailyCheckIn.upsert(payload);
       clearBuffer(bufferKey);
-      const savedDraftId = draftIdRef.current || draftId;
-      if (savedDraftId) await CheckInDraft.delete(savedDraftId).catch(() => {});
+      if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current).catch(() => {});
       await queryClient.invalidateQueries({ queryKey: ['living'] });
 
       // Automatic boundary pass — the old app made you press a button on another page.

@@ -38,6 +38,13 @@ export function EntryCard({ entry, people = [], selected = false, onEdit, onDele
   </article>;
 }
 
+/** Short, stable key for a prompt's text (djb2). */
+function promptKey(text) {
+  let hash = 5381;
+  for (let i = 0; i < text.length; i += 1) hash = ((hash << 5) + hash + text.charCodeAt(i)) >>> 0;
+  return hash.toString(36);
+}
+
 export function JournalComposer({ open, existing = null, prompt = '', onClose, onSaved }) {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -45,12 +52,16 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
   const [notice, setNotice] = useState('');
   const [confirmClose, setConfirmClose] = useState(false);
   const baselineRef = useRef(null);
+  const touchedRef = useRef(false);
   const { user } = useAuth();
-  const bufferKey = user?.id ? `composer:${user.id}:${existing?.id || 'new'}` : null;
+  // New entries started from a prompt get their own key, so a prompt is never
+  // replaced by older free-form words (and vice versa).
+  const bufferKey = user?.id ? `composer:${user.id}:${existing?.id || (prompt ? `prompt-${promptKey(prompt)}` : 'new')}` : null;
   useEffect(() => {
     if (open) {
       const initial = existing ? { ...existing, kind: existing.entry_kind || (['reflection', 'interaction'].includes(existing.kind) ? existing.kind : 'reflection'), emotions_text: (existing.emotions || []).join(', '), time: existing.occurred_at ? new Date(existing.occurred_at).toTimeString().slice(0, 5) : '', activities_text: (existing.activities || []).join(', ') } : { date: todayKey(), kind: 'reflection', time: '', emotions_text: '', notes: prompt, mood_score: null, person_ids: [], activities_text: '', stress_context: {}, interaction_feeling: '', boundary_respected: '' };
       baselineRef.current = JSON.stringify(initial);
+      touchedRef.current = false;
       const buffer = readBuffer(bufferKey);
       const restore = bufferIsNewer(buffer, existing?.updated_at);
       setForm(restore ? buffer.value : initial);
@@ -61,12 +72,13 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
     // Restore once per opening; later edits must not re-run this.
   }, [open, existing, prompt, bufferKey]);
   const dirty = Boolean(open && form && baselineRef.current !== null && JSON.stringify(form) !== baselineRef.current);
+  // Buffer only what the person actually typed; clear it on save or discard.
   useEffect(() => {
-    if (!open || !form) return;
-    if (dirty) writeBuffer(bufferKey, form); else clearBuffer(bufferKey);
-  }, [open, form, dirty, bufferKey]);
+    if (open && form && touchedRef.current) writeBuffer(bufferKey, form);
+  }, [open, form, bufferKey]);
   useBeforeUnload(dirty);
-  const update = (patch) => setForm((previous) => ({ ...previous, ...patch }));
+  const update = (patch) => { touchedRef.current = true; setForm((previous) => ({ ...previous, ...patch })); };
+  const canKeepAsDraft = !existing || existing.is_draft;
   function requestClose() {
     if (busy) return;
     if (dirty) { setConfirmClose(true); return; }
@@ -105,7 +117,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
       <label className="living-label">Habits or activities<input className="living-input mt-2" value={form.activities_text} onChange={(e) => update({ activities_text: e.target.value })} maxLength={1000} placeholder="A walk, late work, coffee… separated by commas" /></label>
       <details open={Boolean(existing?.stress_context?.state_ids?.length)}><summary className="living-label cursor-pointer mb-4">Stress, body cues, and feeling like yourself · optional</summary><StressFields value={form.stress_context} onChange={(value) => update({ stress_context: value })} /></details>
       {error && <p className="living-error" role="alert">{error}</p>}
-      {confirmClose && <div className="living-inset" role="alert"><p className="text-sm mb-3">These words are not saved yet.</p><div className="flex flex-wrap items-center gap-3"><button type="button" className="living-secondary" onClick={() => setConfirmClose(false)}>Keep writing</button><button type="button" className="living-secondary" disabled={busy} onClick={() => save(true)}>Save as a draft</button><button type="button" className="underline text-sm" onClick={discard}>Discard these words</button></div></div>}
+      {confirmClose && <div className="living-inset" role="alert"><p className="text-sm mb-3">{canKeepAsDraft ? 'These words are not saved yet.' : 'Your changes to this entry are not saved yet.'}</p><div className="flex flex-wrap items-center gap-3"><button type="button" className="living-secondary" onClick={() => setConfirmClose(false)}>Keep writing</button>{canKeepAsDraft ? <button type="button" className="living-secondary" disabled={busy} onClick={() => save(true)}>Save as a draft</button> : <button type="button" className="living-secondary" disabled={busy} onClick={() => save(false)}>Save changes</button>}<button type="button" className="underline text-sm" onClick={discard}>{canKeepAsDraft ? 'Discard these words' : 'Discard changes'}</button></div></div>}
       <div className="flex flex-wrap gap-3"><button type="submit" className="ink-button" disabled={busy}>{busy ? 'Keeping your words…' : 'Save journal entry'}</button><button type="button" className="living-secondary" disabled={busy} onClick={() => save(true)}>Save as a draft</button></div>
     </form>}
   </DialogContent></Dialog>;

@@ -190,6 +190,7 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 1: Toggle Systems ── */}
                     <TabsContent value="systems" className="space-y-6">
+                    <fieldset disabled={profileLoad !== 'ready'} className="space-y-6 min-w-0 border-0 p-0 m-0" aria-busy={profileLoad === 'loading'}>
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Choose your systems</h3>
                             <p className="text-sm mb-2" style={{ color: 'var(--gh-ink-muted)' }}>
@@ -254,10 +255,12 @@ export default function CosmicAddons() {
                                 {isSaving ? 'Saving…' : 'Save your cosmos'}
                             </button>
                         </div>
+                    </fieldset>
                     </TabsContent>
 
                     {/* ── Tab 2: Profile Detail Forms ── */}
                     <TabsContent value="profile" className="space-y-6">
+                    <fieldset disabled={profileLoad !== 'ready'} className="space-y-6 min-w-0 border-0 p-0 m-0" aria-busy={profileLoad === 'loading'}>
                         {/* Sacred Geometry Blueprint */}
                         <div className="p-6 flex flex-col items-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Your cosmic blueprint</h3>
@@ -306,6 +309,7 @@ export default function CosmicAddons() {
                                 </button>
                             </div>
                         )}
+                    </fieldset>
                     </TabsContent>
 
                     {/* ── Tab 3: Connections ── */}

@@ -31,6 +31,9 @@ describe('isTransientAuthError', () => {
     expect(isTransientAuthError({ name: 'AuthRetryableFetchError', status: 0 })).toBe(true);
     expect(isTransientAuthError({ name: 'TypeError' })).toBe(true);
     expect(isTransientAuthError({ name: 'AuthApiError', status: 503 })).toBe(true);
+    // Timeouts and rate limits are temporary; signing out on them would wipe unsaved words.
+    expect(isTransientAuthError({ name: 'AuthApiError', status: 408 })).toBe(true);
+    expect(isTransientAuthError({ name: 'AuthApiError', status: 429 })).toBe(true);
   });
   it('treats real rejections as sign-outs', () => {
     expect(isTransientAuthError({ name: 'AuthApiError', status: 401 })).toBe(false);

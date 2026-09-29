@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergePreferences, preferenceStore, inOrder, OTHER_ACCOUNT, TOO_SLOW, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
+import { mergePreferences, preferenceStore, inOrder, saveProblem, OTHER_ACCOUNT, TOO_SLOW, UNCONFIRMED, UNIQUE_VIOLATION, ROW_SECURITY } from '../preference-store';
 
 // A stored row that moves its updated_at on every write, like the database,
 // with a pause before each write so changes started together overlap.
@@ -91,14 +91,33 @@ describe('changes from one tab land in the order they were made', () => {
   });
 
   it('gives up on a request that takes too long, so later changes still run', async () => {
+    // Like the client waiting for a sign-in token: it doesn't answer the abort.
+    /** @type {any} */
+    let seen;
     const stalled = {
-      list: (/** @type {any} */ _sort, /** @type {any} */ _limit, /** @type {any} */ _offset, /** @type {any} */ { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')))),
+      list: (/** @type {any} */ _sort, /** @type {any} */ _limit, /** @type {any} */ _offset, /** @type {any} */ options) => { seen = options.signal; return new Promise(() => {}); },
       updateWhere: async () => [],
       createFor: async () => null,
     };
     const first = inOrder(() => mergePreferences(preferenceStore(stalled, 'me', 30), 'me', { a: 1 }));
     const next = inOrder(async () => 'next ran');
     await expect(first).rejects.toThrow(TOO_SLOW);
+    // The request is abandoned too, so it can't go out once the token arrives.
+    expect(seen.aborted).toBe(true);
     expect(await next).toBe('next ran');
+  });
+
+  it('says a slow write may have been stored, and a slow read that nothing was', async () => {
+    const slowWrite = {
+      list: async () => [{ id: 'row', user_id: 'me', values: {}, updated_at: 'u' }],
+      updateWhere: () => new Promise(() => {}),
+      createFor: async () => null,
+    };
+    await expect(mergePreferences(preferenceStore(slowWrite, 'me', 30), 'me', { a: 1 })).rejects.toThrow(UNCONFIRMED);
+    expect(UNCONFIRMED).toMatch(/will show here once it reloads/);
+    expect(saveProblem(new Error(UNCONFIRMED))).toMatch(/Your words are still here/);
+    expect(saveProblem(new Error(OTHER_ACCOUNT))).toBe(OTHER_ACCOUNT);
+    expect(saveProblem(new Error('Failed to fetch'))).toBe('Could not save: Failed to fetch');
+    expect(TOO_SLOW).toMatch(/^Not saved/);
   });
 });

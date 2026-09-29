@@ -13,7 +13,20 @@
 const MAX_ATTEMPTS = 6;
 const REQUEST_MS = 20000;
 export const OTHER_ACCOUNT = 'Not saved: a different account is signed in now.';
-export const TOO_SLOW = 'Saving is taking too long. Check your connection and try again.';
+// A read that times out sent nothing. A write that times out may have been
+// stored: a control shows what is stored once it reloads, so trying again
+// could undo it, while a form keeps the words, and saving them again does no
+// harm.
+export const TOO_SLOW = 'Not saved: the connection was too slow. Please try again.';
+export const UNCONFIRMED = 'The connection was too slow to confirm this was saved. What is stored will show here once it reloads.';
+const UNCONFIRMED_FORM = 'The connection was too slow to confirm this was saved. Your words are still here, and saving again does no harm.';
+const OWN_MESSAGES = new Set([OTHER_ACCOUNT, TOO_SLOW]);
+
+/** How a form reports a failed save: the store's own messages stand alone. */
+export function saveProblem(/** @type {any} */ error) {
+  if (error?.message === UNCONFIRMED) return UNCONFIRMED_FORM;
+  return OWN_MESSAGES.has(error?.message) ? error.message : `Could not save: ${error?.message}`;
+}
 // Postgres error codes: a row for this owner already exists; the signed-in
 // account may not write this owner's row.
 export const UNIQUE_VIOLATION = '23505';
@@ -43,15 +56,22 @@ export async function mergePreferences(store, userId, patch) {
   throw new Error('Your settings were changing somewhere else at the same moment. Please try again.');
 }
 
-// Each request is abandoned after requestMs, so a stalled one fails instead of
-// holding every later change back, and can't reach the server late.
-async function inTime(requestMs, run) {
+// Each request is abandoned after requestMs, counted from the call, even
+// while the client still waits for a sign-in token: the change fails at once
+// instead of holding every later one back, and a request not yet sent never
+// goes out. A write the server already received may still be stored, so the
+// caller reloads what is stored either way.
+async function inTime(requestMs, run, slow = TOO_SLOW) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), requestMs);
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let timer;
+  const tooSlow = new Promise((_, reject) => {
+    timer = setTimeout(() => { controller.abort(); reject(new Error(slow)); }, requestMs);
+  });
   try {
-    return await run(controller.signal);
+    return await Promise.race([run(controller.signal), tooSlow]);
   } catch (error) {
-    if (controller.signal.aborted) throw new Error(TOO_SLOW);
+    if (controller.signal.aborted) throw new Error(slow);
     throw error;
   } finally {
     clearTimeout(timer);
@@ -66,8 +86,8 @@ async function inTime(requestMs, run) {
 export function preferenceStore(entity, userId, requestMs = REQUEST_MS) {
   return {
     read: () => inTime(requestMs, async (signal) => (await entity.list('-created_date', 1, 0, { signal }))[0]),
-    swap: (row, values) => inTime(requestMs, async (signal) => (await entity.updateWhere({ id: row.id, user_id: userId, updated_at: row.updated_at }, { values }, { signal }))[0]),
-    create: (values) => inTime(requestMs, (signal) => entity.createFor(userId, { values }, { signal })).catch((/** @type {any} */ error) => {
+    swap: (row, values) => inTime(requestMs, async (signal) => (await entity.updateWhere({ id: row.id, user_id: userId, updated_at: row.updated_at }, { values }, { signal }))[0], UNCONFIRMED),
+    create: (values) => inTime(requestMs, (signal) => entity.createFor(userId, { values }, { signal }), UNCONFIRMED).catch((/** @type {any} */ error) => {
       if (error?.code === UNIQUE_VIOLATION) return null;
       if (error?.code === ROW_SECURITY) throw new Error(OTHER_ACCOUNT);
       throw error;

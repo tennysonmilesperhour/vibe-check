@@ -3,7 +3,7 @@ import { evaluateBoundaries, dedupeAlerts } from '../boundaries.js';
 
 const mk = (date, mood) => ({ date, mood_score: mood });
 
-const settings = { mood_threshold: 4, consecutive_days: 3 };
+const settings = { notices_enabled: true, mood_threshold: 4, consecutive_days: 3 };
 
 describe('evaluateBoundaries', () => {
   it('flags a low-mood day at or under the threshold', () => {
@@ -50,5 +50,28 @@ describe('dedupeAlerts', () => {
     const out = dedupeAlerts(fresh, existing);
     expect(out).toHaveLength(1);
     expect(out[0].alert_type).toBe('declining');
+  });
+});
+
+describe('evaluateBoundaries notices are opt-in and factual', () => {
+  it('stays silent unless the person turned notices on', () => {
+    expect(evaluateBoundaries([mk('2026-07-02', 1)], { mood_threshold: 4 })).toEqual([]);
+    expect(evaluateBoundaries([mk('2026-07-02', 1)], {})).toEqual([]);
+  });
+
+  it('names the day, the score, and the line the person chose', () => {
+    const [alert] = evaluateBoundaries([mk('2026-07-02', 3)], settings);
+    expect(alert.message).toBe('On Thursday, July 2 your mood was 3, at or below the line of 4 you chose.');
+    expect(alert.message).not.toMatch(/today/i);
+  });
+
+  it('reports a declining run with the actual scores', () => {
+    const out = evaluateBoundaries([mk('2026-07-02', 7), mk('2026-07-01', 8), mk('2026-06-30', 9)], settings);
+    const declining = out.find((a) => a.alert_type === 'declining');
+    expect(declining.message).toBe('Your last 3 check-ins went from 9 to 8 to 7, ending Thursday, July 2.');
+  });
+
+  it('ignores check-ins without a mood score', () => {
+    expect(evaluateBoundaries([{ date: '2026-07-02', mood_score: null }], settings)).toEqual([]);
   });
 });

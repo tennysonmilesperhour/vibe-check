@@ -6,6 +6,7 @@ const supportEmail = "morphiclabsdata@gmail.com";
 export default function Support() {
   return (
     <LegalPage title="Support">
+      <p><strong>Need to talk to someone now?</strong> <a className="touch-link underline" href="/support-now">Free crisis and safety services</a> are listed on one page, with a safety plan you can keep. This email address isn't watched around the clock and can't help in an emergency.</p>
       <p>For help with signing in, exports, privacy, or account deletion, contact the Vibe Check team.</p>
       <p><a className="ink-button inline-flex items-center" href={`mailto:${supportEmail}?subject=Vibe%20Check%20support`}>Email support</a></p>
       <p>{supportEmail}</p>
@@ -14,7 +15,8 @@ export default function Support() {
       <ul>
         <li>Confirm you are using the same email address you used to create the account.</li>
         <li>Use “Forgot your password?” on the sign-in screen if you cannot sign in.</li>
-        <li>If saving fails, keep the page open and retry when your connection returns. Unsaved text may be lost if you close the page.</li>
+        <li>Check-ins save a draft as you write. If saving fails, keep the tab open: your words stay in that tab and Vibe Check tries again when your connection returns. Words that haven't saved can be lost if you close the tab.</li>
+        <li>If you set an app lock and forgot the PIN, choose “Forgot your PIN?” on the lock screen. It signs you out and removes the lock on that device; your records stay in your account.</li>
       </ul>
 
       <h2>Account deletion</h2>

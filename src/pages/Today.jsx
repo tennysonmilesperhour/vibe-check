@@ -56,13 +56,15 @@ export default function Today() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [checkIns, openAlerts] = await Promise.all([
+      const [checkIns, openAlerts, me] = await Promise.all([
         DailyCheckIn.all("-date"),
         BoundaryAlert.filter({ is_acknowledged: false }).catch(() => []),
+        base44.auth.me().catch(() => null),
       ]);
       const today = checkIns.find((c) => c.date === todayKey()) || null;
       setEntry(today);
-      setAlerts(openAlerts);
+      // Notices are opt-in; older ones stay hidden unless the person turned them on.
+      setAlerts(me?.boundary_settings?.notices_enabled ? openAlerts : []);
       setStreak(computeStreak(checkIns, todayKey()));
       if (!today && checkIns[0]?.created_date) setLastEntryAt(checkIns[0].created_date);
     } catch (err) {

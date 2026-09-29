@@ -22,6 +22,9 @@ export function LockScreen({ userId, onUnlock, onForgot, onClosed = () => {}, on
   const paused = pausedUntil > Date.now();
   const inputRef = useRef(null);
   const titleRef = useRef(null);
+  // Closed (say, "Not now") while a PIN was being checked: don't unlock afterwards.
+  const gone = useRef(false);
+  useEffect(() => { gone.current = false; return () => { gone.current = true; }; }, []);
 
   useEffect(() => {
     const remaining = pausedUntil - Date.now();
@@ -69,6 +72,7 @@ export function LockScreen({ userId, onUnlock, onForgot, onClosed = () => {}, on
     setBusy(true);
     setError(''); // so a repeated message is announced again
     const ok = await pinMatches(userId, pin).catch(() => false);
+    if (gone.current) return;
     setBusy(false);
     if (ok) {
       clearFailedAttempts(userId);
@@ -104,7 +108,7 @@ export function LockScreen({ userId, onUnlock, onForgot, onClosed = () => {}, on
             event.preventDefault();
             focusStart(); // during a pause the PIN field is disabled; don't land on sign-out instead
           }}
-          onEscapeKeyDown={onCancel ? () => onCancel() : undefined}
+          onEscapeKeyDown={onCancel ? () => { if (!busy) onCancel(); } : undefined}
           onCloseAutoFocus={(event) => { event.preventDefault(); onClosed(); }}
         >
           <form onSubmit={submit} className="m-auto w-full max-w-sm text-center space-y-4">
@@ -131,7 +135,7 @@ export function LockScreen({ userId, onUnlock, onForgot, onClosed = () => {}, on
               {/* Shown here rather than on another page, so nothing under the lock is lost. */}
               <button type="button" className="underline text-sm" aria-expanded={showSupport} onClick={() => setShowSupport((open) => !open)}>Need support now?</button>
               <QuickExit className="underline text-sm inline-flex items-center gap-2" />
-              {onCancel && <button type="button" className="underline text-sm" onClick={onCancel}>Not now</button>}
+              {onCancel && <button type="button" className="underline text-sm" disabled={busy} onClick={onCancel}>Not now</button>}
             </div>
             {showSupport && <div className="living-card text-left"><SupportResources /></div>}
           </form>

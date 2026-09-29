@@ -15,7 +15,7 @@ import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
 import { computeStreak, isMilestone } from "@/lib/streaks";
 import { todayKey } from "@/lib/dates";
 import { useAuth } from "@/lib/AuthContext";
-import { readBuffer, clearBuffer, bufferRestorable } from "@/lib/writing-buffer";
+import { readBuffer, clearBuffer, bufferRestorable, latestVersion, isNewerVersion } from "@/lib/writing-buffer";
 import useWritingBuffer from "@/hooks/use-writing-buffer";
 import useBeforeUnload from "@/hooks/use-before-unload";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -56,8 +56,10 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftMessage, setDraftMessage] = useState('');
   const [restored, setRestored] = useState(false); // a saved draft or tab copy was brought back
+  // Unsaved words from this tab that can't be proven newer than the server copy.
+  const [heldBuffer, setHeldBuffer] = useState(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
-  const [autosave, setAutosave] = useState('idle'); // idle | saving | saved | offline
+  const [autosave, setAutosave] = useState('idle'); // idle | saving | saved | offline | local
   const [retry, setRetry] = useState(0);
   // The newest server version for this date (check-in or draft). Tab copies
   // record it, so a restore compares server times and never the device clock.
@@ -69,6 +71,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // What the server already holds; anything different is unsaved.
   const baselineRef = useRef(null);
   const draftIdRef = useRef(null);
+  // The draft this visit started from, so "Discard changes" can put it back.
+  const visitStartDraftRef = useRef(null);
+  // False when the saved draft couldn't be loaded: never autosave over a
+  // draft this tab has not seen.
+  const draftKnownRef = useRef(true);
   // Draft writes run one at a time, in order, so an older draft can never land
   // after a newer one or after the day is kept.
   const chainRef = useRef(Promise.resolve());
@@ -93,20 +100,33 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     let active = true;
     const initial = formFrom(existing);
     baselineRef.current = JSON.stringify(initial);
+    visitStartDraftRef.current = null;
     const buffer = readBuffer(bufferKey);
-    const restoreBuffer = (message) => {
-      restoreForm(buffer.value);
-      setRestored(true);
-      setDraftMessage(message);
+    // Restore a tab copy that is provably newest; otherwise offer it back
+    // rather than dropping words that may still be the latest.
+    const takeBuffer = (shown, ...serverTimes) => {
+      if (!buffer) return false;
+      if (bufferRestorable(buffer, ...serverTimes)) {
+        restoreForm(buffer.value);
+        setRestored(true);
+        return true;
+      }
+      if (JSON.stringify({ ...shown, ...buffer.value }) !== JSON.stringify(shown)) setHeldBuffer(buffer.value);
+      return false;
     };
     CheckInDraft.filter({ date: dateKey }).then(([draft]) => {
       if (!active) return;
+      draftKnownRef.current = true;
       if (draft) draftIdRef.current = draft.id;
-      const draftIsNewer = Boolean(draft) && (!existing || draft.updated_at > existing.updated_at);
-      setServerVersion([existing?.updated_at, draft?.updated_at].filter(Boolean).sort().at(-1) || null);
-      if (draftIsNewer) baselineRef.current = JSON.stringify({ ...initial, ...draft.payload });
-      if (bufferRestorable(buffer, existing?.updated_at, draft?.updated_at)) {
-        restoreBuffer('Your unsaved check-in is here.');
+      const draftIsNewer = Boolean(draft) && isNewerVersion(draft.updated_at, existing?.updated_at);
+      const shown = draftIsNewer ? { ...initial, ...draft.payload } : initial;
+      setServerVersion(latestVersion(existing?.updated_at, draft?.updated_at));
+      if (draftIsNewer) {
+        baselineRef.current = JSON.stringify(shown);
+        visitStartDraftRef.current = draft.payload;
+      }
+      if (takeBuffer(shown, existing?.updated_at, draft?.updated_at)) {
+        setDraftMessage('Your unsaved check-in is here.');
       } else if (draftIsNewer) {
         restoreForm(draft.payload);
         setRestored(true);
@@ -114,10 +134,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       }
     }).catch(() => {
       if (!active) return;
-      if (bufferRestorable(buffer, existing?.updated_at)) {
-        restoreBuffer('Your unsaved check-in is here. We could not reach your saved drafts, so keep this tab open until it saves.');
+      draftKnownRef.current = false;
+      if (takeBuffer(initial, existing?.updated_at)) {
+        setDraftMessage('Your unsaved check-in is here. We could not reach your saved drafts, so it is kept in this tab until you keep the day.');
       } else {
-        setDraftMessage('Could not check for a saved draft. Reload before continuing if you were resuming one.');
+        setDraftMessage('Could not check for a saved draft. What you write is kept in this tab; reload before continuing if you were resuming one.');
       }
     }).finally(() => { if (active) setDraftLoading(false); });
     return () => { active = false; };
@@ -127,9 +148,17 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // switch, reload, or dropped connection never takes the words.
   const snapshot = JSON.stringify(form);
   const dirty = !draftLoading && baselineRef.current !== null && snapshot !== baselineRef.current;
-  useWritingBuffer(bufferKey, form, { enabled: dirty && !finishedRef.current, basedOn: serverVersion });
+  useWritingBuffer(bufferKey, snapshot, { enabled: dirty && !finishedRef.current, basedOn: serverVersion });
+  // Edits taken back to where the visit started leave nothing to restore.
+  useEffect(() => {
+    if (!draftLoading && !dirty && editedRef.current && !heldBuffer) clearBuffer(bufferKey);
+  }, [dirty, draftLoading, heldBuffer, bufferKey]);
   useEffect(() => {
     if (!dirty || finishedRef.current) return undefined;
+    if (!draftKnownRef.current) {
+      setAutosave('local');
+      return undefined;
+    }
     autosaveTimerRef.current = setTimeout(() => {
       if (finishedRef.current) return;
       setAutosave('saving');
@@ -201,28 +230,43 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     setSaving(false);
   }
 
-  /** Remove this session's draft and tab copy. Returns true when done. */
-  async function discardDraft() {
+  /** Run a draft change after autosave settles. Returns true when it worked. */
+  async function changeDrafts(work, failureTitle) {
     setSaving(true);
     try {
       await settleAutosave();
-      if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current);
-      draftIdRef.current = null;
+      await work();
       clearBuffer(bufferKey);
       return true;
     } catch (err) {
       resumeAutosave();
-      toast({ title: 'Could not discard the draft', description: err.message, variant: 'destructive' });
+      toast({ title: failureTitle, description: err.message, variant: 'destructive' });
       return false;
     } finally {
       setSaving(false);
     }
   }
 
+  // Leave-prompt "Discard changes": undo this visit only. A draft saved on an
+  // earlier visit is put back; a draft this visit created is removed.
+  const discardVisit = () => changeDrafts(async () => {
+    if (visitStartDraftRef.current) await CheckInDraft.upsert({ date: dateKey, payload: visitStartDraftRef.current });
+    else if (draftIdRef.current) {
+      await CheckInDraft.delete(draftIdRef.current);
+      draftIdRef.current = null;
+    }
+  }, 'Could not discard the changes');
+
+  // "Discard draft" on a restored draft: remove the whole draft for this day.
   async function discardRestored() {
-    if (!(await discardDraft())) return;
+    const done = await changeDrafts(async () => {
+      if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current);
+      draftIdRef.current = null;
+    }, 'Could not discard the draft');
+    if (!done) return;
     const initial = formFrom(existing);
     baselineRef.current = JSON.stringify(initial);
+    visitStartDraftRef.current = null;
     setForm(initial);
     setCustomHabits(customHabitsFrom(initial.activities));
     setServerVersion(existing?.updated_at || null);
@@ -231,6 +275,18 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     setDraftMessage('Draft discarded.');
     editedRef.current = false;
     finishedRef.current = false;
+  }
+
+  function acceptHeldBuffer() {
+    editedRef.current = true;
+    restoreForm(heldBuffer);
+    setHeldBuffer(null);
+    setDraftMessage('Your unsaved words from this tab are back.');
+  }
+
+  function dismissHeldBuffer() {
+    setHeldBuffer(null);
+    if (!editedRef.current) clearBuffer(bufferKey);
   }
 
   // Leaving from the first step: ask only if this visit changed something.
@@ -260,10 +316,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const save = async () => {
     setSaving(true);
     await settleAutosave();
+    // The profile only adds an optional personal-day number; never let a
+    // profile hiccup block keeping the day.
+    const me = await base44.auth.me().catch(() => null);
+    let saved;
     try {
-      // The profile only adds an optional personal-day number; never let a
-      // profile hiccup block keeping the day.
-      const me = await base44.auth.me().catch(() => null);
       const birthDate = me?.cosmic_profile?.birth_date || null;
       const moon = moonPhase(dateKey);
       const personIds = [
@@ -276,22 +333,31 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         ...(birthDate ? { personal_day: personalDay(birthDate, dateKey) } : {}),
         person_ids: personIds,
       };
-
       // Single atomic write on (user_id, date): a second tab or a re-entered
       // ceremony can't race a read-then-create into a unique violation.
-      const saved = await DailyCheckIn.upsert(payload);
-      clearBuffer(bufferKey);
-      if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current).catch(() => {});
-      await queryClient.invalidateQueries({ queryKey: ['living'] });
+      saved = await DailyCheckIn.upsert(payload);
+    } catch (e) {
+      resumeAutosave();
+      toast({ title: "Could not save", description: e?.message || "Please try again. Your words are still here.", variant: "destructive" });
+      setSaving(false);
+      return;
+    }
 
-      // Automatic boundary pass — the old app made you press a button on another page.
-      // Skipped when the profile could not load: without the person's own
-      // thresholds, a default line must not be described as theirs.
-      let newAlerts = [];
-      if (me) try {
+    // The day is kept. Nothing below may bring a draft back or report the
+    // save as failed.
+    baselineRef.current = JSON.stringify(form);
+    clearBuffer(bufferKey);
+    if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current).catch(() => {});
+    await queryClient.invalidateQueries({ queryKey: ['living'] }).catch(() => {});
+
+    // Automatic boundary pass. Skipped when the profile could not load:
+    // without the person's own thresholds, a default line must not be
+    // described as theirs.
+    let newAlerts = [];
+    if (me) {
+      try {
         const recent = await DailyCheckIn.list("-date", 30);
-        const settings = me?.boundary_settings || {};
-        const candidates = evaluateBoundaries(recent, settings);
+        const candidates = evaluateBoundaries(recent, me.boundary_settings || {});
         const existingAlerts = await BoundaryAlert.list("-created_date", 50);
         newAlerts = dedupeAlerts(candidates, existingAlerts);
         for (const alert of newAlerts) {
@@ -300,29 +366,26 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       } catch {
         // boundary check must never block the save
       }
-
-      // Streak celebration (respect reduced motion).
-      try {
-        const recent = await DailyCheckIn.list("-date", 120);
-        const streak = computeStreak(recent, todayKey());
-        if (isMilestone(streak) && !reduced && !existing) {
-          const confetti = (await import("canvas-confetti")).default;
-          confetti({ particleCount: 90, spread: 75, origin: { y: 0.7 }, colors: ["#929B78", "#B59B79", "#A58E66", "#E9E2CD"] });
-        }
-        toast({
-          title: existing ? "Today, updated" : "The day is kept",
-          description: streak > 1 ? `${streak} evenings in a row.` : "Your first evening of a new run.",
-        });
-      } catch {
-        toast({ title: existing ? "Today, updated" : "The day is kept" });
-      }
-
-      onDone?.(saved, { newAlerts });
-    } catch (e) {
-      resumeAutosave();
-      toast({ title: "Could not save", description: e?.message || "Please try again. Your words are still here.", variant: "destructive" });
     }
+
+    // Streak celebration (respect reduced motion).
+    try {
+      const recent = await DailyCheckIn.list("-date", 120);
+      const streak = computeStreak(recent, todayKey());
+      if (isMilestone(streak) && !reduced && !existing) {
+        const confetti = (await import("canvas-confetti")).default;
+        confetti({ particleCount: 90, spread: 75, origin: { y: 0.7 }, colors: ["#929B78", "#B59B79", "#A58E66", "#E9E2CD"] });
+      }
+      toast({
+        title: existing ? "Today, updated" : "The day is kept",
+        description: streak > 1 ? `${streak} evenings in a row.` : "Your first evening of a new run.",
+      });
+    } catch {
+      toast({ title: existing ? "Today, updated" : "The day is kept" });
+    }
+
     setSaving(false);
+    onDone?.(saved, { newAlerts });
   };
 
   const steps = useMemo(() => ({
@@ -357,12 +420,19 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         <div className="flex justify-between items-center mt-4 text-sm" style={{ color: "rgba(255,253,246,0.8)" }}>
           <span>{stepIndex + 1} of {STEP_IDS.length}</span>
           <span className="flex items-center gap-4">
-            <span role="status" aria-live="polite" className="text-xs">{autosave === 'saving' ? 'Saving draft…' : autosave === 'saved' && !dirty ? 'Draft saved' : autosave === 'offline' ? 'Not saved yet. Your words stay in this tab.' : ''}</span>
+            <span role="status" aria-live="polite" className="text-xs">{autosave === 'saving' ? 'Saving draft…' : autosave === 'saved' && !dirty ? 'Draft saved' : autosave === 'offline' ? 'Not saved yet. Your words stay in this tab.' : autosave === 'local' ? 'Kept in this tab' : ''}</span>
             <button type="button" onClick={saveDraft} disabled={saving} className="underline underline-offset-4">{saving ? 'Saving…' : 'Save draft and close'}</button>
           </span>
         </div>
         <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.</p>
         {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="underline underline-offset-4 ml-3" disabled={saving} onClick={discardRestored}>Discard draft</button>}</p>}
+        {heldBuffer && (
+          <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>
+            This tab also kept unsaved words that may be newer than what is shown.
+            <button type="button" className="underline underline-offset-4 ml-3" onClick={acceptHeldBuffer}>Use them</button>
+            <button type="button" className="underline underline-offset-4 ml-3" onClick={dismissHeldBuffer}>Dismiss</button>
+          </p>
+        )}
 
         <div className="flex-1 flex items-center py-10">
           <AnimatePresence mode="wait">
@@ -388,7 +458,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
             <p className="mb-3">Keep your changes to this day as a draft?</p>
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" className="cream-button text-sm" disabled={saving} onClick={saveDraft}>Keep as draft</button>
-              <button type="button" className="ghost-cream-button text-sm" disabled={saving} onClick={async () => { if (await discardDraft()) onCancel?.(); }}>Discard changes</button>
+              <button type="button" className="ghost-cream-button text-sm" disabled={saving} onClick={async () => { if (await discardVisit()) onCancel?.(); }}>Discard changes</button>
               <button type="button" className="underline underline-offset-4" onClick={() => setConfirmLeave(false)}>Keep editing</button>
             </div>
           </div>

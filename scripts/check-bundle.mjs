@@ -12,7 +12,8 @@ const LAZY_ONLY = /charts|recharts|jspdf|html2canvas|canvg|purify/i
 const dist = path.resolve(process.cwd(), 'dist')
 const html = readFileSync(path.join(dist, 'index.html'), 'utf8')
 // Read attributes independently of their order or quoting.
-const attr = (tag, name) => tag.match(new RegExp(`\\b${name}\\s*=\\s*["']?([^"'\\s>]+)`, 'i'))?.[1]
+// Anchor on whitespace so data-src or data-type never match src or type.
+const attr = (tag, name) => tag.match(new RegExp(`\\s${name}\\s*=\\s*["']?([^"'\\s>]+)`, 'i'))?.[1]
 const entries = [...html.matchAll(/<script\b[^>]*>/gi)].map(([tag]) => tag)
   .filter((tag) => attr(tag, 'type') === 'module' && attr(tag, 'src')?.endsWith('.js'))
   .map((tag) => attr(tag, 'src'))

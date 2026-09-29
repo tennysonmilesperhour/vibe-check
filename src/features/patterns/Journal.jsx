@@ -52,6 +52,8 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [confirmClose, setConfirmClose] = useState(false);
+  // Unsaved words from this tab that can't be proven newer than the saved entry.
+  const [heldBuffer, setHeldBuffer] = useState(null);
   const baselineRef = useRef(null);
   const touchedRef = useRef(false);
   const { user } = useAuth();
@@ -66,15 +68,21 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
       const buffer = readBuffer(bufferKey);
       const restore = bufferRestorable(buffer, existing?.updated_at);
       setForm(restore ? buffer.value : initial);
+      setHeldBuffer(!restore && buffer && JSON.stringify(buffer.value) !== JSON.stringify(initial) ? buffer.value : null);
       setNotice(restore ? 'Your unsaved words are back.' : '');
       setConfirmClose(false);
       setError('');
     }
     // Restore once per opening; later edits must not re-run this.
   }, [open, existing, prompt, bufferKey]);
-  const dirty = Boolean(open && form && baselineRef.current !== null && JSON.stringify(form) !== baselineRef.current);
-  // Buffer only what the person actually typed; clear it on save or discard.
-  useWritingBuffer(bufferKey, form, { enabled: Boolean(open && form && touchedRef.current), basedOn: existing?.updated_at || null });
+  const serializedForm = form ? JSON.stringify(form) : null;
+  const dirty = Boolean(open && form && baselineRef.current !== null && serializedForm !== baselineRef.current);
+  // Buffer only what the person actually typed; clear it on save or discard,
+  // or when they take their edits back to where they started.
+  useWritingBuffer(bufferKey, serializedForm, { enabled: Boolean(open && form && touchedRef.current && dirty), basedOn: existing?.updated_at || null });
+  useEffect(() => {
+    if (open && form && touchedRef.current && !dirty && !heldBuffer) clearBuffer(bufferKey);
+  }, [open, form, dirty, heldBuffer, bufferKey]);
   useBeforeUnload(dirty);
   const update = (patch) => { touchedRef.current = true; setForm((previous) => ({ ...previous, ...patch })); };
   const canKeepAsDraft = !existing || existing.is_draft;
@@ -106,6 +114,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
   return <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) requestClose(); }}><DialogContent className="living-dialog"><DialogHeader><DialogTitle>{existing ? 'Revisit your words' : 'Keep a moment'}</DialogTitle><DialogDescription>Your private journal. People you add are not notified.</DialogDescription></DialogHeader>
     {form && <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); save(); }}>
       {notice && <p className="living-success" role="status">{notice}</p>}
+      {heldBuffer && <div className="living-inset flex flex-wrap items-center justify-between gap-3" role="status"><p className="text-sm">This tab kept unsaved words that may be newer than this entry.</p><span className="flex gap-3"><button type="button" className="living-secondary" onClick={() => { touchedRef.current = true; setForm(heldBuffer); setHeldBuffer(null); setNotice('Your unsaved words are back.'); }}>Use them</button><button type="button" className="underline text-sm" onClick={() => { setHeldBuffer(null); if (!touchedRef.current) clearBuffer(bufferKey); }}>Dismiss</button></span></div>}
       <div className="grid sm:grid-cols-2 gap-4"><label className="living-label">Date of the experience<input className="living-input mt-2" type="date" required max={todayKey()} value={form.date} onChange={(e) => update({ date: e.target.value })} /></label><label className="living-label">Kind of entry<select className="living-input mt-2" value={form.kind} onChange={(e) => update({ kind: e.target.value })}><option value="reflection">Reflection</option><option value="interaction">An interaction</option></select></label></div>
       <label className="living-label">Time of the experience · optional<input className="living-input mt-2" type="time" value={form.time} onChange={(e) => update({ time: e.target.value })} /></label>
       <label className="living-label">What do you want to remember?<textarea className="living-input mt-2" rows={5} maxLength={30000} value={form.notes} onChange={(e) => update({ notes: e.target.value })} placeholder="What happened? How did it leave you feeling?" /></label>

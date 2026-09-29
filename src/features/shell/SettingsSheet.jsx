@@ -44,10 +44,11 @@ export default function SettingsSheet({ open, onOpenChange }) {
   }, [open, loadAttempt]);
   useEffect(() => { setWeekStart(living.data?.preferences?.week_start ?? 1); }, [living.data?.preferences?.week_start]);
   async function save() {
-    if (!settingsLoaded) return;
     setSaving(true); setError('');
     try {
-      await base44.auth.updateMe({ boundary_settings: settings });
+      // Thresholds save only once the real ones loaded; the week start does
+      // not depend on them.
+      if (settingsLoaded) await base44.auth.updateMe({ boundary_settings: settings });
       await living.savePreferences({ week_start: weekStart });
       toast({ title: 'Settings saved' });
     } catch (err) { setError(err.message); }
@@ -90,12 +91,12 @@ export default function SettingsSheet({ open, onOpenChange }) {
   return <><Sheet open={open} onOpenChange={onOpenChange}><SheetContent className="overflow-y-auto living-settings">
     <SheetHeader><SheetTitle className="font-display text-2xl">Settings & privacy</SheetTitle><SheetDescription>Your record, your preferences, and who can see this device.</SheetDescription></SheetHeader>
     <div className="space-y-7 mt-6">
-      {error && <p className="living-error" role="alert">{error}{!settingsLoaded && <> Saving is paused until your settings load. <button type="button" className="underline" onClick={() => setLoadAttempt((count) => count + 1)}>Try again</button></>}</p>}
+      {error && <p className="living-error" role="alert">{error}{!settingsLoaded && <> Your low-mood lines are paused until they load; other settings still save. <button type="button" className="underline" onClick={() => setLoadAttempt((count) => count + 1)}>Try again</button></>}</p>}
       <section className="space-y-5" aria-labelledby="settings-reflections"><h3 id="settings-reflections" className="font-semibold">Reflections & reports</h3>
-        <div><Label>Low mood line: {settings.mood_threshold}</Label><Slider min={1} max={7} step={1} value={[settings.mood_threshold]} onValueChange={([value]) => setSettings({ ...settings, mood_threshold: value })} className="mt-3" aria-label="Low mood threshold" /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
-        <div><Label>Declining run: {settings.consecutive_days} days</Label><Slider min={2} max={7} step={1} value={[settings.consecutive_days]} onValueChange={([value]) => setSettings({ ...settings, consecutive_days: value })} className="mt-3" aria-label="Consecutive declining days" /></div>
+        <div><Label>Low mood line: {settings.mood_threshold}</Label><Slider disabled={!settingsLoaded} min={1} max={7} step={1} value={[settings.mood_threshold]} onValueChange={([value]) => setSettings({ ...settings, mood_threshold: value })} className="mt-3" aria-label="Low mood threshold" /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
+        <div><Label>Declining run: {settings.consecutive_days} days</Label><Slider disabled={!settingsLoaded} min={2} max={7} step={1} value={[settings.consecutive_days]} onValueChange={([value]) => setSettings({ ...settings, consecutive_days: value })} className="mt-3" aria-label="Consecutive declining days" /></div>
         <label className="living-label">Your week begins<select className="living-input mt-2" value={weekStart} onChange={(event) => setWeekStart(Number(event.target.value))}><option value={1}>Monday</option><option value={0}>Sunday</option></select></label>
-        <button className="ink-button" onClick={save} disabled={saving || living.isLoading || !settingsLoaded}>{saving ? 'Saving…' : 'Save settings'}</button>
+        <button className="ink-button" onClick={save} disabled={saving || living.isLoading}>{saving ? 'Saving…' : 'Save settings'}</button>
       </section>
       <section className="space-y-3 hairline pt-6"><h3 className="font-semibold">Your private record</h3><p className="living-muted text-sm">Check-ins, journal entries, people, and practice responses are saved to your account. Adding someone to your orbit does not invite them or share your entries.</p><p className="living-muted text-sm">Choose a date range and individual entries, remove saved people’s names, and preview the exact contents before downloading. Password encryption is available in the export preview.</p><button className="living-secondary" onClick={() => { onOpenChange(false); navigate('/Analytics?export=1'); }}>Choose & preview an export</button><p className="living-muted text-sm">Edit or delete individual records from their history. Reports update with those changes. Your patterns, full history, and reports stay free.</p></section>
       <section className="space-y-3 hairline pt-6"><h3 className="font-semibold">On a shared device</h3><p className="living-muted text-sm">Sign out to close access to your account on this device. Downloaded files and browser history remain on the device.</p><div className="flex flex-wrap gap-3"><button className="living-secondary" disabled={saving} onClick={() => signOut('local')}>Sign out on this device</button><button className="living-secondary" disabled={saving} onClick={() => signOut('global')}>Sign out on all devices</button></div><p className="living-muted text-xs">Other sessions are revoked immediately; an already issued access token may remain valid until it expires.</p></section>

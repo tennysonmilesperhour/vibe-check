@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { readBuffer, writeBuffer, clearBuffer, clearAllBuffers, bufferRestorable } from '../writing-buffer.js';
+import { readBuffer, writeBuffer, writeSerializedBuffer, clearBuffer, clearAllBuffers, bufferRestorable, latestVersion, isNewerVersion } from '../writing-buffer.js';
 
 function fakeStorage() {
   const map = new Map();
@@ -59,5 +59,21 @@ describe('writing buffer', () => {
     // Something was saved after a new-entry buffer began: keep the server copy.
     expect(bufferRestorable({ basedOn: null }, t1)).toBe(false);
     expect(bufferRestorable(null, t1)).toBe(false);
+  });
+
+  it('stores a pre-serialized value the same way', () => {
+    writeSerializedBuffer('ceremony:u1:2026-09-29', JSON.stringify({ mood_score: 6 }), '2026-09-29T20:00:00.000000+00:00');
+    expect(readBuffer('ceremony:u1:2026-09-29')).toEqual({ value: { mood_score: 6 }, basedOn: '2026-09-29T20:00:00.000000+00:00' });
+  });
+
+  it('orders server versions without the device clock', () => {
+    const t1 = '2026-09-29T20:00:00.000000+00:00';
+    const t2 = '2026-09-29T20:05:00.000000+00:00';
+    expect(latestVersion(t1, null, t2, undefined)).toBe(t2);
+    expect(latestVersion()).toBeNull();
+    expect(isNewerVersion(t2, t1)).toBe(true);
+    expect(isNewerVersion(t1, t2)).toBe(false);
+    expect(isNewerVersion(t1, null)).toBe(true);
+    expect(isNewerVersion(null, t1)).toBe(false);
   });
 });

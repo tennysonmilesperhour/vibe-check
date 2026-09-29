@@ -91,8 +91,9 @@ describe('changes from one tab land in the order they were made', () => {
   });
 
   it('gives up on a request that takes too long, so later changes still run', async () => {
+    // Like the client waiting for a sign-in token: it doesn't answer the abort.
     const stalled = {
-      list: (/** @type {any} */ _sort, /** @type {any} */ _limit, /** @type {any} */ _offset, /** @type {any} */ { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')))),
+      list: () => new Promise(() => {}),
       updateWhere: async () => [],
       createFor: async () => null,
     };

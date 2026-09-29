@@ -13,7 +13,7 @@
 const MAX_ATTEMPTS = 6;
 const REQUEST_MS = 20000;
 export const OTHER_ACCOUNT = 'Not saved: a different account is signed in now.';
-export const TOO_SLOW = 'Saving is taking too long. Check your connection and try again.';
+export const TOO_SLOW = 'Saving took too long, so it may not have been saved. Check your connection and try again.';
 // Postgres error codes: a row for this owner already exists; the signed-in
 // account may not write this owner's row.
 export const UNIQUE_VIOLATION = '23505';
@@ -43,13 +43,20 @@ export async function mergePreferences(store, userId, patch) {
   throw new Error('Your settings were changing somewhere else at the same moment. Please try again.');
 }
 
-// Each request is abandoned after requestMs, so a stalled one fails instead of
-// holding every later change back, and can't reach the server late.
+// Each request is abandoned after requestMs, counted from the call, even
+// while the client still waits for a sign-in token: the change fails at once
+// instead of holding every later one back, and a request not yet sent never
+// goes out. One the server already received may still be stored, so the
+// caller reloads what is stored either way.
 async function inTime(requestMs, run) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), requestMs);
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let timer;
+  const tooSlow = new Promise((_, reject) => {
+    timer = setTimeout(() => { controller.abort(); reject(new Error(TOO_SLOW)); }, requestMs);
+  });
   try {
-    return await run(controller.signal);
+    return await Promise.race([run(controller.signal), tooSlow]);
   } catch (error) {
     if (controller.signal.aborted) throw new Error(TOO_SLOW);
     throw error;

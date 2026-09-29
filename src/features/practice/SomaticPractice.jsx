@@ -86,8 +86,11 @@ export default function SomaticPractice() {
       // before saving a new one, which then asks instead.
       const promiseKept = promiseSaved || await keepPromise().then(() => true, () => false);
       await PracticeSession.createFor(ownerId, { date: todayKey(), practice_id: active.id, state_id: state.id, status, intention, before_notes: before, after_notes: after, outcome: outcome || null, alignment: alignment || null, source_pattern: params.get('pattern') || null, source_entry_keys: (params.get('sources') || '').split(',').filter(Boolean) });
-      await living.refresh(); closePractice();
-      if (outcome === 'More uncomfortable' && promiseKept) { setNotice(''); setAskStop(active.id); }
+      const stored = await living.refresh(); closePractice();
+      // Say what now holds: an earlier promise that timed out may still have
+      // been stored, and under it this response doesn't hide the practice.
+      const hiddenNow = stored ? hiddenPractices(stored.preferences, stored.sessions).includes(active.id) : !promiseKept;
+      if (outcome === 'More uncomfortable' && !hiddenNow) { setNotice(''); setAskStop(active.id); }
       else if (outcome === 'More uncomfortable') setNotice('Your response is kept. This practice will no longer be suggested.');
       else setNotice('Your experience is kept. It will be included in your weekly and monthly reports.');
     } catch (err) { setError(err.message || 'Could not save. Your words are still here; please try again.'); }

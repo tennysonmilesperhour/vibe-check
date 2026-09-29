@@ -13,7 +13,7 @@ import StressPatternCards from '@/features/patterns/StressPatternCards';
 import ExportHistory from '@/features/patterns/ExportHistory';
 import PatternCalendar from '@/features/patterns/PatternCalendar';
 import { todayKey, addDaysKey, parseLocalDate, diffDaysKeys } from '@/lib/dates';
-import { filterEntries, historyChart, stressPatterns, validDateKey } from '@/lib/living-patterns';
+import { filterEntries, historyChart, stateCards, stressPatterns, validDateKey } from '@/lib/living-patterns';
 import { STRESS_STATES } from '@/lib/practices';
 
 const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', 'Year'], ['all', 'All time'], ['custom', 'Custom']];
@@ -36,17 +36,21 @@ export default function Analytics() {
   // Connections are worked out on every day in the date range: filtering days
   // by a state, person, habit, or words first would pick them by what is being
   // compared. The filters then narrow which connections show. State cards are
-  // plain counts, so they count the filtered days.
+  // plain counts of the days the person, habit, and words filters leave; the
+  // feeling filter only picks which card shows, so its count keeps every day
+  // as its base.
   const inRange = useMemo(() => valid && data ? filterEntries(data.entries, { start, end }) : [], [data, start, end, valid]);
   const rangePatterns = useMemo(() => stressPatterns(inRange, data?.people, data?.preferences?.pattern_feedback), [inRange, data]);
-  const narrowed = Boolean(filters.state || filters.person || filters.habit || filters.search);
-  const filteredCounts = useMemo(() => (narrowed ? stressPatterns(filtered, data?.people, data?.preferences?.pattern_feedback).filter((pattern) => pattern.context.type === 'state') : null), [narrowed, filtered, data]);
+  const countsNarrowed = Boolean(filters.person || filters.habit || filters.search);
+  const counts = useMemo(() => (countsNarrowed
+    ? stateCards(filterEntries(inRange, { person: filters.person, habit: filters.habit, search: filters.search }), data?.preferences?.pattern_feedback)
+    : rangePatterns.filter((pattern) => pattern.context.type === 'state')), [countsNarrowed, inRange, rangePatterns, filters.person, filters.habit, filters.search, data]);
   const patterns = useMemo(() => [
     ...rangePatterns.filter((pattern) => pattern.context.type !== 'state' && (!filters.state || pattern.state === filters.state)
       && (!filters.person || (pattern.context.type === 'person' && pattern.context.id === filters.person))
       && (!filters.habit || (pattern.context.type === 'habit' && pattern.context.id === filters.habit))),
-    ...(filteredCounts || rangePatterns.filter((pattern) => pattern.context.type === 'state')).filter((pattern) => !filters.state || pattern.state === filters.state),
-  ], [rangePatterns, filteredCounts, filters.state, filters.person, filters.habit]);
+    ...counts.filter((pattern) => !filters.state || pattern.state === filters.state),
+  ], [rangePatterns, counts, filters.state, filters.person, filters.habit]);
   const habits = [...new Set((data?.entries || []).flatMap((entry) => entry.activities || []))].sort();
   const moods = filtered.filter((entry) => entry.kind === 'day' && entry.mood_score != null).map((entry) => Number(entry.mood_score));
   const recordedDays = new Set(filtered.map((entry) => entry.date)).size;

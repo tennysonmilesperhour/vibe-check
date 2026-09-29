@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import SkyField from "@/features/shell/SkyField";
 import { ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
 import { EMOTIONS, ACTIVITIES } from "./vocab";
-import { ALL_STEPS, chooseSteps, stressAnswered } from "./check-in-steps";
+import { ALL_STEPS, chooseSteps } from "./check-in-steps";
 import { usePreferences } from "@/features/patterns/useLivingData";
 import { moonPhase } from "@/lib/resonance/moon";
 import { personalDay } from "@/lib/resonance/numerology";
@@ -27,11 +27,20 @@ const AUTOSAVE_DELAY_MS = 1500;
 const AUTOSAVE_RETRY_MS = 10000;
 
 
+// Which questions a kept day asked is bookkeeping in
+// stress_context.visited_steps, written only when the day is kept (see save).
+// The form, drafts and tab copies hold answers alone.
+const answersOnly = (value) => {
+  if (!value?.stress_context?.visited_steps) return value;
+  const { visited_steps: _visited, ...stress } = value.stress_context;
+  return { ...value, stress_context: stress };
+};
+
 /**
  * The daily check-in, at any time of day: one question per screen, the sky
  * deepening as you go. Saves as a single DailyCheckIn; runs opt-in notices.
  */
-const formFrom = (existing) => ({
+const formFrom = (existing) => answersOnly({
   mood_score: existing?.mood_score ?? null,
   energy_level: existing?.energy_level ?? null,
   sleep_quality: existing?.sleep_quality ?? null,
@@ -45,11 +54,6 @@ const formFrom = (existing) => ({
   stress_context: existing?.stress_context ?? {},
 });
 // Words the person typed themselves, beside the preset chips.
-// Which questions were reached is kept in stress_context.visited_steps. It
-// travels with drafts and tab copies, but reaching a question is not an edit:
-// it never makes a draft or a "keep your changes?" prompt on its own.
-const withoutVisits = (value) => ({ ...value, stress_context: Object.fromEntries(Object.entries(value.stress_context || {}).filter(([key]) => key !== 'visited_steps')) });
-const comparable = (value) => JSON.stringify(withoutVisits(value));
 const customFrom = (items = [], presets) => items.filter((item) => !presets.some((preset) => preset.label === item)).join(', ');
 const withCustom = (items, presets, text) => [...new Set([...items.filter((item) => presets.some((preset) => preset.label === item)), ...text.split(',').map((item) => item.trim()).filter(Boolean)])];
 
@@ -104,19 +108,16 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   }, [stepIndex]);
 
   const restoreForm = (payload) => {
-    setForm((previous) => {
-      const next = { ...previous, ...payload };
-      const visits = [...new Set([...(previous.stress_context?.visited_steps || []), ...(payload.stress_context?.visited_steps || [])])];
-      return visits.length ? { ...next, stress_context: { ...next.stress_context, visited_steps: visits } } : next;
-    });
-    setCustomHabits(customFrom(payload.activities, ACTIVITIES));
-    setCustomFeelings(customFrom(payload.emotions, EMOTIONS));
+    const answers = answersOnly(payload);
+    setForm((previous) => ({ ...previous, ...answers }));
+    setCustomHabits(customFrom(answers.activities, ACTIVITIES));
+    setCustomFeelings(customFrom(answers.emotions, EMOTIONS));
   };
 
   useEffect(() => {
     let active = true;
     const initial = formFrom(existing);
-    baselineRef.current = comparable(initial);
+    baselineRef.current = JSON.stringify(initial);
     visitStartDraftRef.current = null;
     const buffer = readBuffer(bufferKey);
     // Restore a tab copy that is provably newest; otherwise offer it back
@@ -128,7 +129,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
         setRestored(true);
         return true;
       }
-      if (comparable({ ...shown, ...buffer.value }) !== comparable(shown)) setHeldBuffer(buffer.value);
+      if (JSON.stringify({ ...shown, ...answersOnly(buffer.value) }) !== JSON.stringify(shown)) setHeldBuffer(buffer.value);
       return false;
     };
     CheckInDraft.filter({ date: dateKey }).then(([draft]) => {
@@ -136,10 +137,10 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       draftKnownRef.current = true;
       if (draft) draftIdRef.current = draft.id;
       const draftIsNewer = Boolean(draft) && isNewerVersion(draft.updated_at, existing?.updated_at);
-      const shown = draftIsNewer ? { ...initial, ...draft.payload } : initial;
+      const shown = draftIsNewer ? { ...initial, ...answersOnly(draft.payload) } : initial;
       setServerVersion(latestVersion(existing?.updated_at, draft?.updated_at));
       if (draftIsNewer) {
-        baselineRef.current = comparable(shown);
+        baselineRef.current = JSON.stringify(shown);
         visitStartDraftRef.current = draft.payload;
       }
       if (takeBuffer(shown, existing?.updated_at, draft?.updated_at)) {
@@ -164,8 +165,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // Keep a tab copy immediately and a server draft after a pause, so a tab
   // switch, reload, or dropped connection never takes the words.
   const snapshot = JSON.stringify(form);
-  const edits = comparable(form);
-  const dirty = !draftLoading && baselineRef.current !== null && edits !== baselineRef.current;
+  const dirty = !draftLoading && baselineRef.current !== null && snapshot !== baselineRef.current;
   useWritingBuffer(bufferKey, snapshot, { enabled: dirty && !finishedRef.current, basedOn: serverVersion });
   // Edits taken back to where the visit started leave nothing to restore.
   useEffect(() => {
@@ -180,7 +180,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     autosaveTimerRef.current = setTimeout(() => {
       if (finishedRef.current) return;
       setAutosave('saving');
-      const sent = edits;
+      const sent = snapshot;
       const payload = form;
       chainRef.current = chainRef.current.catch(() => {}).then(async () => {
         if (finishedRef.current) return;
@@ -193,7 +193,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
           setServerVersion(draft.updated_at || null);
           baselineRef.current = sent;
           // The server now holds these words; keep a tab copy only for newer ones.
-          if (comparable(formRef.current) === sent) clearBuffer(bufferKey);
+          if (JSON.stringify(formRef.current) === sent) clearBuffer(bufferKey);
           setAutosave('saved');
         } catch {
           if (finishedRef.current) return;
@@ -308,7 +308,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     }, 'Could not discard the draft');
     if (!done) return;
     const initial = formFrom(existing);
-    baselineRef.current = comparable(initial);
+    baselineRef.current = JSON.stringify(initial);
     visitStartDraftRef.current = null;
     setForm(initial);
     setCustomHabits(customFrom(initial.activities, ACTIVITIES));
@@ -361,22 +361,28 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // Choices saved before the check-in followed them didn't ask for that, so
   // only choices saved since shape it.
   const tracking = prefs.data?.tracking_shapes_check_in ? prefs.data.tracking || [] : [];
+  // Which questions this visit put to the person, added to what the kept day
+  // already recorded (an edit never takes one away), and written only when
+  // the day is kept. Patterns compare only days that asked about states and
+  // about people and habits, so the answers must never decide it:
+  // - a question shown only because it already holds an answer (see
+  //   chooseSteps) doesn't count;
+  // - a draft never adds to it, since only visits that change something
+  //   leave one.
+  const visitedRef = useRef(new Set(existing?.stress_context?.visited_steps || []));
+  const askedRef = useRef(ALL_STEPS);
   useEffect(() => {
     if (stepIds || draftLoading || prefs.isLoading) return;
+    askedRef.current = chooseSteps(tracking);
     setStepIds(chooseSteps(tracking, formRef.current));
   }, [stepIds, draftLoading, prefs.isLoading, prefs.data]);
   const stepOrder = stepIds || ALL_STEPS;
   const stepId = stepOrder[stepIndex];
-  // Which questions the person reached, kept with the check-in so patterns
-  // only compare days that asked the same things.
   useEffect(() => {
-    if (!stepIds || !stepId) return;
-    setForm((previous) => {
-      const visited = previous.stress_context?.visited_steps || [];
-      return visited.includes(stepId) ? previous : { ...previous, stress_context: { ...previous.stress_context, visited_steps: [...visited, stepId] } };
-    });
+    if (stepIds && stepId && askedRef.current.includes(stepId)) visitedRef.current.add(stepId);
   }, [stepIds, stepId]);
   const showAllSteps = () => {
+    askedRef.current = ALL_STEPS;
     setStepIds(ALL_STEPS);
     setStepIndex(ALL_STEPS.indexOf(stepId));
     // The button goes away; keep focus on the question, whose label gives the new count.
@@ -400,9 +406,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       const personIds = [
         ...new Set([...(form.person_ids || []), ...(form.high_moment?.person_ids || []), ...(form.low_moment?.person_ids || [])]),
       ];
-      // An answer means its question was seen, even on an earlier visit.
-      const visited = new Set(form.stress_context?.visited_steps || []);
-      if (stressAnswered(form.stress_context)) visited.add('stress');
+      // A tag answers the people and habits question, on whichever visit.
+      const visited = new Set(visitedRef.current);
       if ((form.activities || []).length || (form.person_ids || []).length) visited.add('activities');
       const payload = {
         ...form,
@@ -424,7 +429,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
 
     // The day is kept. Nothing below may bring a draft back or report the
     // save as failed.
-    baselineRef.current = comparable(form);
+    baselineRef.current = JSON.stringify(form);
     clearBuffer(bufferKey);
     if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current).catch(() => {});
     await queryClient.invalidateQueries({ queryKey: ['living'] }).catch(() => {});

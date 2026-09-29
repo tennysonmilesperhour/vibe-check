@@ -63,11 +63,11 @@ export function previousPeriod(period, weekStartsOn = 1) {
 // A state needs 3 recorded days to be shown at all. A connection with a person
 // or habit is held to more:
 // - The same question every day: only daily check-ins that asked about states
-//   and about people and habits count (older check-ins that don't record it
-//   count if they were created once every check-in asked both, whatever day
-//   they are for), and only their answers, so a day with more journal
-//   moments has no extra chances. Of those, only days with at least one
-//   person (or habit) tagged.
+//   and about people and habits count, and only their answers, so a day with
+//   more journal moments has no extra chances. A check-in records which
+//   questions it asked when the day is kept; older ones don't say, and some
+//   were kept before reaching the states question, so they are left out. Of
+//   those, only days with at least one person (or habit) tagged.
 //   Days are never picked by their states: keeping only days with a state
 //   would make unrelated states look connected.
 // - At least 5 such days with it, 5 without, and 3 with both.
@@ -79,19 +79,55 @@ export function previousPeriod(period, weekStartsOn = 1) {
 //   enough days to test in this view (Bonferroni).
 // On simulated records where nothing is connected, messy the way real ones
 // are (mood-only days, skipped questions, calm days left blank, busy and
-// quiet days, and a history from before states could be recorded), few
+// quiet days, and older check-ins that don't say what they asked), few
 // people see a connection in any view (see the tests). A strong real one
 // usually shows within a few months. It is still an association in a
 // record, never a cause.
-// Every check-in created from here on asked about states and about people and
-// habits (the states question shipped in #40), until visited_steps took over.
-const ASKED_BOTH_SINCE = Date.parse('2026-09-09T00:14:20Z');
 const MIN_STATE_DAYS = 3;
 const MIN_GROUP_DAYS = 5;
 const MIN_GAP = 0.2;
 const MIN_RATIO = 2;
 const VIEW_ALPHA = 0.02;
 const MAX_STRATUM = 40;
+
+// Entries grouped by date: the states, people and habits of each day.
+function recordDays(list, statesOf) {
+  const byDate = new Map();
+  for (const entry of list) {
+    if (!byDate.has(entry.date)) byDate.set(entry.date, { states: new Set(), people: new Set(), habits: new Set(), entries: [] });
+    const day = byDate.get(entry.date);
+    statesOf.get(entry).filter((id) => id !== 'unsure').forEach((id) => day.states.add(id));
+    entryPeople(entry).forEach((id) => day.people.add(id));
+    (entry.activities || []).forEach((id) => day.habits.add(id));
+    day.entries.push(entry);
+  }
+  return [...byDate.values()];
+}
+const sourcesFor = (statesOf, state, days) => days.flatMap((day) => day.entries.filter((entry) => statesOf.get(entry).includes(state)));
+const statusIn = (feedback) => (key) => feedback[key] || 'suggested';
+const rank = (item) => (item.context.type === 'state' ? 2 : item.significant ? 0 : 1);
+const ranked = (items) => items
+  .filter((item) => item.status !== 'dismissed')
+  .sort((a, b) => rank(a) - rank(b) || b.days - a.days || a.key.localeCompare(b.key));
+
+function countStates(days, statesOf, status) {
+  const states = [...new Set(days.flatMap((day) => [...day.states]))];
+  return states.map((state) => {
+    const stateDays = days.filter((day) => day.states.has(state));
+    const key = `${state}:state:`;
+    return { key, state, context: { type: 'state', id: '', label: '' }, entries: sourcesFor(statesOf, state, stateDays), days: stateDays.length, total: days.length, status: status(key) };
+  }).filter((card) => card.days >= MIN_STATE_DAYS);
+}
+
+/**
+ * Only the state cards: how many recorded days include each state the person
+ * chose. Quick enough to recount a view as its filters change.
+ * @param {any[]} entries @param {any} feedback
+ */
+export function stateCards(entries, feedback = {}) {
+  const statesOf = new Map(entries.map((entry) => [entry, entryStates(entry)]));
+  return ranked(countStates(recordDays(entries, statesOf), statesOf, statusIn(feedback)));
+}
 
 /**
  * What repeats in the record. Two kinds of card:
@@ -102,35 +138,16 @@ const MAX_STRATUM = 40;
  */
 export function stressPatterns(entries, people = [], feedback = {}) {
   const statesOf = new Map(entries.map((entry) => [entry, entryStates(entry)]));
-  const toDays = (list) => {
-    const byDate = new Map();
-    for (const entry of list) {
-      if (!byDate.has(entry.date)) byDate.set(entry.date, { states: new Set(), people: new Set(), habits: new Set(), entries: [] });
-      const day = byDate.get(entry.date);
-      statesOf.get(entry).filter((id) => id !== 'unsure').forEach((id) => day.states.add(id));
-      entryPeople(entry).forEach((id) => day.people.add(id));
-      (entry.activities || []).forEach((id) => day.habits.add(id));
-      day.entries.push(entry);
-    }
-    return [...byDate.values()];
-  };
-  const days = toDays(entries);
-  // Daily check-ins that asked both questions (see above).
+  const status = statusIn(feedback);
+  const days = recordDays(entries, statesOf);
+  // Daily check-ins that recorded asking both questions (see above).
   const askedBoth = (entry) => {
     const visited = entry.stress_context?.visited_steps;
-    if (Array.isArray(visited)) return visited.includes('stress') && visited.includes('activities');
-    return Date.parse(entry.created_date || entry.created_at || '') >= ASKED_BOTH_SINCE;
+    return Array.isArray(visited) && visited.includes('stress') && visited.includes('activities');
   };
-  const checkInDays = toDays(entries.filter((entry) => entry.kind === 'day' && askedBoth(entry)));
-  const status = (key) => feedback[key] || 'suggested';
-  const sourcesFor = (state, list) => list.flatMap((day) => day.entries.filter((entry) => statesOf.get(entry).includes(state)));
+  const checkInDays = recordDays(entries.filter((entry) => entry.kind === 'day' && askedBoth(entry)), statesOf);
   const states = [...new Set(days.flatMap((day) => [...day.states]))];
-
-  const cards = states.map((state) => {
-    const stateDays = days.filter((day) => day.states.has(state));
-    const key = `${state}:state:`;
-    return { key, state, context: { type: 'state', id: '', label: '' }, entries: sourcesFor(state, stateDays), days: stateDays.length, total: days.length, status: status(key) };
-  }).filter((card) => card.days >= MIN_STATE_DAYS);
+  const cards = countStates(days, statesOf, status);
 
   const comparable = {
     person: checkInDays.filter((day) => day.people.size > 0),
@@ -161,7 +178,7 @@ export function stressPatterns(entries, people = [], feedback = {}) {
       // days split, so the correction counts every pair that could have shown.
       const tested = bigEnough && shared.length + otherwise >= MIN_STATE_DAYS;
       if (!tested && !(status(key) === 'confirmed' && shared.length >= MIN_STATE_DAYS)) continue;
-      candidates.push({ key, state, context, tested, strata, entries: sourcesFor(state, shared), days: shared.length, total: withDays.length, without: { days: otherwise, total: withoutDays.length }, status: status(key) });
+      candidates.push({ key, state, context, tested, strata, entries: sourcesFor(statesOf, state, shared), days: shared.length, total: withDays.length, without: { days: otherwise, total: withoutDays.length }, status: status(key) });
     }
   }
   const threshold = VIEW_ALPHA / Math.max(1, candidates.filter((item) => item.tested).length);
@@ -177,10 +194,7 @@ export function stressPatterns(entries, people = [], feedback = {}) {
   // as not beyond chance when that is so; the choice is theirs.
   }).filter((item) => item.significant || (item.status === 'confirmed' && item.days >= MIN_STATE_DAYS));
 
-  const rank = (item) => (item.context.type === 'state' ? 2 : item.significant ? 0 : 1);
-  return [...connections, ...cards]
-    .filter((item) => item.status !== 'dismissed')
-    .sort((a, b) => rank(a) - rank(b) || b.days - a.days || a.key.localeCompare(b.key));
+  return ranked([...connections, ...cards]);
 }
 
 /** @param {any[]} entries @param {any} period @param {any[]} sessions @param {any[]} people @param {any} feedback */

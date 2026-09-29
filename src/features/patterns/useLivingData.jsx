@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/api/supabase';
 import { DailyCheckIn, JournalEntry, PracticeSession, ReportReflection, VibePreference, Person } from '@/api/entities';
 import { timelineEntries } from '@/lib/living-patterns';
 
@@ -16,15 +17,23 @@ export async function fetchLivingData() {
 // patch is given the latest stored values, so a list is changed from what is
 // stored now, not from an older copy on this device.
 // Writes from this tab run one at a time, so two quick changes can't both
-// start from the same stored values and drop one another.
+// start from the same stored values and drop one another. A write that hangs
+// holds the next one back for WRITE_WAIT_MS at most, so one stalled request
+// can't stop a safety plan from saving. A write still waiting when its
+// account signs out is dropped, never kept in the next account.
+const WRITE_WAIT_MS = 20000;
 let writes = Promise.resolve();
 function storePreferences(client, userId, patch) {
   const write = writes.then(async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!userId || data?.session?.user?.id !== userId) throw new Error('You were signed out before this was saved.');
     const [row] = await VibePreference.list();
     const current = row?.values || {};
     return VibePreference.upsert({ values: { ...current, ...(typeof patch === 'function' ? patch(current) : patch) } }, 'user_id');
   });
-  writes = write.catch(() => {});
+  let timer;
+  const waited = new Promise((resolve) => { timer = setTimeout(resolve, WRITE_WAIT_MS); });
+  writes = Promise.race([write.catch(() => {}), waited]).then(() => clearTimeout(timer));
   return write.then(async (result) => {
     await client.invalidateQueries({ queryKey: ['living', userId] });
     return result;

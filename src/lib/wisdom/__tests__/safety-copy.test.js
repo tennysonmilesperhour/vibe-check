@@ -142,6 +142,25 @@ describe('symbolic readings never talk over harm', () => {
     expect(JSON.stringify(systemReading('tarot_archetype', { birth_card: 'The Tower' }, profile))).not.toMatch(/Your Soul Card|Greer/i);
   });
 
+  it('does not read an earlier method\'s shadow card beside the computed birth card', () => {
+    // 11 + 28 + 1970 = 2009 -> 11, Justice, soul 2, The High Priestess.
+    const profile = { birth_date: '1970-11-28', enabled_systems: ['tarot_archetype'], tarot_archetype: {} };
+    const data = { birth_card: '11 – Justice', birth_card_source: 'retired', shadow_card: '2 – The High Priestess', shadow_card_source: 'retired' };
+    const reading = JSON.stringify(systemReading('tarot_archetype', data, profile));
+    expect(reading).toMatch(/Your Soul Card: The High Priestess/i);
+    expect(reading).not.toMatch(/Your Shadow Card|The two together/i);
+    // Beside a card that isn't the computed one, it is still read.
+    const kept = JSON.stringify(systemReading('tarot_archetype', data, { ...profile, birth_date: '1960-01-03' }));
+    expect(kept).toMatch(/Your Shadow Card: The High Priestess/i);
+  });
+
+  it('asks for a check of Gene Keys spheres saved under the old labels', () => {
+    const profile = { enabled_systems: ['gene_keys'] };
+    expect(JSON.stringify(systemReading('gene_keys', { radiance: '31', positions_checked: false }, profile))).toMatch(/Check these keys/i);
+    expect(JSON.stringify(systemReading('gene_keys', { radiance: '31', positions_checked: true }, profile))).not.toMatch(/Check these keys/i);
+    expect(JSON.stringify(systemReading('gene_keys', { life_work: '51', positions_checked: false }, profile))).not.toMatch(/Check these keys/i);
+  });
+
   it('reads a shadow card the person chose, even when it is also the soul card', () => {
     // 1 + 3 + 1960 = 1964 -> 20, Judgement, soul 2, The High Priestess.
     const profile = { birth_date: '1960-01-03', enabled_systems: ['tarot_archetype'], tarot_archetype: {} };

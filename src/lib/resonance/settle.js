@@ -1,6 +1,6 @@
-// Saved cosmic profiles brought up to date when the Cosmos page loads, for
-// data saved before a change in how Vibe Check works it out. Nothing here
-// is stored until the person saves their profile.
+// Saved cosmic profiles brought up to date, for data saved before a change
+// in how Vibe Check works it out. It runs when the Cosmos page loads and
+// again when the profile is saved, once the birth date is final.
 import { settleTarot } from './tarotCards.js';
 
 // Until September 30, 2026, the Gene Keys form named the wrong chart

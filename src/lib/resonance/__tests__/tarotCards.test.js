@@ -114,6 +114,17 @@ describe("tarot birth cards (Mary K. Greer's method)", () => {
     expect(settleTarot(undefined, '1985-11-23')).toBeUndefined();
   });
 
+  it('settles an earlier card that a new birth date makes the computed one', () => {
+    // 11 + 28 + 1970 = 2009 -> 11, Justice: the same card the Life Path method gave for 1960-01-03.
+    const kept = { birth_card: '11 – Justice', birth_card_source: 'retired', shadow_card: '2 – The High Priestess', shadow_card_source: 'retired' };
+    expect(settleTarot(kept, '1970-11-28')).toEqual({ birth_card: '11 – Justice', birth_card_source: 'birth_date' });
+    // Still an earlier card for the saved date: it stays for the notice.
+    expect(settleTarot(kept, '1960-01-03')).toEqual(kept);
+    // A card the person chose stays, with its shadow card.
+    const chosen = { ...kept, birth_card_source: 'entered' };
+    expect(settleTarot(chosen, '1970-11-28')).toEqual(chosen);
+  });
+
   it('returns null without a valid date', () => {
     expect(birthCards('')).toBeNull();
     expect(birthCards('1990-4-12')).toBeNull();

@@ -119,8 +119,11 @@ export default function CosmicAddons() {
         }
         setIsSaving(true);
         try {
-            await base44.auth.updateMe({ cosmic_profile: profile });
-            setSavedSnapshot(JSON.stringify(profile));
+            const settled = settleCosmicProfile(profile);
+            await base44.auth.updateMe({ cosmic_profile: settled });
+            // Keep any edit made while saving; it settles on the next save.
+            setProfile(prev => (prev === profile ? settled : prev));
+            setSavedSnapshot(JSON.stringify(settled));
             setHasSavedProfile(true);
             toast({ title: "Cosmic profile saved", description: "Your loom and readings now weave from these systems." });
         } catch (e) {

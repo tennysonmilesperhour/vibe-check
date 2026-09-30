@@ -7,6 +7,7 @@ import { astrologyReading } from "./astrology";
 import { NUMBERS, reduceToKey } from "./content/numerology";
 import { HD_TYPES, resolveType, resolveAuthority, resolveProfile } from "./content/humanDesign";
 import { GK_SEQUENCE_META, resolveKey } from "./content/geneKeys";
+import { RELABELED_SPHERES } from "@/lib/resonance/settle";
 import { resolveArcana } from "./content/tarotArchetype";
 import { resolveEnneagram, resolveInstinct } from "./content/enneagram";
 import { resolveChakra } from "./content/chakras";
@@ -64,6 +65,9 @@ function humanDesignReading(data) {
   return format(sections);
 }
 
+// For spheres saved under the form's old position labels (settleCosmicProfile).
+export const GENE_KEYS_RECHECK = "Earlier versions of Vibe Check named the wrong chart positions for Radiance, Purpose, Attraction and IQ. If you looked yours up in a Human Design chart, check them against your Gene Keys profile on the My Profile tab.";
+
 function geneKeysReading(data, computed) {
   const d = { ...computed, ...clean(data) };
   const order = ["life_work", "evolution", "radiance", "purpose", "attraction", "iq"];
@@ -78,6 +82,9 @@ function geneKeysReading(data, computed) {
     h: "Your Golden Path",
     p: `Gene Keys describes each key as a spectrum with three names, a Shadow, a Gift and a Siddhi. These are the keys currently in your profile, offered as words to reflect with. A hard feeling or a hard situation doesn't mean you have fallen into a shadow.`,
   });
+  if (d.positions_checked === false && RELABELED_SPHERES.some((k) => d[k])) {
+    sections.push({ h: "Check these keys", p: GENE_KEYS_RECHECK });
+  }
 
   for (const k of present) {
     const key = resolveKey(d[k]);
@@ -155,7 +162,9 @@ function tarotArchetypeReading(data, computed) {
   // chosen by hand.
   const computedBirth = Boolean(birth) && resolveArcana(computed.birth_card)?.name === birth.name;
   const soul = computedBirth ? resolveArcana(computed.soul_card) : null;
-  const shadow = resolveArcana(d.shadow_card);
+  // A shadow card an earlier method filled in isn't read beside the computed
+  // birth card, whose soul card now shows on its own.
+  const shadow = computedBirth && d.shadow_card_source === 'retired' ? null : resolveArcana(d.shadow_card);
   const year = resolveArcana(d.personal_year_card);
   const sections = [];
 

@@ -143,13 +143,15 @@ export function followBirthCard(tarot, nextDate) {
 }
 
 /**
- * Saved tarot data with a source for each card saved before sources were
- * recorded, worked out from the saved birth date:
- * - a birth card that matches the birth date's card is 'birth_date';
- * - one a retired method gave for that date is 'retired';
- * - a shadow card a retired method filled in goes when the birth card is the
- *   computed one, since the soul card now shows on its own, and is marked
- *   'retired' otherwise, to go if that birth card is replaced.
+ * Saved tarot data with its sources settled against the birth date, when
+ * the Cosmos page loads and again when the profile is saved:
+ * - a birth card with no source, or an earlier method's, that matches the
+ *   birth date's card becomes 'birth_date';
+ * - one with no source that an earlier method gave for that date becomes
+ *   'retired';
+ * - a shadow card with no source that an earlier method gave becomes
+ *   'retired', and goes beside a 'birth_date' card, whose soul card now
+ *   shows on its own.
  * Any other card stays as it is.
  * @param {Record<string, any> | null | undefined} tarot @param {string} birthDate
  */
@@ -158,14 +160,12 @@ export function settleTarot(tarot, birthDate) {
   const next = { ...tarot };
   const retired = retiredCards(birthDate);
   const birth = cardId(next.birth_card);
-  if (birth !== null && !next.birth_card_source) {
+  const source = next.birth_card_source;
+  if (birth !== null && (!source || source === 'retired')) {
     if (birth === birthCards(birthDate)?.personality.id) next.birth_card_source = 'birth_date';
-    else if (retired?.birth.includes(birth)) next.birth_card_source = 'retired';
+    else if (!source && retired?.birth.includes(birth)) next.birth_card_source = 'retired';
   }
   const shadow = cardId(next.shadow_card);
-  if (shadow !== null && !next.shadow_card_source && retired?.shadow.includes(shadow)) {
-    if (next.birth_card_source === 'birth_date') delete next.shadow_card;
-    else next.shadow_card_source = 'retired';
-  }
-  return next;
+  if (shadow !== null && !next.shadow_card_source && retired?.shadow.includes(shadow)) next.shadow_card_source = 'retired';
+  return next.birth_card_source === 'birth_date' ? replacedCard(next) : next;
 }

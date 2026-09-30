@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recentHardMoment, harmRecordedWith, guardAnswer, settleDecision, momentFromReads, keepKnownHarm } from '../symbolic-guard';
+import { recentHardMoment, harmRecordedWith, guardAnswer, settleDecision, momentFromReads, keepKnownHarm, inGuardWindow } from '../symbolic-guard';
 
 const today = '2026-09-29';
 
@@ -70,9 +70,6 @@ describe('symbolic readings wait after a hard moment', () => {
     // A newer provisional answer, such as one found from part of the record, replaces it.
     const partial = { ...low, incomplete: true };
     expect(settleDecision(pause, 'provisional', partial)).toEqual({ moment: partial, final: false });
-    // ...but never outweighs harm already known.
-    const harmPause = settleDecision(undefined, 'provisional', { kind: 'harm', date: '2026-09-28' });
-    expect(settleDecision(harmPause, 'provisional', partial)).toBe(harmPause);
     expect(settleDecision(pause, 'final', null)).toEqual({ moment: null, final: true });
   });
 
@@ -113,9 +110,16 @@ describe('symbolic readings wait after a hard moment', () => {
     const answer = guardAnswer({ fetchStatus: 'idle', isPending: false, isStale: false, data: kept });
     expect(answer).toBe('provisional');
     decided = settleDecision(decided, answer, kept);
-    expect(decided).toEqual({ moment: harm, final: false });
+    expect(decided).toEqual({ moment: { ...harm, incomplete: true }, final: false });
     // A full read later (the entry was changed) lifts it.
     decided = settleDecision(decided, guardAnswer({ fetchStatus: 'idle', isPending: false, isStale: false, data: null }), null);
     expect(decided).toEqual({ moment: null, final: true });
+  });
+
+  it('counts only moments inside the window', () => {
+    expect(inGuardWindow({ date: '2026-09-27' }, today)).toBe(true);
+    expect(inGuardWindow({ date: '2026-09-26' }, today)).toBe(false);
+    expect(inGuardWindow({ date: '2026-09-30' }, today)).toBe(false);
+    expect(inGuardWindow(null, today)).toBe(false);
   });
 });

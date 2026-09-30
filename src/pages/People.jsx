@@ -128,8 +128,8 @@ export default function People() {
     if (harmRecordedWith(person, journal)) return;
     setSynergyBusy(true);
     try {
-      // Only the request is stored; an older saved text is cleared.
-      const updated = await Person.update(person.id, { synergy_reading: null, synergy_generated_at: new Date().toISOString() });
+      // Only the request is stored; text saved by earlier versions is never shown.
+      const updated = await Person.update(person.id, { synergy_generated_at: new Date().toISOString() });
       setDetail({ ...person, ...updated });
       load();
     } catch (err) {

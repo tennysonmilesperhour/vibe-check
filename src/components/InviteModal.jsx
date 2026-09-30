@@ -48,8 +48,8 @@ export default function InviteModal({ open, onClose }) {
         </DialogHeader>
 
         <p className="text-sm mb-4" style={{ color: "var(--gh-ink-soft)" }}>
-          Once they weave their own cosmos, you can add them to your people and
-          read the synergy between your charts.
+          Share Vibe Check with someone. Their journal and patterns stay
+          private to them, and nothing of yours is shared.
         </p>
 
         <div className="flex gap-2">

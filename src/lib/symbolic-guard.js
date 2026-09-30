@@ -7,6 +7,15 @@ export const GUARD_DAYS = 3;
 export const LOW_MOOD = 3;
 
 const harmful = (entry) => entry.interaction_feeling === 'unsafe' || entry.boundary_respected === 'no';
+
+/**
+ * Whether a dated entry or moment falls in the last GUARD_DAYS days.
+ * @param {{ date?: string } | null | undefined} dated @param {string} [today]
+ */
+export function inGuardWindow(dated, today = todayKey()) {
+  const since = addDaysKey(today, -(GUARD_DAYS - 1));
+  return Boolean(dated?.date) && dated.date >= since && dated.date <= today;
+}
 const lowMood = (entry) => entry.mood_score != null && Number(entry.mood_score) <= LOW_MOOD;
 
 /**
@@ -18,8 +27,7 @@ const lowMood = (entry) => entry.mood_score != null && Number(entry.mood_score) 
  * @returns {{ kind: 'harm' | 'low', date: string } | null}
  */
 export function recentHardMoment({ checkIns = [], journal = [] } = {}, today = todayKey()) {
-  const since = addDaysKey(today, -(GUARD_DAYS - 1));
-  const recent = (entry) => Boolean(entry?.date) && entry.date >= since && entry.date <= today;
+  const recent = (entry) => inGuardWindow(entry, today);
   const kept = journal.filter((entry) => recent(entry) && !entry.is_draft);
   /** @type {{ kind: 'harm' | 'low', date: string }[]} */
   const moments = [
@@ -65,8 +73,7 @@ export function momentFromReads(checkIns, journal, today = todayKey()) {
  * @returns {M | null}
  */
 export function keepKnownHarm(previous, next, today = todayKey()) {
-  const since = addDaysKey(today, -(GUARD_DAYS - 1));
-  const knownHarm = previous?.kind === 'harm' && previous.date >= since && previous.date <= today;
+  const knownHarm = previous?.kind === 'harm' && inGuardWindow(previous, today);
   return next?.incomplete && knownHarm ? { ...previous, incomplete: true } : next;
 }
 
@@ -106,11 +113,7 @@ export function guardAnswer({ fetchStatus, isPending, isStale, data = null }) {
  */
 export function settleDecision(decided, answer, current) {
   if (decided?.final || answer === 'wait') return decided;
-  if (answer === 'provisional') {
-    // An answer from part of the record never outweighs harm already known.
-    const knownHarm = /** @type {any} */ (decided?.moment)?.kind === 'harm' && /** @type {any} */ (current)?.incomplete;
-    return decided?.moment === current || knownHarm ? decided : { moment: current, final: false };
-  }
+  if (answer === 'provisional') return decided?.moment === current ? decided : { moment: current, final: false };
   return { moment: current, final: true };
 }
 

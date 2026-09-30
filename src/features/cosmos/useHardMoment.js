@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry } from '@/api/entities';
 import { addDaysKey, todayKey } from '@/lib/dates';
-import { GUARD_DAYS, guardAnswer, keepKnownHarm, momentFromReads, settleDecision } from '@/lib/symbolic-guard';
+import { GUARD_DAYS, guardAnswer, inGuardWindow, keepKnownHarm, momentFromReads, settleDecision } from '@/lib/symbolic-guard';
 
 /**
  * The latest hard moment in the last few days (see symbolic-guard), for
@@ -40,8 +40,10 @@ export default function useHardMoment({ watching = true } = {}) {
     refetchInterval: watching && !decided?.final ? (query) => (query.state.data?.incomplete ? 15_000 : false) : false,
   });
   const waitingSince = useRef(Date.now()).current;
-  const answer = guardAnswer({ fetchStatus: query.fetchStatus, isPending: query.isPending, isStale: query.isStale, data: query.data });
-  const settled = settleDecision(decided, answer, query.data || null);
+  // A cached moment that has since left the window counts as none.
+  const current = inGuardWindow(query.data) ? query.data : null;
+  const answer = guardAnswer({ fetchStatus: query.fetchStatus, isPending: query.isPending, isStale: query.isStale, data: current });
+  const settled = settleDecision(decided, answer, current);
   useEffect(() => { if (settled !== decided) setDecided(settled); }, [settled, decided]);
   return { moment: settled?.moment ?? null, checking: settled === undefined, waitingSince };
 }

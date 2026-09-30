@@ -31,6 +31,30 @@ export function recentHardMoment({ checkIns = [], journal = [] } = {}, today = t
 }
 
 /**
+ * Whether the guard is still waiting on its check, from its query's state: a
+ * request running or paused offline, with no answer yet or only a stale one.
+ * A failed or disabled check isn't waiting, so readings show as usual.
+ * @param {{ fetchStatus: string, isPending: boolean, isStale: boolean }} query
+ */
+export function guardWaiting({ fetchStatus, isPending, isStale }) {
+  return (fetchStatus === 'fetching' || fetchStatus === 'paused') && (isPending || isStale);
+}
+
+/**
+ * The page's decision about readings. The first answer decides for the
+ * visit, so a later one never swaps an open reading for the pause; undefined
+ * means still waiting.
+ * @template T
+ * @param {T | null | undefined} decided the decision already made, if any
+ * @param {boolean} waiting @param {T | null} current the latest answer
+ * @returns {T | null | undefined}
+ */
+export function settleDecision(decided, waiting, current) {
+  if (decided !== undefined) return decided;
+  return waiting ? undefined : current;
+}
+
+/**
  * Whether the person recorded feeling unsafe with someone, or a boundary of
  * theirs that someone didn't respect. A chart comparison then isn't offered.
  * @param {any} person @param {any[]} journal

@@ -17,11 +17,10 @@ const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
 
 // Questions about safety, staying, leaving, another person, or someone's
 // treatment of you. The cards can't weigh those, so the reading says so
-// first. Any question that mentions another person counts, since harm is
-// described in too many ways to list; a safety note beside an unrelated
-// question ("Will they like my work?") costs little, and a missed one can
-// cost a lot.
-export const RELATIONSHIP_QUESTION = /\b(he|she|they|him|her|them|his|hers|their|stay\w*|leav\w*|left|go back|forgiv\w*|hurt\w*|abus\w*|assault\w*|rap(e|ed|es|ing)|unsafe|safe(ty)?|danger\w*|scar(e|ed|es|ing)|afraid|terrif\w*|fear\w*|frighten\w*|threat\w*|kill\w*|hit|hits|hitting|slap\w*|punch\w*|kick\w*|beat\w*|push(ed|es|ing)?|shov\w*|chok\w*|strangl\w*|stalk\w*|violen\w*|yell\w*|scream\w*|shout\w*|control\w*|jealous\w*|cheat\w*|partner\w*|husband|wife|boyfriend|girlfriend|fianc\w*|spouse|ex|dating|marr\w*|divorc\w*|break\w* ?up|relationship\w*|loves? me)\b/i;
+// first. The list errs wide, since a safety note beside an unrelated question
+// ("Will they like my work?") costs little; any other question still gets a
+// shorter note, because harm is described in more ways than a list can hold.
+export const RELATIONSHIP_QUESTION = /\b(he|she|they|him|her|them|his|hers|their|we|us|someone|somebody|anyone|mom|mum|mother|dad|father|step(mom|mum|mother|dad|father|parent)\w*|parent\w*|brother\w*|sister\w*|sibling\w*|son|daughter\w*|child|kid\w*|uncle\w*|aunt\w*|cousin\w*|grand(ma|pa|mother|father|parent)\w*|boss\w*|manager\w*|co-?worker\w*|colleague\w*|teacher\w*|coach\w*|landlord\w*|roommate\w*|friend\w*|stay\w*|leav\w*|left|go back|forgiv\w*|hurt\w*|abus\w*|assault\w*|rap(e|ed|es|ing)|unsafe|safe(ty)?|danger\w*|scar(e|ed|es|ing)|afraid|terrif\w*|fear\w*|frighten\w*|threat\w*|kill\w*|hit|hits|hitting|slap\w*|punch\w*|kick\w*|beat\w*|push(ed|es|ing)?|shov\w*|grab\w*|touch\w*|follow\w*|chok\w*|strangl\w*|stalk\w*|violen\w*|yell\w*|scream\w*|shout\w*|control\w*|jealous\w*|cheat\w*|partner\w*|husband|wife|boyfriend|girlfriend|fianc\w*|spouse|ex|dating|marr\w*|divorc\w*|break\w* ?up|relationship\w*|loves? me)\b/i;
 
 /**
  * tarotReading({ spreadName, deck, cards, question, resonanceSummary })
@@ -37,8 +36,10 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
     ? `You laid out "${spreadName}" with a question in mind: "${question}". The cards can't answer it for you. Here is what they offer to think with.`
     : `You laid out "${spreadName}" with an open question. Here is what the cards offer to think with.`;
   paras.push(opener);
-  if (question && RELATIONSHIP_QUESTION.test(question)) {
-    paras.push("No reading can tell you whether someone is safe to be with or whether to stay. What you have recorded, how you are treated, and the people you trust can. If you are not safe, support is here whenever you want it.");
+  if (question) {
+    paras.push(RELATIONSHIP_QUESTION.test(question)
+      ? "No reading can tell you whether someone is safe to be with or whether to stay. What you have recorded, how you are treated, and the people you trust can. If you are not safe, support is here whenever you want it."
+      : "If your question is about how someone treats you, your own record and the people you trust can weigh that better than any card. Support is here whenever you want it.");
   }
 
   // Position by position, each named first so any label reads cleanly
@@ -185,7 +186,7 @@ function findResonances(signals) {
   const num = signals.find((s) => s.system === "numerology");
   const tarot = signals.find((s) => s.system === "tarot_archetype");
   const gk = signals.find((s) => s.system === "gene_keys");
-  if (num && tarot) pairs.push(`Your ${num.short} and ${tarot.short} are the same insight in two dialects, numerology and Tarot draw your archetype from the same root number.`);
+  if (num && tarot) pairs.push(`Your ${num.short} and ${tarot.short} both come from the same root number, so treat them as one calculation read two ways.`);
   if (hd && gk) pairs.push(`Your Human Design and Gene Keys share one source, the 64 hexagrams; your Life's Work key is literally your Conscious Sun gate.`);
   if (astro && tarot) pairs.push(`Some Western esoteric traditions associate particular tarot cards with signs or planets. These correspondences offer another symbolic perspective, not confirmation of a prediction.`);
   return pairs;

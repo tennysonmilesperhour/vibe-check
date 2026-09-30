@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Person, Relationship, Connection, DailyCheckIn, JournalEntry, User } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import PlantVoice from '@/features/shell/PlantVoice';
 import { synergyReading } from "@/lib/wisdom/readings";
-import { harmRecordedWith } from "@/lib/symbolic-guard";
+import { harmRecordedWith, recentHardMoment } from "@/lib/symbolic-guard";
 import GuardedReading from "@/features/cosmos/GuardedReading";
-import useHardMoment from "@/features/cosmos/useHardMoment";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,9 +40,18 @@ export default function People() {
   // Synergy is part of Cosmos: it shows only once the person has chosen a system there.
   const [usesCosmos, setUsesCosmos] = useState(false);
   const [myChart, setMyChart] = useState(null);
-  // Like the readings in Cosmos, synergy waits for a few days after a hard moment.
-  const guard = useHardMoment();
+  // Like the readings in Cosmos, synergy waits for a few days after a hard
+  // moment, worked out from the history this page has already loaded.
+  const guard = useMemo(() => ({ moment: recentHardMoment({ checkIns, journal }), checking: false }), [checkIns, journal]);
   const [readAnyway, setReadAnyway] = useState(false);
+  const harm = useMemo(() => (detail ? harmRecordedWith(detail, journal) : false), [detail, journal]);
+  // Asking for a reading is remembered; the reading itself is composed from
+  // both charts each time, so it always uses today's wording.
+  const askedForSynergy = Boolean(detail?.synergy_generated_at || detail?.synergy_reading);
+  const synergyText = useMemo(
+    () => (usesCosmos && askedForSynergy && !harm ? synergyReading(myChart || {}, detail.cosmic_snapshot, detail.name) : null),
+    [usesCosmos, askedForSynergy, harm, myChart, detail],
+  );
 
   const load = useCallback(async () => {
     try {
@@ -113,7 +121,7 @@ export default function People() {
     }
   };
 
-  /** Refresh a linked friend's cosmic snapshot when theirs is newer, then read synergy. */
+  /** Refresh a linked friend's cosmic snapshot when theirs is newer, then show synergy. */
   const generateSynergy = async (person) => {
     if (harmRecordedWith(person, journal)) return;
     setSynergyBusy(true);
@@ -126,11 +134,9 @@ export default function People() {
           await Person.update(person.id, { cosmic_snapshot: snapshot, snapshot_updated_at: new Date().toISOString() });
         }
       }
-      const me = await base44.auth.me();
-      // Composed locally by comparing both blueprints — no API.
-      const reading = synergyReading(me?.cosmic_profile || {}, snapshot, person.name);
-      const updated = await Person.update(person.id, { synergy_reading: reading, synergy_generated_at: new Date().toISOString() });
-      setDetail({ ...person, ...updated, synergy_reading: reading });
+      // Only the request is stored; an older saved text is cleared.
+      const updated = await Person.update(person.id, { synergy_reading: null, synergy_generated_at: new Date().toISOString() });
+      setDetail({ ...person, ...updated });
       load();
     } catch (err) {
       toast({ title: "Synergy reading failed", description: err?.message, variant: "destructive" });
@@ -140,10 +146,6 @@ export default function People() {
 
   if (loading) return <div className="min-h-[60vh] field-wash" aria-busy="true" />;
   const entries = timelineEntries(checkIns, journal);
-  const harm = detail ? harmRecordedWith(detail, journal) : false;
-  // A saved reading marks that the person asked for one; it is shown in
-  // today's wording from both charts, so replaced wording never returns.
-  const synergyText = detail?.synergy_reading ? synergyReading(myChart || {}, detail.cosmic_snapshot, detail.name) : null;
 
   return (
     <div className="field-wash min-h-screen">
@@ -290,22 +292,24 @@ export default function People() {
                   <GuardedReading guard={guard} readAnyway={readAnyway} onReadAnyway={() => setReadAnyway(true)} compact>
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>SYNERGY READING · FROM COSMOS</p>
-                      <button
-                        type="button"
-                        className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
-                        style={{ color: "var(--gh-accent)" }}
-                        onClick={() => generateSynergy(detail)}
-                        disabled={synergyBusy}
-                      >
-                        <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
-                        {synergyBusy ? "Reading…" : synergyText ? "Refresh" : "Generate"}
-                      </button>
+                      {!synergyText && (
+                        <button
+                          type="button"
+                          className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
+                          style={{ color: "var(--gh-accent)" }}
+                          onClick={() => generateSynergy(detail)}
+                          disabled={synergyBusy}
+                        >
+                          <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
+                          {synergyBusy ? "Reading…" : "Generate"}
+                        </button>
+                      )}
                     </div>
                     {synergyText ? (
                       <p className="text-sm mt-2 whitespace-pre-line" style={{ color: "var(--gh-ink)" }}>{synergyText}</p>
                     ) : (
                       <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
-                        A symbolic comparison of your chart with any chart details saved for {detail.name}. It can't tell you how you are treated. Saved here once made.
+                        A symbolic comparison of your chart with any chart details saved for {detail.name}. It can't tell you how you are treated. Shown here once you ask for it.
                       </p>
                     )}
                   </GuardedReading>

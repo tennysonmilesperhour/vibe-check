@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry } from '@/api/entities';
 import { addDaysKey, todayKey } from '@/lib/dates';
-import { GUARD_DAYS, recentHardMoment } from '@/lib/symbolic-guard';
+import { GUARD_DAYS, guardWaiting, recentHardMoment, settleDecision } from '@/lib/symbolic-guard';
 
 /**
  * The latest hard moment in the last few days (see symbolic-guard), for
  * readings to wait on. Saves of check-ins and journal moments mark it stale
  * (see useLivingData). The first current answer after the page opens decides
- * for the visit: checking is true until then, and later refreshes never swap
- * an open reading for the pause. If nothing can be read, offline included,
- * readings show as usual.
+ * for the visit: checking is true until then, offline included, and later
+ * refreshes never swap an open reading for the pause. waitingSince is when
+ * the page began waiting. If the check fails, readings show as usual.
  */
 export default function useHardMoment() {
   const { user } = useAuth();
@@ -32,12 +32,10 @@ export default function useHardMoment() {
     enabled: Boolean(user?.id),
     staleTime: 60_000,
   });
-  // Waiting on a request that can answer now: not paused offline, not
-  // disabled, not failed.
-  const unanswered = query.fetchStatus === 'fetching' && (query.isPending || query.isStale);
+  const waitingSince = useRef(Date.now()).current;
   const current = query.data || null;
-  const [decision, setDecision] = useState(/** @type {typeof current | undefined} */ (undefined));
-  useEffect(() => { if (!unanswered && decision === undefined) setDecision(current); }, [unanswered, decision, current]);
-  if (decision !== undefined) return { moment: decision, checking: false };
-  return { moment: unanswered ? null : current, checking: unanswered };
+  const [decided, setDecided] = useState(/** @type {typeof current | undefined} */ (undefined));
+  const settled = settleDecision(decided, guardWaiting(query), current);
+  useEffect(() => { if (decided === undefined && settled !== undefined) setDecided(settled); }, [decided, settled]);
+  return { moment: settled ?? null, checking: settled === undefined, waitingSince };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recentHardMoment, harmRecordedWith } from '../symbolic-guard';
+import { recentHardMoment, harmRecordedWith, guardWaiting, settleDecision } from '../symbolic-guard';
 
 const today = '2026-09-29';
 
@@ -25,5 +25,25 @@ describe('symbolic readings wait after a hard moment', () => {
     const journal = [{ date: '2026-01-01', person_ids: ['sam'], boundary_respected: 'no' }, { date: '2026-01-02', person_ids: ['jules'], interaction_feeling: 'supportive' }];
     expect(harmRecordedWith(sam, journal)).toBe(true);
     expect(harmRecordedWith({ id: 'jules', name: 'Jules' }, journal)).toBe(false);
+  });
+
+  it('waits for a running or offline check with no current answer, and never for a failed one', () => {
+    expect(guardWaiting({ fetchStatus: 'fetching', isPending: true, isStale: true })).toBe(true);
+    expect(guardWaiting({ fetchStatus: 'paused', isPending: true, isStale: true })).toBe(true);
+    // A saved check-in marks the cached answer stale: wait for the new one.
+    expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: true })).toBe(true);
+    expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: false })).toBe(false);
+    expect(guardWaiting({ fetchStatus: 'idle', isPending: false, isStale: true })).toBe(false);
+    expect(guardWaiting({ fetchStatus: 'idle', isPending: true, isStale: true })).toBe(false);
+  });
+
+  it('lets the first answer decide for the visit', () => {
+    const low = { kind: 'low', date: '2026-09-29' };
+    expect(settleDecision(undefined, true, null)).toBeUndefined();
+    expect(settleDecision(undefined, false, low)).toBe(low);
+    expect(settleDecision(undefined, false, null)).toBeNull();
+    // Later answers never change it.
+    expect(settleDecision(null, false, low)).toBeNull();
+    expect(settleDecision(low, true, null)).toBe(low);
   });
 });

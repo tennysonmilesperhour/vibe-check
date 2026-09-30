@@ -153,10 +153,11 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
         personality: fullName ? str(personality(fullName)) : null,
         birthday: str(birthdayNumber(birthDate)),
         maturity: fullName ? str(maturity(birthDate, fullName)) : null,
-        personal_year: birthDate ? str(personalYear(birthDate, todayKey())) : null,
     };
 
     // Read-only cycles + karmic debts (informational, not stored form fields).
+    // The personal year changes each birthday, so it is never stored either.
+    const pYear = birthDate ? personalYear(birthDate, todayKey()) : null;
     const pMonth = birthDate ? personalMonth(birthDate, todayKey()) : null;
     const pDay = birthDate ? personalDay(birthDate, todayKey()) : null;
     const debts = karmicDebts(birthDate, fullName);
@@ -176,7 +177,6 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
         { key: 'personality', label: 'Personality Number', hint: 'From the consonants in your name. Numerology links it with how others first see you' },
         { key: 'birthday', label: 'Birthday Number', hint: 'From the day of the month you were born' },
         { key: 'maturity', label: 'Maturity Number', hint: 'Your Life Path plus your Expression. Numerology links it with later life' },
-        { key: 'personal_year', label: 'Personal Year Number', hint: 'From your birth date and the year of your most recent birthday' },
     ];
 
     return (
@@ -190,9 +190,10 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                 </Field>
             ))}
 
-            {(pMonth != null || pDay != null || debts.length > 0) && (
+            {(pYear != null || pMonth != null || pDay != null || debts.length > 0) && (
                 <div className="md:col-span-2 space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <DerivedChip label="Personal Year" value={pYear != null ? str(pYear) : null} />
                         <DerivedChip label="Personal Month" value={pMonth != null ? str(pMonth) : null} />
                         <DerivedChip label="Personal Day" value={pDay != null ? str(pDay) : null} />
                     </div>

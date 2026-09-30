@@ -4,8 +4,6 @@
 // when the profile is saved, once the date is final.
 import { reconcileTarot, settleTarot } from './tarotCards.js';
 import { enneagramOption, resolveEnneagram, wingOf } from '../wisdom/content/enneagram.js';
-import { personalYear } from './numerology.js';
-import { todayKey } from '../dates.js';
 
 // Until September 30, 2026, the Gene Keys form named the wrong chart
 // positions for these spheres (Conscious Moon, Conscious Node, Unconscious
@@ -40,27 +38,24 @@ export function withSphere(geneKeys, key, value) {
  * - an Enneagram type saved under an earlier name gets the form's current
  *   name for the same number, and a wing that doesn't belong to the type
  *   goes;
- * - a saved personal year is brought up to date, since it changes each
- *   birthday.
+ * - a saved personal year goes: it changes each birthday, so it is worked
+ *   out from the birth date wherever it is shown.
  * @param {Record<string, any>} profile
- * @param {string} [today]
  * @returns {Record<string, any>}
  */
-export function settleCosmicProfile(profile, today = todayKey()) {
+export function settleCosmicProfile(profile) {
   const geneKeys = profile.gene_keys;
   const recheck = geneKeys && geneKeys.positions_checked === undefined && RELABELED_SPHERES.some((key) => geneKeys[key]);
   const enneagram = profile.enneagram;
   const number = enneagram?.type ? resolveEnneagram(enneagram.type)?.number : null;
   const staleWing = Boolean(number && enneagram.wing && !wingOf(enneagram.wing, number));
   const renamed = Boolean(number && enneagram.type !== enneagramOption(number));
-  const year = profile.birth_date ? personalYear(profile.birth_date, today) : null;
-  const savedYear = profile.numerology?.personal_year;
   return {
     ...profile,
     tarot_archetype: settleTarot(profile.tarot_archetype, profile.birth_date),
     ...(recheck ? { gene_keys: { ...geneKeys, positions_checked: false } } : {}),
     ...(renamed || staleWing ? { enneagram: { ...enneagram, ...(renamed ? { type: enneagramOption(number) } : {}), ...(staleWing ? { wing: undefined } : {}) } } : {}),
-    ...(year != null && savedYear && String(savedYear) !== String(year) ? { numerology: { ...profile.numerology, personal_year: String(year) } } : {}),
+    ...(profile.numerology?.personal_year !== undefined ? { numerology: { ...profile.numerology, personal_year: undefined } } : {}),
   };
 }
 

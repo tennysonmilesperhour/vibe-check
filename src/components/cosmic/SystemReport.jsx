@@ -200,7 +200,7 @@ const SYSTEM_DETAILS = {
   gene_keys: GeneKeysDetail,
   numerology: ({ data }) => <GenericDetail data={data} fields={[
     { key: 'life_path', label: 'Life Path' }, { key: 'expression', label: 'Expression' },
-    { key: 'soul_urge', label: 'Soul Urge' }, { key: 'personal_year', label: 'Personal Year' },
+    { key: 'soul_urge', label: 'Soul Urge' },
   ]} />,
   tarot_archetype: ({ data }) => <GenericDetail data={data} fields={[
     { key: 'birth_card', label: 'Birth Card' }, { key: 'shadow_card', label: 'Shadow Card' },

@@ -50,11 +50,10 @@ describe('settleCosmicProfile', () => {
     expect(settleCosmicProfile({ enneagram: { type: '9 – Peace and harmony', wing: '9w1' } }).enneagram).toEqual({ type: '9 – Peace and harmony', wing: '9w1' });
   });
 
-  it('brings a saved personal year up to date', () => {
-    // Born July 15: on 2026-09-30 the personal year counts from 2026 (7 + 6 + 1 = 14 -> 5).
-    const saved = { birth_date: '1990-07-15', numerology: { life_path: '5', personal_year: '4' } };
-    expect(settleCosmicProfile(saved, '2026-09-30').numerology).toEqual({ life_path: '5', personal_year: '5' });
-    expect(settleCosmicProfile({ ...saved, numerology: { personal_year: '5' } }, '2026-09-30').numerology).toEqual({ personal_year: '5' });
+  it('drops a saved personal year, which is worked out from the birth date wherever it shows', () => {
+    const settled = settleCosmicProfile({ birth_date: '1990-07-15', numerology: { life_path: '5', personal_year: '4' } });
+    expect(JSON.parse(JSON.stringify(settled.numerology))).toEqual({ life_path: '5' });
+    expect(settleCosmicProfile({ numerology: { life_path: '5' } }).numerology).toEqual({ life_path: '5' });
   });
 
   it('gives saved tarot cards a source', () => {

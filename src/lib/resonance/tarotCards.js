@@ -144,8 +144,9 @@ export function withChosenCard(tarot, card) {
 export function followBirthCard(tarot, nextDate) {
   if (tarot?.birth_card_source !== 'birth_date') return tarot;
   if (birthCards(nextDate)) return withComputedCard(tarot, nextDate);
-  const { birth_card: _card, ...rest } = tarot;
-  return rest;
+  // Undefined rather than deleted keeps the key's place, so the same date
+  // typed again gives the same saved form (the page compares it as JSON).
+  return { ...tarot, birth_card: undefined };
 }
 
 /**

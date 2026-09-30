@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recentHardMoment, harmRecordedWith, guardWaiting, settleDecision } from '../symbolic-guard';
+import { recentHardMoment, harmRecordedWith, guardAnswer, settleDecision } from '../symbolic-guard';
 
 const today = '2026-09-29';
 
@@ -27,29 +27,44 @@ describe('symbolic readings wait after a hard moment', () => {
     expect(harmRecordedWith({ id: 'jules', name: 'Jules' }, journal)).toBe(false);
   });
 
-  it('waits for a running or offline check with no current answer, and never for a failed one', () => {
-    expect(guardWaiting({ fetchStatus: 'fetching', isPending: true, isStale: true })).toBe(true);
-    expect(guardWaiting({ fetchStatus: 'paused', isPending: true, isStale: true })).toBe(true);
-    // A saved check-in marks the cached answer stale: wait for the new one.
-    expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: true })).toBe(true);
-    expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: false })).toBe(false);
-    expect(guardWaiting({ fetchStatus: 'idle', isPending: false, isStale: true })).toBe(false);
-    expect(guardWaiting({ fetchStatus: 'idle', isPending: true, isStale: true })).toBe(false);
-    // An old answer that holds a hard moment stands, offline or slow...
-    const low = { kind: 'low', date: '2026-09-28' };
-    expect(guardWaiting({ fetchStatus: 'paused', isPending: false, isStale: true, data: low })).toBe(false);
-    expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: true, data: low })).toBe(false);
-    // ...unless a save has since made it out of date.
-    expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: true, isInvalidated: true, data: low })).toBe(true);
+  it('waits for a first answer, and for a recheck of an old "no hard moment", offline too', () => {
+    expect(guardAnswer({ fetchStatus: 'fetching', isPending: true, isStale: true })).toBe('wait');
+    expect(guardAnswer({ fetchStatus: 'paused', isPending: true, isStale: true })).toBe('wait');
+    expect(guardAnswer({ fetchStatus: 'fetching', isPending: false, isStale: true, data: null })).toBe('wait');
+    expect(guardAnswer({ fetchStatus: 'paused', isPending: false, isStale: true, data: null })).toBe('wait');
   });
 
-  it('lets the first answer decide for the visit', () => {
+  it('shows a known hard moment at once while it is checked again', () => {
+    const low = { kind: 'low', date: '2026-09-28' };
+    expect(guardAnswer({ fetchStatus: 'fetching', isPending: false, isStale: true, data: low })).toBe('provisional');
+    expect(guardAnswer({ fetchStatus: 'paused', isPending: false, isStale: true, data: low })).toBe('provisional');
+  });
+
+  it('takes a current answer, or the last one there is when the check cannot run', () => {
+    const low = { kind: 'low', date: '2026-09-28' };
+    expect(guardAnswer({ fetchStatus: 'idle', isPending: false, isStale: false, data: null })).toBe('final');
+    expect(guardAnswer({ fetchStatus: 'fetching', isPending: false, isStale: false, data: low })).toBe('final');
+    // A failed recheck keeps the moment it knew; a failed first check shows readings.
+    expect(guardAnswer({ fetchStatus: 'idle', isPending: false, isStale: true, data: low })).toBe('final');
+    expect(guardAnswer({ fetchStatus: 'idle', isPending: false, isStale: true })).toBe('final');
+    // Disabled.
+    expect(guardAnswer({ fetchStatus: 'idle', isPending: true, isStale: true })).toBe('final');
+  });
+
+  it('lets a final answer decide for the visit, and a provisional pause lift', () => {
     const low = { kind: 'low', date: '2026-09-29' };
-    expect(settleDecision(undefined, true, null)).toBeUndefined();
-    expect(settleDecision(undefined, false, low)).toBe(low);
-    expect(settleDecision(undefined, false, null)).toBeNull();
-    // Later answers never change it.
-    expect(settleDecision(null, false, low)).toBeNull();
-    expect(settleDecision(low, true, null)).toBe(low);
+    expect(settleDecision(undefined, 'wait', null)).toBeUndefined();
+    expect(settleDecision(undefined, 'final', low)).toEqual({ moment: low, final: true });
+    expect(settleDecision(undefined, 'final', null)).toEqual({ moment: null, final: true });
+    // A final decision never changes, so an open reading is never replaced.
+    const shown = { moment: null, final: true };
+    expect(settleDecision(shown, 'final', low)).toBe(shown);
+    expect(settleDecision(shown, 'provisional', low)).toBe(shown);
+    // A provisional pause holds while waiting, and a current answer may lift it.
+    const pause = settleDecision(undefined, 'provisional', low);
+    expect(pause).toEqual({ moment: low, final: false });
+    expect(settleDecision(pause, 'wait', null)).toBe(pause);
+    expect(settleDecision(pause, 'provisional', low)).toBe(pause);
+    expect(settleDecision(pause, 'final', null)).toEqual({ moment: null, final: true });
   });
 });

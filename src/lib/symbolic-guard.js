@@ -31,31 +31,39 @@ export function recentHardMoment({ checkIns = [], journal = [] } = {}, today = t
 }
 
 /**
- * Whether the guard is still waiting on its check, from its query's state: a
- * request running or paused offline, with no answer yet, an answer a save has
- * since made out of date, or an old answer of "no hard moment". An old answer
- * that holds a hard moment stands, so the pause shows at once. A failed or
- * disabled check isn't waiting, so readings show as usual.
- * @param {{ fetchStatus: string, isPending: boolean, isStale: boolean, isInvalidated?: boolean, data?: unknown }} query
+ * What the guard's check says right now, from its query's state:
+ * - 'wait': no answer yet, or only an old "no hard moment" while the check
+ *   runs again (running or paused offline);
+ * - 'provisional': an old answer that holds a hard moment, while the check
+ *   runs again. The pause shows at once, and a newer answer may lift it;
+ * - 'final': a current answer, or the last one there is when the check
+ *   can't run. A failed or disabled check with nothing known is "no hard
+ *   moment", so readings show as usual.
+ * @param {{ fetchStatus: string, isPending: boolean, isStale: boolean, data?: unknown }} query
+ * @returns {'wait' | 'provisional' | 'final'}
  */
-export function guardWaiting({ fetchStatus, isPending, isStale, isInvalidated = false, data = null }) {
-  if (fetchStatus !== 'fetching' && fetchStatus !== 'paused') return false;
-  if (isPending || isInvalidated) return true;
-  return isStale && !data;
+export function guardAnswer({ fetchStatus, isPending, isStale, data = null }) {
+  const running = fetchStatus === 'fetching' || fetchStatus === 'paused';
+  if (!running || (!isPending && !isStale)) return 'final';
+  if (isPending || !data) return 'wait';
+  return 'provisional';
 }
 
 /**
- * The page's decision about readings. The first answer decides for the
- * visit, so a later one never swaps an open reading for the pause; undefined
- * means still waiting.
+ * The page's decision about readings, undefined while waiting. A final
+ * answer decides for the visit, so a later one never swaps an open reading
+ * for the pause. A provisional pause holds until a final answer, which may
+ * lift it: going from a pause to a reading is the safe direction.
  * @template T
- * @param {T | null | undefined} decided the decision already made, if any
- * @param {boolean} waiting @param {T | null} current the latest answer
- * @returns {T | null | undefined}
+ * @param {{ moment: T | null, final: boolean } | undefined} decided
+ * @param {'wait' | 'provisional' | 'final'} answer
+ * @param {T | null} current the latest answer
+ * @returns {{ moment: T | null, final: boolean } | undefined}
  */
-export function settleDecision(decided, waiting, current) {
-  if (decided !== undefined) return decided;
-  return waiting ? undefined : current;
+export function settleDecision(decided, answer, current) {
+  if (decided?.final || answer === 'wait') return decided;
+  if (answer === 'provisional') return decided ?? { moment: current, final: false };
+  return { moment: current, final: true };
 }
 
 /**

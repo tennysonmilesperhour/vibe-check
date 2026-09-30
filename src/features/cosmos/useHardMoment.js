@@ -1,24 +1,23 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry } from '@/api/entities';
 import { addDaysKey, todayKey } from '@/lib/dates';
-import { GUARD_DAYS, guardWaiting, recentHardMoment, settleDecision } from '@/lib/symbolic-guard';
+import { GUARD_DAYS, guardAnswer, recentHardMoment, settleDecision } from '@/lib/symbolic-guard';
 
 /**
  * The latest hard moment in the last few days (see symbolic-guard), for
  * readings to wait on. Saves of check-ins and journal moments mark it stale
- * (see useLivingData). The first current answer after the page opens decides
- * for the visit: checking is true until then, offline included, and later
- * refreshes never swap an open reading for the pause. waitingSince is when
- * the page began waiting. If the check fails, readings show as usual.
+ * (see useLivingData). checking is true until the page has an answer, offline
+ * included; a current answer then decides for the visit, so later refreshes
+ * never swap an open reading for the pause (see settleDecision).
+ * waitingSince is when the page began waiting. If the check fails, readings
+ * show as usual.
  */
 export default function useHardMoment() {
   const { user } = useAuth();
-  const client = useQueryClient();
-  const queryKey = ['living', user?.id, 'hard-moment'];
   const query = useQuery({
-    queryKey,
+    queryKey: ['living', user?.id, 'hard-moment'],
     queryFn: async () => {
       const since = addDaysKey(todayKey(), -(GUARD_DAYS - 1));
       const [checkIns, journal] = await Promise.allSettled([
@@ -35,13 +34,9 @@ export default function useHardMoment() {
     staleTime: 60_000,
   });
   const waitingSince = useRef(Date.now()).current;
-  const current = query.data || null;
-  const [decided, setDecided] = useState(/** @type {typeof current | undefined} */ (undefined));
-  const waiting = guardWaiting({
-    fetchStatus: query.fetchStatus, isPending: query.isPending, isStale: query.isStale,
-    isInvalidated: client.getQueryState(queryKey)?.isInvalidated ?? false, data: query.data,
-  });
-  const settled = settleDecision(decided, waiting, current);
-  useEffect(() => { if (decided === undefined && settled !== undefined) setDecided(settled); }, [decided, settled]);
-  return { moment: settled ?? null, checking: settled === undefined, waitingSince };
+  const answer = guardAnswer({ fetchStatus: query.fetchStatus, isPending: query.isPending, isStale: query.isStale, data: query.data });
+  const [decided, setDecided] = useState(/** @type {{ moment: any, final: boolean } | undefined} */ (undefined));
+  const settled = settleDecision(decided, answer, query.data || null);
+  useEffect(() => { if (settled !== decided) setDecided(settled); }, [settled, decided]);
+  return { moment: settled?.moment ?? null, checking: settled === undefined, waitingSince };
 }

@@ -33,7 +33,7 @@ function humanDesignReading(data) {
   const sections = [];
 
   if (!type && !auth && !prof) {
-    return "Enter your Human Design Type, Authority, and Profile on the Systems tab to unlock your full reading. If you do not know your chart yet, you can calculate it for free from your birth date, time, and place at any Human Design bodygraph site, then enter the results here.";
+    return "Enter your Human Design Type, Authority, and Profile on the My Profile tab to unlock your full reading. If you do not know your chart yet, you can calculate it for free from your birth date, time, and place at any Human Design bodygraph site, then enter the results here.";
   }
 
   if (type) {
@@ -71,7 +71,7 @@ function geneKeysReading(data, computed) {
   const sections = [];
 
   if (present.length === 0) {
-    return "Your Life's Work Gene Key equals your Conscious Sun Gate in Human Design. Enter that gate number (or any of your Gene Keys) on the Systems tab and your hologenetic reading will compose here.";
+    return "Your Life's Work Gene Key equals your Conscious Sun Gate in Human Design. Enter that gate number (or any of your Gene Keys) on the My Profile tab and your hologenetic reading will compose here.";
   }
 
   sections.push({
@@ -189,7 +189,7 @@ function enneagramReading(data) {
   const sections = [];
 
   if (!t) {
-    return "Enter your Enneagram type (1 through 9) on the Systems tab to unlock your reading. If you are unsure of your type, look for the core fear and desire below that ring truest, that is usually your type talking.";
+    return "Enter your Enneagram type (1 through 9) on the My Profile tab to unlock your reading. If you are unsure of your type, look for the core fear and desire below that ring truest, that is usually your type talking.";
   }
 
   sections.push({ h: `Type ${t.number}: ${t.name}`, p: `At your core, your basic fear is ${t.fear}, and your basic desire is ${t.desire}. Everything about your personality is, at root, a strategy to avoid that fear and secure that desire.` });
@@ -219,7 +219,7 @@ function chakraReading(data) {
   const sections = [];
 
   if (!c) {
-    return "Choose your dominant or focus chakra on the Systems tab to unlock your reading. If you are unsure, notice which theme below is most alive for you right now, whether it is safety, creativity, power, love, voice, insight, or meaning.";
+    return "Choose your dominant or focus chakra on the My Profile tab to unlock your reading. If you are unsure, notice which theme below is most alive for you right now, whether it is safety, creativity, power, love, voice, insight, or meaning.";
   }
 
   sections.push({ h: `The center you chose: ${c.name} (${c.sanskrit})`, p: `Chakra traditions place this center at the ${c.location} and associate it with the element of ${c.element}, the color ${c.color}, and ${c.theme}.` });

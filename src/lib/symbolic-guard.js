@@ -32,11 +32,14 @@ export function recentHardMoment({ checkIns = [], journal = [] } = {}, today = t
 
 /**
  * The hard moment from the guard's two reads, as Promise.allSettled results.
- * A moment found in either stands; "no hard moment" needs both, so a read
- * that half failed throws instead of lifting a pause.
+ * "No hard moment" needs both, so a read that half failed with nothing found
+ * throws instead of lifting a pause. A moment found in either stands; a low
+ * mood found while the journal couldn't be read is marked incomplete, since
+ * harm recorded there would come first.
  * @param {PromiseSettledResult<any[]>} checkIns
  * @param {PromiseSettledResult<any[]>} journal
  * @param {string} [today]
+ * @returns {{ kind: 'harm' | 'low', date: string, incomplete?: boolean } | null}
  */
 export function momentFromReads(checkIns, journal, today = todayKey()) {
   const moment = recentHardMoment({
@@ -45,6 +48,7 @@ export function momentFromReads(checkIns, journal, today = todayKey()) {
   }, today);
   const failed = [checkIns, journal].find((result) => result.status === 'rejected');
   if (!moment && failed?.status === 'rejected') throw failed.reason;
+  if (moment && moment.kind !== 'harm' && journal.status === 'rejected') return { ...moment, incomplete: true };
   return moment;
 }
 
@@ -53,7 +57,8 @@ export function momentFromReads(checkIns, journal, today = todayKey()) {
  * - 'wait': no answer yet, or only an old "no hard moment" while the check
  *   runs again (running or paused offline);
  * - 'provisional': an old answer that holds a hard moment, while the check
- *   runs again. The pause shows at once, and a newer answer may lift it;
+ *   runs again, or one found from part of the record. The pause shows at
+ *   once, and a newer answer may lift or change it;
  * - 'final': a current answer, or the last one there is when the check
  *   can't run. A failed or disabled check with nothing known is "no hard
  *   moment", so readings show as usual.
@@ -62,6 +67,8 @@ export function momentFromReads(checkIns, journal, today = todayKey()) {
  */
 export function guardAnswer({ fetchStatus, isPending, isStale, data = null }) {
   const running = fetchStatus === 'fetching' || fetchStatus === 'paused';
+  // Found from part of the record: the pause shows, and a full answer may change it.
+  if (/** @type {any} */ (data)?.incomplete) return 'provisional';
   if (!running || (!isPending && !isStale)) return 'final';
   if (isPending || !data) return 'wait';
   return 'provisional';

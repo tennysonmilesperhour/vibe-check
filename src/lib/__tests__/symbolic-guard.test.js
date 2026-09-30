@@ -38,6 +38,8 @@ describe('symbolic readings wait after a hard moment', () => {
     const low = { kind: 'low', date: '2026-09-28' };
     expect(guardAnswer({ fetchStatus: 'fetching', isPending: false, isStale: true, data: low })).toBe('provisional');
     expect(guardAnswer({ fetchStatus: 'paused', isPending: false, isStale: true, data: low })).toBe('provisional');
+    // One found from part of the record stays open to a full answer.
+    expect(guardAnswer({ fetchStatus: 'idle', isPending: false, isStale: false, data: { ...low, incomplete: true } })).toBe('provisional');
   });
 
   it('takes a current answer, or the last one there is when the check cannot run', () => {
@@ -73,7 +75,9 @@ describe('symbolic readings wait after a hard moment', () => {
     const down = /** @type {PromiseSettledResult<any[]>} */ ({ status: 'rejected', reason: new Error('down') });
     const unsafe = [{ date: '2026-09-28', interaction_feeling: 'unsafe' }];
     expect(momentFromReads(down, ok(unsafe), today)).toEqual({ kind: 'harm', date: '2026-09-28' });
-    expect(momentFromReads(ok([{ date: '2026-09-29', mood_score: 2 }]), down, today)).toEqual({ kind: 'low', date: '2026-09-29' });
+    // Harm recorded in an unread journal would come first, so a low mood alone is incomplete.
+    expect(momentFromReads(ok([{ date: '2026-09-29', mood_score: 2 }]), down, today)).toEqual({ kind: 'low', date: '2026-09-29', incomplete: true });
+    expect(momentFromReads(down, ok([{ date: '2026-09-29', mood_score: 2 }]), today)).toEqual({ kind: 'low', date: '2026-09-29' });
     expect(() => momentFromReads(ok([{ date: '2026-09-29', mood_score: 6 }]), down, today)).toThrow('down');
     expect(momentFromReads(ok([]), ok([]), today)).toBeNull();
   });

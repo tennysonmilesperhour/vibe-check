@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Person, Relationship, Connection, DailyCheckIn, JournalEntry, User } from "@/entities/all";
+import { Person, Relationship, Connection, DailyCheckIn, JournalEntry } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import PlantVoice from '@/features/shell/PlantVoice';
 import { synergyReading } from "@/lib/wisdom/readings";
@@ -121,19 +121,15 @@ export default function People() {
     }
   };
 
-  /** Refresh a linked friend's cosmic snapshot when theirs is newer, then show synergy. */
+  /**
+   * Remember that the person asked for a synergy reading. A linked friend's
+   * newer chart can't be fetched yet (see User in entities), so the reading
+   * uses the chart saved for them.
+   */
   const generateSynergy = async (person) => {
     if (harmRecordedWith(person, journal)) return;
     setSynergyBusy(true);
     try {
-      let snapshot = person.cosmic_snapshot;
-      if (person.linked_user_email) {
-        const [friend] = await User.filter({ email: person.linked_user_email }).catch(() => []);
-        if (friend?.cosmic_profile && (!person.snapshot_updated_at || (friend.updated_date && friend.updated_date > person.snapshot_updated_at))) {
-          snapshot = friend.cosmic_profile;
-          await Person.update(person.id, { cosmic_snapshot: snapshot, snapshot_updated_at: new Date().toISOString() });
-        }
-      }
       // Only the request is stored; an older saved text is cleared.
       const updated = await Person.update(person.id, { synergy_reading: null, synergy_generated_at: new Date().toISOString() });
       setDetail({ ...person, ...updated });
@@ -292,8 +288,7 @@ export default function People() {
                   <GuardedReading guard={guard} readAnyway={readAnyway} onReadAnyway={() => setReadAnyway(true)} compact>
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>SYNERGY READING · FROM COSMOS</p>
-                      {/* Once shown, the reading only changes if a linked friend's chart does. */}
-                      {(!synergyText || detail.linked_user_email) && (
+                      {!synergyText && (
                         <button
                           type="button"
                           className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
@@ -302,7 +297,7 @@ export default function People() {
                           disabled={synergyBusy}
                         >
                           <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
-                          {synergyBusy ? "Reading…" : synergyText ? "Update their chart" : "Generate"}
+                          {synergyBusy ? "Reading…" : "Generate"}
                         </button>
                       )}
                     </div>

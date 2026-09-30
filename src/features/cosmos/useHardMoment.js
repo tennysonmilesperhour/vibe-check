@@ -27,7 +27,9 @@ export default function useHardMoment() {
       return momentFromReads(checkIns, journal);
     },
     enabled: Boolean(user?.id),
-    staleTime: 60_000,
+    // An answer found from part of the record is checked again until whole.
+    staleTime: (query) => (query.state.data?.incomplete ? 0 : 60_000),
+    refetchInterval: (query) => (query.state.data?.incomplete ? 15_000 : false),
   });
   const waitingSince = useRef(Date.now()).current;
   const answer = guardAnswer({ fetchStatus: query.fetchStatus, isPending: query.isPending, isStale: query.isStale, data: query.data });

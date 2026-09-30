@@ -15,7 +15,7 @@ export default function ReadingPause({ moment, onShowAnyway, compact = false }) 
       <p className={compact ? 'text-sm' : undefined}>
         {moment.kind === 'harm'
           ? "In the last few days you recorded feeling unsafe, or a boundary that wasn't respected."
-          : 'In the last few days you recorded a low mood.'}
+          : moment.incomplete ? 'In the last few days you recorded a hard moment.' : 'In the last few days you recorded a low mood.'}
         {' '}A symbolic reading can't weigh what happened, and your own record comes first.
       </p>
       <div className={`flex flex-wrap gap-x-5 gap-y-2${compact ? ' text-sm' : ''}`}>

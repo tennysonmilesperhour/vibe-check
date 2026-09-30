@@ -94,11 +94,28 @@ describe('symbolic readings wait after a hard moment', () => {
     /** @type {Moment} */ const partial = { kind: 'low', date: '2026-09-29', incomplete: true };
     /** @type {Moment} */ const low = { kind: 'low', date: '2026-09-29' };
     /** @type {Moment} */ const oldHarm = { kind: 'harm', date: '2026-09-20' };
-    expect(keepKnownHarm(harm, partial, today)).toBe(harm);
+    expect(keepKnownHarm(harm, partial, today)).toEqual({ ...harm, incomplete: true });
     // A complete answer, or harm outside the window, doesn't hold it.
     expect(keepKnownHarm(harm, null, today)).toBeNull();
     expect(keepKnownHarm(harm, low, today)).toBe(low);
     expect(keepKnownHarm(oldHarm, partial, today)).toBe(partial);
     expect(keepKnownHarm(undefined, partial, today)).toBe(partial);
+  });
+
+  it('holds a known harm pause through a partial recheck, and lets a full read decide', () => {
+    /** @type {{ kind: 'harm' | 'low', date: string, incomplete?: boolean }} */
+    const harm = { kind: 'harm', date: '2026-09-28' };
+    // Return to Cosmos: the cached harm shows while the check runs again.
+    let decided = settleDecision(undefined, guardAnswer({ fetchStatus: 'fetching', isPending: false, isStale: true, data: harm }), harm);
+    expect(decided).toEqual({ moment: harm, final: false });
+    // The recheck could only read the check-ins.
+    const kept = keepKnownHarm(harm, momentFromReads({ status: 'fulfilled', value: [{ date: '2026-09-29', mood_score: 3 }] }, { status: 'rejected', reason: new Error('down') }, today), today);
+    const answer = guardAnswer({ fetchStatus: 'idle', isPending: false, isStale: false, data: kept });
+    expect(answer).toBe('provisional');
+    decided = settleDecision(decided, answer, kept);
+    expect(decided).toEqual({ moment: harm, final: false });
+    // A full read later (the entry was changed) lifts it.
+    decided = settleDecision(decided, guardAnswer({ fetchStatus: 'idle', isPending: false, isStale: false, data: null }), null);
+    expect(decided).toEqual({ moment: null, final: true });
   });
 });

@@ -56,6 +56,8 @@ export function momentFromReads(checkIns, journal, today = todayKey()) {
  * The answer to keep: a new answer found from part of the record never
  * replaces harm already known within the window, so the harm wording and
  * relationship support survive a failed journal read, across visits too.
+ * The kept harm is still marked incomplete, so it is checked again and a
+ * full read can confirm or lift it.
  * @template {{ kind: 'harm' | 'low', date: string, incomplete?: boolean }} M
  * @param {M | null | undefined} previous the cached answer
  * @param {M | null} next the new answer
@@ -65,7 +67,7 @@ export function momentFromReads(checkIns, journal, today = todayKey()) {
 export function keepKnownHarm(previous, next, today = todayKey()) {
   const since = addDaysKey(today, -(GUARD_DAYS - 1));
   const knownHarm = previous?.kind === 'harm' && previous.date >= since && previous.date <= today;
-  return next?.incomplete && knownHarm ? previous : next;
+  return next?.incomplete && knownHarm ? { ...previous, incomplete: true } : next;
 }
 
 /**

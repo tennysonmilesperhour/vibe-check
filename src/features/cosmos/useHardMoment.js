@@ -30,6 +30,9 @@ export default function useHardMoment({ watching = true } = {}) {
       return keepKnownHarm(client.getQueryData(queryKey), momentFromReads(checkIns, journal));
     },
     enabled: Boolean(user?.id),
+    // Kept while the app is open for as long as a moment can count, so a
+    // known harm survives leaving Cosmos (see keepKnownHarm).
+    gcTime: GUARD_DAYS * 24 * 60 * 60 * 1000,
     // An answer found from part of the record is checked again until whole,
     // while its pause is showing: not once the page has decided or the
     // person chose to read.

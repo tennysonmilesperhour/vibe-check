@@ -30,7 +30,7 @@ export default function InviteModal({ open, onClose }) {
     try {
       await navigator.share({
         title: "Vibe Check",
-        text: "One honest check-in each evening. Weave your chart with mine.",
+        text: "A private journal for noticing your own patterns. Nothing of mine is shared with you, and nothing of yours with me.",
         url: inviteUrl,
       });
     } catch {
@@ -48,8 +48,8 @@ export default function InviteModal({ open, onClose }) {
         </DialogHeader>
 
         <p className="text-sm mb-4" style={{ color: "var(--gh-ink-soft)" }}>
-          Once they weave their own cosmos, you can add them to your people and
-          read the synergy between your charts.
+          Share Vibe Check with someone. Their journal and patterns stay
+          private to them, and nothing of yours is shared.
         </p>
 
         <div className="flex gap-2">

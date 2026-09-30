@@ -78,10 +78,12 @@ export default function CosmicAddons() {
     useBeforeUnload(isDirty);
     // After a hard moment, every tab with a reading waits until the person
     // asks for them once on this visit. The Loom's map stays.
-    const guard = useHardMoment();
     const [readAnyway, setReadAnyway] = useState(false);
-    const guarded = (reading) => (
-        <GuardedReading guard={guard} readAnyway={readAnyway} onReadAnyway={() => setReadAnyway(true)}>{reading}</GuardedReading>
+    const guard = useHardMoment({ watching: !readAnyway });
+    const [skippedCheck, setSkippedCheck] = useState(() => new Set());
+    const guarded = (tab, reading) => (
+        <GuardedReading guard={guard} readAnyway={readAnyway || skippedCheck.has(tab)} onReadAnyway={() => setReadAnyway(true)}
+            onSkipCheck={() => setSkippedCheck((tabs) => new Set(tabs).add(tab))}>{reading}</GuardedReading>
     );
 
     // Loom "Deep dive into X" → jump to the Deep Dive tab, open that system.
@@ -332,12 +334,12 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 3: Connections ── */}
                     <TabsContent value="correspondences" className="space-y-6">
-                        {guarded(<CorrespondenceMap enabledSystems={enabledSystems} profile={profile} />)}
+                        {guarded('correspondences', <CorrespondenceMap enabledSystems={enabledSystems} profile={profile} />)}
                     </TabsContent>
 
                     {/* ── Tab 4: Deep Dive ── */}
                     <TabsContent value="deepdive" className="space-y-6">
-                        {guarded(<>
+                        {guarded('deepdive', <>
                             <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                                 <p className="text-sm" style={{ color: 'var(--gh-ink-soft)' }}>
                                     Explore the systems you have chosen through your profile details, reflective questions, and small experiments. You can save each reading as a PDF.
@@ -351,12 +353,12 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 5: Readings for the day, week, month and year ── */}
                     <TabsContent value="readings" className="space-y-6">
-                        {guarded(<SymbolicReadings profile={hasSavedProfile || isDirty ? profile : null} profileLoad={profileLoad} />)}
+                        {guarded('readings', <SymbolicReadings profile={hasSavedProfile || isDirty ? profile : null} profileLoad={profileLoad} />)}
                     </TabsContent>
 
                     {/* ── Tab 6: Tarot & Oracle ── */}
                     <TabsContent value="tarot">
-                        {guarded(<TarotTable />)}
+                        {guarded('tarot', <TarotTable />)}
                     </TabsContent>
                 </Tabs>
             </div>

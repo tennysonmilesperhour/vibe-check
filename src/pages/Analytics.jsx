@@ -17,7 +17,15 @@ import { STRESS_STATES } from '@/lib/practices';
 
 const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', 'Year'], ['all', 'All time'], ['custom', 'Custom']];
 
+// Symbolic wisdom lives in Cosmos now. Old links go there before the full
+// history starts loading.
 export default function Analytics() {
+  const [params] = useSearchParams();
+  if (params.get('tab') === 'wisdom') return <Navigate to="/CosmicAddons?tab=readings" replace />;
+  return <Patterns />;
+}
+
+function Patterns() {
   const living = useLivingData();
   const [params, setParams] = useSearchParams();
   const [exporting, setExporting] = useState(null);
@@ -56,8 +64,6 @@ export default function Analytics() {
   }
   function openExport(initial = { start, end }) { setExporting(initial); }
 
-  // Symbolic readings moved to Cosmos.
-  if (tab === 'wisdom') return <Navigate to="/CosmicAddons?tab=readings" replace />;
   if (living.isLoading) return <div className="living-page" role="status" aria-busy="true">Gathering your whole history…</div>;
   if (living.isError || !data) return <div className="living-page"><h1>Your history is still yours.</h1><p className="living-error mt-4" role="alert">We could not load it right now. {living.error?.message}</p><button className="ink-button mt-4" onClick={() => living.refetch()}>Try loading again</button></div>;
 

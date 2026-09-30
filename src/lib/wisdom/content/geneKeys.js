@@ -75,7 +75,7 @@ export const GK_SEQUENCE_META = {
   life_work:  { label: "Life's Work", sphere: "your outer purpose, how you contribute in the world (your Conscious Sun)" },
   evolution:  { label: "Evolution",   sphere: "your core life challenge, the pressure that drives your growth (your Conscious Earth)" },
   radiance:   { label: "Radiance",    sphere: "your health and vitality, how your energy shines when you are aligned (your Conscious Moon)" },
-  purpose:    { label: "Purpose",     sphere: "your deeper relational purpose and the love you are here to give (your Conscious Node)" },
+  purpose:    { label: "Purpose",     sphere: "how you relate to others and what you give (your Conscious Node)" },
   attraction: { label: "Attraction",  sphere: "the pattern of your closest relationships (your Unconscious Sun)" },
   iq:         { label: "IQ",          sphere: "your natural genius and how you are gifted to prosper and work (your Unconscious Node)" },
 };

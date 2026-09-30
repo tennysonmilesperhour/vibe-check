@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Person, Relationship, Connection, DailyCheckIn, JournalEntry, User } from "@/entities/all";
+import { Person, Relationship, Connection, DailyCheckIn, JournalEntry } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import PlantVoice from '@/features/shell/PlantVoice';
-import { synergyReading, currentSynergy } from "@/lib/wisdom/readings";
-import { harmRecordedWith } from "@/lib/symbolic-guard";
+import { synergyReading } from "@/lib/wisdom/readings";
+import { harmRecordedWith, recentHardMoment } from "@/lib/symbolic-guard";
+import GuardedReading from "@/features/cosmos/GuardedReading";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +19,10 @@ import { timelineEntries } from "@/lib/living-patterns";
 import { parseLocalDate } from "@/lib/dates";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
-import { UserPlus, Users, Sparkle, RefreshCw, Trash2, Pencil } from "lucide-react";
+import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
-const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "", linked_user_email: "" };
+const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
 
 /** Everyone you're in orbit with: merged Relationships + Constellation. */
 export default function People() {
@@ -38,13 +39,29 @@ export default function People() {
   const [synergyBusy, setSynergyBusy] = useState(false);
   // Synergy is part of Cosmos: it shows only once the person has chosen a system there.
   const [usesCosmos, setUsesCosmos] = useState(false);
+  const [myChart, setMyChart] = useState(null);
+  // Like the readings in Cosmos, synergy waits for a few days after a hard
+  // moment, worked out from the history this page has already loaded.
+  const guard = useMemo(() => ({ moment: recentHardMoment({ checkIns, journal }), checking: false }), [checkIns, journal]);
+  const [readAnyway, setReadAnyway] = useState(false);
+  const harm = useMemo(() => (detail ? harmRecordedWith(detail, journal) : false), [detail, journal]);
+  // Asking for a reading is remembered; the reading itself is composed from
+  // both charts each time, so it always uses today's wording.
+  const askedForSynergy = Boolean(detail?.synergy_generated_at || detail?.synergy_reading);
+  const synergyText = useMemo(
+    () => (usesCosmos && askedForSynergy && !harm ? synergyReading(myChart || {}, detail.cosmic_snapshot, detail.name) : null),
+    [usesCosmos, askedForSynergy, harm, myChart, detail],
+  );
 
   const load = useCallback(async () => {
     try {
       await migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
       const [ppl, ci, entries, me] = await Promise.all([Person.all(), DailyCheckIn.all("-date"), JournalEntry.all('-date'), base44.auth.me().catch(() => null)]);
       // A failed account read keeps what was known, so readings don't vanish.
-      if (me) setUsesCosmos((me.cosmic_profile?.enabled_systems || []).length > 0);
+      if (me) {
+        setUsesCosmos((me.cosmic_profile?.enabled_systems || []).length > 0);
+        setMyChart(me.cosmic_profile || {});
+      }
       setPeople(ppl);
       setCheckIns(ci);
       setJournal(entries.filter((entry) => !entry.is_draft));
@@ -65,7 +82,6 @@ export default function People() {
       qualities: (person.qualities || []).join(", "),
       concerns: (person.concerns || []).join(", "),
       boundary_notes: person.boundary_notes || "",
-      linked_user_email: person.linked_user_email || "",
     } : EMPTY_FORM);
   };
 
@@ -77,7 +93,6 @@ export default function People() {
       qualities: form.qualities.split(",").map((s) => s.trim()).filter(Boolean),
       concerns: form.concerns.split(",").map((s) => s.trim()).filter(Boolean),
       boundary_notes: form.boundary_notes,
-      linked_user_email: form.linked_user_email.trim() || undefined,
     };
     if (!payload.name) return;
     try {
@@ -104,24 +119,18 @@ export default function People() {
     }
   };
 
-  /** Refresh a linked friend's cosmic snapshot when theirs is newer, then read synergy. */
-  const generateSynergy = async (person, force = false) => {
-    if ((currentSynergy(person.synergy_reading) && !force) || harmRecordedWith(person, journal)) return;
+  /**
+   * Remember that the person asked for a synergy reading. Another account's
+   * chart can't be read from here, so the reading uses the chart saved for
+   * this person.
+   */
+  const generateSynergy = async (person) => {
+    if (harmRecordedWith(person, journal)) return;
     setSynergyBusy(true);
     try {
-      let snapshot = person.cosmic_snapshot;
-      if (person.linked_user_email) {
-        const [friend] = await User.filter({ email: person.linked_user_email }).catch(() => []);
-        if (friend?.cosmic_profile && (!person.snapshot_updated_at || (friend.updated_date && friend.updated_date > person.snapshot_updated_at))) {
-          snapshot = friend.cosmic_profile;
-          await Person.update(person.id, { cosmic_snapshot: snapshot, snapshot_updated_at: new Date().toISOString() });
-        }
-      }
-      const me = await base44.auth.me();
-      // Composed locally by comparing both blueprints — no API.
-      const reading = synergyReading(me?.cosmic_profile || {}, snapshot, person.name);
-      const updated = await Person.update(person.id, { synergy_reading: reading, synergy_generated_at: new Date().toISOString() });
-      setDetail({ ...person, ...updated, synergy_reading: reading });
+      // Only the request is stored; text saved by earlier versions is never shown.
+      const updated = await Person.update(person.id, { synergy_generated_at: new Date().toISOString() });
+      setDetail({ ...person, ...updated });
       load();
     } catch (err) {
       toast({ title: "Synergy reading failed", description: err?.message, variant: "destructive" });
@@ -180,11 +189,6 @@ export default function People() {
                       ? `${stats.mentions} tagged check-ins · daily mood ${stats.avgMood} · last ${format(parseLocalDate(stats.lastMention), "MMM d")}`
                       : "Not yet part of a check-in"}
                   </p>
-                  {person.linked_user_email && (
-                    <p className="text-xs mt-1 inline-flex items-center gap-1" style={{ color: "var(--gh-accent)" }}>
-                      <Sparkle className="w-3 h-3" aria-hidden="true" /> On vibe check
-                    </p>
-                  )}
                 </button>
               );
             })}
@@ -264,7 +268,7 @@ export default function People() {
                   </div>
                 )}
 
-                {usesCosmos && harmRecordedWith(detail, journal) && (
+                {usesCosmos && harm && (
                   <div className="hairline pt-4">
                     <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>NO SYNERGY READING</p>
                     <p className="text-sm mt-2" style={{ color: "var(--gh-ink)" }}>
@@ -273,28 +277,31 @@ export default function People() {
                     </p>
                   </div>
                 )}
-                {usesCosmos && !harmRecordedWith(detail, journal) && <div className="hairline pt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>SYNERGY READING · FROM COSMOS</p>
-                    <button
-                      type="button"
-                      className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
-                      style={{ color: "var(--gh-accent)" }}
-                      onClick={() => generateSynergy(detail, true)}
-                      disabled={synergyBusy}
-                    >
-                      <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
-                      {synergyBusy ? "Reading…" : currentSynergy(detail.synergy_reading) ? "Refresh" : "Generate"}
-                    </button>
-                  </div>
-                  {currentSynergy(detail.synergy_reading) ? (
-                    <p className="text-sm mt-2 whitespace-pre-line" style={{ color: "var(--gh-ink)" }}>{detail.synergy_reading}</p>
-                  ) : (
-                    <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
-                      {detail.synergy_reading ? "An earlier reading used wording we have since replaced. Generate a new one if you want it. " : ""}
-                      A symbolic comparison of your chart with any chart details saved for {detail.name}. It can't tell you how you are treated. Saved here once made.
-                    </p>
-                  )}
+                {usesCosmos && !harm && <div className="hairline pt-4">
+                  <GuardedReading guard={guard} readAnyway={readAnyway} onReadAnyway={() => setReadAnyway(true)} compact>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>SYNERGY READING · FROM COSMOS</p>
+                      {!synergyText && (
+                        <button
+                          type="button"
+                          className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
+                          style={{ color: "var(--gh-accent)" }}
+                          onClick={() => generateSynergy(detail)}
+                          disabled={synergyBusy}
+                        >
+                          <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
+                          {synergyBusy ? "Reading…" : "Generate"}
+                        </button>
+                      )}
+                    </div>
+                    {synergyText ? (
+                      <p className="text-sm mt-2 whitespace-pre-line" style={{ color: "var(--gh-ink)" }}>{synergyText}</p>
+                    ) : (
+                      <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
+                        A symbolic comparison of your chart with any chart details saved for {detail.name}. It can't tell you how you are treated. Shown here once you ask for it.
+                      </p>
+                    )}
+                  </GuardedReading>
                 </div>}
               </>
             )}
@@ -337,10 +344,6 @@ export default function People() {
               <div>
                 <Label htmlFor="p-boundary">Boundary notes</Label>
                 <Textarea id="p-boundary" value={form.boundary_notes} onChange={(e) => setForm({ ...form, boundary_notes: e.target.value })} rows={2} className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="p-email">Their vibe check email (optional, links profiles for synergy)</Label>
-                <Input id="p-email" type="email" value={form.linked_user_email} onChange={(e) => setForm({ ...form, linked_user_email: e.target.value })} className="mt-1" />
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" className="px-4 py-2 text-sm" style={{ border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)", color: "var(--gh-ink-soft)" }} onClick={() => setEditing(null)}>

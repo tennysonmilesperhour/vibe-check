@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recentHardMoment, harmRecordedWith, guardAnswer, settleDecision, momentFromReads } from '../symbolic-guard';
+import { recentHardMoment, harmRecordedWith, guardAnswer, settleDecision, momentFromReads, keepKnownHarm } from '../symbolic-guard';
 
 const today = '2026-09-29';
 
@@ -86,5 +86,19 @@ describe('symbolic readings wait after a hard moment', () => {
     expect(momentFromReads(down, ok([{ date: '2026-09-29', mood_score: 2 }]), today)).toEqual({ kind: 'low', date: '2026-09-29' });
     expect(() => momentFromReads(ok([{ date: '2026-09-29', mood_score: 6 }]), down, today)).toThrow('down');
     expect(momentFromReads(ok([]), ok([]), today)).toBeNull();
+  });
+
+  it('keeps harm already known when a new answer comes from part of the record', () => {
+    /** @typedef {{ kind: 'harm' | 'low', date: string, incomplete?: boolean }} Moment */
+    /** @type {Moment} */ const harm = { kind: 'harm', date: '2026-09-28' };
+    /** @type {Moment} */ const partial = { kind: 'low', date: '2026-09-29', incomplete: true };
+    /** @type {Moment} */ const low = { kind: 'low', date: '2026-09-29' };
+    /** @type {Moment} */ const oldHarm = { kind: 'harm', date: '2026-09-20' };
+    expect(keepKnownHarm(harm, partial, today)).toBe(harm);
+    // A complete answer, or harm outside the window, doesn't hold it.
+    expect(keepKnownHarm(harm, null, today)).toBeNull();
+    expect(keepKnownHarm(harm, low, today)).toBe(low);
+    expect(keepKnownHarm(oldHarm, partial, today)).toBe(partial);
+    expect(keepKnownHarm(undefined, partial, today)).toBe(partial);
   });
 });

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry } from '@/api/entities';
 import { addDaysKey, todayKey } from '@/lib/dates';
-import { GUARD_DAYS, guardAnswer, momentFromReads, settleDecision } from '@/lib/symbolic-guard';
+import { GUARD_DAYS, guardAnswer, keepKnownHarm, momentFromReads, settleDecision } from '@/lib/symbolic-guard';
 
 /**
  * The latest hard moment in the last few days (see symbolic-guard), for
@@ -16,16 +16,18 @@ import { GUARD_DAYS, guardAnswer, momentFromReads, settleDecision } from '@/lib/
  */
 export default function useHardMoment({ watching = true } = {}) {
   const { user } = useAuth();
+  const client = useQueryClient();
+  const queryKey = ['living', user?.id, 'hard-moment'];
   const [decided, setDecided] = useState(/** @type {{ moment: any, final: boolean } | undefined} */ (undefined));
   const query = useQuery({
-    queryKey: ['living', user?.id, 'hard-moment'],
+    queryKey,
     queryFn: async () => {
       const since = addDaysKey(todayKey(), -(GUARD_DAYS - 1));
       const [checkIns, journal] = await Promise.allSettled([
         DailyCheckIn.since(since, 'date,mood_score'),
         JournalEntry.since(since, 'date,mood_score,interaction_feeling,boundary_respected,is_draft'),
       ]);
-      return momentFromReads(checkIns, journal);
+      return keepKnownHarm(client.getQueryData(queryKey), momentFromReads(checkIns, journal));
     },
     enabled: Boolean(user?.id),
     // An answer found from part of the record is checked again until whole,

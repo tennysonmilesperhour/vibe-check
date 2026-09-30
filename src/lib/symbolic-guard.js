@@ -53,6 +53,22 @@ export function momentFromReads(checkIns, journal, today = todayKey()) {
 }
 
 /**
+ * The answer to keep: a new answer found from part of the record never
+ * replaces harm already known within the window, so the harm wording and
+ * relationship support survive a failed journal read, across visits too.
+ * @template {{ kind: 'harm' | 'low', date: string, incomplete?: boolean }} M
+ * @param {M | null | undefined} previous the cached answer
+ * @param {M | null} next the new answer
+ * @param {string} [today]
+ * @returns {M | null}
+ */
+export function keepKnownHarm(previous, next, today = todayKey()) {
+  const since = addDaysKey(today, -(GUARD_DAYS - 1));
+  const knownHarm = previous?.kind === 'harm' && previous.date >= since && previous.date <= today;
+  return next?.incomplete && knownHarm ? previous : next;
+}
+
+/**
  * What the guard's check says right now, from its query's state:
  * - 'wait': no answer yet, or only an old "no hard moment" while the check
  *   runs again (running or paused offline);

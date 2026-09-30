@@ -60,7 +60,7 @@ export const NUMBERS = {
     title: "Care and responsibility",
     keywords: ["care", "responsibility", "home", "harmony"],
     core: "care and responsibility",
-    question: "Who, including you, could use some care today?",
+    question: "Who, including you, could use some care right now?",
     lifePath: "Numerology links Life Path 6 with care and responsibility: home, family, community, and looking after people. A tension some people with this number notice is caring for others without losing track of themselves. Whose care do you carry, and who looks after you?",
     expression: "Numerology links an Expression of 6 with nurturing, counsel, and making spaces feel good to be in. Which of these, if any, do you recognize?",
     soulUrge: "Numerology links a Soul Urge of 6 with a wish to love and be loved, and to make a home where people feel safe. Does that ring true?",

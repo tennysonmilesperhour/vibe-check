@@ -78,16 +78,14 @@ function HumanDesignDetail({ data }) {
 function GeneKeysDetail({ data }) {
   const sequences = [
     { group: "Activation Sequence", keys: [
-      { label: "Life's Work (Conscious Sun)", key: "life_work" },
-      { label: "Evolution (Conscious Earth)", key: "evolution" },
+      { label: "Life's Work (Personality Sun)", key: "life_work" },
+      { label: "Evolution (Personality Earth)", key: "evolution" },
+      { label: "Radiance (Design Sun)", key: "radiance" },
+      { label: "Purpose (Design Earth)", key: "purpose" },
     ]},
     { group: "Venus Sequence", keys: [
-      { label: "Radiance (Conscious Moon)", key: "radiance" },
-      { label: "Purpose (Conscious Node)", key: "purpose" },
-    ]},
-    { group: "Pearl Sequence", keys: [
-      { label: "Attraction (Unconscious Sun)", key: "attraction" },
-      { label: "IQ (Unconscious Node)", key: "iq" },
+      { label: "Attraction (Design Moon)", key: "attraction" },
+      { label: "IQ (Personality Venus)", key: "iq" },
     ]},
   ];
   return (
@@ -195,7 +193,7 @@ const SYSTEM_DETAILS = {
   ]} />,
   enneagram: ({ data }) => <GenericDetail data={data} fields={[
     { key: 'type', label: 'Type' }, { key: 'wing', label: 'Wing' },
-    { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Tritype' },
+    { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Three-center type' },
   ]} />,
   chakras: ({ data }) => <GenericDetail data={data} fields={[
     { key: 'dominant_center', label: 'Dominant Center' },
@@ -247,6 +245,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
 
       {expanded && (
         <div className="px-5 pb-5">
+          {meta.origin && <p className="text-xs mb-4" style={{ color: 'var(--gh-ink-muted)' }}>{meta.origin}</p>}
           {/* Profile data */}
           <Detail data={data} cosmicProfile={cosmicProfile} />
 

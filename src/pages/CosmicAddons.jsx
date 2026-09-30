@@ -13,6 +13,7 @@ import {
     NumerologyForm, TarotForm, ChakraForm, EnneagramForm
 } from "@/components/cosmic/ProfileForm";
 import AstrologyGuide from "@/components/cosmic/AstrologyGuide";
+import { TAROT_MAJOR_ARCANA } from "@/components/cosmic/correspondences";
 import SystemReports from "@/components/cosmic/SystemReport";
 import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";
 import Loom from "@/features/loom/Loom";
@@ -130,7 +131,11 @@ export default function CosmicAddons() {
     /** One-tap fix from ConflictNotice: adopt the computed value. */
     const useComputed = (conflict) => {
         const [systemKey, field] = conflict.field.split('.');
-        setProfile(prev => ({ ...prev, [systemKey]: { ...(prev[systemKey] || {}), [field]: String(conflict.computed), ...(conflict.field === 'astrology.sun_sign' ? { sun_source: 'date_estimate' } : {}) } }));
+        // Tarot cards are stored as the form's "N – Name" option.
+        const value = systemKey === 'tarot_archetype'
+            ? TAROT_MAJOR_ARCANA.find((option) => option.endsWith(`– ${conflict.computed}`)) || String(conflict.computed)
+            : String(conflict.computed);
+        setProfile(prev => ({ ...prev, [systemKey]: { ...(prev[systemKey] || {}), [field]: value, ...(conflict.field === 'astrology.sun_sign' ? { sun_source: 'date_estimate' } : {}) } }));
     };
 
     const toggleSystem = (systemId) => {
@@ -223,7 +228,7 @@ export default function CosmicAddons() {
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth data</h3>
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
-                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations and an approximate Sun sign.
+                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac.
                             </p>
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>

@@ -37,6 +37,14 @@ describe('resonanceGraph', () => {
     expect(edge).toBeTruthy();
   });
 
+  it('links a two-digit birth card that reduces to the Life Path, and not an unrelated one', () => {
+    // 11 + 23 + 1985 = 2019 -> 12, The Hanged Man, which reduces to 3, the Life Path.
+    const hanged = resonanceGraph({ ...profile, birth_date: '1985-11-23', numerology: {}, tarot_archetype: {} }, '2026-07-02');
+    expect(hanged.edges.find((e) => e.kind === 'number')?.why).toMatch(/The Hanged Man, reduces to 3, the same number as your Life Path/);
+    const unrelated = resonanceGraph({ ...profile, tarot_archetype: { birth_card: 'The Tower' } }, '2026-07-02');
+    expect(unrelated.edges.find((e) => e.kind === 'number')).toBeUndefined();
+  });
+
   it('links birth card to its Golden Dawn sign (Hierophant -> Taurus)', () => {
     const edge = graph.edges.find((e) => e.kind === 'astro');
     expect(edge).toBeTruthy();

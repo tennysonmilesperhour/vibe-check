@@ -194,7 +194,7 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
               </div>
               <p className="text-sm mt-1" style={{ color: "var(--gh-ink-soft)" }}>
                 {SYSTEM_LABEL[selected.data.system]} placement
-                {selected.data.ring === "wheel" ? " · plotted at its true position on the wheel" : " · held in the inner ring"}
+                {selected.data.ring === "wheel" ? " · placed on the wheel by its sign or gate, approximately" : " · held in the inner ring"}
               </p>
               {onDeepDive && (
                 <button type="button" className="ink-button text-sm py-2 mt-3" onClick={() => onDeepDive(selected.data.system)}>

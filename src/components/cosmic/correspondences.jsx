@@ -79,35 +79,35 @@ export const CHAKRA_CENTERS = [
 // Qualitative cross-system mapping used by the correspondence surfaces
 export const SYSTEM_CORRESPONDENCES = {
     astrology_human_design: `
-Astrology and Human Design share roots: HD uses the I Ching's 64 hexagrams mapped to the zodiac wheel and planetary gates. Sun sign themes often resonate with one's Incarnation Cross. Moon sign qualities tend to mirror emotional authority patterns.`,
+Human Design places the 64 hexagrams of the I Ching around the zodiac wheel, so each gate sits at particular zodiac degrees, and it works out a chart from planetary positions, as astrology does. Beyond that shared wheel, the two systems describe people in their own ways.`,
 
     astrology_gene_keys: `
-Gene Keys are derived from the same 64 hexagrams as Human Design, which in turn map to zodiac degrees. Each Gene Key has a Shadow (unconscious pattern), Gift (awakened expression), and Siddhi (highest potential) — mirroring astrology's concept of a planet in detriment, dignity, and exaltation.`,
+Gene Keys uses the same 64 hexagrams as Human Design, so each key also sits at particular zodiac degrees. Its Shadow, Gift and Siddhi are Gene Keys' own terms, with no direct astrological equivalent.`,
 
     astrology_numerology: `
-Both systems decode patterns in birth data. Numerology reduces the birth date to core numbers while astrology maps planetary positions at that moment. Life Path 1 often correlates with Aries/Leo sun themes; Life Path 2 with Libra/Cancer; Life Path 7 with Pisces/Scorpio.`,
+Both work from your birth date: numerology reduces it to core numbers, and astrology maps the sky at that moment. Links between particular numbers and signs are modern associations, not rules of either system.`,
 
     astrology_tarot: `
-The Major Arcana map directly to astrology: The Fool = Uranus/Aquarius, The High Priestess = Moon, The Empress = Venus, The Emperor = Aries, The Hierophant = Taurus, The Lovers = Gemini, etc. Birth cards are worked out from your Life Path number.`,
+In the Golden Dawn tradition, which many modern decks follow, each Major Arcana card is attributed to a sign, planet or element: The High Priestess to the Moon, The Empress to Venus, The Emperor to Aries, The Hierophant to Taurus, The Lovers to Gemini, and so on. Birth cards are worked out from your birth date by Mary K. Greer's method.`,
 
     human_design_gene_keys: `
-Human Design and Gene Keys both use the 64 hexagrams of the I Ching. In HD they are called Gates; in Gene Keys they are called the 64 Keys. Your Life's Work Gene Key is the same as your Conscious Sun Gate in HD — the most visible aspect of your design.`,
+Human Design and Gene Keys both use the 64 hexagrams of the I Ching. Human Design calls them gates, and Gene Keys calls them keys. Your Life's Work key has the same number as your Conscious Sun gate in Human Design.`,
 
     human_design_chakras: `
-Human Design's 9 Centers correspond directly to the chakra system: Root Center = Root Chakra, Sacral Center = Sacral Chakra, Solar Plexus Center = Solar Plexus Chakra, Heart Center = Heart Chakra, G Center = integrates Heart/Throat, Throat Center = Throat Chakra, Ajna = Third Eye, Head = Crown.`,
+Human Design says its nine centers grew out of the seven chakras, and teachers pair them in different ways. Vibe Check pairs them by theme: Head with Crown, Ajna with Third Eye, Throat with Throat, the G center with Heart and Throat, the Heart (will) center with Solar Plexus, the emotional Solar Plexus center and the Sacral center with Sacral, and Root with Root. The Spleen center has no single match. This pairing is Vibe Check's own.`,
 
     numerology_tarot: `
-Numerology and Tarot are deeply linked. Your Life Path number corresponds to a Major Arcana card (1 = Magician, 2 = High Priestess, etc., with master numbers 11 = Justice, 22 = The Fool). The birth card in Tarot is calculated similarly to the Life Path number.`,
+Every Major Arcana card has a number, so numerology and tarot share number symbolism. Tarot birth cards, by Mary K. Greer's method, come from the same birth date as your Life Path, and the card's number reduces to your Life Path's single digit.`,
 
     gene_keys_chakras: `
-The 64 Gene Keys are organized into biological sequences that correlate with the body's energy centers. The Activation Sequence maps to physical wellbeing (lower chakras), the Venus Sequence to emotional intelligence (heart center), and the Pearl Sequence to vocation and prosperity (higher expression).`,
+Gene Keys groups the keys from your chart into sequences: the Activation Sequence (life's work, evolution, radiance and purpose), the Venus Sequence (relationships and emotional patterns) and the Pearl Sequence (work and prosperity). Pairing these with chakras is Vibe Check's own association, not part of Gene Keys.`,
 
     enneagram_astrology: `
-Both systems describe core archetypal drives. The Enneagram's nine types echo planetary signatures: Type 1's inner critic mirrors Saturn/Virgo precision, Type 2 resonates with Venus/Cancer nurturing, Type 4 with Neptune/Pisces depth, Type 8 with Mars/Scorpio intensity. Your Sun and Moon signs often color how your Enneagram type expresses and defends itself.`,
+Both describe patterns in how people meet the world. Linking particular types to signs or planets is a modern association, not part of either system, so compare them as two lenses rather than as confirmation.`,
 
     enneagram_human_design: `
-The Enneagram maps psychological motivation (core fear and desire) while Human Design maps energetic mechanics (how your energy is built to operate). A Projector Type 3 achieves differently than a Generator Type 3. Your HD Authority shows how to make decisions; your Enneagram type shows the patterns that hijack them — together they reveal both the vehicle and the driver.`,
+The Enneagram describes motivations, such as core fears and desires. Human Design describes how, in its view, your energy and decisions work. They come from different traditions, and you can compare what each offers without making them agree.`,
 
     enneagram_gene_keys: `
-The Enneagram's growth path — from fixation toward essence — parallels the Gene Keys' journey from Shadow through Gift to Siddhi. Your type's core passion (e.g. Type 1's resentment, Type 9's sloth) often names the same pattern as a prominent Shadow in your hologenetic profile, offering two languages for the same inner work.`
+Both describe a movement from reactive patterns toward more freedom: the Enneagram from fixation toward essence, and Gene Keys from Shadow toward Gift. The systems don't reference each other, so any overlap you notice is yours to weigh.`
 };

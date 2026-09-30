@@ -1,8 +1,7 @@
-// The 64 Gene Keys for the local wisdom engine. Each key is a spectrum of
-// consciousness: the Shadow (the unconscious pattern under pressure), the Gift
-// (its awakened, creative expression), and the Siddhi (its highest, transcendent
-// flowering). This is the canonical Gene Keys spectrum, used to compose readings
-// for the Activation, Venus, and Pearl sequence positions.
+// The 64 Gene Keys for the local wisdom engine. Gene Keys, created by Richard
+// Rudd, names each key with a Shadow, a Gift and a Siddhi; the essences are
+// Vibe Check's own short summaries. Used to compose readings for the
+// Activation and Venus sequence positions.
 
 export const GENE_KEYS = {
   1:  { shadow: "Entropy",         gift: "Freshness",      siddhi: "Beauty",         essence: "creative renewal that keeps life from going stale" },
@@ -19,7 +18,7 @@ export const GENE_KEYS = {
   12: { shadow: "Vanity",          gift: "Discrimination", siddhi: "Purity",         essence: "pure self-expression free of the need to impress" },
   13: { shadow: "Discord",         gift: "Discernment",    siddhi: "Empathy",        essence: "the listener who holds others' stories with love" },
   14: { shadow: "Compromise",      gift: "Competence",     siddhi: "Bounteousness",  essence: "skillful work that generates abundance" },
-  15: { shadow: "Dullness",        gift: "Magnetism",      siddhi: "Florescence",    essence: "an magnetic aliveness that embraces life's extremes" },
+  15: { shadow: "Dullness",        gift: "Magnetism",      siddhi: "Florescence",    essence: "a magnetic aliveness that embraces life's extremes" },
   16: { shadow: "Indifference",    gift: "Versatility",    siddhi: "Mastery",        essence: "enthusiasm refined into true skill" },
   17: { shadow: "Opinion",         gift: "Far-sightedness",siddhi: "Omniscience",    essence: "the eye that sees patterns and possibilities ahead" },
   18: { shadow: "Judgement",       gift: "Integrity",      siddhi: "Perfection",     essence: "the healthy urge to improve, freed from criticism" },
@@ -72,12 +71,14 @@ export const GENE_KEYS = {
 };
 
 export const GK_SEQUENCE_META = {
-  life_work:  { label: "Life's Work", sphere: "your outer purpose, how you contribute in the world (your Conscious Sun)" },
-  evolution:  { label: "Evolution",   sphere: "your core life challenge, the pressure that drives your growth (your Conscious Earth)" },
-  radiance:   { label: "Radiance",    sphere: "your health and vitality, how your energy shines when you are aligned (your Conscious Moon)" },
-  purpose:    { label: "Purpose",     sphere: "how you relate to others and what you give (your Conscious Node)" },
-  attraction: { label: "Attraction",  sphere: "the pattern of your closest relationships (your Unconscious Sun)" },
-  iq:         { label: "IQ",          sphere: "your natural genius and how you are gifted to prosper and work (your Unconscious Node)" },
+  // Activation Sequence: the Sun and Earth of the Personality and Design charts.
+  life_work:  { label: "Life's Work", sphere: "your work in the world (from your Personality Sun, the Conscious Sun in Human Design)" },
+  evolution:  { label: "Evolution",   sphere: "the challenges you grow through (from your Personality Earth)" },
+  radiance:   { label: "Radiance",    sphere: "health and vitality (from your Design Sun)" },
+  purpose:    { label: "Purpose",     sphere: "what grounds you and gives your life meaning (from your Design Earth)" },
+  // Venus Sequence.
+  attraction: { label: "Attraction",  sphere: "your closest relationships (from your Design Moon)" },
+  iq:         { label: "IQ",          sphere: "how you think and learn (from your Personality Venus)" },
 };
 
 export function resolveKey(value) {

@@ -4,8 +4,8 @@
 // wisdom/weather prompts (replacing loose prose context).
 import { deriveAll } from './derive.js';
 import { moonPhase } from './moon.js';
-import { personalDay } from './numerology.js';
-import { signStartDegree, gateWheelDegree, ARCANA_ASTRO, LIFE_PATH_CARD, arcanaName } from './tables.js';
+import { personalDay, reduceSingle } from './numerology.js';
+import { signStartDegree, gateWheelDegree, ARCANA_ASTRO, arcanaName } from './tables.js';
 
 const signMidDegree = (sign) => {
   const start = signStartDegree(sign);
@@ -98,10 +98,12 @@ export function resonanceGraph(profile = {}, dateKey) {
       `Gene Key ${lifeWork} and Gate ${gate} are the same I Ching hexagram — your Life's Work is your Conscious Sun.`);
   }
 
-  // number identity: life path <-> birth card
-  if (lp && birthCardName && LIFE_PATH_CARD[Number(lp)] !== undefined) {
+  // number link: a birth card worked out from the same date reduces to the
+  // Life Path's single digit (22, The Fool, reduces to 4).
+  const birthCardId = birthCardName ? arcanaIdByName(birthCardName) : null;
+  if (lp && birthCardId !== null && reduceSingle(birthCardId === 0 ? 22 : birthCardId) === reduceSingle(Number(lp))) {
     addEdge('numerology.life_path', 'tarot_archetype.birth_card', 'number',
-      `Life Path ${lp} names ${birthCardName} as its Major Arcana counterpart.`);
+      `Your birth card, ${birthCardName}, reduces to ${reduceSingle(Number(lp))}, the same number as your Life Path.`);
   }
 
   // Golden Dawn: birth card <-> its sign/planet, tied back to astrology placements

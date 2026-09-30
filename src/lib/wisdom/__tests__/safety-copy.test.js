@@ -131,4 +131,14 @@ describe('symbolic readings never talk over harm', () => {
     expect(integratedReading(base.enabled_systems, { ...base, numerology: {}, tarot_archetype: {} })).toMatch(/one calculation read two ways/);
     expect(integratedReading(base.enabled_systems, { ...base, numerology: { life_path: '7' }, tarot_archetype: { birth_card: 'The Lovers' } })).not.toMatch(/same root number/);
   });
+
+  it('shows the soul card and how the birth cards are worked out', () => {
+    const profile = { birth_date: '1985-11-23', enabled_systems: ['tarot_archetype'], tarot_archetype: {} };
+    const reading = JSON.stringify(systemReading('tarot_archetype', {}, profile));
+    expect(reading).toMatch(/Your Birth Card: The Hanged Man/i);
+    expect(reading).toMatch(/Your Soul Card: The Empress/i);
+    expect(reading).toMatch(/Mary K. Greer's method/);
+    // A birth card chosen by hand doesn't get the computed soul card.
+    expect(JSON.stringify(systemReading('tarot_archetype', { birth_card: 'The Tower' }, profile))).not.toMatch(/Your Soul Card|Greer/i);
+  });
 });

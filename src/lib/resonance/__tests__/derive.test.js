@@ -4,7 +4,7 @@ import { deriveAll } from '../derive.js';
 const profile = {
   first_name: 'Ann',
   last_name: 'Lee',
-  birth_date: '1990-07-15', // life path 5 -> The Hierophant
+  birth_date: '1990-07-15', // life path 5; 7 + 15 + 1990 = 2012 -> 5, The Hierophant
   enabled_systems: ['numerology', 'tarot_archetype', 'human_design', 'gene_keys'],
   human_design: { type: 'Projector', conscious_sun_gate: '14' },
   gene_keys: {},
@@ -20,9 +20,14 @@ describe('deriveAll', () => {
     expect(values.numerology.personal_year).toBe(4);
   });
 
-  it('derives the tarot birth card from the life path', () => {
+  it('derives the tarot birth card from the birth date (Greer)', () => {
     const { values } = deriveAll(profile, '2026-07-02');
     expect(values.tarot_archetype.birth_card).toBe('The Hierophant');
+    // A single-digit total gives one card, so there is no separate soul card.
+    expect(values.tarot_archetype.soul_card).toBeNull();
+    // 11 + 23 + 1985 = 2019 -> 12, soul 3
+    const later = deriveAll({ ...profile, birth_date: '1985-11-23' }, '2026-07-02').values.tarot_archetype;
+    expect(later).toMatchObject({ birth_card: 'The Hanged Man', soul_card: 'The Empress' });
   });
 
   it('derives the Sun sign and its fixed attributes from the birth date', () => {
@@ -43,10 +48,10 @@ describe('deriveAll', () => {
     expect(Array.isArray(n.karmic_debts)).toBe(true);
   });
 
-  it('adds the personal-year tarot card', () => {
+  it('adds the year card for the calendar year (Greer)', () => {
     const { values } = deriveAll(profile, '2026-07-02');
-    // personal year 4 -> The Emperor
-    expect(values.tarot_archetype.personal_year_card).toBe('The Emperor');
+    // 7 + 15 + 2026 = 2048 -> 14
+    expect(values.tarot_archetype.personal_year_card).toBe('Temperance');
   });
 
   it('flags an astrology conflict when the entered Sun sign contradicts the date', () => {

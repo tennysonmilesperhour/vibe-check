@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowRight, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import PageTransition from '@/features/shell/PageTransition';
 import PlantVoice from '@/features/shell/PlantVoice';
-import CosmicWisdomCard from '@/components/cosmic/CosmicWisdomCard';
 import { useLivingData } from '@/features/patterns/useLivingData';
 import Journal from '@/features/patterns/Journal';
 import Reports from '@/features/patterns/Reports';
@@ -57,6 +56,8 @@ export default function Analytics() {
   }
   function openExport(initial = { start, end }) { setExporting(initial); }
 
+  // Symbolic readings moved to Cosmos.
+  if (tab === 'wisdom') return <Navigate to="/CosmicAddons?tab=readings" replace />;
   if (living.isLoading) return <div className="living-page" role="status" aria-busy="true">Gathering your whole history…</div>;
   if (living.isError || !data) return <div className="living-page"><h1>Your history is still yours.</h1><p className="living-error mt-4" role="alert">We could not load it right now. {living.error?.message}</p><button className="ink-button mt-4" onClick={() => living.refetch()}>Try loading again</button></div>;
 
@@ -64,14 +65,14 @@ export default function Analytics() {
   return <div className="field-wash min-h-screen"><PageTransition className="living-page space-y-8">
     <header className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR HISTORY BELONGS TO YOU · ALWAYS FREE</p><h1>The whole pattern.</h1><p className="living-muted mt-3">People, habits, hard days, good days. Keep them in view together.</p></div><button className="living-secondary" onClick={() => openExport()}><Download size={16} />Choose an export</button></header>
     {living.reloadFailed && <p className="living-error" role="alert">Your record couldn't refresh, so what shows may be out of date. <button type="button" className="underline" onClick={() => living.refetch()}>{living.isFetching ? 'Trying…' : 'Try again'}</button></p>}
-    <nav className="living-tabs" aria-label="Patterns sections">{[['patterns', 'Patterns'], ['reports', 'Weekly & monthly'], ['journal', 'Journal & history'], ['wisdom', 'Symbolic wisdom']].map(([id, label]) => <button key={id} type="button" aria-current={tab === id ? 'page' : undefined} onClick={() => change('tab', id)}>{label}</button>)}</nav>
+    <nav className="living-tabs" aria-label="Patterns sections">{[['patterns', 'Patterns'], ['reports', 'Weekly & monthly'], ['journal', 'Journal & history']].map(([id, label]) => <button key={id} type="button" aria-current={tab === id ? 'page' : undefined} onClick={() => change('tab', id)}>{label}</button>)}</nav>
     {['patterns', 'journal'].includes(tab) && <section className="living-card space-y-4" aria-label="History filters"><div className="living-chips" aria-label="Date range">{RANGES.map(([value, label]) => <button type="button" className="living-chip" key={value} aria-pressed={range === value} onClick={() => change('range', value)}>{label}</button>)}</div>
       {range === 'custom' && <div className="grid sm:grid-cols-2 gap-4"><label className="living-label">From<input type="date" className="living-input mt-2" max={lastDay} value={start} onChange={(e) => change('start', e.target.value)} /></label><label className="living-label">Through<input type="date" className="living-input mt-2" max={lastDay} value={end} onChange={(e) => change('end', e.target.value)} /></label></div>}
       <div className="grid sm:grid-cols-3 gap-3"><label className="living-label">Person<select className="living-input mt-2" value={filters.person} onChange={(e) => change('person', e.target.value)}><option value="">Everyone</option>{data.people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label><label className="living-label">Habit or activity<select className="living-input mt-2" value={filters.habit} onChange={(e) => change('habit', e.target.value)}><option value="">All habits</option>{habits.map((habit) => <option key={habit}>{habit}</option>)}</select></label><label className="living-label">Recorded feeling<select className="living-input mt-2" value={filters.state} onChange={(e) => change('state', e.target.value)}><option value="">All feelings</option>{STRESS_STATES.map((state) => <option value={state.id} key={state.id}>{state.label}</option>)}</select></label></div>
       <label className="living-label">Search your words<input className="living-input mt-2" type="search" value={filters.search} onChange={(e) => change('search', e.target.value)} placeholder="Find a phrase you want to revisit" /></label>
       <p className="living-muted text-xs">{start} – {end} · {filtered.length} of {data.entries.length} saved entries match. Untagged days do not establish that a person or habit was absent.</p>{!valid && <p role="alert" className="living-error">Choose a valid date range through today.</p>}
     </section>}
-    {tab === 'reports' ? <Reports data={data} onChanged={living.refresh} savePreferences={living.savePreferences} onExport={openExport} /> : tab === 'journal' ? <Journal data={data} entries={filtered} onChanged={living.refresh} /> : tab === 'wisdom' ? <><PlantVoice>These systems offer another way to reflect. Let your own words and experiences remain the ground beneath each interpretation.</PlantVoice><div className="grid md:grid-cols-2 gap-4">{['daily', 'weekly', 'monthly', 'yearly'].map((period) => <CosmicWisdomCard key={period} periodType={period} />)}</div></> : <>
+    {tab === 'reports' ? <Reports data={data} onChanged={living.refresh} savePreferences={living.savePreferences} onExport={openExport} /> : tab === 'journal' ? <Journal data={data} entries={filtered} onChanged={living.refresh} /> : <>
       <PlantVoice>A good day is part of your story. So are the difficult days that came before. Let us look at what repeats, what supports you, and where you want more choice.</PlantVoice>
       <div className="living-stats"><div><span>RECORDED DAYS IN VIEW</span><strong>{recordedDays}<small> / {valid ? diffDaysKeys(end, start) + 1 : '—'}</small></strong></div><div><span>DAILY MOOD RANGE</span><strong>{moods.length ? `${Math.min(...moods)}–${Math.max(...moods)}` : '—'}<small>{moods.length ? ' / 10' : ''}</small></strong></div><div><span>DAILY MOOD AVERAGE</span><strong>{moods.length ? (moods.reduce((a, b) => a + b, 0) / moods.length).toFixed(1) : '—'}</strong></div></div>
       {valid && <PatternCalendar entries={filtered} start={start} end={end} weekStart={data.preferences.week_start === 0 ? 0 : 1} />}

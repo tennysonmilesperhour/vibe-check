@@ -77,7 +77,7 @@ describe("tarotReading", () => {
   it("weaves the spread into one story with a closing line", () => {
     const t = tarotReading({ spreadName: "Past · Present · Future", deck: "tarot", cards, question: "What should I focus on?" });
     expect(t).toContain("The Emperor");
-    expect(t).toContain("Carry this:");
+    expect(t).toContain("Something to carry, if it fits:");
     expect(t.length).toBeGreaterThan(200);
   });
 

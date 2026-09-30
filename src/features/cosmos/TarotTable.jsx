@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Reading, DailyCheckIn } from "@/entities/all";
+import { Reading } from "@/entities/all";
 import { tarotReading } from "@/lib/wisdom/readings";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
@@ -116,22 +116,20 @@ export default function TarotTable() {
     setInterpreting(true);
     try {
       const me = await base44.auth.me().catch(() => null);
-      const resonance = me?.cosmic_profile ? summarizeGraph(resonanceGraph(me.cosmic_profile, todayKey())) : "";
-      const recent = await DailyCheckIn.list("-date", 7).catch(() => []);
-      const week = recent.map((c) => `${c.date}: mood ${c.mood_score}${c.emotions?.length ? `, felt ${c.emotions.join("/")}` : ""}`).join("; ");
+      const chart = me?.cosmic_profile;
+      const resonance = chart?.enabled_systems?.length ? summarizeGraph(resonanceGraph(chart, todayKey())) : "";
 
-      // Woven locally from the cards, your week, and your chart — no API.
+      // Woven locally from the cards and your chart, never from your journal.
       const result = tarotReading({
         spreadName: spread.name,
         deck: deckId,
         cards: drawn,
         question: question.trim(),
-        week,
         resonanceSummary: resonance,
       });
       setInterpretation(result);
       if (savedReading?.id) {
-        await Reading.update(savedReading.id, { interpretation: result, linked_checkin_date: todayKey() }).catch(() => {});
+        await Reading.update(savedReading.id, { interpretation: result }).catch(() => {});
       }
     } catch (e) {
       toast({ title: "The reading resisted", description: e?.message || "Try again in a moment.", variant: "destructive" });
@@ -140,13 +138,19 @@ export default function TarotTable() {
   };
 
   return (
-    <div className="dusk-surface min-h-screen">
+    <div className="dusk-surface rounded-[var(--radius)]">
       <div className="max-w-4xl mx-auto px-6 py-10">
         <header className="text-center">
           <SanctuaryMark size={52} className="mx-auto mb-5 text-[var(--gh-gold)]" />
           <h1 className="text-4xl md:text-5xl" style={{ color: duskInk }}>The table is set</h1>
           <p className="text-sm mt-2" style={{ color: duskInkSoft }}>
             {deckId === "tarot" ? "78 cards, reversals included" : "44 oracle cards, always upright"}
+          </p>
+          <p className="text-xs mt-3 max-w-xl mx-auto" style={{ color: duskInkSoft }}>
+            {deckId === "tarot"
+              ? "Tarot began as a card game in fifteenth-century Italy; this deck follows the Rider-Waite-Smith deck of 1909. The meanings are written for Vibe Check as prompts for reflection, not predictions."
+              : "This oracle deck was written for Vibe Check. Its cards are prompts for reflection, not predictions."}
+            {" "}No reading can decide whether someone is safe to be with.
           </p>
         </header>
 

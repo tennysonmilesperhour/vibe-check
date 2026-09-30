@@ -59,7 +59,7 @@ export const GENE_KEYS = {
   52: { shadow: "Stress",          gift: "Restraint",      siddhi: "Stillness",      essence: "the concentrated stillness beneath pressure" },
   53: { shadow: "Immaturity",      gift: "Expansion",      siddhi: "Superabundance", essence: "beginning new cycles of growth and development" },
   54: { shadow: "Greed",           gift: "Aspiration",     siddhi: "Ascension",      essence: "ambition transmuted into spiritual aspiration" },
-  55: { shadow: "Victimisation",   gift: "Freedom",        siddhi: "Freedom",        essence: "emotional freedom; the end of victimhood" },
+  55: { shadow: "Victimisation",   gift: "Freedom",        siddhi: "Freedom",        essence: "emotional freedom" },
   56: { shadow: "Distraction",     gift: "Enrichment",     siddhi: "Intoxication",   essence: "the storyteller who enriches through experience" },
   57: { shadow: "Unease",          gift: "Intuition",      siddhi: "Clarity",        essence: "penetrating intuition in the present moment" },
   58: { shadow: "Dissatisfaction", gift: "Vitality",       siddhi: "Bliss",          essence: "the joy of improvement and aliveness" },
@@ -72,11 +72,11 @@ export const GENE_KEYS = {
 };
 
 export const GK_SEQUENCE_META = {
-  life_work:  { label: "Life's Work", sphere: "your outer purpose, how you are meant to shine and contribute in the world (your Conscious Sun)" },
+  life_work:  { label: "Life's Work", sphere: "your outer purpose, how you contribute in the world (your Conscious Sun)" },
   evolution:  { label: "Evolution",   sphere: "your core life challenge, the pressure that drives your growth (your Conscious Earth)" },
   radiance:   { label: "Radiance",    sphere: "your health and vitality, how your energy shines when you are aligned (your Conscious Moon)" },
   purpose:    { label: "Purpose",     sphere: "your deeper relational purpose and the love you are here to give (your Conscious Node)" },
-  attraction: { label: "Attraction",  sphere: "what you draw to you and the pattern of your closest bonds (your Unconscious Sun)" },
+  attraction: { label: "Attraction",  sphere: "the pattern of your closest relationships (your Unconscious Sun)" },
   iq:         { label: "IQ",          sphere: "your natural genius and how you are gifted to prosper and work (your Unconscious Node)" },
 };
 

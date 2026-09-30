@@ -53,6 +53,22 @@ function makeEntity(table) {
       return (data || []).map(outbound);
     },
 
+    /**
+     * Rows dated on or after a day, newest first, with only the columns asked
+     * for: small reads for checks that need a few fields.
+     * @param {string} sinceDate @param {string} [columns]
+     */
+    async since(sinceDate, columns = '*') {
+      const { data, error } = await supabase
+        .from(table)
+        .select(columns)
+        .gte('date', sinceDate)
+        .order('date', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data || []).map(outbound);
+    },
+
     async all(sort = '-created_date') {
       return fetchAllPages((limit, offset) => this.list(sort, limit, offset), 500);
     },

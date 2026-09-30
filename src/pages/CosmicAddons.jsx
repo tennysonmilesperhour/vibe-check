@@ -16,6 +16,10 @@ import AstrologyGuide from "@/components/cosmic/AstrologyGuide";
 import SystemReports from "@/components/cosmic/SystemReport";
 import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";
 import Loom from "@/features/loom/Loom";
+import TarotTable from "@/features/cosmos/TarotTable";
+import SymbolicReadings from "@/features/cosmos/SymbolicReadings";
+import GuardedReading from "@/features/cosmos/GuardedReading";
+import useHardMoment from "@/features/cosmos/useHardMoment";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
@@ -60,6 +64,9 @@ export default function CosmicAddons() {
     // Saving is paused until the real profile has loaded, so a failed load can
     // never be saved over the person's actual profile.
     const [profileLoad, setProfileLoad] = useState('loading'); // loading | ready | error
+    // Readings come from the person's own choices: a saved profile or changes
+    // on this page, never from the page's starting defaults.
+    const [hasSavedProfile, setHasSavedProfile] = useState(false);
     const loomRef = useRef(null);
 
     // Two-way URL sync: back button and refresh keep your place.
@@ -69,6 +76,13 @@ export default function CosmicAddons() {
     const [deepDive, setDeepDive] = useState({ system: null, nonce: 0 });
     const isDirty = JSON.stringify(profile) !== savedSnapshot;
     useBeforeUnload(isDirty);
+    // After a hard moment, every tab with a reading waits until the person
+    // asks for them once on this visit. The Loom's map stays.
+    const guard = useHardMoment();
+    const [readAnyway, setReadAnyway] = useState(false);
+    const guarded = (reading) => (
+        <GuardedReading guard={guard} readAnyway={readAnyway} onReadAnyway={() => setReadAnyway(true)}>{reading}</GuardedReading>
+    );
 
     // Loom "Deep dive into X" → jump to the Deep Dive tab, open that system.
     const openDeepDive = (system) => {
@@ -86,6 +100,7 @@ export default function CosmicAddons() {
                 const merged = { ...EMPTY_PROFILE, ...user.cosmic_profile };
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
+                setHasSavedProfile(true);
             }
             setProfileLoad('ready');
         } catch {
@@ -102,6 +117,7 @@ export default function CosmicAddons() {
         try {
             await base44.auth.updateMe({ cosmic_profile: profile });
             setSavedSnapshot(JSON.stringify(profile));
+            setHasSavedProfile(true);
             toast({ title: "Cosmic profile saved", description: "Your loom and readings now weave from these systems." });
         } catch (e) {
             toast({ title: "Could not save", description: e?.message, variant: "destructive" });
@@ -180,12 +196,14 @@ export default function CosmicAddons() {
                 )}
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="mb-6 w-full grid grid-cols-4"
+                    <TabsList className="mb-6 w-full h-auto grid grid-cols-3 sm:grid-cols-6"
                         style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                         <TabsTrigger value="systems">Systems</TabsTrigger>
                         <TabsTrigger value="profile">My Profile</TabsTrigger>
                         <TabsTrigger value="correspondences">Connections</TabsTrigger>
                         <TabsTrigger value="deepdive">Deep Dive</TabsTrigger>
+                        <TabsTrigger value="readings">Readings</TabsTrigger>
+                        <TabsTrigger value="tarot">Tarot & Oracle</TabsTrigger>
                     </TabsList>
 
                     {/* ── Tab 1: Toggle Systems ── */}
@@ -314,19 +332,31 @@ export default function CosmicAddons() {
 
                     {/* ── Tab 3: Connections ── */}
                     <TabsContent value="correspondences" className="space-y-6">
-                        <CorrespondenceMap enabledSystems={enabledSystems} profile={profile} />
+                        {guarded(<CorrespondenceMap enabledSystems={enabledSystems} profile={profile} />)}
                     </TabsContent>
 
                     {/* ── Tab 4: Deep Dive ── */}
                     <TabsContent value="deepdive" className="space-y-6">
-                        <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-                            <p className="text-sm" style={{ color: 'var(--gh-ink-soft)' }}>
-                                Explore the systems you have chosen through your profile details, reflective questions, and small experiments. You can save each reading as a PDF.
-                            </p>
-                        </div>
-                        {enabledSystems.includes("astrology") && <AstrologyGuide />}
-                        <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile}
-                            openSystem={deepDive.system} openNonce={deepDive.nonce} />
+                        {guarded(<>
+                            <div className="p-5" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
+                                <p className="text-sm" style={{ color: 'var(--gh-ink-soft)' }}>
+                                    Explore the systems you have chosen through your profile details, reflective questions, and small experiments. You can save each reading as a PDF.
+                                </p>
+                            </div>
+                            {enabledSystems.includes("astrology") && <AstrologyGuide />}
+                            <SystemReports enabledSystems={enabledSystems} profile={profile} cosmicProfile={profile}
+                                openSystem={deepDive.system} openNonce={deepDive.nonce} />
+                        </>)}
+                    </TabsContent>
+
+                    {/* ── Tab 5: Readings for the day, week, month and year ── */}
+                    <TabsContent value="readings" className="space-y-6">
+                        {guarded(<SymbolicReadings profile={hasSavedProfile || isDirty ? profile : null} profileLoad={profileLoad} />)}
+                    </TabsContent>
+
+                    {/* ── Tab 6: Tarot & Oracle ── */}
+                    <TabsContent value="tarot">
+                        {guarded(<TarotTable />)}
                     </TabsContent>
                 </Tabs>
             </div>

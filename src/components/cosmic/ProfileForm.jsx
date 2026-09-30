@@ -246,7 +246,7 @@ export function TarotForm({ data, onChange, birthDate }) {
                     {autoBirthCard && data?.birth_card === autoBirthCard && <AutoBadge />}
                 </div>
             </Field>
-            <Field label="Shadow / Teacher Card" hint="The complementary archetype (reduced digit of birth card)">
+            <Field label="Shadow Card" hint="The complementary archetype (reduced digit of birth card)">
                 <div className="relative">
                     <SimpleSelect value={data?.shadow_card} onChange={v => set('shadow_card', v)} options={TAROT_MAJOR_ARCANA} />
                     {autoShadowCard && data?.shadow_card === autoShadowCard && <AutoBadge />}

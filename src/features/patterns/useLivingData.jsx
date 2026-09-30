@@ -54,6 +54,8 @@ export function useLivingData() {
   const refresh = async ({ withPreferences = false } = {}) => {
     const started = Date.now();
     const keys = withPreferences ? [queryKey, preferencesKey(user?.id)] : [queryKey];
+    // A saved or removed entry can change whether readings wait (useHardMoment).
+    client.invalidateQueries({ queryKey: ['living', user?.id, 'hard-moment'], exact: true }).catch(() => {});
     await Promise.all(keys.map((key) => client.invalidateQueries({ queryKey: key, exact: true })));
     const fresh = keys.every((key) => {
       const state = client.getQueryState(key);

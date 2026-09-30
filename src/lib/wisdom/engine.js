@@ -38,26 +38,27 @@ function humanDesignReading(data) {
 
   if (type) {
     const t = HD_TYPES[type];
-    sections.push({ h: `You are a ${type}`, p: t.body });
+    sections.push({ h: `Your type: ${type}`, p: t.body });
     sections.push({
       h: "Your strategy",
-      p: `Your strategy is ${t.strategy}. Live by it and your life fills with ${t.signature}; override it and you meet your not-self signature, ${t.notSelf}. Think of ${t.signature} and ${t.notSelf} as your dashboard lights, telling you moment to moment whether you are living as yourself.`,
+      p: `Human Design suggests the strategy ${t.strategy}. It names ${t.signature} as this type's signature and ${t.notSelf} as its not-self theme. Only you can say what your feelings mean: ${t.notSelf} can be a fitting response to how you are treated, and it doesn't mean you are off course. No strategy's timing applies to your safety; if you are unsafe, you don't have to wait for anything.`,
     });
   }
   if (auth) {
-    sections.push({ h: auth.label, p: auth.text });
+    // With a type, its strategy section above already says this.
+    sections.push({ h: auth.label, p: type ? auth.text : `${auth.text} No system's timing applies to your safety; if you are unsafe, you don't have to wait for anything.` });
   }
   if (prof) {
     sections.push({ h: `Profile ${prof.key}: the ${prof.name}`, p: prof.text });
   }
   if (d.definition) sections.push({ h: "Definition", p: `Your definition is ${d.definition}. This describes how energy flows and connects across your chart, and how self-contained or relationship-driven your inner wiring tends to be.` });
   if (d.strategy && !type) sections.push({ h: "Strategy", p: `Your noted strategy: ${d.strategy}.` });
-  if (d.incarnation_cross) sections.push({ h: "Incarnation Cross", p: `Your Incarnation Cross is the ${d.incarnation_cross}, the overarching theme of your life's purpose, the role only you are here to play across the whole arc of your life.` });
+  if (d.incarnation_cross) sections.push({ h: "Incarnation Cross", p: `Human Design describes your Incarnation Cross, the ${d.incarnation_cross}, as a theme across your life. Take it as one perspective on purpose; your own sense of purpose may differ.` });
   if (d.custom_notes) sections.push({ h: "Your own notes", p: d.custom_notes });
 
   sections.push({
     h: "Living it",
-    p: `Human Design is an experiment, not a belief. For the next week, ${type ? `practice your strategy, ${HD_TYPES[type].strategy}` : "practice waiting for the right timing before you commit"}, on one real decision and watch what happens in your body. The proof is in how you feel, not in the theory.`,
+    p: `If you want to test Human Design, try ${type ? `its suggested strategy, ${HD_TYPES[type].strategy},` : "giving yourself a little more time before you commit"} on one real decision this week that you can safely take time over. Afterward, notice what was useful and what wasn't. You decide what counts.`,
   });
 
   return format(sections);
@@ -75,7 +76,7 @@ function geneKeysReading(data, computed) {
 
   sections.push({
     h: "Your Golden Path",
-    p: `The Gene Keys map your journey from Shadow to Gift to Siddhi, the same pattern moving from unconscious reaction, to awakened creativity, to transcendent grace. These are the keys currently in your profile. Contemplation, not effort, is how they open.`,
+    p: `Gene Keys describes each key as a spectrum with three names, a Shadow, a Gift and a Siddhi. These are the keys currently in your profile, offered as words to reflect with. A hard feeling or a hard situation doesn't mean you have fallen into a shadow.`,
   });
 
   for (const k of present) {
@@ -84,14 +85,14 @@ function geneKeysReading(data, computed) {
     const meta = GK_SEQUENCE_META[k];
     sections.push({
       h: `${meta.label}: Gene Key ${key.number}`,
-      p: `This sphere governs ${meta.sphere}. Its spectrum runs ${key.shadow} → ${key.gift} → ${key.siddhi}: it is ${key.essence}. Under stress you can fall into the Shadow of ${key.shadow}; as you bring awareness, it flowers into the Gift of ${key.gift}, your ${meta.label.toLowerCase()} at its best. At its highest it becomes the Siddhi of ${key.siddhi}.`,
+      p: `Gene Keys links this sphere with ${meta.sphere}. It names this key's spectrum ${key.shadow}, ${key.gift} and ${key.siddhi}, and describes it as ${key.essence}. Notice whether any of it matches your experience, and leave what doesn't.`,
     });
   }
 
   const lifeKey = resolveKey(d.life_work);
   sections.push({
     h: "Living it",
-    p: `You do not force a Gene Key open; you contemplate it until it opens you.${lifeKey ? ` This week, simply hold your Life's Work key: where does the Shadow of ${lifeKey.shadow} still run you, and where is the Gift of ${lifeKey.gift} already alive?` : ""} Awareness itself is the transformation.`,
+    p: `Gene Keys is meant for slow contemplation.${lifeKey ? ` This week, if you like, hold your Life's Work key in mind: where do you already see ${lifeKey.gift} in your life?` : ""} Keep what is useful and leave the rest.`,
   });
 
   return format(sections);
@@ -155,18 +156,18 @@ function tarotArchetypeReading(data, computed) {
   const sections = [];
 
   if (!birth && !shadow) {
-    return "Your Tarot birth card is derived from your Life Path number. Add your birth date on the Systems tab and your soul archetype will appear here.";
+    return "Your Tarot birth card is derived from your Life Path number. Add your birth date on the Systems tab and a reading of your birth card will appear here.";
   }
 
   if (birth) {
     sections.push({ h: `Your Birth Card: ${birth.name}`, p: birth.archetype });
-    sections.push({ h: "Its keynote", p: `Keywords of your archetype: ${birth.keywords.join(", ")}. This is the lens your soul looks through, the role you keep being handed across a lifetime.` });
+    sections.push({ h: "Its keynote", p: `Keywords of this card: ${birth.keywords.join(", ")}. Some readers treat these as themes that recur across a life. Keep what fits.` });
   }
   if (shadow && shadow.name !== birth?.name) {
-    sections.push({ h: `Your Shadow / Teacher Card: ${shadow.name}`, p: shadow.shadow });
+    sections.push({ h: `Your Shadow Card: ${shadow.name}`, p: shadow.shadow });
     sections.push({
       h: "The two together",
-      p: `${birth ? `Your Birth Card ${birth.name} and Shadow Card ${shadow.name} form a complete portrait: one is your gift, the other is the initiation that keeps refining it. ` : ""}The teacher card is not a curse; it is the exact medicine your archetype needs, arriving disguised as a challenge.`,
+      p: `${birth ? `Your Birth Card ${birth.name} and Shadow Card ${shadow.name} can be read together: one as a strength, the other as a theme that may challenge you. ` : ""}Hard things in your life are not assigned by a card, and they don't have to be lessons.`,
     });
   }
   if (year && year.name !== birth?.name) {
@@ -175,7 +176,7 @@ function tarotArchetypeReading(data, computed) {
 
   sections.push({
     h: "Living it",
-    p: `${birth ? `Watch for ${birth.name} showing up in your daily life this week, in the choices you make and the role you play. ` : ""}Your archetype is not a description to memorize; it is a pattern to recognize as it happens.`,
+    p: `${birth ? `If you like, notice where the themes of ${birth.name} show up this week, and where they don't. ` : ""}What you notice in your own life counts for more than what a card says.`,
   });
 
   return format(sections);
@@ -205,7 +206,7 @@ function enneagramReading(data) {
   }
 
   sections.push({ h: "Under stress and in growth", p: `When you are stretched thin you move ${t.disintegration}. When you are healthy and growing you move ${t.integration}. Knowing both directions gives you an early-warning system and a map: notice the slide toward stress, and consciously practice the qualities of your growth point.` });
-  sections.push({ h: "The way through", p: `The holy idea that releases your type is ${t.holyIdea}. ${t.growth}` });
+  sections.push({ h: "The way through", p: `Some Enneagram teachers pair each type with a "holy idea"; for this type it is ${t.holyIdea}. ${t.growth}` });
 
   if (d.custom_notes) sections.push({ h: "Your own notes", p: d.custom_notes });
 
@@ -223,7 +224,7 @@ function chakraReading(data) {
 
   sections.push({ h: `Your center: ${c.name} (${c.sanskrit})`, p: `Located at the ${c.location} and associated with the element of ${c.element} and the color ${c.color}, your dominant center governs ${c.theme}. This is where much of your energy naturally concentrates.` });
   sections.push({ h: "When it is balanced", p: `In balance, this center makes you ${c.balanced}. This is your gift when the energy here is flowing cleanly.` });
-  sections.push({ h: "When it is blocked", p: `Out of balance, you may notice ${c.blocked}. These are not problems to fix so much as signals that this center needs attention and care.` });
+  sections.push({ h: "When this area feels hard", p: `Some modern chakra teachers link experiences like ${c.blocked} to this center. That is a symbolic lens, not a diagnosis: a feeling doesn't mean something in you is blocked, and it may be a fair response to what is happening.` });
   sections.push({ h: "How the centers relate", p: `Your dominant center does not stand alone, it colors the whole system. A strong ${c.name} center draws energy that the others may need too, so part of your practice is making sure the neighboring centers are not left depleted or overworked in its shadow.` });
   sections.push({ h: "Practices to balance it", p: `To tend your ${c.name} center: ${c.practices}` });
 

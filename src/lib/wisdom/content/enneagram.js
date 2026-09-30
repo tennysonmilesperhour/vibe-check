@@ -9,7 +9,7 @@ export const ENNEAGRAM = {
     desire: "to be good, right, and to have integrity",
     passion: "anger, held in as chronic resentment and a sense that things should be better",
     fixation: "resentment and the relentless inner critic",
-    holyIdea: "perfection: the world is already unfolding as it should",
+    holyIdea: "perfection: a sense that goodness is present even in what is unfinished",
     integration: "toward Seven, loosening into spontaneity, play, and acceptance",
     disintegration: "toward Four, sinking into moodiness, self-doubt, and secret unmet needs",
     growth: "You relax the grip when you learn that goodness is not the same as flawlessness, and that your own imperfection is allowed. Serenity replaces the inner critic when you can let the world, and yourself, be a work in progress.",

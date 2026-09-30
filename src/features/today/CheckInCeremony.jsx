@@ -11,8 +11,6 @@ import { ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonyStep
 import { EMOTIONS, ACTIVITIES } from "./vocab";
 import { ALL_STEPS, chooseSteps } from "./check-in-steps";
 import { usePreferences } from "@/features/patterns/useLivingData";
-import { moonPhase } from "@/lib/resonance/moon";
-import { personalDay } from "@/lib/resonance/numerology";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { todayKey } from "@/lib/dates";
@@ -400,13 +398,12 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const save = async () => {
     setSaving(true);
     await settleAutosave();
-    // The profile only adds an optional personal-day number; never let a
-    // profile hiccup block keeping the day.
+    // The profile only holds the person's notice settings; never let a
+    // profile hiccup block keeping the day. A check-in keeps what the person
+    // recorded, nothing from the optional systems.
     const me = await base44.auth.me().catch(() => null);
     let saved;
     try {
-      const birthDate = me?.cosmic_profile?.birth_date || null;
-      const moon = moonPhase(dateKey);
       const personIds = [
         ...new Set([...(form.person_ids || []), ...(form.high_moment?.person_ids || []), ...(form.low_moment?.person_ids || [])]),
       ];
@@ -414,8 +411,6 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       const payload = {
         ...form,
         date: dateKey,
-        moon_phase: moon.name,
-        ...(birthDate ? { personal_day: personalDay(birthDate, dateKey) } : {}),
         person_ids: personIds,
         stress_context: { ...form.stress_context, asked_steps: ALL_STEPS.filter((id) => asked.has(id)) },
       };

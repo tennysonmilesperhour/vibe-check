@@ -4,7 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { Person, Relationship, Connection, DailyCheckIn, JournalEntry, User } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import PlantVoice from '@/features/shell/PlantVoice';
-import { synergyReading } from "@/lib/wisdom/readings";
+import { synergyReading, currentSynergy } from "@/lib/wisdom/readings";
+import { harmRecordedWith } from "@/lib/symbolic-guard";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,11 +36,15 @@ export default function People() {
   const [deleting, setDeleting] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [synergyBusy, setSynergyBusy] = useState(false);
+  // Synergy is part of Cosmos: it shows only once the person has chosen a system there.
+  const [usesCosmos, setUsesCosmos] = useState(false);
 
   const load = useCallback(async () => {
     try {
       await migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
-      const [ppl, ci, entries] = await Promise.all([Person.all(), DailyCheckIn.all("-date"), JournalEntry.all('-date')]);
+      const [ppl, ci, entries, me] = await Promise.all([Person.all(), DailyCheckIn.all("-date"), JournalEntry.all('-date'), base44.auth.me().catch(() => null)]);
+      // A failed account read keeps what was known, so readings don't vanish.
+      if (me) setUsesCosmos((me.cosmic_profile?.enabled_systems || []).length > 0);
       setPeople(ppl);
       setCheckIns(ci);
       setJournal(entries.filter((entry) => !entry.is_draft));
@@ -101,7 +106,7 @@ export default function People() {
 
   /** Refresh a linked friend's cosmic snapshot when theirs is newer, then read synergy. */
   const generateSynergy = async (person, force = false) => {
-    if (person.synergy_reading && !force) return;
+    if ((currentSynergy(person.synergy_reading) && !force) || harmRecordedWith(person, journal)) return;
     setSynergyBusy(true);
     try {
       let snapshot = person.cosmic_snapshot;
@@ -259,28 +264,38 @@ export default function People() {
                   </div>
                 )}
 
-                <div className="hairline pt-4">
+                {usesCosmos && harmRecordedWith(detail, journal) && (
+                  <div className="hairline pt-4">
+                    <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>NO SYNERGY READING</p>
+                    <p className="text-sm mt-2" style={{ color: "var(--gh-ink)" }}>
+                      A moment you recorded with {detail.name} in it is marked unsafe, or as one where a boundary wasn't respected. A chart can't weigh that, so no reading is offered. Your entries with {detail.name} stay in your history.{" "}
+                      <Link to="/support-now?focus=relationship" className="underline underline-offset-4" style={{ color: "var(--gh-accent)" }}>Support for relationships</Link>
+                    </p>
+                  </div>
+                )}
+                {usesCosmos && !harmRecordedWith(detail, journal) && <div className="hairline pt-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>SYNERGY READING</p>
+                    <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>SYNERGY READING · FROM COSMOS</p>
                     <button
                       type="button"
                       className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
                       style={{ color: "var(--gh-accent)" }}
-                      onClick={() => generateSynergy(detail, !!detail.synergy_reading)}
+                      onClick={() => generateSynergy(detail, true)}
                       disabled={synergyBusy}
                     >
                       <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
-                      {synergyBusy ? "Reading…" : detail.synergy_reading ? "Refresh" : "Generate"}
+                      {synergyBusy ? "Reading…" : currentSynergy(detail.synergy_reading) ? "Refresh" : "Generate"}
                     </button>
                   </div>
-                  {detail.synergy_reading ? (
+                  {currentSynergy(detail.synergy_reading) ? (
                     <p className="text-sm mt-2 whitespace-pre-line" style={{ color: "var(--gh-ink)" }}>{detail.synergy_reading}</p>
                   ) : (
                     <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
-                      A one-time reading of how your charts meet. Saved here once generated.
+                      {detail.synergy_reading ? "An earlier reading used wording we have since replaced. Generate a new one if you want it. " : ""}
+                      A symbolic comparison of your chart with any chart details saved for {detail.name}. It can't tell you how you are treated. Saved here once made.
                     </p>
                   )}
-                </div>
+                </div>}
               </>
             )}
           </DialogContent>

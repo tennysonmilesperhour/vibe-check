@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
 import { format } from "date-fns";
 import { todayKey, parseLocalDate } from "@/lib/dates";
+import { LOW_MOOD } from "@/lib/symbolic-guard";
 import { moonPhase } from "@/lib/resonance/moon";
 import MoonGlyph from "@/features/loom/MoonGlyph";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
@@ -155,7 +156,10 @@ export default function Today() {
         <nav aria-label="Continue" className="flex flex-wrap gap-4 hairline pt-6 text-sm font-medium">
           <Link to={createPageUrl("Analytics")} style={{ color: "var(--gh-accent)" }}>See your patterns</Link>
           <Link to={createPageUrl("Practice")} style={{ color: "var(--gh-accent)" }}>Find a practice</Link>
-          <Link to={createPageUrl("CosmicAddons")} style={{ color: "var(--gh-accent)" }}>Explore optional systems</Link>
+          {/* After a hard day, support comes before the optional systems. */}
+          {entry?.mood_score != null && Number(entry.mood_score) <= LOW_MOOD
+            ? <Link to="/support-now" style={{ color: "var(--gh-accent)" }}>Support now</Link>
+            : <Link to={createPageUrl("CosmicAddons")} style={{ color: "var(--gh-accent)" }}>Explore optional systems</Link>}
         </nav>
       </PageTransition>
     </div>

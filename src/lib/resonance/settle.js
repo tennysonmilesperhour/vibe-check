@@ -38,8 +38,8 @@ export function withSphere(geneKeys, key, value) {
  * - an Enneagram type saved under an earlier name gets the form's current
  *   name for the same number, and a wing that doesn't belong to the type
  *   goes;
- * - a saved personal year goes: it changes each birthday, so it is worked
- *   out from the birth date wherever it is shown.
+ * - a saved personal year goes when there is a birth date: it changes each
+ *   birthday, so it is worked out from the birth date wherever it is shown.
  * @param {Record<string, any>} profile
  * @returns {Record<string, any>}
  */
@@ -55,7 +55,7 @@ export function settleCosmicProfile(profile) {
     tarot_archetype: settleTarot(profile.tarot_archetype, profile.birth_date),
     ...(recheck ? { gene_keys: { ...geneKeys, positions_checked: false } } : {}),
     ...(renamed || staleWing ? { enneagram: { ...enneagram, ...(renamed ? { type: enneagramOption(number) } : {}), ...(staleWing ? { wing: undefined } : {}) } } : {}),
-    ...(profile.numerology?.personal_year !== undefined ? { numerology: { ...profile.numerology, personal_year: undefined } } : {}),
+    ...(profile.birth_date && profile.numerology?.personal_year !== undefined ? { numerology: { ...profile.numerology, personal_year: undefined } } : {}),
   };
 }
 

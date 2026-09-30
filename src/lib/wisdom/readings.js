@@ -79,7 +79,7 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
   }
 
   // Closing line
-  const closer = buildCarry(cards);
+  const closer = buildCarry(cards, question);
   paras.push(`Something to carry, if it fits: ${closer}`);
 
   return paras.join("\n\n");
@@ -87,9 +87,11 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
 
 // Card names can be phrases ("Choose the Living Option"), so they are never
 // the subject of a sentence, here or in the position lines.
-// What a card offers to carry is always about the person's own needs and
-// values, never about another person, so it reads safely whatever the question.
-function buildCarry(cards) {
+// A question that may be about safety or another person closes on the
+// person's own sense of things, never on a card's theme. The pattern is broad
+// on purpose, so the line also reads well after an ordinary question.
+function buildCarry(cards, question = "") {
+  if (question && RELATIONSHIP_QUESTION.test(question)) return "your own sense of what you need, and the people you trust.";
   const last = cards[cards.length - 1];
   const focus = cards.find((c) => /advice|action|could lead|outcome/i.test(c.position)) || last;
   // A reversed card's reading can run against its upright theme.

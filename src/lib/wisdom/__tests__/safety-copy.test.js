@@ -72,6 +72,13 @@ describe('symbolic readings never talk over harm', () => {
     }
     const three = tarotReading({ spreadName: 'Daily Draw', cards: [{ card: card(52), position: 'Your Message', reversed: false }] });
     expect(three).toMatch(/Something to carry, if it fits: gentleness with yourself/);
+    // A reversed card doesn't close on its upright theme.
+    const sun = tarotReading({ spreadName: 'Daily Draw', cards: [{ card: card(19), position: 'Your Message', reversed: true }] });
+    expect(sun).toMatch(/Something to carry, if it fits: whatever rang true in The Sun, reversed, and nothing that didn't\.$/);
+    // A relationship question closes on the person's own record.
+    const back = tarotReading({ spreadName: 'Daily Draw', question: 'Should I take him back?', cards: [{ card: card(23 + 13), position: 'Advice', reversed: false }] });
+    expect(back).toMatch(/Something to carry, if it fits: what you have recorded about what happened, and the people you trust\.$/);
+    expect(back).not.toMatch(/mutual care, in small/);
   });
 
   it('gives each minor arcana card its own reading', () => {

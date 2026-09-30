@@ -44,6 +44,19 @@ describe('settleCosmicProfile', () => {
     expect(settleCosmicProfile({ enneagram: {} }).enneagram).toEqual({});
   });
 
+  it('drops a saved wing that does not belong to the type', () => {
+    expect(settleCosmicProfile({ enneagram: { type: '9 – The Peacemaker', wing: '4w5', instinct: 'Social (so)' } }).enneagram)
+      .toEqual({ type: '9 – Peace and harmony', wing: undefined, instinct: 'Social (so)' });
+    expect(settleCosmicProfile({ enneagram: { type: '9 – Peace and harmony', wing: '9w1' } }).enneagram).toEqual({ type: '9 – Peace and harmony', wing: '9w1' });
+  });
+
+  it('brings a saved personal year up to date', () => {
+    // Born July 15: on 2026-09-30 the personal year counts from 2026 (7 + 6 + 1 = 14 -> 5).
+    const saved = { birth_date: '1990-07-15', numerology: { life_path: '5', personal_year: '4' } };
+    expect(settleCosmicProfile(saved, '2026-09-30').numerology).toEqual({ life_path: '5', personal_year: '5' });
+    expect(settleCosmicProfile({ ...saved, numerology: { personal_year: '5' } }, '2026-09-30').numerology).toEqual({ personal_year: '5' });
+  });
+
   it('gives saved tarot cards a source', () => {
     const settled = settleCosmicProfile({ birth_date: '1985-11-23', tarot_archetype: { birth_card: '3 – The Empress' } });
     expect(settled.tarot_archetype).toEqual({ birth_card: '3 – The Empress', birth_card_source: 'retired' });

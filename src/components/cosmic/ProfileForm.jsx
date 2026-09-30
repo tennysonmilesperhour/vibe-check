@@ -176,7 +176,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
         { key: 'personality', label: 'Personality Number', hint: 'From the consonants in your name. Numerology links it with how others first see you' },
         { key: 'birthday', label: 'Birthday Number', hint: 'From the day of the month you were born' },
         { key: 'maturity', label: 'Maturity Number', hint: 'Your Life Path plus your Expression. Numerology links it with later life' },
-        { key: 'personal_year', label: 'Personal Year Number', hint: 'From your birth date and the current year' },
+        { key: 'personal_year', label: 'Personal Year Number', hint: 'From your birth date and the year of your most recent birthday' },
     ];
 
     return (

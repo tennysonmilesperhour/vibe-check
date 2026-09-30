@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { personalYear } from "../../resonance/numerology";
+import { todayKey } from "../../dates";
 import { systemReading } from "../engine";
 import { tarotReading, integratedReading, synergyReading, patternReading, periodWisdom } from "../readings";
 
@@ -68,9 +70,20 @@ describe("systemReading", () => {
     expect(systemReading("enneagram", { type: "1", wing: "1w9" }, PROFILE)).toMatch(/some of Type 9's qualities into Type 1/);
   });
 
+  it("numerology reads the current personal year, not a saved one", () => {
+    const profile = { birth_date: "1990-07-15", enabled_systems: ["numerology"], numerology: {} };
+    const current = personalYear("1990-07-15", todayKey());
+    const saved = current === 1 ? "2" : "1";
+    const reading = systemReading("numerology", { life_path: "5", personal_year: saved }, profile);
+    expect(reading).toContain(`YOUR PERSONAL YEAR (${current})`);
+    expect(reading).not.toContain(`YOUR PERSONAL YEAR (${saved})`);
+  });
+
   it("numerology says an 8 year and an 11 year", () => {
-    expect(systemReading("numerology", { life_path: "5", personal_year: "8" }, PROFILE)).toMatch(/reads this as an 8 year/);
-    expect(systemReading("numerology", { life_path: "5", personal_year: "3" }, PROFILE)).toMatch(/reads this as a 3 year/);
+    // Without a birth date, the saved personal year is the one read.
+    const noDate = { enabled_systems: ["numerology"] };
+    expect(systemReading("numerology", { life_path: "5", personal_year: "8" }, noDate)).toMatch(/reads this as an 8 year/);
+    expect(systemReading("numerology", { life_path: "5", personal_year: "3" }, noDate)).toMatch(/reads this as a 3 year/);
   });
 
   it("chakras names the center", () => {

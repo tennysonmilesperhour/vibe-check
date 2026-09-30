@@ -79,7 +79,7 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
   }
 
   // Closing line
-  const closer = buildCarry(cards);
+  const closer = buildCarry(cards, question);
   paras.push(`Something to carry, if it fits: ${closer}`);
 
   return paras.join("\n\n");
@@ -87,9 +87,14 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
 
 // Card names can be phrases ("Choose the Living Option"), so they are never
 // the subject of a sentence, here or in the position lines.
-function buildCarry(cards) {
+function buildCarry(cards, question = "") {
+  // A question about safety or a relationship closes on the person's own
+  // record, never on a card's theme.
+  if (question && RELATIONSHIP_QUESTION.test(question)) return "what you have recorded about what happened, and the people you trust.";
   const last = cards[cards.length - 1];
   const focus = cards.find((c) => /advice|action|could lead|outcome/i.test(c.position)) || last;
+  // A reversed card's reading can run against its upright theme.
+  if (focus.reversed) return `whatever rang true in ${focus.card.name}, reversed, and nothing that didn't.`;
   // A card names what to carry when its first keyword isn't something to
   // carry into a day, such as heartbreak or sudden change.
   const kw = focus.card.carry || (focus.card.keywords || [])[0] || "presence";

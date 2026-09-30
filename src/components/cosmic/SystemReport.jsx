@@ -124,6 +124,9 @@ const PDF_INK = [27, 36, 26];
 const PDF_ACCENT = [52, 73, 47];
 const PDF_MUTED = [84, 94, 65];
 
+// Saved fields whose key names a term the app avoids.
+const PDF_FIELD_LABELS = { tritype: 'three-center type' };
+
 async function exportToPDF(systemLabel, reportText, profileData, origin) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -162,7 +165,7 @@ async function exportToPDF(systemLabel, reportText, profileData, origin) {
     doc.setTextColor(...PDF_INK);
     Object.entries(profileData).forEach(([k, v]) => {
       if (v && k !== 'custom_notes' && !k.endsWith('_source') && typeof v === 'string') {
-        const line = `${k.replace(/_/g, ' ')}: ${v}`;
+        const line = `${PDF_FIELD_LABELS[k] || k.replace(/_/g, ' ')}: ${v}`;
         doc.text(line, margin, y);
         y += 5;
         if (y > 270) { doc.addPage(); y = margin; }

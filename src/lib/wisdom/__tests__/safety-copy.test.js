@@ -56,6 +56,24 @@ describe('symbolic readings never talk over harm', () => {
     }
   });
 
+  it('closes every one-card reading with something worth carrying', () => {
+    const HARD = /heartbreak|anxiety|grief|deception|trapped|burden|painful|hardship|conflict|betrayal|exhaustion|walking away|illusion|sudden change|shadow self|forgiveness|worry|loss|regret|restriction|upheaval|secrecy/i;
+    /** @type {[string, any[]][]} */
+    const decks = [['tarot', FULL_DECK], ['oracle', ORACLE_DECK]];
+    for (const [deck, cards] of decks) {
+      for (const item of cards) {
+        for (const reversed of [false, true]) {
+          const reading = tarotReading({ spreadName: 'Daily Draw', deck, cards: [{ card: item, position: 'Your Message', reversed }] });
+          const closer = reading.slice(reading.indexOf('Something to carry, if it fits:'));
+          expect(closer, item.name).not.toMatch(HARD);
+          for (const pattern of [BYPASSING, PUSHING, IDENTITY, DESTINY]) expect(closer).not.toMatch(pattern);
+        }
+      }
+    }
+    const three = tarotReading({ spreadName: 'Daily Draw', cards: [{ card: card(52), position: 'Your Message', reversed: false }] });
+    expect(three).toMatch(/Something to carry, if it fits: gentleness with yourself/);
+  });
+
   it('gives each minor arcana card its own reading', () => {
     expect(MINOR_ARCANA).toHaveLength(56);
     expect(MINOR_ARCANA.map((c) => c.id)).toEqual(Array.from({ length: 56 }, (_, i) => i + 22));

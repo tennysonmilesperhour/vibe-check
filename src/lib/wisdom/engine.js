@@ -10,7 +10,7 @@ import { GK_SEQUENCE_META, resolveKey } from "./content/geneKeys";
 import { needsPositionCheck, POSITION_CHECK_NOTE } from "@/lib/resonance/settle";
 import { shadowGivesWay } from "@/lib/resonance/tarotCards";
 import { resolveArcana } from "./content/tarotArchetype";
-import { resolveEnneagram, resolveInstinct } from "./content/enneagram";
+import { resolveEnneagram, resolveInstinct, wingOf } from "./content/enneagram";
 import { resolveChakra } from "./content/chakras";
 
 // ── formatting helpers ───────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ function numerologyReading(data, computed) {
 
   sections.push({
     h: "Living it",
-    p: `Numerology is one way to think about themes and timing.${yearKey ? ` It reads this as a ${yearKey} year, linked with ${NUMBERS[yearKey].core}.` : ""} Your own experience decides which of these, if any, are useful.`,
+    p: `Numerology is one way to think about themes and timing.${yearKey ? ` It reads this as ${yearKey === 8 || yearKey === 11 ? "an" : "a"} ${yearKey} year, linked with ${NUMBERS[yearKey].core}.` : ""} Your own experience decides which of these, if any, are useful.`,
   });
 
   return format(sections);
@@ -210,9 +210,10 @@ function enneagramReading(data) {
   sections.push({ h: `Type ${t.number}: ${t.name}`, p: `Enneagram teachers describe Type ${t.number} as organized around a wish ${t.desire}, and a fear of ${t.fear}. If this type fits you, it can help to notice when that fear is steering a choice.` });
   sections.push({ h: "Patterns to notice", p: `Teachers link this type with ${t.passion}, and a habit of mind described as ${t.fixation}. These are tendencies, not faults, and a feeling can be a fair response to what is happening.` });
 
-  if (d.wing) {
-    const wing = String(d.wing).match(/w\s*([1-9])/i)?.[1];
-    sections.push({ h: `Your wing (${d.wing})`, p: `In the Enneagram, a wing is one of the two types beside yours, said to add some of its qualities.${wing ? ` Teachers read the ${d.wing} wing as bringing some of Type ${wing}'s qualities into Type ${t.number}.` : ""} Keep what fits.` });
+  // A wing left over from another type isn't read.
+  const wing = wingOf(d.wing, t.number);
+  if (wing) {
+    sections.push({ h: `Your wing (${d.wing})`, p: `In the Enneagram, a wing is one of the two types beside yours, said to add some of its qualities. Teachers read the ${d.wing} wing as bringing some of Type ${wing}'s qualities into Type ${t.number}. Keep what fits.` });
   }
   if (inst) {
     sections.push({ h: `Your instinct: ${inst.label}`, p: inst.text });

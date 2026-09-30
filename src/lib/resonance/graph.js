@@ -8,6 +8,8 @@ import { personalDay, reduceSingle } from './numerology.js';
 import { signStartDegree, gateWheelDegree, ARCANA_ASTRO, arcanaName } from './tables.js';
 // Accepts both the bare name ("The Hierophant") and the form's "N – Name".
 import { cardId as arcanaIdByName } from './tarotCards.js';
+import { enneagramOption, resolveEnneagram, wingOf } from '../wisdom/content/enneagram.js';
+import { resolveChakra } from '../wisdom/content/chakras.js';
 
 const signMidDegree = (sign) => {
   const start = signStartDegree(sign);
@@ -69,11 +71,16 @@ export function resonanceGraph(profile = {}, dateKey) {
   }
 
   // ── enneagram / chakras: inner-ring nodes ──
-  if (enabled.has('enneagram') && profile.enneagram?.type) {
-    addNode('enneagram.type', 'enneagram', `Type ${profile.enneagram.type}${profile.enneagram.wing ? ` (${profile.enneagram.wing})` : ''}`, null);
+  // Labels come from the content, so a name saved under an earlier label
+  // reads as the current one.
+  const enneagram = enabled.has('enneagram') ? resolveEnneagram(profile.enneagram?.type) : null;
+  if (enneagram) {
+    const wing = wingOf(profile.enneagram.wing, enneagram.number) ? ` (${profile.enneagram.wing})` : '';
+    addNode('enneagram.type', 'enneagram', `Type ${enneagramOption(enneagram.number)}${wing}`, null);
   }
-  if (enabled.has('chakras') && profile.chakras?.dominant_center) {
-    addNode('chakras.dominant', 'chakras', `${profile.chakras.dominant_center} centered`, null);
+  const chakra = enabled.has('chakras') ? resolveChakra(profile.chakras?.dominant_center) : null;
+  if (chakra) {
+    addNode('chakras.dominant', 'chakras', `${chakra.name} center`, null);
   }
 
   const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));

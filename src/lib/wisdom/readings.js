@@ -8,6 +8,7 @@ import { ZODIAC } from "./content/zodiac";
 import { NUMBERS, reduceToKey } from "./content/numerology";
 import { resolveType, HD_TYPES } from "./content/humanDesign";
 import { resolveEnneagram } from "./content/enneagram";
+import { resolveChakra } from "./content/chakras";
 import { resolveArcana } from "./content/tarotArchetype";
 
 // deterministic pick so a given card/number always phrases the same way
@@ -89,7 +90,9 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
 function buildCarry(cards) {
   const last = cards[cards.length - 1];
   const focus = cards.find((c) => /advice|action|could lead|outcome/i.test(c.position)) || last;
-  const kw = (focus.card.keywords || [])[0] || "presence";
+  // A card names what to carry when its first keyword isn't something to
+  // carry into a day, such as heartbreak or sudden change.
+  const kw = focus.card.carry || (focus.card.keywords || [])[0] || "presence";
   const options = [
     `${kw}. Where might it show up for you this week?`,
     `${kw}, in small, real ways. What could that look like today?`,
@@ -121,7 +124,7 @@ function collectSignals(enabled, profile, computed) {
   if (enabled.includes("astrology")) {
     const sun = astrologyPlacements(profile.astrology || {}, computed.astrology || {}).find(p => p.id === "sun")?.sign;
     if (sun && ZODIAC[sun]) out.push({
-      system: "astrology", label: "Astrology", short: `a ${sun} Sun`,
+      system: "astrology", label: "Astrology", short: `${/^[AEIOU]/.test(sun) ? "an" : "a"} ${sun} Sun`,
       essence: ZODIAC[sun].gift,
     });
   }
@@ -163,7 +166,7 @@ function collectSignals(enabled, profile, computed) {
     });
   }
   if (enabled.includes("chakras")) {
-    const c = profile.chakras?.dominant_center;
+    const c = resolveChakra(profile.chakras?.dominant_center)?.name;
     if (c) out.push({
       system: "chakras", label: "Chakras", short: `the ${c} center`,
       essence: `the themes of the ${c} center`,
@@ -322,9 +325,10 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
   const moon = enabled.includes("astrology") ? graph?.today?.moonPhase : null;
   const astrology = enabled.includes("astrology") ? astrologyPeriodWisdom(periodType, profile.astrology || {}, computed.astrology || {}) : null;
   if (astrology) {
-    const cycle = ({ daily: num.personal_day, weekly: num.personal_year, monthly: num.personal_month, yearly: num.personal_year })[periodType];
-    const number = NUMBERS[reduceToKey(cycle)];
-    return number ? { ...astrology, wisdom: `${astrology.wisdom}\n\nFrom your optional numerology practice: numerology links this cycle with ${number.core}. ${number.question}` } : astrology;
+    const [cycle, cycleName] = ({ daily: [num.personal_day, "personal day"], weekly: [num.personal_year, "personal year"], monthly: [num.personal_month, "personal month"], yearly: [num.personal_year, "personal year"] })[periodType] || [];
+    const key = reduceToKey(cycle);
+    const number = NUMBERS[key];
+    return number ? { ...astrology, wisdom: `${astrology.wisdom}\n\nFrom your optional numerology practice: your ${cycleName} number is ${key}, which numerology links with ${number.core}. ${number.question}` } : astrology;
   }
   const name = (profile.first_name || "").trim();
 

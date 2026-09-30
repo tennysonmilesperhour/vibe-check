@@ -8,7 +8,7 @@ export const ENNEAGRAM = {
   1: {
     name: "Integrity and improvement",
     fear: "getting things wrong or falling short",
-    desire: "to do things well and act with integrity",
+    desire: "to do right and to do things well",
     passion: "anger, often held in as resentment when things fall short",
     fixation: "resentment, with a strict inner critic",
     holyIdea: "perfection: goodness can be present in what is still unfinished",
@@ -18,8 +18,8 @@ export const ENNEAGRAM = {
   },
   2: {
     name: "Care and connection",
-    fear: "being unwanted or unloved",
-    desire: "to be loved and to matter to others",
+    fear: "love disappearing if you stop giving",
+    desire: "to be close to others and to know you are wanted",
     passion: "pride, the sense of having no needs while meeting everyone else's",
     fixation: "flattery, and giving in the hope of getting",
     holyIdea: "freedom: love does not have to be earned",
@@ -29,8 +29,8 @@ export const ENNEAGRAM = {
   },
   3: {
     name: "Accomplishment and worth",
-    fear: "being worthless without accomplishments",
-    desire: "to feel valuable and worthwhile",
+    fear: "counting for nothing without success",
+    desire: "to know your own worth and to have it recognized",
     passion: "self-deception, shaping yourself into what seems to succeed",
     fixation: "vanity, and measuring yourself by success",
     holyIdea: "hope: worth is not something you have to perform",
@@ -40,7 +40,7 @@ export const ENNEAGRAM = {
   },
   4: {
     name: "Authenticity and depth",
-    fear: "having no identity or significance of your own",
+    fear: "not having a self that feels real and your own",
     desire: "to feel authentic and to live a life with personal meaning",
     passion: "envy, a sense that something essential is missing and others have it",
     fixation: "melancholy, and a feeling of being different",
@@ -51,8 +51,8 @@ export const ENNEAGRAM = {
   },
   5: {
     name: "Understanding and self-reliance",
-    fear: "being helpless, depleted, or overwhelmed",
-    desire: "to be capable and to understand how things work",
+    fear: "running out of energy or being swamped by demands",
+    desire: "to understand how things work and to handle life on your own resources",
     passion: "avarice, holding tight to time, energy, and privacy",
     fixation: "withdrawal into observation and thought",
     holyIdea: "omniscience: you are part of life, not only an observer of it",
@@ -62,8 +62,8 @@ export const ENNEAGRAM = {
   },
   6: {
     name: "Security and loyalty",
-    fear: "being without support or guidance",
-    desire: "to feel secure and supported",
+    fear: "facing danger or uncertainty alone",
+    desire: "to have steady ground and people you can rely on",
     passion: "fear, watching for what could go wrong",
     fixation: "doubt, and imagining the worst",
     holyIdea: "faith: guidance you can find in yourself",
@@ -73,7 +73,7 @@ export const ENNEAGRAM = {
   },
   7: {
     name: "Possibility and freedom",
-    fear: "being trapped in pain or limitation",
+    fear: "being stuck with pain or boredom",
     desire: "to be free and to enjoy life fully",
     passion: "gluttony, an appetite for more experiences",
     fixation: "planning, always toward the next thing",
@@ -84,8 +84,8 @@ export const ENNEAGRAM = {
   },
   8: {
     name: "Strength and protection",
-    fear: "being controlled or harmed by others",
-    desire: "to protect yourself and direct your own life",
+    fear: "being at the mercy of someone else's power",
+    desire: "to stand on your own strength and shape your own path",
     passion: "lust, an intensity in how you meet life",
     fixation: "vengeance, and bracing against others",
     holyIdea: "truth: strength can include tenderness",
@@ -95,7 +95,7 @@ export const ENNEAGRAM = {
   },
   9: {
     name: "Peace and harmony",
-    fear: "conflict, loss, and separation",
+    fear: "disconnection and discord",
     desire: "to have peace, inside and around you",
     passion: "self-forgetting, going along to keep things calm",
     fixation: "going numb to your own wants to keep the peace",
@@ -108,6 +108,18 @@ export const ENNEAGRAM = {
 
 /** A type as the profile form lists it, e.g. "4 – Authenticity and depth". */
 export const enneagramOption = (number) => `${number} – ${ENNEAGRAM[number].name}`;
+
+/**
+ * The wing's type number when a wing such as "4w5" belongs to the type: it
+ * starts with the type and names one of the two types beside it. Otherwise null.
+ * @param {unknown} wing @param {number} type
+ */
+export function wingOf(wing, type) {
+  const m = String(wing || "").match(/^\s*([1-9])\s*w\s*([1-9])\s*$/i);
+  if (!m || Number(m[1]) !== type) return null;
+  const side = Number(m[2]);
+  return side === (type % 9) + 1 || side === ((type + 7) % 9) + 1 ? side : null;
+}
 
 export const INSTINCTS = {
   sp: { label: "Self-Preservation", text: "Enneagram teachers describe the self-preservation instinct as attention to safety, health, comfort, and resources: whether you and the people close to you are secure." },

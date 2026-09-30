@@ -19,6 +19,7 @@ import {
 import AstrologyProfile from "./AstrologyProfile";
 import { birthCards, cardId, cardOption, withChosenCard, withComputedCard, yearCardOn } from "@/lib/resonance/tarotCards";
 import { needsPositionCheck, POSITION_CHECK_NOTE, withSphere } from "@/lib/resonance/settle";
+import { resolveEnneagram, wingOf } from "@/lib/wisdom/content/enneagram";
 import { todayKey } from "@/lib/dates";
 
 const str = (n) => (n == null ? null : String(n));
@@ -271,7 +272,7 @@ export function EnneagramForm({ data, onChange }) {
     return (
         <div className="grid md:grid-cols-2 gap-5">
             <Field label="Type" hint="The type whose description fits you best. Teachers describe each by a central wish and fear">
-                <SimpleSelect value={data?.type} onChange={v => set('type', v)} options={ENNEAGRAM_TYPES} />
+                <SimpleSelect value={data?.type} onChange={v => onChange({ ...data, type: v, wing: wingOf(data?.wing, resolveEnneagram(v)?.number) ? data.wing : undefined })} options={ENNEAGRAM_TYPES} />
             </Field>
             <Field label="Wing" hint="One of the two types beside yours, said to add some of its qualities">
                 <SimpleSelect value={data?.wing} onChange={v => set('wing', v)} options={wingOptions} />

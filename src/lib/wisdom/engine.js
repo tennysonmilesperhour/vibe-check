@@ -7,6 +7,8 @@ import { astrologyReading } from "./astrology";
 import { NUMBERS, reduceToKey } from "./content/numerology";
 import { HD_TYPES, resolveType, resolveAuthority, resolveProfile } from "./content/humanDesign";
 import { GK_SEQUENCE_META, resolveKey } from "./content/geneKeys";
+import { needsPositionCheck, POSITION_CHECK_NOTE } from "@/lib/resonance/settle";
+import { shadowGivesWay } from "@/lib/resonance/tarotCards";
 import { resolveArcana } from "./content/tarotArchetype";
 import { resolveEnneagram, resolveInstinct } from "./content/enneagram";
 import { resolveChakra } from "./content/chakras";
@@ -71,13 +73,16 @@ function geneKeysReading(data, computed) {
   const sections = [];
 
   if (present.length === 0) {
-    return "Your Life's Work Gene Key equals your Conscious Sun Gate in Human Design. Enter that gate number (or any of your Gene Keys) on the My Profile tab and your hologenetic reading will compose here.";
+    return "Your Life's Work Gene Key equals your Conscious Sun Gate in Human Design. Enter that gate number (or any of your Gene Keys) on the My Profile tab and your reading will appear here.";
   }
 
   sections.push({
     h: "Your Golden Path",
     p: `Gene Keys describes each key as a spectrum with three names, a Shadow, a Gift and a Siddhi. These are the keys currently in your profile, offered as words to reflect with. A hard feeling or a hard situation doesn't mean you have fallen into a shadow.`,
   });
+  if (needsPositionCheck(d)) {
+    sections.push({ h: "Check these keys", p: `${POSITION_CHECK_NOTE} You can confirm them on the My Profile tab.` });
+  }
 
   for (const k of present) {
     const key = resolveKey(d[k]);
@@ -151,17 +156,25 @@ function numerologyReading(data, computed) {
 function tarotArchetypeReading(data, computed) {
   const d = { ...computed, ...clean(data) };
   const birth = resolveArcana(d.birth_card);
-  const shadow = resolveArcana(d.shadow_card);
+  // The soul card and the method belong to the computed birth card, not one
+  // chosen by hand.
+  const computedBirth = Boolean(birth) && resolveArcana(computed.birth_card)?.name === birth.name;
+  const soul = computedBirth ? resolveArcana(computed.soul_card) : null;
+  // A shadow card an earlier method filled in gives way to the soul card.
+  const shadow = shadowGivesWay(d, computedBirth) ? null : resolveArcana(d.shadow_card);
   const year = resolveArcana(d.personal_year_card);
   const sections = [];
 
   if (!birth && !shadow) {
-    return "Your Tarot birth card is derived from your Life Path number. Add your birth date on the Systems tab and a reading of your birth card will appear here.";
+    return "Your Tarot birth cards are worked out from your birth date. Add it on the Systems tab and a reading of your birth card will appear here.";
   }
 
   if (birth) {
     sections.push({ h: `Your Birth Card: ${birth.name}`, p: birth.archetype });
     sections.push({ h: "Its keynote", p: `Keywords of this card: ${birth.keywords.join(", ")}. Some readers treat these as themes that recur across a life. Keep what fits.` });
+  }
+  if (soul && soul.name !== birth?.name) {
+    sections.push({ h: `Your Soul Card: ${soul.name}`, p: soul.archetype });
   }
   if (shadow && shadow.name !== birth?.name) {
     sections.push({ h: `Your Shadow Card: ${shadow.name}`, p: shadow.shadow });
@@ -172,6 +185,9 @@ function tarotArchetypeReading(data, computed) {
   }
   if (year && year.name !== birth?.name) {
     sections.push({ h: `This year: ${year.name}`, p: year.year });
+  }
+  if (computedBirth) {
+    sections.push({ h: "How these are worked out", p: "Vibe Check follows Mary K. Greer's method. Your birth card adds your birth month, day and year and reduces the total to 22 or less, with 22 as The Fool. Your soul card reduces that number to one digit. Your year card uses the same sum with the current year; if your birthday is in July or later, that year runs from one birthday to the next." });
   }
 
   sections.push({
@@ -202,7 +218,7 @@ function enneagramReading(data) {
     sections.push({ h: `Your instinct: ${inst.label}`, p: inst.text });
   }
   if (d.tritype) {
-    sections.push({ h: `Your tritype (${d.tritype})`, p: `Your tritype names the three types you lead with, one from each center, head, heart, and body. Together they describe the fuller texture of how you think, feel, and act.` });
+    sections.push({ h: `Your three-center type (${d.tritype})`, p: `Some Enneagram teachers look at the type you lean on in each center, head, heart and body. Together they can describe more of how you think, feel and act. Keep what fits.` });
   }
 
   sections.push({ h: "Under stress and in growth", p: `When you are stretched thin you move ${t.disintegration}. When you are healthy and growing you move ${t.integration}. Knowing both directions gives you an early-warning system and a map: notice the slide toward stress, and consciously practice the qualities of your growth point.` });

@@ -138,3 +138,16 @@ describe("periodWisdom", () => {
     });
   }
 });
+
+import { GK_SEQUENCE_META } from '../content/geneKeys';
+
+describe('Gene Keys spheres', () => {
+  it('name the chart positions Gene Keys uses', () => {
+    expect(GK_SEQUENCE_META.life_work.sphere).toMatch(/Personality Sun/);
+    expect(GK_SEQUENCE_META.evolution.sphere).toMatch(/Personality Earth/);
+    expect(GK_SEQUENCE_META.radiance.sphere).toMatch(/Design Sun/);
+    expect(GK_SEQUENCE_META.purpose.sphere).toMatch(/Design Earth/);
+    expect(GK_SEQUENCE_META.attraction.sphere).toMatch(/Design Moon/);
+    expect(GK_SEQUENCE_META.iq.sphere).toMatch(/Personality Venus/);
+  });
+});

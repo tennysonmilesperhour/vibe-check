@@ -12,34 +12,12 @@ export function signStartDegree(sign) {
   return idx === -1 ? null : idx * 30;
 }
 
-/** Life path number -> Major Arcana card id (matches tarotDeck.jsx ids: 8 Strength, 11 Justice). */
-export const LIFE_PATH_CARD = {
-  1: 1,   // The Magician
-  2: 2,   // The High Priestess
-  3: 3,   // The Empress
-  4: 4,   // The Emperor
-  5: 5,   // The Hierophant
-  6: 6,   // The Lovers
-  7: 7,   // The Chariot
-  8: 8,   // Strength
-  9: 9,   // The Hermit
-  11: 11, // Justice (master number honored as its own card)
-  22: 0,  // The Fool (22 is the Fool's number in birth-card practice)
-  33: 6,  // exceeds 22 -> 3+3 = 6 -> The Lovers
-};
-
 const ARCANA_NAMES = [
   'The Fool', 'The Magician', 'The High Priestess', 'The Empress', 'The Emperor',
   'The Hierophant', 'The Lovers', 'The Chariot', 'Strength', 'The Hermit',
   'Wheel of Fortune', 'Justice', 'The Hanged Man', 'Death', 'Temperance',
   'The Devil', 'The Tower', 'The Star', 'The Moon', 'The Sun', 'Judgement', 'The World',
 ];
-
-export function arcanaForLifePath(lifePathNumber) {
-  const id = LIFE_PATH_CARD[lifePathNumber];
-  if (id === undefined) return null;
-  return { id, name: ARCANA_NAMES[id] };
-}
 
 export function arcanaName(id) {
   return ARCANA_NAMES[id] ?? null;

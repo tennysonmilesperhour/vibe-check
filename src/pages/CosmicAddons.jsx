@@ -21,6 +21,8 @@ import SymbolicReadings from "@/features/cosmos/SymbolicReadings";
 import GuardedReading from "@/features/cosmos/GuardedReading";
 import useHardMoment from "@/features/cosmos/useHardMoment";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
+import { followBirthCard, withComputedCard } from "@/lib/resonance/tarotCards";
+import { settleCosmicProfile, settleOnSave } from "@/lib/resonance/settle";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
 import PlantVoice from '@/features/shell/PlantVoice';
@@ -99,7 +101,7 @@ export default function CosmicAddons() {
         try {
             const user = await base44.auth.me();
             if (user?.cosmic_profile) {
-                const merged = { ...EMPTY_PROFILE, ...user.cosmic_profile };
+                const merged = settleCosmicProfile({ ...EMPTY_PROFILE, ...user.cosmic_profile });
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
                 setHasSavedProfile(true);
@@ -117,8 +119,11 @@ export default function CosmicAddons() {
         }
         setIsSaving(true);
         try {
-            await base44.auth.updateMe({ cosmic_profile: profile });
-            setSavedSnapshot(JSON.stringify(profile));
+            const settled = settleOnSave(profile);
+            await base44.auth.updateMe({ cosmic_profile: settled });
+            // Keep any edit made while saving; it settles on the next save.
+            setProfile(prev => (prev === profile ? settled : prev));
+            setSavedSnapshot(JSON.stringify(settled));
             setHasSavedProfile(true);
             toast({ title: "Cosmic profile saved", description: "Your loom and readings now weave from these systems." });
         } catch (e) {
@@ -130,8 +135,26 @@ export default function CosmicAddons() {
     /** One-tap fix from ConflictNotice: adopt the computed value. */
     const useComputed = (conflict) => {
         const [systemKey, field] = conflict.field.split('.');
-        setProfile(prev => ({ ...prev, [systemKey]: { ...(prev[systemKey] || {}), [field]: String(conflict.computed), ...(conflict.field === 'astrology.sun_sign' ? { sun_source: 'date_estimate' } : {}) } }));
+        setProfile(prev => {
+            if (conflict.field === 'tarot_archetype.birth_card') return { ...prev, tarot_archetype: withComputedCard(prev.tarot_archetype, prev.birth_date) };
+            const system = { ...(prev[systemKey] || {}), [field]: String(conflict.computed) };
+            if (conflict.field === 'astrology.sun_sign') system.sun_source = 'date_estimate';
+            return { ...prev, [systemKey]: system };
+        });
     };
+
+    /** From ConflictNotice: keep a saved birth card as the person's own choice. */
+    const keepSaved = (conflict) => {
+        if (conflict.field !== 'tarot_archetype.birth_card') return;
+        setProfile(prev => ({ ...prev, tarot_archetype: { ...(prev.tarot_archetype || {}), birth_card_source: 'entered' } }));
+    };
+
+    // A birth card worked out from the birth date follows it, even while the tarot form is closed.
+    const setBirthDate = (birthDate) => setProfile(prev => ({
+        ...prev,
+        birth_date: birthDate,
+        tarot_archetype: followBirthCard(prev.tarot_archetype, birthDate),
+    }));
 
     const toggleSystem = (systemId) => {
         setProfile(prev => {
@@ -183,7 +206,7 @@ export default function CosmicAddons() {
                 </SkyField>
 
                 <div className="mb-6">
-                    <ConflictNotice profile={profile} onUseComputed={useComputed} />
+                    <ConflictNotice profile={profile} onUseComputed={useComputed} onKeepSaved={keepSaved} />
                 </div>
 
                 {isDirty && (
@@ -223,7 +246,7 @@ export default function CosmicAddons() {
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                             <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth data</h3>
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
-                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations and an approximate Sun sign.
+                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac.
                             </p>
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
@@ -241,7 +264,7 @@ export default function CosmicAddons() {
                                 <div>
                                     <Label style={{ color: 'var(--gh-ink-soft)' }}>Date of Birth</Label>
                                     <Input type="date" className="mt-1" value={profile.birth_date}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_date: e.target.value }))} />
+                                        onChange={e => setBirthDate(e.target.value)} />
                                 </div>
                                 <div>
                                     <Label style={{ color: 'var(--gh-ink-soft)' }}>Time of Birth <span className="text-xs opacity-60">(optional)</span></Label>

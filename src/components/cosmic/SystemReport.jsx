@@ -3,6 +3,7 @@ import { astrologyPlacements, astrologyAspects } from "@/lib/wisdom/astrology";
 import { deriveAstrology } from "@/lib/resonance/astrology";
 import { AstrologySources } from "./AstrologyGuide";
 import { systemReading } from "@/lib/wisdom/engine";
+import { needsPositionCheck, POSITION_CHECK_NOTE } from "@/lib/resonance/settle";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { systemMeta, tint } from "./systemMeta";
@@ -78,20 +79,19 @@ function HumanDesignDetail({ data }) {
 function GeneKeysDetail({ data }) {
   const sequences = [
     { group: "Activation Sequence", keys: [
-      { label: "Life's Work (Conscious Sun)", key: "life_work" },
-      { label: "Evolution (Conscious Earth)", key: "evolution" },
+      { label: "Life's Work (Personality Sun)", key: "life_work" },
+      { label: "Evolution (Personality Earth)", key: "evolution" },
+      { label: "Radiance (Design Sun)", key: "radiance" },
+      { label: "Purpose (Design Earth)", key: "purpose" },
     ]},
     { group: "Venus Sequence", keys: [
-      { label: "Radiance (Conscious Moon)", key: "radiance" },
-      { label: "Purpose (Conscious Node)", key: "purpose" },
-    ]},
-    { group: "Pearl Sequence", keys: [
-      { label: "Attraction (Unconscious Sun)", key: "attraction" },
-      { label: "IQ (Unconscious Node)", key: "iq" },
+      { label: "Attraction (Design Moon)", key: "attraction" },
+      { label: "IQ (Personality Venus)", key: "iq" },
     ]},
   ];
   return (
     <>
+      {needsPositionCheck(data) && <p className="text-xs mb-3" role="note" style={{ color: 'var(--gh-ink-soft)' }}>{POSITION_CHECK_NOTE}</p>}
       {sequences.map(seq => (
         <Section key={seq.group} title={seq.group}>
           {seq.keys.map(k => data?.[k.key] && (
@@ -124,7 +124,7 @@ const PDF_INK = [27, 36, 26];
 const PDF_ACCENT = [52, 73, 47];
 const PDF_MUTED = [84, 94, 65];
 
-async function exportToPDF(systemLabel, reportText, profileData) {
+async function exportToPDF(systemLabel, reportText, profileData, origin) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
@@ -141,7 +141,16 @@ async function exportToPDF(systemLabel, reportText, profileData) {
   doc.setFontSize(9);
   doc.setTextColor(...PDF_MUTED);
   doc.text(`Composed ${new Date().toLocaleDateString()} · Vibe Check`, margin, y);
-  y += 10;
+  y += 6;
+  // Where the system comes from and who Vibe Check is not affiliated with.
+  if (origin) {
+    doc.setFontSize(8.5);
+    for (const line of doc.splitTextToSize(origin, maxW)) {
+      doc.text(line, margin, y);
+      y += 4.5;
+    }
+  }
+  y += 4;
 
   // Profile summary
   if (profileData) {
@@ -152,7 +161,7 @@ async function exportToPDF(systemLabel, reportText, profileData) {
     doc.setFontSize(8.5);
     doc.setTextColor(...PDF_INK);
     Object.entries(profileData).forEach(([k, v]) => {
-      if (v && k !== 'custom_notes' && typeof v === 'string') {
+      if (v && k !== 'custom_notes' && !k.endsWith('_source') && typeof v === 'string') {
         const line = `${k.replace(/_/g, ' ')}: ${v}`;
         doc.text(line, margin, y);
         y += 5;
@@ -195,7 +204,7 @@ const SYSTEM_DETAILS = {
   ]} />,
   enneagram: ({ data }) => <GenericDetail data={data} fields={[
     { key: 'type', label: 'Type' }, { key: 'wing', label: 'Wing' },
-    { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Tritype' },
+    { key: 'instinct', label: 'Instinct' }, { key: 'tritype', label: 'Three-center type' },
   ]} />,
   chakras: ({ data }) => <GenericDetail data={data} fields={[
     { key: 'dominant_center', label: 'Dominant Center' },
@@ -247,6 +256,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
 
       {expanded && (
         <div className="px-5 pb-5">
+          {meta.origin && <p className="text-xs mb-4" style={{ color: 'var(--gh-ink-muted)' }}>{meta.origin}</p>}
           {/* Profile data */}
           <Detail data={data} cosmicProfile={cosmicProfile} />
 
@@ -260,7 +270,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
                 <span className="text-sm font-semibold" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>Deep reading</span>
               </div>
               {report && (
-                <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, systemId === "astrology" ? null : data)}
+                <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, systemId === "astrology" ? null : data, meta.origin)}
                   className="text-xs gap-1.5" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
                   <Download className="w-3 h-3" /> Save as PDF
                 </Button>

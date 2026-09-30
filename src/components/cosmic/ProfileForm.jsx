@@ -17,32 +17,11 @@ import {
     personalYear, personalMonth, personalDay, karmicDebts,
 } from "@/lib/resonance/numerology";
 import AstrologyProfile from "./AstrologyProfile";
-import { arcanaForLifePath, arcanaName } from "@/lib/resonance/tables";
+import { birthCards, cardId, cardOption, withChosenCard, withComputedCard, yearCardOn } from "@/lib/resonance/tarotCards";
+import { needsPositionCheck, POSITION_CHECK_NOTE, withSphere } from "@/lib/resonance/settle";
 import { todayKey } from "@/lib/dates";
 
 const str = (n) => (n == null ? null : String(n));
-const digitSum = (n) => String(n).split('').reduce((a, d) => a + Number(d), 0);
-
-// Tarot cards render as "N – Name" to match the select option strings.
-const cardLabel = (id) => (id == null ? null : `${id} – ${arcanaName(id)}`);
-const birthCard = (birthDate) => {
-    const lp = lifePath(birthDate);
-    return lp !== null ? arcanaForLifePath(lp) : null;
-};
-function birthCardLabel(birthDate) {
-    const card = birthCard(birthDate);
-    return card ? cardLabel(card.id) : null;
-}
-function shadowCardLabel(birthDate) {
-    const card = birthCard(birthDate);
-    if (!card || card.id <= 9) return null;
-    return cardLabel(digitSum(card.id));
-}
-function yearCardLabel(birthDate) {
-    const py = birthDate ? personalYear(birthDate, todayKey()) : null;
-    const card = py !== null ? arcanaForLifePath(py) : null;
-    return card ? cardLabel(card.id) : null;
-}
 
 function Field({ label, hint, children }) {
     return (
@@ -130,18 +109,27 @@ export function HumanDesignForm({ data, onChange }) {
 export function GeneKeysForm({ data, onChange }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
     const keyFields = [
-        { key: 'life_work', label: "Life's Work (Conscious Sun)", hint: "What you're here to do — your most visible gift" },
-        { key: 'evolution', label: "Evolution (Conscious Earth)", hint: "What grounds your life's work" },
-        { key: 'radiance', label: "Radiance (Conscious Moon)", hint: "Your subconscious gift that naturally shines" },
-        { key: 'purpose', label: "Purpose (Conscious Node)", hint: "Your soul's higher evolutionary direction" },
-        { key: 'attraction', label: "Attraction (Unconscious Sun)", hint: "The pattern of your closest relationships" },
-        { key: 'iq', label: "IQ (Unconscious Node)", hint: "The deep intelligence shaping your path" },
+        { key: 'life_work', label: "Life's Work (Personality Sun)", hint: "Your work in the world; also your Conscious Sun gate in Human Design" },
+        { key: 'evolution', label: "Evolution (Personality Earth)", hint: "The challenges you grow through" },
+        { key: 'radiance', label: "Radiance (Design Sun)", hint: "Health and vitality" },
+        { key: 'purpose', label: "Purpose (Design Earth)", hint: "What grounds you" },
+        { key: 'attraction', label: "Attraction (Design Moon)", hint: "Your closest relationships" },
+        { key: 'iq', label: "IQ (Personality Venus)", hint: "How you think and learn" },
     ];
     return (
         <div className="grid md:grid-cols-2 gap-5">
+            {needsPositionCheck(data) && (
+                <div className="md:col-span-2 text-xs p-3" role="note"
+                    style={{ color: 'var(--gh-ink-soft)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
+                    <p>{POSITION_CHECK_NOTE}</p>
+                    <button type="button" onClick={() => onChange({ ...data, positions_checked: true })} className="mt-1 font-bold underline underline-offset-4" style={{ color: 'var(--gh-accent)' }}>
+                        They're right
+                    </button>
+                </div>
+            )}
             {keyFields.map(({ key, label, hint }) => (
                 <Field key={key} label={label} hint={hint}>
-                    <SimpleSelect value={data?.[key]} onChange={v => set(key, v)} options={GENE_KEY_NUMBERS} placeholder="Key 1–64" />
+                    <SimpleSelect value={data?.[key]} onChange={v => onChange(withSphere(data, key, v))} options={GENE_KEY_NUMBERS} placeholder="Key 1–64" />
                 </Field>
             ))}
             <div className="md:col-span-2">
@@ -227,36 +215,38 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
 export function TarotForm({ data, onChange, birthDate }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
 
-    const autoBirthCard = birthCardLabel(birthDate);
-    const autoShadowCard = shadowCardLabel(birthDate);
-    const autoYearCard = yearCardLabel(birthDate);
+    // Cards are stored as the "N – Name" select options.
+    const cards = birthCards(birthDate);
+    const year = birthDate ? yearCardOn(birthDate, todayKey()) : null;
+    const autoBirthCard = cards ? cardOption(cards.personality.id) : null;
+    const autoYearCard = year ? cardOption(year.id) : null;
+    // The soul card belongs to the computed birth card, not one chosen by hand.
+    const autoSoulCard = cards?.soul && (!data?.birth_card || cardId(data.birth_card) === cards.personality.id) ? cardOption(cards.soul.id) : null;
 
+    // Fill in an empty birth card from the birth date. A changed date is
+    // followed where the date is set (followBirthCard).
     useEffect(() => {
-        const updates = {};
-        if (autoBirthCard && !data?.birth_card) updates.birth_card = autoBirthCard;
-        if (autoShadowCard && !data?.shadow_card) updates.shadow_card = autoShadowCard;
-        if (Object.keys(updates).length > 0) onChange({ ...data, ...updates });
+        if (autoBirthCard && !data?.birth_card) onChange(withComputedCard(data, birthDate));
     }, [birthDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const chooseBirthCard = (card) => onChange(card === autoBirthCard ? withComputedCard(data, birthDate) : withChosenCard(data, card));
 
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Birth Card" hint="Worked out from your birth date">
+            <Field label="Birth Card" hint="Worked out from your birth date by Mary K. Greer's method">
                 <div className="relative">
-                    <SimpleSelect value={data?.birth_card} onChange={v => set('birth_card', v)} options={TAROT_MAJOR_ARCANA} />
+                    <SimpleSelect value={data?.birth_card} onChange={chooseBirthCard} options={TAROT_MAJOR_ARCANA} />
                     {autoBirthCard && data?.birth_card === autoBirthCard && <AutoBadge />}
                 </div>
             </Field>
-            <Field label="Shadow Card" hint="The complementary archetype (reduced digit of birth card)">
-                <div className="relative">
-                    <SimpleSelect value={data?.shadow_card} onChange={v => set('shadow_card', v)} options={TAROT_MAJOR_ARCANA} />
-                    {autoShadowCard && data?.shadow_card === autoShadowCard && <AutoBadge />}
-                </div>
+            <Field label="Shadow Card" hint="Optional, if a tarot practice you follow names one">
+                <SimpleSelect value={data?.shadow_card} onChange={v => onChange({ ...data, shadow_card: v, shadow_card_source: 'entered' })} options={TAROT_MAJOR_ARCANA} />
             </Field>
 
-            {autoYearCard && (
-                <div className="md:col-span-2">
-                    <p className="text-xs mb-2" style={{ color: 'var(--gh-ink-muted)' }}>The card walking with you this personal year:</p>
-                    <DerivedChip label="Personal Year Card" value={autoYearCard} />
+            {(autoSoulCard || autoYearCard) && (
+                <div className="md:col-span-2 flex flex-wrap gap-2">
+                    {autoSoulCard && <DerivedChip label="Soul Card" value={autoSoulCard} />}
+                    {autoYearCard && <DerivedChip label="Year Card" value={autoYearCard} />}
                 </div>
             )}
 
@@ -289,7 +279,7 @@ export function EnneagramForm({ data, onChange }) {
             <Field label="Instinctual Variant" hint="Which survival drive leads: self-preservation, social, or one-to-one">
                 <SimpleSelect value={data?.instinct} onChange={v => set('instinct', v)} options={ENNEAGRAM_INSTINCTS} />
             </Field>
-            <Field label="Tritype" hint="Optional — your dominant type in each center, e.g. 469 or 358">
+            <Field label="Three-center type" hint="Optional: the type you lean on in each center, head, heart and body, e.g. 469 or 358">
                 <Input className="mt-1" value={data?.tritype || ''} onChange={e => set('tritype', e.target.value)} placeholder="e.g. 469" />
             </Field>
             <div className="md:col-span-2">

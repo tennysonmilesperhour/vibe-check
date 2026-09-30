@@ -5,14 +5,11 @@ import {
   lifePath, expression, soulUrge, personality, birthdayNumber, maturity, karmicDebts,
   personalYear, personalMonth, personalDay,
 } from './numerology.js';
-import { arcanaForLifePath, arcanaName } from './tables.js';
+import { birthCards, cardId, cardOption, retiredCards, yearCardOn } from './tarotCards.js';
 import { deriveAstrology } from './astrology.js';
 
-// Normalize for comparison; also strips the "N – " prefix the tarot form stores
-// so "5 – The Hierophant" matches the engine's bare "The Hierophant".
+// Normalize for comparison. Tarot cards compare by card id (tarotCards).
 const norm = (v) => String(v ?? '').trim().replace(/^\d+\s*[–-]\s*/, '').toLowerCase();
-
-const digitSum = (n) => String(n).split('').reduce((a, d) => a + Number(d), 0);
 
 /**
  * deriveAll(profile, onDateKey) ->
@@ -25,12 +22,12 @@ export function deriveAll(profile = {}, onDateKey) {
   const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
 
   const lp = lifePath(birthDate);
-  const birthCard = lp !== null ? arcanaForLifePath(lp) : null;
-  // Shadow / teacher card: the reduced digit of the birth card's number.
-  const shadowCard =
-    birthCard && birthCard.id > 9 ? arcanaName(digitSum(birthCard.id)) : null;
+  // Tarot birth, soul and year cards by Mary K. Greer's method (tarotCards).
+  const cards = birthCards(birthDate);
+  const birthCard = cards?.personality ?? null;
+  const soulCard = cards?.soul ?? null;
   const py = birthDate && onDateKey ? personalYear(birthDate, onDateKey) : null;
-  const yearCard = py !== null ? arcanaForLifePath(py) : null;
+  const yearCard = birthDate && onDateKey ? yearCardOn(birthDate, onDateKey) : null;
 
   const astro = deriveAstrology(birthDate);
 
@@ -50,7 +47,7 @@ export function deriveAll(profile = {}, onDateKey) {
     },
     tarot_archetype: {
       birth_card: birthCard?.name ?? null,
-      shadow_card: shadowCard,
+      soul_card: soulCard?.name ?? null,
       personal_year_card: yearCard?.name ?? null,
     },
     gene_keys: {
@@ -63,10 +60,11 @@ export function deriveAll(profile = {}, onDateKey) {
   };
 
   const conflicts = [];
-  const check = (field, entered, computed, source) => {
+  // `systems` are the systems a conflict compares; each needs to be turned on.
+  const check = (field, entered, computed, source, systems = [field.split('.')[0]]) => {
     if (entered == null || entered === '' || computed == null) return;
     if (norm(entered) !== norm(computed)) {
-      conflicts.push({ field, entered, computed, source });
+      conflicts.push({ field, entered, computed, source, systems });
     }
   };
 
@@ -74,13 +72,32 @@ export function deriveAll(profile = {}, onDateKey) {
   // for review; an explicit choice or unknown value should not be repeatedly challenged.
   if (!profile.astrology?.sun_source) check('astrology.sun_sign', profile.astrology?.sun_sign, astro.sun_sign, 'calendar-based Sun estimate');
   check('numerology.life_path', profile.numerology?.life_path, lp, 'birth date');
-  check('tarot_archetype.birth_card', profile.tarot_archetype?.birth_card, birthCard?.name, 'life path number');
+  // A birth card the person chose stays theirs. Any other is compared with
+  // the birth date's card (see birth_card_source in tarotCards): `value` is
+  // that card as the form stores it, `retired` marks a card a retired method
+  // filled in, and `keepable` a card the app did not work out from this date.
+  const tarot = profile.tarot_archetype || {};
+  const source = tarot.birth_card_source;
+  const savedCard = tarot.birth_card ? cardId(tarot.birth_card) : null;
+  if (birthCard && tarot.birth_card && source !== 'entered' && savedCard !== birthCard.id) {
+    conflicts.push({
+      field: 'tarot_archetype.birth_card',
+      entered: tarot.birth_card,
+      computed: birthCard.name,
+      source: 'birth date',
+      systems: ['tarot_archetype'],
+      value: cardOption(birthCard.id),
+      retired: source === 'retired' || (!source && savedCard !== null && Boolean(retiredCards(birthDate)?.birth.includes(savedCard))),
+      keepable: source !== 'birth_date',
+    });
+  }
   if (profile.gene_keys?.life_work && profile.human_design?.conscious_sun_gate) {
     check(
       'gene_keys.life_work',
       profile.gene_keys.life_work,
       profile.human_design.conscious_sun_gate,
-      'Human Design Conscious Sun gate (same hexagram)'
+      'Human Design Conscious Sun gate (same hexagram)',
+      ['gene_keys', 'human_design']
     );
   }
 

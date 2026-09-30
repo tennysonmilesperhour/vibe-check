@@ -4,23 +4,15 @@
 // wisdom/weather prompts (replacing loose prose context).
 import { deriveAll } from './derive.js';
 import { moonPhase } from './moon.js';
-import { personalDay } from './numerology.js';
-import { signStartDegree, gateWheelDegree, ARCANA_ASTRO, LIFE_PATH_CARD, arcanaName } from './tables.js';
+import { personalDay, reduceSingle } from './numerology.js';
+import { signStartDegree, gateWheelDegree, ARCANA_ASTRO, arcanaName } from './tables.js';
+// Accepts both the bare name ("The Hierophant") and the form's "N – Name".
+import { cardId as arcanaIdByName } from './tarotCards.js';
 
 const signMidDegree = (sign) => {
   const start = signStartDegree(sign);
   return start === null ? null : start + 15;
 };
-
-function arcanaIdByName(name) {
-  // Accept both the bare name ("The Hierophant") and the "N – Name" option
-  // format the profile form stores.
-  const bare = String(name || '').replace(/^\s*\d+\s*[–-]\s*/, '').toLowerCase();
-  for (let id = 0; id < 22; id++) {
-    if (arcanaName(id)?.toLowerCase() === bare) return id;
-  }
-  return null;
-}
 
 /** resonanceGraph(profile, dateKey) -> { nodes, edges, today } (JSON-safe). */
 export function resonanceGraph(profile = {}, dateKey) {
@@ -98,10 +90,16 @@ export function resonanceGraph(profile = {}, dateKey) {
       `Gene Key ${lifeWork} and Gate ${gate} are the same I Ching hexagram — your Life's Work is your Conscious Sun.`);
   }
 
-  // number identity: life path <-> birth card
-  if (lp && birthCardName && LIFE_PATH_CARD[Number(lp)] !== undefined) {
-    addEdge('numerology.life_path', 'tarot_archetype.birth_card', 'number',
-      `Life Path ${lp} names ${birthCardName} as its Major Arcana counterpart.`);
+  // number link: a birth card worked out from the same date reduces to the
+  // same digit as the Life Path. The Fool counts as 22, and a master number
+  // Life Path such as 11 shares its root (2) with the card.
+  const birthCardId = birthCardName ? arcanaIdByName(birthCardName) : null;
+  const cardNumber = birthCardId === 0 ? 22 : birthCardId;
+  if (lp && cardNumber !== null && reduceSingle(cardNumber) === reduceSingle(Number(lp))) {
+    const card = `Your birth card, ${arcanaName(birthCardId)}, ${birthCardId === 0 ? 'counts as 22' : `is card ${cardNumber}`}`;
+    addEdge('numerology.life_path', 'tarot_archetype.birth_card', 'number', cardNumber === Number(lp)
+      ? `${card}, the same number as your Life Path.`
+      : `${card}, and your Life Path is ${lp}. Both reduce to ${reduceSingle(cardNumber)}.`);
   }
 
   // Golden Dawn: birth card <-> its sign/planet, tied back to astrology placements

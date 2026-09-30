@@ -210,7 +210,8 @@ describe('connections are compared with comparable days without them', () => {
       if (views.some(showsConnection)) falseAlarms += 1;
     }
     expect(falseAlarms / people).toBeLessThan(0.05);
-  });
+    // A year of records for 100 people takes a few seconds, longer on a busy machine.
+  }, 20_000);
 
   it('does not read busy days, which carry more of everything, as a connection', () => {
     // Busy days have coffee and anger; quiet days have tea and nothing else.

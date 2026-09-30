@@ -60,10 +60,11 @@ export function deriveAll(profile = {}, onDateKey) {
   };
 
   const conflicts = [];
-  const check = (field, entered, computed, source) => {
+  // `systems` are the systems a conflict compares; each needs to be turned on.
+  const check = (field, entered, computed, source, systems = [field.split('.')[0]]) => {
     if (entered == null || entered === '' || computed == null) return;
     if (norm(entered) !== norm(computed)) {
-      conflicts.push({ field, entered, computed, source });
+      conflicts.push({ field, entered, computed, source, systems });
     }
   };
 
@@ -72,21 +73,22 @@ export function deriveAll(profile = {}, onDateKey) {
   if (!profile.astrology?.sun_source) check('astrology.sun_sign', profile.astrology?.sun_sign, astro.sun_sign, 'calendar-based Sun estimate');
   check('numerology.life_path', profile.numerology?.life_path, lp, 'birth date');
   // A birth card the person chose stays theirs. Any other is compared with
-  // the birth date's card: `value` is that card as the form stores it,
-  // `retired` marks a card a retired method filled in, and only a card saved
-  // before sources were recorded is offered to keep as it is.
+  // the birth date's card (see birth_card_source in tarotCards): `value` is
+  // that card as the form stores it, `retired` marks a card a retired method
+  // filled in, and `keepable` a card the app did not work out from this date.
   const tarot = profile.tarot_archetype || {};
+  const source = tarot.birth_card_source;
   const savedCard = tarot.birth_card ? cardId(tarot.birth_card) : null;
-  if (birthCard && tarot.birth_card && tarot.birth_card_source !== 'entered' && savedCard !== birthCard.id) {
-    const legacy = !tarot.birth_card_source;
+  if (birthCard && tarot.birth_card && source !== 'entered' && savedCard !== birthCard.id) {
     conflicts.push({
       field: 'tarot_archetype.birth_card',
       entered: tarot.birth_card,
       computed: birthCard.name,
       source: 'birth date',
+      systems: ['tarot_archetype'],
       value: cardOption(birthCard.id),
-      retired: legacy && savedCard !== null && Boolean(retiredCards(birthDate)?.birth.includes(savedCard)),
-      keepable: legacy,
+      retired: source === 'retired' || (!source && savedCard !== null && Boolean(retiredCards(birthDate)?.birth.includes(savedCard))),
+      keepable: source !== 'birth_date',
     });
   }
   if (profile.gene_keys?.life_work && profile.human_design?.conscious_sun_gate) {
@@ -94,7 +96,8 @@ export function deriveAll(profile = {}, onDateKey) {
       'gene_keys.life_work',
       profile.gene_keys.life_work,
       profile.human_design.conscious_sun_gate,
-      'Human Design Conscious Sun gate (same hexagram)'
+      'Human Design Conscious Sun gate (same hexagram)',
+      ['gene_keys', 'human_design']
     );
   }
 

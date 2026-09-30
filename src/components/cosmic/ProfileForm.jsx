@@ -105,14 +105,10 @@ export function HumanDesignForm({ data, onChange }) {
     );
 }
 
-// Before September 30, 2026, the form named the wrong chart positions for
-// these four spheres (Conscious Moon, Conscious Node, Unconscious Sun and
-// Unconscious Node).
-const RELABELED_SPHERES = ['radiance', 'purpose', 'attraction', 'iq'];
-
 export function GeneKeysForm({ data, onChange }) {
-    const set = (key, val) => onChange({ ...data, [key]: val, ...(RELABELED_SPHERES.includes(key) ? { positions_checked: true } : {}) });
-    const recheck = !data?.positions_checked && RELABELED_SPHERES.some((key) => data?.[key]);
+    const set = (key, val) => onChange({ ...data, [key]: val });
+    // Spheres saved under the form's old position labels (settleCosmicProfile).
+    const recheck = data?.positions_checked === false;
     const keyFields = [
         { key: 'life_work', label: "Life's Work (Personality Sun)", hint: "Your work in the world; also your Conscious Sun gate in Human Design" },
         { key: 'evolution', label: "Evolution (Personality Earth)", hint: "The challenges you grow through" },
@@ -234,7 +230,7 @@ export function TarotForm({ data, onChange, birthDate }) {
         if (autoBirthCard && !data?.birth_card) onChange(withComputedCard(data, birthDate));
     }, [birthDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const chooseBirthCard = (card) => onChange({ ...data, birth_card: card, birth_card_source: card === autoBirthCard ? 'birth_date' : 'entered' });
+    const chooseBirthCard = (card) => onChange(card === autoBirthCard ? withComputedCard(data, birthDate) : { ...data, birth_card: card, birth_card_source: 'entered' });
 
     return (
         <div className="grid md:grid-cols-2 gap-5">

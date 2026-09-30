@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { birthCards, cardId, cardOption, followBirthCard, retiredCards, settleTarot, withComputedCard, yearCard, yearCardOn } from '../tarotCards.js';
-import correspondencesSource from '../../../components/cosmic/correspondences.jsx?raw';
+import { TAROT_MAJOR_ARCANA } from '@/components/cosmic/correspondences';
 
 describe("tarot birth cards (Mary K. Greer's method)", () => {
   it('adds month, day and year, then reduces to 22 or less', () => {
@@ -37,9 +37,7 @@ describe("tarot birth cards (Mary K. Greer's method)", () => {
   });
 
   it('stores cards exactly as the form lists them', () => {
-    const block = correspondencesSource.match(/export const TAROT_MAJOR_ARCANA = \[([\s\S]*?)\];/)?.[1] || '';
-    const options = [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
-    expect(options).toEqual(Array.from({ length: 22 }, (_, id) => cardOption(id)));
+    expect(TAROT_MAJOR_ARCANA).toEqual(Array.from({ length: 22 }, (_, id) => cardOption(id)));
   });
 
   it('knows the cards the retired methods filled in', () => {
@@ -63,30 +61,44 @@ describe("tarot birth cards (Mary K. Greer's method)", () => {
     expect(yearCardOn('1990-07-15', '')).toBeNull();
   });
 
-  it('works out the birth card and follows a changed birth date', () => {
+  it('works out the birth card, dropping a shadow card a retired method filled in', () => {
     expect(withComputedCard({ custom_notes: 'Swords' }, '1985-11-23')).toEqual({ custom_notes: 'Swords', birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' });
+    expect(withComputedCard({ birth_card: '11 – Justice', birth_card_source: 'retired', shadow_card: '2 – The High Priestess', shadow_card_source: 'retired' }, '1960-01-03'))
+      .toEqual({ birth_card: '20 – Judgement', birth_card_source: 'birth_date' });
+    // A shadow card the person chose stays.
+    expect(withComputedCard({ shadow_card: '16 – The Tower', shadow_card_source: 'entered' }, '1985-11-23')).toMatchObject({ shadow_card: '16 – The Tower' });
     expect(withComputedCard({ birth_card: '1 – The Magician' }, '')).toEqual({ birth_card: '1 – The Magician' });
-    const follow = (tarot) => followBirthCard(tarot, '1990-07-15', '1985-11-23')?.birth_card;
-    expect(follow({ birth_card: '5 – The Hierophant', birth_card_source: 'birth_date' })).toBe('12 – The Hanged Man');
-    // Saved before sources were recorded: the old date's card, or a retired method's, follows.
-    expect(follow({ birth_card: '5 – The Hierophant' })).toBe('12 – The Hanged Man');
-    expect(follow({ birth_card: 'The Hierophant' })).toBe('12 – The Hanged Man');
-    // A card the person chose stays, and so does one no method gave for the old date.
-    expect(follow({ birth_card: '5 – The Hierophant', birth_card_source: 'entered' })).toBe('5 – The Hierophant');
-    expect(follow({ birth_card: '16 – The Tower' })).toBe('16 – The Tower');
-    expect(follow({})).toBeUndefined();
-    // A cleared date leaves the card as it is.
-    expect(followBirthCard({ birth_card: '5 – The Hierophant', birth_card_source: 'birth_date' }, '1990-07-15', '')?.birth_card).toBe('5 – The Hierophant');
   });
 
-  it('brings saved tarot data up to date', () => {
-    // A saved card that matches the birth date's card is marked as worked out from it.
+  it('follows a changed birth date by the recorded source', () => {
+    const follow = (tarot, date = '1985-11-23') => followBirthCard(tarot, date)?.birth_card;
+    expect(follow({ birth_card: '5 – The Hierophant', birth_card_source: 'birth_date' })).toBe('12 – The Hanged Man');
+    expect(follow({ birth_card: '3 – The Empress', birth_card_source: 'retired' })).toBe('12 – The Hanged Man');
+    // A card the person chose stays, and so does one with no source.
+    expect(follow({ birth_card: '5 – The Hierophant', birth_card_source: 'entered' })).toBe('5 – The Hierophant');
+    expect(follow({ birth_card: '5 – The Hierophant' })).toBe('5 – The Hierophant');
+    expect(follow({})).toBeUndefined();
+    // While a date is typed it passes through empty and partial values; the card ends on the final date.
+    /** @type {any} */
+    let tarot = { birth_card: '3 – The Empress', birth_card_source: 'retired' };
+    for (const date of ['', '0001-11-23', '0019-11-23', '0198-11-23', '1986-11-23']) tarot = followBirthCard(tarot, date);
+    expect(tarot).toEqual({ birth_card: '4 – The Emperor', birth_card_source: 'birth_date' });
+  });
+
+  it('gives each saved card a source from the saved birth date', () => {
+    // A card that matches the birth date's card was worked out from it.
     expect(settleTarot({ birth_card: '12 – The Hanged Man' }, '1985-11-23')).toEqual({ birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' });
-    // A retired method's card that differs stays unmarked, for the notice.
-    expect(settleTarot({ birth_card: '3 – The Empress' }, '1985-11-23')).toEqual({ birth_card: '3 – The Empress' });
-    // A shadow card a retired method filled in goes; one the person chose stays.
-    expect(settleTarot({ birth_card: '11 – Justice', shadow_card: '2 – The High Priestess' }, '1960-01-03')).toEqual({ birth_card: '11 – Justice' });
-    expect(settleTarot({ shadow_card: '10 – Wheel of Fortune' }, '1978-01-02')).toEqual({});
+    // A retired method's card that differs is marked, for the notice.
+    expect(settleTarot({ birth_card: '3 – The Empress' }, '1985-11-23')).toEqual({ birth_card: '3 – The Empress', birth_card_source: 'retired' });
+    // Any other card, and one that already has a source, stays as it is.
+    expect(settleTarot({ birth_card: '16 – The Tower' }, '1985-11-23')).toEqual({ birth_card: '16 – The Tower' });
+    expect(settleTarot({ birth_card: '3 – The Empress', birth_card_source: 'entered' }, '1985-11-23')).toEqual({ birth_card: '3 – The Empress', birth_card_source: 'entered' });
+    // A retired shadow card goes beside the computed birth card, and is marked beside a retired one.
+    expect(settleTarot({ birth_card: '11 – Justice', shadow_card: '2 – The High Priestess' }, '1969-12-28')).toEqual({ birth_card: '11 – Justice', birth_card_source: 'birth_date' });
+    expect(settleTarot({ birth_card: '11 – Justice', shadow_card: '2 – The High Priestess' }, '1960-01-03'))
+      .toEqual({ birth_card: '11 – Justice', birth_card_source: 'retired', shadow_card: '2 – The High Priestess', shadow_card_source: 'retired' });
+    expect(settleTarot({ shadow_card: '10 – Wheel of Fortune' }, '1978-01-02')).toEqual({ shadow_card: '10 – Wheel of Fortune', shadow_card_source: 'retired' });
+    // A shadow card the person chose, or one no method gave, stays.
     expect(settleTarot({ shadow_card: '3 – The Empress', shadow_card_source: 'entered' }, '1985-11-23')).toEqual({ shadow_card: '3 – The Empress', shadow_card_source: 'entered' });
     expect(settleTarot({ shadow_card: '16 – The Tower' }, '1985-11-23')).toEqual({ shadow_card: '16 – The Tower' });
     expect(settleTarot(undefined, '1985-11-23')).toBeUndefined();

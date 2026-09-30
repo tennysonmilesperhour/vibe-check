@@ -10,10 +10,6 @@ const FIELD_LABELS = {
   "gene_keys.life_work": "Gene Keys Life's Work",
 };
 
-// The systems a conflict compares, which all need to be turned on.
-const systemsOf = (conflict) =>
-  conflict.field === "gene_keys.life_work" ? ["gene_keys", "human_design"] : [conflict.field.split(".")[0]];
-
 /**
  * Gentle cross-validation: where saved data contradicts what the systems
  * themselves imply, say so and offer the computed value in one tap. Only
@@ -23,7 +19,7 @@ export default function ConflictNotice({ profile, onUseComputed, onKeepSaved }) 
   const conflicts = useMemo(() => {
     try {
       const enabled = profile?.enabled_systems || [];
-      return deriveAll(profile || {}, todayKey()).conflicts.filter((c) => systemsOf(c).every((system) => enabled.includes(system)));
+      return deriveAll(profile || {}, todayKey()).conflicts.filter((c) => c.systems.every((system) => enabled.includes(system)));
     } catch {
       return [];
     }

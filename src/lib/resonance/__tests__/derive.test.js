@@ -97,7 +97,16 @@ describe('deriveAll', () => {
     // The first method turned 22 into The Emperor; Greer's gives The Fool.
     expect(tarotConflict('1950-05-11', '4 – The Emperor')).toMatchObject({ computed: 'The Fool', retired: true });
     // A card no method gave may come from the person's own practice.
-    expect(tarotConflict('1985-11-23', '16 – The Tower')).toMatchObject({ retired: false, keepable: true });
+    expect(tarotConflict('1985-11-23', '16 – The Tower')).toMatchObject({ retired: false, keepable: true, systems: ['tarot_archetype'] });
+    // A card marked as retired when the profile loaded (settleTarot).
+    const marked = deriveAll({ ...profile, birth_date: '1985-11-23', tarot_archetype: { birth_card: '3 – The Empress', birth_card_source: 'retired' } }, '2026-07-02');
+    expect(marked.conflicts.find((c) => c.field === 'tarot_archetype.birth_card')).toMatchObject({ retired: true, keepable: true });
+  });
+
+  it('names the systems each conflict compares', () => {
+    const both = { ...profile, gene_keys: { life_work: '15' } };
+    expect(deriveAll(both, '2026-07-02').conflicts.find((c) => c.field === 'gene_keys.life_work')?.systems).toEqual(['gene_keys', 'human_design']);
+    expect(deriveAll({ ...profile, numerology: { life_path: '7' } }, '2026-07-02').conflicts.find((c) => c.field === 'numerology.life_path')?.systems).toEqual(['numerology']);
   });
 
   it('leaves a birth card the person chose alone', () => {

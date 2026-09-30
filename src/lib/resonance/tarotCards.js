@@ -97,51 +97,67 @@ export function retiredCards(birthDate) {
   return { birth, shadow: [...new Set(birth.filter((id) => id > 9).map(digitSum))] };
 }
 
+// Where a saved birth card came from (birth_card_source):
+// - 'birth_date': worked out from the birth date by Greer's method;
+// - 'retired': filled in by a retired method, for the person to keep or replace;
+// - 'entered': chosen by the person, and never challenged;
+// - none: saved before sources were recorded (settleTarot sorts these out).
+// A shadow card a retired method filled in is marked 'retired' the same way.
+
 /**
- * Tarot data with the birth card worked out from the birth date.
+ * Tarot data with the birth card worked out from the birth date. A shadow
+ * card a retired method filled in goes with the old birth card: the soul
+ * card now shows on its own.
  * @param {Record<string, any> | null | undefined} tarot @param {string} birthDate
  */
 export function withComputedCard(tarot, birthDate) {
   const cards = birthCards(birthDate);
-  return cards ? { ...tarot, birth_card: cardOption(cards.personality.id), birth_card_source: 'birth_date' } : tarot;
+  if (!cards) return tarot;
+  /** @type {Record<string, any>} */
+  const next = { ...tarot, birth_card: cardOption(cards.personality.id), birth_card_source: 'birth_date' };
+  if (next.shadow_card_source === 'retired') {
+    delete next.shadow_card;
+    delete next.shadow_card_source;
+  }
+  return next;
 }
 
 /**
- * Tarot data after the birth date changes. A birth card filled in from the
- * old date, by this method or a retired one, is worked out again from the
- * new date; a card the person chose stays.
- * @param {Record<string, any> | null | undefined} tarot
- * @param {string} previousDate @param {string} nextDate
+ * Tarot data after the birth date changes. A birth card the app filled in is
+ * worked out again from the new date; a card the person chose, or one saved
+ * without a source, stays. It goes only by the recorded source, since the
+ * date passes through partial values while it is typed.
+ * @param {Record<string, any> | null | undefined} tarot @param {string} nextDate
  */
-export function followBirthCard(tarot, previousDate, nextDate) {
-  const saved = tarot?.birth_card;
-  if (!saved || tarot.birth_card_source === 'entered') return tarot;
-  const id = cardId(saved);
-  const filledIn = tarot.birth_card_source === 'birth_date'
-    || (id !== null && (id === birthCards(previousDate)?.personality.id || Boolean(retiredCards(previousDate)?.birth.includes(id))));
-  return filledIn ? withComputedCard(tarot, nextDate) : tarot;
+export function followBirthCard(tarot, nextDate) {
+  const source = tarot?.birth_card_source;
+  return tarot?.birth_card && (source === 'birth_date' || source === 'retired') ? withComputedCard(tarot, nextDate) : tarot;
 }
 
 /**
- * Saved tarot data brought up to date, for data saved before cards recorded
- * where they came from:
- * - a birth card that matches the birth date's card is marked as worked out
- *   from it, so it follows a changed date;
- * - a shadow card a retired method filled in is dropped. It came from the
- *   birth card's digits, like the soul card that now shows on its own.
- * A birth card from a retired method that differs stays, for the person to
- * keep or replace.
+ * Saved tarot data with a source for each card saved before sources were
+ * recorded, worked out from the saved birth date:
+ * - a birth card that matches the birth date's card is 'birth_date';
+ * - one a retired method gave for that date is 'retired';
+ * - a shadow card a retired method filled in goes when the birth card is the
+ *   computed one, since the soul card now shows on its own, and is marked
+ *   'retired' otherwise, to go if that birth card is replaced.
+ * Any other card stays as it is.
  * @param {Record<string, any> | null | undefined} tarot @param {string} birthDate
  */
 export function settleTarot(tarot, birthDate) {
   if (!tarot) return tarot;
   const next = { ...tarot };
-  if (next.birth_card && !next.birth_card_source && cardId(next.birth_card) === birthCards(birthDate)?.personality.id) {
-    next.birth_card_source = 'birth_date';
+  const retired = retiredCards(birthDate);
+  const birth = cardId(next.birth_card);
+  if (birth !== null && !next.birth_card_source) {
+    if (birth === birthCards(birthDate)?.personality.id) next.birth_card_source = 'birth_date';
+    else if (retired?.birth.includes(birth)) next.birth_card_source = 'retired';
   }
   const shadow = cardId(next.shadow_card);
-  if (shadow !== null && !next.shadow_card_source && retiredCards(birthDate)?.shadow.includes(shadow)) {
-    delete next.shadow_card;
+  if (shadow !== null && !next.shadow_card_source && retired?.shadow.includes(shadow)) {
+    if (next.birth_card_source === 'birth_date') delete next.shadow_card;
+    else next.shadow_card_source = 'retired';
   }
   return next;
 }

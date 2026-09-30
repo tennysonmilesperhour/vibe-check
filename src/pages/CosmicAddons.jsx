@@ -21,7 +21,8 @@ import SymbolicReadings from "@/features/cosmos/SymbolicReadings";
 import GuardedReading from "@/features/cosmos/GuardedReading";
 import useHardMoment from "@/features/cosmos/useHardMoment";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
-import { followBirthCard, settleTarot } from "@/lib/resonance/tarotCards";
+import { followBirthCard, withComputedCard } from "@/lib/resonance/tarotCards";
+import { settleCosmicProfile } from "@/lib/resonance/settle";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
 import PlantVoice from '@/features/shell/PlantVoice';
@@ -100,9 +101,7 @@ export default function CosmicAddons() {
         try {
             const user = await base44.auth.me();
             if (user?.cosmic_profile) {
-                const saved = { ...EMPTY_PROFILE, ...user.cosmic_profile };
-                // Tarot cards saved before they recorded their source (tarotCards).
-                const merged = { ...saved, tarot_archetype: settleTarot(saved.tarot_archetype, saved.birth_date) };
+                const merged = settleCosmicProfile({ ...EMPTY_PROFILE, ...user.cosmic_profile });
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
                 setHasSavedProfile(true);
@@ -134,10 +133,9 @@ export default function CosmicAddons() {
     const useComputed = (conflict) => {
         const [systemKey, field] = conflict.field.split('.');
         setProfile(prev => {
-            // `value` is the computed value as the form stores it, where it differs.
-            const system = { ...(prev[systemKey] || {}), [field]: String(conflict.value ?? conflict.computed) };
+            if (conflict.field === 'tarot_archetype.birth_card') return { ...prev, tarot_archetype: withComputedCard(prev.tarot_archetype, prev.birth_date) };
+            const system = { ...(prev[systemKey] || {}), [field]: String(conflict.computed) };
             if (conflict.field === 'astrology.sun_sign') system.sun_source = 'date_estimate';
-            if (conflict.field === 'tarot_archetype.birth_card') system.birth_card_source = 'birth_date';
             return { ...prev, [systemKey]: system };
         });
     };
@@ -152,7 +150,7 @@ export default function CosmicAddons() {
     const setBirthDate = (birthDate) => setProfile(prev => ({
         ...prev,
         birth_date: birthDate,
-        tarot_archetype: followBirthCard(prev.tarot_archetype, prev.birth_date, birthDate),
+        tarot_archetype: followBirthCard(prev.tarot_archetype, birthDate),
     }));
 
     const toggleSystem = (systemId) => {

@@ -88,7 +88,11 @@ export function guardAnswer({ fetchStatus, isPending, isStale, data = null }) {
  */
 export function settleDecision(decided, answer, current) {
   if (decided?.final || answer === 'wait') return decided;
-  if (answer === 'provisional') return decided?.moment === current ? decided : { moment: current, final: false };
+  if (answer === 'provisional') {
+    // An answer from part of the record never outweighs harm already known.
+    const knownHarm = /** @type {any} */ (decided?.moment)?.kind === 'harm' && /** @type {any} */ (current)?.incomplete;
+    return decided?.moment === current || knownHarm ? decided : { moment: current, final: false };
+  }
   return { moment: current, final: true };
 }
 

@@ -120,9 +120,9 @@ export default function People() {
   };
 
   /**
-   * Remember that the person asked for a synergy reading. A linked friend's
-   * newer chart can't be fetched yet (see User in entities), so the reading
-   * uses the chart saved for them.
+   * Remember that the person asked for a synergy reading. Another account's
+   * chart can't be read from here, so the reading uses the chart saved for
+   * this person.
    */
   const generateSynergy = async (person) => {
     if (harmRecordedWith(person, journal)) return;

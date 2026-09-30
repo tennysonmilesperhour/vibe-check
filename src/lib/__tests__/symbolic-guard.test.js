@@ -70,6 +70,9 @@ describe('symbolic readings wait after a hard moment', () => {
     // A newer provisional answer, such as one found from part of the record, replaces it.
     const partial = { ...low, incomplete: true };
     expect(settleDecision(pause, 'provisional', partial)).toEqual({ moment: partial, final: false });
+    // ...but never outweighs harm already known.
+    const harmPause = settleDecision(undefined, 'provisional', { kind: 'harm', date: '2026-09-28' });
+    expect(settleDecision(harmPause, 'provisional', partial)).toBe(harmPause);
     expect(settleDecision(pause, 'final', null)).toEqual({ moment: null, final: true });
   });
 

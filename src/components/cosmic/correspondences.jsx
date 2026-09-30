@@ -88,7 +88,7 @@ Gene Keys are derived from the same 64 hexagrams as Human Design, which in turn 
 Both systems decode patterns in birth data. Numerology reduces the birth date to core numbers while astrology maps planetary positions at that moment. Life Path 1 often correlates with Aries/Leo sun themes; Life Path 2 with Libra/Cancer; Life Path 7 with Pisces/Scorpio.`,
 
     astrology_tarot: `
-The Major Arcana map directly to astrology: The Fool = Uranus/Aquarius, The High Priestess = Moon, The Empress = Venus, The Emperor = Aries, The Hierophant = Taurus, The Lovers = Gemini, etc. Birth cards connect to your numerological soul archetype.`,
+The Major Arcana map directly to astrology: The Fool = Uranus/Aquarius, The High Priestess = Moon, The Empress = Venus, The Emperor = Aries, The Hierophant = Taurus, The Lovers = Gemini, etc. Birth cards are worked out from your Life Path number.`,
 
     human_design_gene_keys: `
 Human Design and Gene Keys both use the 64 hexagrams of the I Ching. In HD they are called Gates; in Gene Keys they are called the 64 Keys. Your Life's Work Gene Key is the same as your Conscious Sun Gate in HD — the most visible aspect of your design.`,

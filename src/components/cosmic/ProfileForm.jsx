@@ -134,7 +134,7 @@ export function GeneKeysForm({ data, onChange }) {
         { key: 'evolution', label: "Evolution (Conscious Earth)", hint: "What grounds your life's work" },
         { key: 'radiance', label: "Radiance (Conscious Moon)", hint: "Your subconscious gift that naturally shines" },
         { key: 'purpose', label: "Purpose (Conscious Node)", hint: "Your soul's higher evolutionary direction" },
-        { key: 'attraction', label: "Attraction (Unconscious Sun)", hint: "What you naturally attract into your life" },
+        { key: 'attraction', label: "Attraction (Unconscious Sun)", hint: "The pattern of your closest relationships" },
         { key: 'iq', label: "IQ (Unconscious Node)", hint: "The deep intelligence shaping your path" },
     ];
     return (
@@ -240,7 +240,7 @@ export function TarotForm({ data, onChange, birthDate }) {
 
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Birth Card" hint="Your soul archetype — from your birth date">
+            <Field label="Birth Card" hint="Worked out from your birth date">
                 <div className="relative">
                     <SimpleSelect value={data?.birth_card} onChange={v => set('birth_card', v)} options={TAROT_MAJOR_ARCANA} />
                     {autoBirthCard && data?.birth_card === autoBirthCard && <AutoBadge />}

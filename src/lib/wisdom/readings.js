@@ -15,11 +15,13 @@ const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
 
 // ── Tarot / Oracle spread reading ────────────────────────────────────────────
 
-// Questions about safety, staying, leaving, or someone's treatment of you.
-// The cards can't weigh those, so the reading says so first. It errs toward
-// saying so: a safety note beside an unrelated question ("Should I leave my
-// job?") costs little, and a missed one can cost a lot.
-export const RELATIONSHIP_QUESTION = /\b(stay\w*|leav\w*|left|go back|hurt\w*|abus\w*|unsafe|safe(ty)?|danger\w*|scared|afraid|fear\w*|frighten\w*|threat\w*|kill\w*|hit|hits|hitting|beat\w*|push(ed|es|ing)?|shov\w*|chok\w*|violen\w*|yell\w*|scream\w*|shout\w*|control\w*|jealous\w*|cheat\w*|partner\w*|husband|wife|boyfriend|girlfriend|spouse|ex|dating|marr\w*|divorc\w*|break ?up|relationship\w*|trust (him|her|them)|loves? me)\b/i;
+// Questions about safety, staying, leaving, another person, or someone's
+// treatment of you. The cards can't weigh those, so the reading says so
+// first. Any question that mentions another person counts, since harm is
+// described in too many ways to list; a safety note beside an unrelated
+// question ("Will they like my work?") costs little, and a missed one can
+// cost a lot.
+export const RELATIONSHIP_QUESTION = /\b(he|she|they|him|her|them|his|hers|their|stay\w*|leav\w*|left|go back|forgiv\w*|hurt\w*|abus\w*|assault\w*|rap(e|ed|es|ing)|unsafe|safe(ty)?|danger\w*|scar(e|ed|es|ing)|afraid|terrif\w*|fear\w*|frighten\w*|threat\w*|kill\w*|hit|hits|hitting|slap\w*|punch\w*|kick\w*|beat\w*|push(ed|es|ing)?|shov\w*|chok\w*|strangl\w*|stalk\w*|violen\w*|yell\w*|scream\w*|shout\w*|control\w*|jealous\w*|cheat\w*|partner\w*|husband|wife|boyfriend|girlfriend|fianc\w*|spouse|ex|dating|marr\w*|divorc\w*|break\w* ?up|relationship\w*|loves? me)\b/i;
 
 /**
  * tarotReading({ spreadName, deck, cards, question, resonanceSummary })
@@ -43,8 +45,8 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
   const lines = cards.map(({ card, position, reversed }) => {
     const meaning = reversed && card.reversed ? card.reversed : card.meaning;
     const kw = (card.keywords || []).slice(0, 2).join(" and ");
-    const rev = reversed ? ", reversed," : "";
-    return `${position}: ${card.name}${rev}${kw ? ` speaks of ${kw}` : ""}. ${meaning}`;
+    const rev = reversed ? ", reversed" : "";
+    return `${position}: ${card.name}${rev}${kw ? `, a card of ${kw}` : ""}. ${meaning}`;
   });
   paras.push(lines.join(" "));
 
@@ -82,7 +84,7 @@ export function tarotReading({ spreadName = "spread", deck = "tarot", cards = []
 }
 
 // Card names can be phrases ("Choose the Living Option"), so they are never
-// used as the subject of a sentence here.
+// the subject of a sentence, here or in the position lines.
 function buildCarry(cards) {
   const last = cards[cards.length - 1];
   const focus = cards.find((c) => /advice|action|could lead|outcome/i.test(c.position)) || last;
@@ -90,7 +92,7 @@ function buildCarry(cards) {
   const options = [
     `${kw}. Where might it show up for you this week?`,
     `${kw}, in small, real ways. What could that look like today?`,
-    `${kw}, the thread of ${focus.card.name}. Notice where you meet it.`,
+    `${kw}, from the card "${focus.card.name}". Notice where you meet it.`,
   ];
   return pick(options, focus.card.id);
 }
@@ -197,13 +199,8 @@ function findTension(signals) {
 
 // ── Relationship synergy reading (two profiles) ───────────────────────────────
 
-// Every synergy reading carries this line. A saved reading without it was
-// made with wording that has since been replaced, so it isn't shown.
-export const SYNERGY_CAVEAT = "A chart cannot establish compatibility or excuse mistreatment.";
-export const currentSynergy = (text) => (text && text.includes(SYNERGY_CAVEAT) ? text : null);
-
 export function synergyReading(mine = {}, theirs = null, name = "this person") {
-  const lived = `We are the plants. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? ${SYNERGY_CAVEAT} A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`;
+  const lived = `We are the plants. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`;
   if (!theirs || Object.keys(theirs).length === 0) {
     return [
       `We don't have ${name}'s chart, and a chart couldn't tell you how ${name} treats you anyway. What you have recorded with ${name} says more than any reading could.`,

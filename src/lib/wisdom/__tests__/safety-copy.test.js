@@ -15,10 +15,10 @@ const BYPASSING = /universe (supports|is benevolent)|gift from the universe|mean
 
 // Lines that pushed toward risk or past someone's own sense of safety, framed
 // hard things as necessary or as a teacher, or read a feeling as failure.
-const PUSHING = /even where it feels risky|pick alive|scares and excites|act like it|you need to walk through|what needs to end\.|one clean, kind cut|necessary (collapse|disruption|pause|aloneness)|must fall|shadow teacher|it teaches|trust that endings|new life follows every ending|only real risk|reclaim (your|the) power|power you gave away|forgive, and rise|don't make big decisions|reframe today's worry|repeat:|blocked \w+ energy|raw emotion untempered|lack of faith|inability to move on|no truth in the now|you usually regret|not failures|savior or a scapegoat/i;
+const PUSHING = /even where it feels risky|pick alive|scares and excites|act like it|you need to walk through|what needs to end\.|one clean, kind cut|necessary (collapse|disruption|pause|aloneness)|must fall|shadow teacher|it teaches|trust that endings|new life follows every ending|only real risk|reclaim (your|the) power|power you gave away|forgive, and rise|don't make big decisions|reframe today's worry|repeat:|blocked \w+ energy|raw emotion untempered|lack of faith|inability to move on|no truth in the now|you usually regret|not failures|savior or a scapegoat|not a moment for pushing|changes the trajectory|stop deflecting|without the counterweight/i;
 
 // Lines that told the person who they are because of a card or a chart.
-const IDENTITY = /you carry the soul|you are here to|your soul archetype/i;
+const IDENTITY = /you carry the soul|you are here to|soul archetype/i;
 
 const card = (id) => FULL_DECK.find((item) => item.id === id);
 const oracle = (id) => ORACLE_DECK.find((item) => item.id === id);
@@ -33,9 +33,10 @@ describe('symbolic readings never talk over harm', () => {
     for (const text of texts([ARCANA, HD_TYPES, HD_PROFILES])) expect(text).not.toMatch(IDENTITY);
   });
 
-  it('says so first for questions about safety or a relationship, in any word form', () => {
+  it('says so first for questions about safety, a relationship or another person, in their common forms', () => {
     for (const question of ['Is he hurting me?', 'He hurts me, what do I do?', 'Should I be leaving him?', 'Should I stay with her?', 'Is my safety at risk at home?', 'Are my relationships healthy?', 'Should we breakup?', 'Can I trust him?', 'Does she love me?',
-      'Should I leave?', 'Should I stay?', 'Am I in danger?', 'Will he kill me?', 'He hit me', 'Is he controlling?', 'He yells at me every night', 'Should I go back?']) {
+      'Should I leave?', 'Should I stay?', 'Am I in danger?', 'Will he kill me?', 'He hit me', 'Is he controlling?', 'He yells at me every night', 'Should I go back?',
+      'He slapped me', 'I was assaulted', 'Someone is stalking me', 'I am terrified', 'My fiancé scares me', 'Are we breaking up?', 'Should I take him back?', 'Should I forgive him?', 'Will he change?', 'Is my partner good for me?']) {
       expect(question).toMatch(RELATIONSHIP_QUESTION);
     }
     for (const question of ['What should I focus on?', 'Will the project go well?', 'What do I need to know about this week?']) {
@@ -46,10 +47,12 @@ describe('symbolic readings never talk over harm', () => {
   it('reads cleanly with any spread, position or card name', () => {
     const three = tarotReading({ spreadName: 'Past · Present · What may come', cards: [{ card: card(12), position: 'What may come', reversed: false }], question: 'What is next?' });
     expect(three).toMatch(/^You laid out "Past · Present · What may come" with a question in mind/);
-    expect(three).toMatch(/What may come: The Hanged Man speaks of/);
+    expect(three).toMatch(/What may come: The Hanged Man, a card of pause and new perspective\./);
     const living = tarotReading({ spreadName: 'Daily Draw', deck: 'oracle', cards: [{ card: oracle(122), position: 'Your Message', reversed: false }] });
-    expect(living).not.toMatch(/choose the Living Option is/i);
-    expect(living).toMatch(/Something to carry, if it fits: aliveness/);
+    // A card name is never the subject of a sentence.
+    expect(living).toMatch(/Your Message: Choose the Living Option, a card of aliveness and choice\./);
+    expect(living).not.toMatch(/Choose the Living Option (is|speaks)|the thread of Choose/i);
+    expect(living).toMatch(/Something to carry, if it fits: aliveness, from the card "Choose the Living Option"\./);
   });
 
   it('sets the reading beside the chart, never beside today\'s sky', () => {

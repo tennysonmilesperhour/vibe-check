@@ -135,14 +135,17 @@ export function withChosenCard(tarot, card) {
 
 /**
  * Tarot data after the birth date changes: a birth card worked out from the
- * date is worked out again. Any other card stays, including a retired
- * method's, which the notice offers to keep or replace. It goes only by the
- * recorded source, since the date passes through partial values while it
- * is typed.
+ * date is worked out again, and without a full date it is cleared until the
+ * next one fills it in. Any other card stays, including a retired method's,
+ * which the notice offers to keep or replace. It goes only by the recorded
+ * source, since the date passes through partial values while it is typed.
  * @param {Record<string, any> | null | undefined} tarot @param {string} nextDate
  */
 export function followBirthCard(tarot, nextDate) {
-  return tarot?.birth_card && tarot.birth_card_source === 'birth_date' ? withComputedCard(tarot, nextDate) : tarot;
+  if (tarot?.birth_card_source !== 'birth_date') return tarot;
+  if (birthCards(nextDate)) return withComputedCard(tarot, nextDate);
+  const { birth_card: _card, ...rest } = tarot;
+  return rest;
 }
 
 /**

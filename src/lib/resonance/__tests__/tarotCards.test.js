@@ -93,6 +93,10 @@ describe("tarot birth cards (Mary K. Greer's method)", () => {
     expect(typed({ birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' }, partials(1985))).toEqual({ birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' });
     const retired = { birth_card: '3 – The Empress', birth_card_source: 'retired', shadow_card: '2 – The High Priestess', shadow_card_source: 'retired' };
     expect(typed(retired, partials(1985))).toEqual(retired);
+    // A date typed partway and then cleared leaves no card from the partial year; the next full date fills it in.
+    const cleared = typed({ birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' }, ['0002-11-23', '']);
+    expect(cleared).toEqual({ birth_card_source: 'birth_date' });
+    expect(followBirthCard(cleared, '1985-11-23')).toEqual({ birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' });
   });
 
   it('gives each saved card a source from the saved birth date', () => {

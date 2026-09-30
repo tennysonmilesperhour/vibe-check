@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry } from '@/api/entities';
 import { addDaysKey, todayKey } from '@/lib/dates';
-import { GUARD_DAYS, guardAnswer, recentHardMoment, settleDecision } from '@/lib/symbolic-guard';
+import { GUARD_DAYS, guardAnswer, momentFromReads, settleDecision } from '@/lib/symbolic-guard';
 
 /**
  * The latest hard moment in the last few days (see symbolic-guard), for
@@ -24,11 +24,7 @@ export default function useHardMoment() {
         DailyCheckIn.since(since, 'date,mood_score'),
         JournalEntry.since(since, 'date,mood_score,interaction_feeling,boundary_respected,is_draft'),
       ]);
-      if (checkIns.status === 'rejected' && journal.status === 'rejected') throw checkIns.reason;
-      return recentHardMoment({
-        checkIns: checkIns.status === 'fulfilled' ? checkIns.value : [],
-        journal: journal.status === 'fulfilled' ? journal.value : [],
-      });
+      return momentFromReads(checkIns, journal);
     },
     enabled: Boolean(user?.id),
     staleTime: 60_000,

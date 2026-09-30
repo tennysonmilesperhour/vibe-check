@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recentHardMoment, harmRecordedWith, guardAnswer, settleDecision } from '../symbolic-guard';
+import { recentHardMoment, harmRecordedWith, guardAnswer, settleDecision, momentFromReads } from '../symbolic-guard';
 
 const today = '2026-09-29';
 
@@ -66,5 +66,15 @@ describe('symbolic readings wait after a hard moment', () => {
     expect(settleDecision(pause, 'wait', null)).toBe(pause);
     expect(settleDecision(pause, 'provisional', low)).toBe(pause);
     expect(settleDecision(pause, 'final', null)).toEqual({ moment: null, final: true });
+  });
+
+  it('keeps a moment found in either read, and never concludes "none" from half the record', () => {
+    const ok = (value) => /** @type {PromiseSettledResult<any[]>} */ ({ status: 'fulfilled', value });
+    const down = /** @type {PromiseSettledResult<any[]>} */ ({ status: 'rejected', reason: new Error('down') });
+    const unsafe = [{ date: '2026-09-28', interaction_feeling: 'unsafe' }];
+    expect(momentFromReads(down, ok(unsafe), today)).toEqual({ kind: 'harm', date: '2026-09-28' });
+    expect(momentFromReads(ok([{ date: '2026-09-29', mood_score: 2 }]), down, today)).toEqual({ kind: 'low', date: '2026-09-29' });
+    expect(() => momentFromReads(ok([{ date: '2026-09-29', mood_score: 6 }]), down, today)).toThrow('down');
+    expect(momentFromReads(ok([]), ok([]), today)).toBeNull();
   });
 });

@@ -31,6 +31,24 @@ export function recentHardMoment({ checkIns = [], journal = [] } = {}, today = t
 }
 
 /**
+ * The hard moment from the guard's two reads, as Promise.allSettled results.
+ * A moment found in either stands; "no hard moment" needs both, so a read
+ * that half failed throws instead of lifting a pause.
+ * @param {PromiseSettledResult<any[]>} checkIns
+ * @param {PromiseSettledResult<any[]>} journal
+ * @param {string} [today]
+ */
+export function momentFromReads(checkIns, journal, today = todayKey()) {
+  const moment = recentHardMoment({
+    checkIns: checkIns.status === 'fulfilled' ? checkIns.value : [],
+    journal: journal.status === 'fulfilled' ? journal.value : [],
+  }, today);
+  const failed = [checkIns, journal].find((result) => result.status === 'rejected');
+  if (!moment && failed?.status === 'rejected') throw failed.reason;
+  return moment;
+}
+
+/**
  * What the guard's check says right now, from its query's state:
  * - 'wait': no answer yet, or only an old "no hard moment" while the check
  *   runs again (running or paused offline);

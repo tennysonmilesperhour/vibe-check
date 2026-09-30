@@ -292,7 +292,8 @@ export default function People() {
                   <GuardedReading guard={guard} readAnyway={readAnyway} onReadAnyway={() => setReadAnyway(true)} compact>
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>SYNERGY READING · FROM COSMOS</p>
-                      {!synergyText && (
+                      {/* Once shown, the reading only changes if a linked friend's chart does. */}
+                      {(!synergyText || detail.linked_user_email) && (
                         <button
                           type="button"
                           className="text-xs font-bold inline-flex items-center gap-1 underline underline-offset-4"
@@ -301,7 +302,7 @@ export default function People() {
                           disabled={synergyBusy}
                         >
                           <RefreshCw className={`w-3 h-3 ${synergyBusy ? "animate-spin" : ""}`} aria-hidden="true" />
-                          {synergyBusy ? "Reading…" : "Generate"}
+                          {synergyBusy ? "Reading…" : synergyText ? "Update their chart" : "Generate"}
                         </button>
                       )}
                     </div>

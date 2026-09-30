@@ -78,8 +78,8 @@ export default function CosmicAddons() {
     useBeforeUnload(isDirty);
     // After a hard moment, every tab with a reading waits until the person
     // asks for them once on this visit. The Loom's map stays.
-    const guard = useHardMoment();
     const [readAnyway, setReadAnyway] = useState(false);
+    const guard = useHardMoment({ watching: !readAnyway });
     const [skippedCheck, setSkippedCheck] = useState(() => new Set());
     const guarded = (tab, reading) => (
         <GuardedReading guard={guard} readAnyway={readAnyway || skippedCheck.has(tab)} onReadAnyway={() => setReadAnyway(true)}

@@ -67,6 +67,9 @@ describe('symbolic readings wait after a hard moment', () => {
     expect(pause).toEqual({ moment: low, final: false });
     expect(settleDecision(pause, 'wait', null)).toBe(pause);
     expect(settleDecision(pause, 'provisional', low)).toBe(pause);
+    // A newer provisional answer, such as one found from part of the record, replaces it.
+    const partial = { ...low, incomplete: true };
+    expect(settleDecision(pause, 'provisional', partial)).toEqual({ moment: partial, final: false });
     expect(settleDecision(pause, 'final', null)).toEqual({ moment: null, final: true });
   });
 

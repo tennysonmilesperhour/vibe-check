@@ -12,10 +12,11 @@ import { GUARD_DAYS, guardAnswer, momentFromReads, settleDecision } from '@/lib/
  * included; a current answer then decides for the visit, so later refreshes
  * never swap an open reading for the pause (see settleDecision).
  * waitingSince is when the page began waiting. If the check fails, readings
- * show as usual.
+ * show as usual. watching is false once the person chose to read anyway.
  */
-export default function useHardMoment() {
+export default function useHardMoment({ watching = true } = {}) {
   const { user } = useAuth();
+  const [decided, setDecided] = useState(/** @type {{ moment: any, final: boolean } | undefined} */ (undefined));
   const query = useQuery({
     queryKey: ['living', user?.id, 'hard-moment'],
     queryFn: async () => {
@@ -27,13 +28,14 @@ export default function useHardMoment() {
       return momentFromReads(checkIns, journal);
     },
     enabled: Boolean(user?.id),
-    // An answer found from part of the record is checked again until whole.
+    // An answer found from part of the record is checked again until whole,
+    // while its pause is showing: not once the page has decided or the
+    // person chose to read.
     staleTime: (query) => (query.state.data?.incomplete ? 0 : 60_000),
-    refetchInterval: (query) => (query.state.data?.incomplete ? 15_000 : false),
+    refetchInterval: watching && !decided?.final ? (query) => (query.state.data?.incomplete ? 15_000 : false) : false,
   });
   const waitingSince = useRef(Date.now()).current;
   const answer = guardAnswer({ fetchStatus: query.fetchStatus, isPending: query.isPending, isStale: query.isStale, data: query.data });
-  const [decided, setDecided] = useState(/** @type {{ moment: any, final: boolean } | undefined} */ (undefined));
   const settled = settleDecision(decided, answer, query.data || null);
   useEffect(() => { if (settled !== decided) setDecided(settled); }, [settled, decided]);
   return { moment: settled?.moment ?? null, checking: settled === undefined, waitingSince };

@@ -77,8 +77,9 @@ export function guardAnswer({ fetchStatus, isPending, isStale, data = null }) {
 /**
  * The page's decision about readings, undefined while waiting. A final
  * answer decides for the visit, so a later one never swaps an open reading
- * for the pause. A provisional pause holds until a final answer, which may
- * lift it: going from a pause to a reading is the safe direction.
+ * for the pause. A provisional pause follows each newer provisional answer
+ * and holds until a final one, which may lift it: going from a pause to a
+ * reading is the safe direction.
  * @template T
  * @param {{ moment: T | null, final: boolean } | undefined} decided
  * @param {'wait' | 'provisional' | 'final'} answer
@@ -87,7 +88,7 @@ export function guardAnswer({ fetchStatus, isPending, isStale, data = null }) {
  */
 export function settleDecision(decided, answer, current) {
   if (decided?.final || answer === 'wait') return decided;
-  if (answer === 'provisional') return decided ?? { moment: current, final: false };
+  if (answer === 'provisional') return decided?.moment === current ? decided : { moment: current, final: false };
   return { moment: current, final: true };
 }
 

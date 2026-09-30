@@ -19,10 +19,10 @@ import { timelineEntries } from "@/lib/living-patterns";
 import { parseLocalDate } from "@/lib/dates";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
-import { UserPlus, Users, Sparkle, RefreshCw, Trash2, Pencil } from "lucide-react";
+import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
-const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "", linked_user_email: "" };
+const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
 
 /** Everyone you're in orbit with: merged Relationships + Constellation. */
 export default function People() {
@@ -82,7 +82,6 @@ export default function People() {
       qualities: (person.qualities || []).join(", "),
       concerns: (person.concerns || []).join(", "),
       boundary_notes: person.boundary_notes || "",
-      linked_user_email: person.linked_user_email || "",
     } : EMPTY_FORM);
   };
 
@@ -94,7 +93,6 @@ export default function People() {
       qualities: form.qualities.split(",").map((s) => s.trim()).filter(Boolean),
       concerns: form.concerns.split(",").map((s) => s.trim()).filter(Boolean),
       boundary_notes: form.boundary_notes,
-      linked_user_email: form.linked_user_email.trim() || undefined,
     };
     if (!payload.name) return;
     try {
@@ -191,11 +189,6 @@ export default function People() {
                       ? `${stats.mentions} tagged check-ins · daily mood ${stats.avgMood} · last ${format(parseLocalDate(stats.lastMention), "MMM d")}`
                       : "Not yet part of a check-in"}
                   </p>
-                  {person.linked_user_email && (
-                    <p className="text-xs mt-1 inline-flex items-center gap-1" style={{ color: "var(--gh-accent)" }}>
-                      <Sparkle className="w-3 h-3" aria-hidden="true" /> On vibe check
-                    </p>
-                  )}
                 </button>
               );
             })}
@@ -351,10 +344,6 @@ export default function People() {
               <div>
                 <Label htmlFor="p-boundary">Boundary notes</Label>
                 <Textarea id="p-boundary" value={form.boundary_notes} onChange={(e) => setForm({ ...form, boundary_notes: e.target.value })} rows={2} className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="p-email">Their vibe check email (optional, links profiles for synergy)</Label>
-                <Input id="p-email" type="email" value={form.linked_user_email} onChange={(e) => setForm({ ...form, linked_user_email: e.target.value })} className="mt-1" />
               </div>
               <div className="flex justify-end gap-2">
                 <button type="button" className="px-4 py-2 text-sm" style={{ border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 3px)", color: "var(--gh-ink-soft)" }} onClick={() => setEditing(null)}>

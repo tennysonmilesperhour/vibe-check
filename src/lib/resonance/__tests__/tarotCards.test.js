@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { birthCards, cardId, cardOption, followBirthCard, retiredCards, settleTarot, withComputedCard, yearCard, yearCardOn } from '../tarotCards.js';
+import { birthCards, cardId, cardOption, followBirthCard, retiredCards, settleTarot, withChosenCard, withComputedCard, yearCard, yearCardOn } from '../tarotCards.js';
 import { TAROT_MAJOR_ARCANA } from '@/components/cosmic/correspondences';
 
 describe("tarot birth cards (Mary K. Greer's method)", () => {
@@ -70,19 +70,29 @@ describe("tarot birth cards (Mary K. Greer's method)", () => {
     expect(withComputedCard({ birth_card: '1 – The Magician' }, '')).toEqual({ birth_card: '1 – The Magician' });
   });
 
+  it('records a chosen card, dropping a shadow card worked out from the one it replaces', () => {
+    expect(withChosenCard({ birth_card: '11 – Justice', birth_card_source: 'retired', shadow_card: '2 – The High Priestess', shadow_card_source: 'retired' }, '16 – The Tower'))
+      .toEqual({ birth_card: '16 – The Tower', birth_card_source: 'entered' });
+    expect(withChosenCard({ shadow_card: '3 – The Empress', shadow_card_source: 'entered' }, '16 – The Tower'))
+      .toEqual({ birth_card: '16 – The Tower', birth_card_source: 'entered', shadow_card: '3 – The Empress', shadow_card_source: 'entered' });
+  });
+
   it('follows a changed birth date by the recorded source', () => {
     const follow = (tarot, date = '1985-11-23') => followBirthCard(tarot, date)?.birth_card;
     expect(follow({ birth_card: '5 – The Hierophant', birth_card_source: 'birth_date' })).toBe('12 – The Hanged Man');
-    expect(follow({ birth_card: '3 – The Empress', birth_card_source: 'retired' })).toBe('12 – The Hanged Man');
-    // A card the person chose stays, and so does one with no source.
+    // A card the person chose stays, and so do an earlier method's card, left
+    // for the notice, and one with no source.
     expect(follow({ birth_card: '5 – The Hierophant', birth_card_source: 'entered' })).toBe('5 – The Hierophant');
+    expect(follow({ birth_card: '3 – The Empress', birth_card_source: 'retired' })).toBe('3 – The Empress');
     expect(follow({ birth_card: '5 – The Hierophant' })).toBe('5 – The Hierophant');
     expect(follow({})).toBeUndefined();
     // While a date is typed it passes through empty and partial values; the card ends on the final date.
-    /** @type {any} */
-    let tarot = { birth_card: '3 – The Empress', birth_card_source: 'retired' };
-    for (const date of ['', '0001-11-23', '0019-11-23', '0198-11-23', '1986-11-23']) tarot = followBirthCard(tarot, date);
-    expect(tarot).toEqual({ birth_card: '4 – The Emperor', birth_card_source: 'birth_date' });
+    const typed = (tarot, dates) => dates.reduce((current, date) => followBirthCard(current, date), tarot);
+    const partials = (year) => ['', `0001-11-23`, `0019-11-23`, `0198-11-23`, `${year}-11-23`];
+    expect(typed({ birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' }, partials(1986))).toEqual({ birth_card: '4 – The Emperor', birth_card_source: 'birth_date' });
+    expect(typed({ birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' }, partials(1985))).toEqual({ birth_card: '12 – The Hanged Man', birth_card_source: 'birth_date' });
+    const retired = { birth_card: '3 – The Empress', birth_card_source: 'retired', shadow_card: '2 – The High Priestess', shadow_card_source: 'retired' };
+    expect(typed(retired, partials(1985))).toEqual(retired);
   });
 
   it('gives each saved card a source from the saved birth date', () => {

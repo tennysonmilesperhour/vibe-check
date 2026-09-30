@@ -9,6 +9,17 @@ import { settleTarot } from './tarotCards.js';
 export const RELABELED_SPHERES = ['radiance', 'purpose', 'attraction', 'iq'];
 
 /**
+ * Gene Keys data with a sphere set. A sphere first entered under the
+ * current labels needs no check; one saved under the old labels still does.
+ * @param {Record<string, any> | null | undefined} geneKeys @param {string} key @param {string} value
+ */
+export function withSphere(geneKeys, key, value) {
+  const next = { ...geneKeys, [key]: value };
+  if (RELABELED_SPHERES.includes(key) && next.positions_checked === undefined) next.positions_checked = true;
+  return next;
+}
+
+/**
  * The profile with earlier data settled:
  * - tarot cards get a source (settleTarot);
  * - Gene Keys spheres saved under the old labels are marked

@@ -104,34 +104,42 @@ export function retiredCards(birthDate) {
 // - none: saved before sources were recorded (settleTarot sorts these out).
 // A shadow card a retired method filled in is marked 'retired' the same way.
 
+// A shadow card a retired method worked out from the old birth card's
+// digits goes when that birth card is replaced.
+/** @param {Record<string, any>} tarot */
+const replacedCard = (tarot) => {
+  if (tarot.shadow_card_source !== 'retired') return tarot;
+  const { shadow_card: _card, shadow_card_source: _source, ...rest } = tarot;
+  return rest;
+};
+
 /**
- * Tarot data with the birth card worked out from the birth date. A shadow
- * card a retired method filled in goes with the old birth card: the soul
- * card now shows on its own.
+ * Tarot data with the birth card worked out from the birth date.
  * @param {Record<string, any> | null | undefined} tarot @param {string} birthDate
  */
 export function withComputedCard(tarot, birthDate) {
   const cards = birthCards(birthDate);
-  if (!cards) return tarot;
-  /** @type {Record<string, any>} */
-  const next = { ...tarot, birth_card: cardOption(cards.personality.id), birth_card_source: 'birth_date' };
-  if (next.shadow_card_source === 'retired') {
-    delete next.shadow_card;
-    delete next.shadow_card_source;
-  }
-  return next;
+  return cards ? replacedCard({ ...tarot, birth_card: cardOption(cards.personality.id), birth_card_source: 'birth_date' }) : tarot;
 }
 
 /**
- * Tarot data after the birth date changes. A birth card the app filled in is
- * worked out again from the new date; a card the person chose, or one saved
- * without a source, stays. It goes only by the recorded source, since the
- * date passes through partial values while it is typed.
+ * Tarot data with a birth card the person chose.
+ * @param {Record<string, any> | null | undefined} tarot @param {string} card
+ */
+export function withChosenCard(tarot, card) {
+  return replacedCard({ ...tarot, birth_card: card, birth_card_source: 'entered' });
+}
+
+/**
+ * Tarot data after the birth date changes: a birth card worked out from the
+ * date is worked out again. Any other card stays, including a retired
+ * method's, which the notice offers to keep or replace. It goes only by the
+ * recorded source, since the date passes through partial values while it
+ * is typed.
  * @param {Record<string, any> | null | undefined} tarot @param {string} nextDate
  */
 export function followBirthCard(tarot, nextDate) {
-  const source = tarot?.birth_card_source;
-  return tarot?.birth_card && (source === 'birth_date' || source === 'retired') ? withComputedCard(tarot, nextDate) : tarot;
+  return tarot?.birth_card && tarot.birth_card_source === 'birth_date' ? withComputedCard(tarot, nextDate) : tarot;
 }
 
 /**

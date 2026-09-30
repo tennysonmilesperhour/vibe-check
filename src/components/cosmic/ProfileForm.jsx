@@ -17,7 +17,8 @@ import {
     personalYear, personalMonth, personalDay, karmicDebts,
 } from "@/lib/resonance/numerology";
 import AstrologyProfile from "./AstrologyProfile";
-import { birthCards, cardId, cardOption, withComputedCard, yearCardOn } from "@/lib/resonance/tarotCards";
+import { birthCards, cardId, cardOption, withChosenCard, withComputedCard, yearCardOn } from "@/lib/resonance/tarotCards";
+import { withSphere } from "@/lib/resonance/settle";
 import { todayKey } from "@/lib/dates";
 
 const str = (n) => (n == null ? null : String(n));
@@ -130,7 +131,7 @@ export function GeneKeysForm({ data, onChange }) {
             )}
             {keyFields.map(({ key, label, hint }) => (
                 <Field key={key} label={label} hint={hint}>
-                    <SimpleSelect value={data?.[key]} onChange={v => set(key, v)} options={GENE_KEY_NUMBERS} placeholder="Key 1–64" />
+                    <SimpleSelect value={data?.[key]} onChange={v => onChange(withSphere(data, key, v))} options={GENE_KEY_NUMBERS} placeholder="Key 1–64" />
                 </Field>
             ))}
             <div className="md:col-span-2">
@@ -230,7 +231,7 @@ export function TarotForm({ data, onChange, birthDate }) {
         if (autoBirthCard && !data?.birth_card) onChange(withComputedCard(data, birthDate));
     }, [birthDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const chooseBirthCard = (card) => onChange(card === autoBirthCard ? withComputedCard(data, birthDate) : { ...data, birth_card: card, birth_card_source: 'entered' });
+    const chooseBirthCard = (card) => onChange(card === autoBirthCard ? withComputedCard(data, birthDate) : withChosenCard(data, card));
 
     return (
         <div className="grid md:grid-cols-2 gap-5">

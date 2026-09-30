@@ -22,7 +22,7 @@ import GuardedReading from "@/features/cosmos/GuardedReading";
 import useHardMoment from "@/features/cosmos/useHardMoment";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
 import { followBirthCard, withComputedCard } from "@/lib/resonance/tarotCards";
-import { settleCosmicProfile } from "@/lib/resonance/settle";
+import { settleCosmicProfile, settleOnSave } from "@/lib/resonance/settle";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
 import PlantVoice from '@/features/shell/PlantVoice';
@@ -119,7 +119,7 @@ export default function CosmicAddons() {
         }
         setIsSaving(true);
         try {
-            const settled = settleCosmicProfile(profile);
+            const settled = settleOnSave(profile);
             await base44.auth.updateMe({ cosmic_profile: settled });
             // Keep any edit made while saving; it settles on the next save.
             setProfile(prev => (prev === profile ? settled : prev));

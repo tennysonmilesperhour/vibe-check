@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { astrologyPlacements, astrologyAspects } from "@/lib/wisdom/astrology";
 import { deriveAstrology } from "@/lib/resonance/astrology";
 import { AstrologySources } from "./AstrologyGuide";
-import { systemReading, GENE_KEYS_RECHECK } from "@/lib/wisdom/engine";
-import { RELABELED_SPHERES } from "@/lib/resonance/settle";
+import { systemReading } from "@/lib/wisdom/engine";
+import { needsPositionCheck, POSITION_CHECK_NOTE } from "@/lib/resonance/settle";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { systemMeta, tint } from "./systemMeta";
@@ -89,10 +89,9 @@ function GeneKeysDetail({ data }) {
       { label: "IQ (Personality Venus)", key: "iq" },
     ]},
   ];
-  const recheck = data?.positions_checked === false && RELABELED_SPHERES.some((key) => data?.[key]);
   return (
     <>
-      {recheck && <p className="text-xs mb-3" role="note" style={{ color: 'var(--gh-ink-soft)' }}>{GENE_KEYS_RECHECK}</p>}
+      {needsPositionCheck(data) && <p className="text-xs mb-3" role="note" style={{ color: 'var(--gh-ink-soft)' }}>{POSITION_CHECK_NOTE}</p>}
       {sequences.map(seq => (
         <Section key={seq.group} title={seq.group}>
           {seq.keys.map(k => data?.[k.key] && (

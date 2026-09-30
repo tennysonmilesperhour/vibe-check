@@ -150,7 +150,10 @@ describe('symbolic readings never talk over harm', () => {
     expect(reading).toMatch(/Your Soul Card: The High Priestess/i);
     expect(reading).not.toMatch(/Your Shadow Card|The two together/i);
     // Beside a card that isn't the computed one, it is still read.
-    const kept = JSON.stringify(systemReading('tarot_archetype', data, { ...profile, birth_date: '1960-01-03' }));
+    const earlier = JSON.stringify(systemReading('tarot_archetype', data, { ...profile, birth_date: '1960-01-03' }));
+    expect(earlier).toMatch(/Your Shadow Card: The High Priestess/i);
+    // So it is beside a card the person kept, even when it is the computed one.
+    const kept = JSON.stringify(systemReading('tarot_archetype', { ...data, birth_card_source: 'entered' }, profile));
     expect(kept).toMatch(/Your Shadow Card: The High Priestess/i);
   });
 

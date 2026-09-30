@@ -18,7 +18,7 @@ import {
 } from "@/lib/resonance/numerology";
 import AstrologyProfile from "./AstrologyProfile";
 import { birthCards, cardId, cardOption, withChosenCard, withComputedCard, yearCardOn } from "@/lib/resonance/tarotCards";
-import { withSphere } from "@/lib/resonance/settle";
+import { needsPositionCheck, POSITION_CHECK_NOTE, withSphere } from "@/lib/resonance/settle";
 import { todayKey } from "@/lib/dates";
 
 const str = (n) => (n == null ? null : String(n));
@@ -108,8 +108,6 @@ export function HumanDesignForm({ data, onChange }) {
 
 export function GeneKeysForm({ data, onChange }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
-    // Spheres saved under the form's old position labels (settleCosmicProfile).
-    const recheck = data?.positions_checked === false;
     const keyFields = [
         { key: 'life_work', label: "Life's Work (Personality Sun)", hint: "Your work in the world; also your Conscious Sun gate in Human Design" },
         { key: 'evolution', label: "Evolution (Personality Earth)", hint: "The challenges you grow through" },
@@ -120,10 +118,10 @@ export function GeneKeysForm({ data, onChange }) {
     ];
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            {recheck && (
+            {needsPositionCheck(data) && (
                 <div className="md:col-span-2 text-xs p-3" role="note"
                     style={{ color: 'var(--gh-ink-soft)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
-                    <p>Earlier versions of this form named the wrong chart positions for Radiance, Purpose, Attraction and IQ. If you looked these up in a Human Design chart, check them against your Gene Keys profile.</p>
+                    <p>{POSITION_CHECK_NOTE}</p>
                     <button type="button" onClick={() => onChange({ ...data, positions_checked: true })} className="mt-1 font-bold underline underline-offset-4" style={{ color: 'var(--gh-accent)' }}>
                         They're right
                     </button>

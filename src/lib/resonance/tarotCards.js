@@ -101,8 +101,11 @@ export function retiredCards(birthDate) {
 // - 'birth_date': worked out from the birth date by Greer's method;
 // - 'retired': filled in by a retired method, for the person to keep or replace;
 // - 'entered': chosen by the person, and never challenged;
-// - none: saved before sources were recorded (settleTarot sorts these out).
-// A shadow card a retired method filled in is marked 'retired' the same way.
+// - 'saved': saved before sources were recorded, from no method Vibe Check
+//   knows, so possibly the person's own;
+// - none: saved before sources were recorded, and not yet sorted out
+//   (settleTarot does that once, against the birth date it was saved with).
+// A shadow card gets 'retired' or 'saved' the same way.
 
 // A shadow card a retired method worked out from the old birth card's
 // digits goes when that birth card is replaced.
@@ -143,16 +146,36 @@ export function followBirthCard(tarot, nextDate) {
 }
 
 /**
- * Saved tarot data with its sources settled against the birth date, when
- * the Cosmos page loads and again when the profile is saved:
- * - a birth card with no source, or an earlier method's, that matches the
- *   birth date's card becomes 'birth_date';
- * - one with no source that an earlier method gave for that date becomes
- *   'retired';
- * - a shadow card with no source that an earlier method gave becomes
- *   'retired', and goes beside a 'birth_date' card, whose soul card now
- *   shows on its own.
- * Any other card stays as it is.
+ * Whether a shadow card a retired method filled in gives way to the soul
+ * card: beside the birth date's own card, unless the person kept their card.
+ * @param {Record<string, any> | null | undefined} tarot
+ * @param {boolean} isComputedCard whether the birth card is the birth date's card
+ */
+export const shadowGivesWay = (tarot, isComputedCard) =>
+  isComputedCard && tarot?.shadow_card_source === 'retired' && tarot?.birth_card_source !== 'entered';
+
+/**
+ * Tarot data squared with the birth date, when the profile loads and when
+ * it is saved: an earlier method's birth card that is now the birth date's
+ * card becomes 'birth_date', and a shadow card that gives way goes.
+ * @param {Record<string, any> | null | undefined} tarot @param {string} birthDate
+ */
+export function reconcileTarot(tarot, birthDate) {
+  if (!tarot) return tarot;
+  const birth = cardId(tarot.birth_card);
+  const isComputedCard = birth !== null && birth === birthCards(birthDate)?.personality.id;
+  const next = isComputedCard && tarot.birth_card_source === 'retired' ? { ...tarot, birth_card_source: 'birth_date' } : tarot;
+  return shadowGivesWay(next, isComputedCard) ? replacedCard(next) : next;
+}
+
+/**
+ * Saved tarot data as the Cosmos page loads it. Cards with no source get
+ * one, against the birth date they were saved with: a birth card that
+ * matches the date's card is 'birth_date', one a retired method gave is
+ * 'retired', and any other is 'saved'; a shadow card a retired method gave
+ * is 'retired', and any other 'saved'. Once a card has a source it is never
+ * judged against a later date. Then it is squared with the date
+ * (reconcileTarot).
  * @param {Record<string, any> | null | undefined} tarot @param {string} birthDate
  */
 export function settleTarot(tarot, birthDate) {
@@ -160,12 +183,10 @@ export function settleTarot(tarot, birthDate) {
   const next = { ...tarot };
   const retired = retiredCards(birthDate);
   const birth = cardId(next.birth_card);
-  const source = next.birth_card_source;
-  if (birth !== null && (!source || source === 'retired')) {
-    if (birth === birthCards(birthDate)?.personality.id) next.birth_card_source = 'birth_date';
-    else if (!source && retired?.birth.includes(birth)) next.birth_card_source = 'retired';
+  if (birth !== null && !next.birth_card_source) {
+    next.birth_card_source = birth === birthCards(birthDate)?.personality.id ? 'birth_date' : retired?.birth.includes(birth) ? 'retired' : 'saved';
   }
   const shadow = cardId(next.shadow_card);
-  if (shadow !== null && !next.shadow_card_source && retired?.shadow.includes(shadow)) next.shadow_card_source = 'retired';
-  return next.birth_card_source === 'birth_date' ? replacedCard(next) : next;
+  if (shadow !== null && !next.shadow_card_source) next.shadow_card_source = retired?.shadow.includes(shadow) ? 'retired' : 'saved';
+  return reconcileTarot(next, birthDate);
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { settleCosmicProfile, withSphere } from '../settle.js';
+import { needsPositionCheck, settleCosmicProfile, settleOnSave, withSphere } from '../settle.js';
 
 describe('settleCosmicProfile', () => {
   it('asks for a check of Gene Keys spheres saved under the old labels', () => {
@@ -20,6 +20,22 @@ describe('settleCosmicProfile', () => {
     expect(withSphere({ radiance: '31', iq: '5', positions_checked: false }, 'iq', '6').positions_checked).toBe(false);
     // Other fields don't count.
     expect(withSphere({}, 'life_work', '51')).toEqual({ life_work: '51' });
+  });
+
+  it('knows when spheres still need a check', () => {
+    expect(needsPositionCheck({ radiance: '31', positions_checked: false })).toBe(true);
+    expect(needsPositionCheck({ life_work: '51', positions_checked: false })).toBe(false);
+    expect(needsPositionCheck({ radiance: '31', positions_checked: true })).toBe(false);
+    expect(needsPositionCheck(undefined)).toBe(false);
+  });
+
+  it('squares tarot cards with the final birth date on save, without sorting out unsourced cards', () => {
+    // An earlier card that the new date makes the computed one.
+    const kept = { birth_date: '1970-11-28', tarot_archetype: { birth_card: '11 – Justice', birth_card_source: 'retired', shadow_card: '2 – The High Priestess', shadow_card_source: 'retired' } };
+    expect(settleOnSave(kept).tarot_archetype).toEqual({ birth_card: '11 – Justice', birth_card_source: 'birth_date' });
+    // A card with no source is left for the next load.
+    const unsourced = { birth_date: '1978-01-02', tarot_archetype: { birth_card: '19 – The Sun', birth_card_source: 'birth_date', shadow_card: '10 – Wheel of Fortune' } };
+    expect(settleOnSave(unsourced).tarot_archetype).toEqual(unsourced.tarot_archetype);
   });
 
   it('gives saved tarot cards a source', () => {

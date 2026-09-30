@@ -81,6 +81,28 @@ describe('deriveAll', () => {
     expect(conflict).toBeTruthy();
     expect(conflict.entered).toBe('The Hermit');
     expect(conflict.computed).toBe('The Hierophant');
+    // The card as the form stores it, for "Use".
+    expect(conflict.value).toBe('5 – The Hierophant');
+    expect(conflict.retired).toBe(false);
+  });
+
+  it('marks a birth card the retired Life Path method filled in', () => {
+    // Life Path 3 gave The Empress; Greer's method gives The Hanged Man.
+    const legacy = { ...profile, birth_date: '1985-11-23', tarot_archetype: { birth_card: '3 – The Empress' } };
+    const conflict = deriveAll(legacy, '2026-07-02').conflicts.find((c) => c.field === 'tarot_archetype.birth_card');
+    expect(conflict).toMatchObject({ computed: 'The Hanged Man', value: '12 – The Hanged Man', retired: true, retiredShadow: null });
+    // Life Path 11 gave Justice with The High Priestess as its shadow card.
+    const eleven = { ...profile, birth_date: '1960-01-03', tarot_archetype: { birth_card: '11 – Justice', shadow_card: '2 – The High Priestess' } };
+    expect(deriveAll(eleven, '2026-07-02').conflicts.find((c) => c.field === 'tarot_archetype.birth_card'))
+      .toMatchObject({ computed: 'Judgement', retired: true, retiredShadow: '2 – The High Priestess' });
+  });
+
+  it('leaves a birth card the person chose alone', () => {
+    const kept = { ...profile, birth_date: '1985-11-23', tarot_archetype: { birth_card: '3 – The Empress', birth_card_source: 'entered' } };
+    expect(deriveAll(kept, '2026-07-02').conflicts.filter((c) => c.field === 'tarot_archetype.birth_card')).toEqual([]);
+    // A card filled in from an earlier birth date is still checked, and is not the retired method's.
+    const filled = { ...profile, tarot_archetype: { birth_card: '3 – The Empress', birth_card_source: 'birth_date' } };
+    expect(deriveAll(filled, '2026-07-02').conflicts.find((c) => c.field === 'tarot_archetype.birth_card')).toMatchObject({ retired: false });
   });
 
   it('no conflicts when entered matches computed', () => {

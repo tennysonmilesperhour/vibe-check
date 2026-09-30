@@ -170,7 +170,9 @@ function tarotArchetypeReading(data, computed) {
   if (soul && soul.name !== birth?.name) {
     sections.push({ h: `Your Soul Card: ${soul.name}`, p: soul.archetype });
   }
-  if (shadow && shadow.name !== birth?.name) {
+  // A shadow card that repeats the soul card (as the retired Life Path method
+  // filled one in) is already read above.
+  if (shadow && shadow.name !== birth?.name && shadow.name !== soul?.name) {
     sections.push({ h: `Your Shadow Card: ${shadow.name}`, p: shadow.shadow });
     sections.push({
       h: "The two together",

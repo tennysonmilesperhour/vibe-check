@@ -2,7 +2,7 @@
 // (or spent an LLM call). Component method with master numbers preserved
 // for core numbers; personal cycles reduce to single digits.
 
-const digitSum = (n) => String(n).split('').reduce((a, d) => a + Number(d), 0);
+export const digitSum = (n) => String(n).split('').reduce((a, d) => a + Number(d), 0);
 
 export function reduceKeepMasters(n) {
   while (n > 9 && n !== 11 && n !== 22 && n !== 33) n = digitSum(n);
@@ -14,7 +14,8 @@ export function reduceSingle(n) {
   return n;
 }
 
-const parts = (birthDate) => {
+/** A YYYY-MM-DD birth date as numbers, or null. */
+export const parts = (birthDate) => {
   if (!birthDate || !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) return null;
   const [y, m, d] = birthDate.split('-').map(Number);
   return { y, m, d };

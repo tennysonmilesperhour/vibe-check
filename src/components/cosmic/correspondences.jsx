@@ -97,10 +97,10 @@ Human Design and Gene Keys both use the 64 hexagrams of the I Ching. Human Desig
 Human Design says its nine centers grew out of the seven chakras, and teachers pair them in different ways. Vibe Check pairs them by theme: Head with Crown, Ajna with Third Eye, Throat with Throat, the G center with Heart and Throat, the Heart (will) center with Solar Plexus, the emotional Solar Plexus center and the Sacral center with Sacral, and Root with Root. The Spleen center has no single match. This pairing is Vibe Check's own.`,
 
     numerology_tarot: `
-Every Major Arcana card has a number, so numerology and tarot share number symbolism. Tarot birth cards, by Mary K. Greer's method, come from the same birth date as your Life Path, and the card's number reduces to your Life Path's single digit.`,
+Every Major Arcana card has a number, so numerology and tarot share number symbolism. Tarot birth cards, by Mary K. Greer's method, come from the same birth date as your Life Path, so the card's number, with The Fool counted as 22, reduces to the same single digit as your Life Path.`,
 
     gene_keys_chakras: `
-Gene Keys groups the keys from your chart into sequences: the Activation Sequence (life's work, evolution, radiance and purpose), the Venus Sequence (relationships and emotional patterns) and the Pearl Sequence (work and prosperity). Pairing these with chakras is Vibe Check's own association, not part of Gene Keys.`,
+Gene Keys groups the keys from your chart into sequences: the Activation Sequence (life's work, evolution, radiance and purpose), the Venus Sequence (relationships and emotional patterns) and the Pearl Sequence (work and prosperity). Vibe Check pairs the Activation Sequence with the lower chakras, for the body and health, the Venus Sequence with the heart, and the Pearl Sequence with the throat and crown, for work and expression. This pairing is Vibe Check's own association, not part of Gene Keys.`,
 
     enneagram_astrology: `
 Both describe patterns in how people meet the world. Linking particular types to signs or planets is a modern association, not part of either system, so compare them as two lenses rather than as confirmation.`,

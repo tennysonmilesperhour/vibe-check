@@ -40,9 +40,23 @@ describe('resonanceGraph', () => {
   it('links a two-digit birth card that reduces to the Life Path, and not an unrelated one', () => {
     // 11 + 23 + 1985 = 2019 -> 12, The Hanged Man, which reduces to 3, the Life Path.
     const hanged = resonanceGraph({ ...profile, birth_date: '1985-11-23', numerology: {}, tarot_archetype: {} }, '2026-07-02');
-    expect(hanged.edges.find((e) => e.kind === 'number')?.why).toMatch(/The Hanged Man, reduces to 3, the same number as your Life Path/);
+    expect(hanged.edges.find((e) => e.kind === 'number')?.why).toBe('Your birth card, The Hanged Man, is card 12, and your Life Path is 3. Both reduce to 3.');
     const unrelated = resonanceGraph({ ...profile, tarot_archetype: { birth_card: 'The Tower' } }, '2026-07-02');
     expect(unrelated.edges.find((e) => e.kind === 'number')).toBeUndefined();
+  });
+
+  it('words the number link for a matching card, a master number and The Fool', () => {
+    const why = (overrides) => resonanceGraph({ ...profile, ...overrides }, '2026-07-02').edges.find((e) => e.kind === 'number')?.why;
+    expect(graph.edges.find((e) => e.kind === 'number')?.why).toBe('Your birth card, The Hierophant, is card 5, the same number as your Life Path.');
+    // Life Path 11 with The High Priestess shares the root 2, not the number.
+    expect(why({ numerology: { life_path: '11' }, tarot_archetype: { birth_card: '2 – The High Priestess' } }))
+      .toBe('Your birth card, The High Priestess, is card 2, and your Life Path is 11. Both reduce to 2.');
+    expect(why({ numerology: { life_path: '11' }, tarot_archetype: { birth_card: '11 – Justice' } }))
+      .toBe('Your birth card, Justice, is card 11, the same number as your Life Path.');
+    expect(why({ numerology: { life_path: '4' }, tarot_archetype: { birth_card: '0 – The Fool' } }))
+      .toBe('Your birth card, The Fool, counts as 22, and your Life Path is 4. Both reduce to 4.');
+    expect(why({ numerology: { life_path: '22' }, tarot_archetype: { birth_card: 'The Fool' } }))
+      .toBe('Your birth card, The Fool, counts as 22, the same number as your Life Path.');
   });
 
   it('links birth card to its Golden Dawn sign (Hierophant -> Taurus)', () => {

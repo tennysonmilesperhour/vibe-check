@@ -122,7 +122,7 @@ const PDF_INK = [27, 36, 26];
 const PDF_ACCENT = [52, 73, 47];
 const PDF_MUTED = [84, 94, 65];
 
-async function exportToPDF(systemLabel, reportText, profileData) {
+async function exportToPDF(systemLabel, reportText, profileData, origin) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
@@ -139,7 +139,16 @@ async function exportToPDF(systemLabel, reportText, profileData) {
   doc.setFontSize(9);
   doc.setTextColor(...PDF_MUTED);
   doc.text(`Composed ${new Date().toLocaleDateString()} · Vibe Check`, margin, y);
-  y += 10;
+  y += 6;
+  // Where the system comes from and who Vibe Check is not affiliated with.
+  if (origin) {
+    doc.setFontSize(8.5);
+    for (const line of doc.splitTextToSize(origin, maxW)) {
+      doc.text(line, margin, y);
+      y += 4.5;
+    }
+  }
+  y += 4;
 
   // Profile summary
   if (profileData) {
@@ -150,7 +159,7 @@ async function exportToPDF(systemLabel, reportText, profileData) {
     doc.setFontSize(8.5);
     doc.setTextColor(...PDF_INK);
     Object.entries(profileData).forEach(([k, v]) => {
-      if (v && k !== 'custom_notes' && typeof v === 'string') {
+      if (v && k !== 'custom_notes' && !k.endsWith('_source') && typeof v === 'string') {
         const line = `${k.replace(/_/g, ' ')}: ${v}`;
         doc.text(line, margin, y);
         y += 5;
@@ -259,7 +268,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
                 <span className="text-sm font-semibold" style={{ color: 'var(--gh-ink)', fontFamily: 'Space Grotesk, sans-serif' }}>Deep reading</span>
               </div>
               {report && (
-                <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, systemId === "astrology" ? null : data)}
+                <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, systemId === "astrology" ? null : data, meta.origin)}
                   className="text-xs gap-1.5" style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-accent)', background: 'transparent' }}>
                   <Download className="w-3 h-3" /> Save as PDF
                 </Button>

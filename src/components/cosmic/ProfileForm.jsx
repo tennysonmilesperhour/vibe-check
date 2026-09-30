@@ -17,26 +17,10 @@ import {
     personalYear, personalMonth, personalDay, karmicDebts,
 } from "@/lib/resonance/numerology";
 import AstrologyProfile from "./AstrologyProfile";
-import { arcanaName } from "@/lib/resonance/tables";
-import { birthCards, yearCard } from "@/lib/resonance/tarotCards";
+import { birthCards, cardId, cardOption, yearCard } from "@/lib/resonance/tarotCards";
 import { todayKey } from "@/lib/dates";
 
 const str = (n) => (n == null ? null : String(n));
-
-// Tarot cards render as "N – Name" to match the select option strings.
-const cardLabel = (id) => (id == null ? null : `${id} – ${arcanaName(id)}`);
-function birthCardLabel(birthDate) {
-    const cards = birthCards(birthDate);
-    return cards ? cardLabel(cards.personality.id) : null;
-}
-function soulCardLabel(birthDate) {
-    const cards = birthCards(birthDate);
-    return cards && cards.soul.id !== cards.personality.id ? cardLabel(cards.soul.id) : null;
-}
-function yearCardLabel(birthDate) {
-    const card = birthDate ? yearCard(birthDate, Number(todayKey().slice(0, 4))) : null;
-    return card ? cardLabel(card.id) : null;
-}
 
 function Field({ label, hint, children }) {
     return (
@@ -221,19 +205,29 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
 export function TarotForm({ data, onChange, birthDate }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
 
-    const autoBirthCard = birthCardLabel(birthDate);
-    const autoSoulCard = soulCardLabel(birthDate);
-    const autoYearCard = yearCardLabel(birthDate);
+    // Cards are stored as the "N – Name" select options.
+    const cards = birthCards(birthDate);
+    const year = birthDate ? yearCard(birthDate, Number(todayKey().slice(0, 4))) : null;
+    const autoBirthCard = cards ? cardOption(cards.personality.id) : null;
+    const autoYearCard = year ? cardOption(year.id) : null;
+    // The soul card belongs to the computed birth card, not one chosen by hand.
+    const autoSoulCard = cards?.soul && (!data?.birth_card || cardId(data.birth_card) === cards.personality.id) ? cardOption(cards.soul.id) : null;
 
+    // Fill in the birth card from the birth date, and follow a changed date,
+    // unless the person chose a card. A card saved before the source was
+    // recorded stays until the person picks one or answers the notice.
     useEffect(() => {
-        if (autoBirthCard && !data?.birth_card) onChange({ ...data, birth_card: autoBirthCard });
+        if (!autoBirthCard || data?.birth_card === autoBirthCard) return;
+        if (!data?.birth_card || data.birth_card_source === 'birth_date') onChange({ ...data, birth_card: autoBirthCard, birth_card_source: 'birth_date' });
     }, [birthDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const chooseBirthCard = (card) => onChange({ ...data, birth_card: card, birth_card_source: card === autoBirthCard ? 'birth_date' : 'entered' });
 
     return (
         <div className="grid md:grid-cols-2 gap-5">
             <Field label="Birth Card" hint="Worked out from your birth date by Mary K. Greer's method">
                 <div className="relative">
-                    <SimpleSelect value={data?.birth_card} onChange={v => set('birth_card', v)} options={TAROT_MAJOR_ARCANA} />
+                    <SimpleSelect value={data?.birth_card} onChange={chooseBirthCard} options={TAROT_MAJOR_ARCANA} />
                     {autoBirthCard && data?.birth_card === autoBirthCard && <AutoBadge />}
                 </div>
             </Field>

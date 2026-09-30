@@ -13,7 +13,6 @@ import {
     NumerologyForm, TarotForm, ChakraForm, EnneagramForm
 } from "@/components/cosmic/ProfileForm";
 import AstrologyGuide from "@/components/cosmic/AstrologyGuide";
-import { TAROT_MAJOR_ARCANA } from "@/components/cosmic/correspondences";
 import SystemReports from "@/components/cosmic/SystemReport";
 import CorrespondenceMap from "@/components/cosmic/CorrespondenceMap";
 import Loom from "@/features/loom/Loom";
@@ -131,11 +130,22 @@ export default function CosmicAddons() {
     /** One-tap fix from ConflictNotice: adopt the computed value. */
     const useComputed = (conflict) => {
         const [systemKey, field] = conflict.field.split('.');
-        // Tarot cards are stored as the form's "N – Name" option.
-        const value = systemKey === 'tarot_archetype'
-            ? TAROT_MAJOR_ARCANA.find((option) => option.endsWith(`– ${conflict.computed}`)) || String(conflict.computed)
-            : String(conflict.computed);
-        setProfile(prev => ({ ...prev, [systemKey]: { ...(prev[systemKey] || {}), [field]: value, ...(conflict.field === 'astrology.sun_sign' ? { sun_source: 'date_estimate' } : {}) } }));
+        setProfile(prev => {
+            // `value` is the computed value as the form stores it, where it differs.
+            const system = { ...(prev[systemKey] || {}), [field]: String(conflict.value ?? conflict.computed) };
+            if (conflict.field === 'astrology.sun_sign') system.sun_source = 'date_estimate';
+            if (conflict.field === 'tarot_archetype.birth_card') {
+                system.birth_card_source = 'birth_date';
+                if (conflict.retiredShadow && system.shadow_card === conflict.retiredShadow) delete system.shadow_card;
+            }
+            return { ...prev, [systemKey]: system };
+        });
+    };
+
+    /** From ConflictNotice: keep a saved birth card as the person's own choice. */
+    const keepSaved = (conflict) => {
+        if (conflict.field !== 'tarot_archetype.birth_card') return;
+        setProfile(prev => ({ ...prev, tarot_archetype: { ...(prev.tarot_archetype || {}), birth_card_source: 'entered' } }));
     };
 
     const toggleSystem = (systemId) => {
@@ -188,7 +198,7 @@ export default function CosmicAddons() {
                 </SkyField>
 
                 <div className="mb-6">
-                    <ConflictNotice profile={profile} onUseComputed={useComputed} />
+                    <ConflictNotice profile={profile} onUseComputed={useComputed} onKeepSaved={keepSaved} />
                 </div>
 
                 {isDirty && (

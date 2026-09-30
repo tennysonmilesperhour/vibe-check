@@ -5,7 +5,7 @@ import {
   lifePath, expression, soulUrge, personality, birthdayNumber, maturity, karmicDebts,
   personalYear, personalMonth, personalDay,
 } from './numerology.js';
-import { birthCards, yearCard as greerYearCard } from './tarotCards.js';
+import { birthCards, cardId, cardOption, retiredCards, yearCard as greerYearCard } from './tarotCards.js';
 import { deriveAstrology } from './astrology.js';
 
 // Normalize for comparison; also strips the "N – " prefix the tarot form stores
@@ -26,7 +26,7 @@ export function deriveAll(profile = {}, onDateKey) {
   // Tarot birth, soul and year cards by Mary K. Greer's method (tarotCards).
   const cards = birthCards(birthDate);
   const birthCard = cards?.personality ?? null;
-  const soulCard = cards && cards.soul.id !== cards.personality.id ? cards.soul : null;
+  const soulCard = cards?.soul ?? null;
   const py = birthDate && onDateKey ? personalYear(birthDate, onDateKey) : null;
   const yearCard = birthDate && onDateKey ? greerYearCard(birthDate, Number(onDateKey.slice(0, 4))) : null;
 
@@ -61,10 +61,10 @@ export function deriveAll(profile = {}, onDateKey) {
   };
 
   const conflicts = [];
-  const check = (field, entered, computed, source) => {
+  const check = (field, entered, computed, source, extra = {}) => {
     if (entered == null || entered === '' || computed == null) return;
     if (norm(entered) !== norm(computed)) {
-      conflicts.push({ field, entered, computed, source });
+      conflicts.push({ field, entered, computed, source, ...extra });
     }
   };
 
@@ -72,7 +72,21 @@ export function deriveAll(profile = {}, onDateKey) {
   // for review; an explicit choice or unknown value should not be repeatedly challenged.
   if (!profile.astrology?.sun_source) check('astrology.sun_sign', profile.astrology?.sun_sign, astro.sun_sign, 'calendar-based Sun estimate');
   check('numerology.life_path', profile.numerology?.life_path, lp, 'birth date');
-  check('tarot_archetype.birth_card', profile.tarot_archetype?.birth_card, birthCard?.name, 'birth date');
+  // A birth card the person chose stays theirs. Any other is checked against
+  // the birth date: `value` is the card as the form stores it, and `retired`
+  // marks a saved card the retired Life Path method filled in, before
+  // birth_card_source was recorded, so the notice can explain the change.
+  const tarot = profile.tarot_archetype || {};
+  if (birthCard && tarot.birth_card_source !== 'entered') {
+    const retired = tarot.birth_card_source ? null : retiredCards(birthDate);
+    const isRetired = retired !== null && cardId(tarot.birth_card) === retired.birth;
+    check('tarot_archetype.birth_card', tarot.birth_card, birthCard.name, 'birth date', {
+      value: cardOption(birthCard.id),
+      retired: isRetired,
+      // The retired method's shadow card was this date's soul card, which now shows on its own.
+      retiredShadow: isRetired && retired?.shadow != null ? cardOption(retired.shadow) : null,
+    });
+  }
   if (profile.gene_keys?.life_work && profile.human_design?.conscious_sun_gate) {
     check(
       'gene_keys.life_work',

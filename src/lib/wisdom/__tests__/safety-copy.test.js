@@ -142,12 +142,11 @@ describe('symbolic readings never talk over harm', () => {
     expect(JSON.stringify(systemReading('tarot_archetype', { birth_card: 'The Tower' }, profile))).not.toMatch(/Your Soul Card|Greer/i);
   });
 
-  it('reads a shadow card that repeats the soul card once', () => {
-    // 1 + 3 + 1960 = 1964 -> 20, Judgement, soul 2. The retired Life Path
-    // method saved The High Priestess as a shadow card for this date.
+  it('reads a shadow card the person chose, even when it is also the soul card', () => {
+    // 1 + 3 + 1960 = 1964 -> 20, Judgement, soul 2, The High Priestess.
     const profile = { birth_date: '1960-01-03', enabled_systems: ['tarot_archetype'], tarot_archetype: {} };
-    const reading = JSON.stringify(systemReading('tarot_archetype', { birth_card: '20 – Judgement', shadow_card: '2 – The High Priestess' }, profile));
+    const reading = JSON.stringify(systemReading('tarot_archetype', { birth_card: '20 – Judgement', shadow_card: '2 – The High Priestess', shadow_card_source: 'entered' }, profile));
     expect(reading).toMatch(/Your Soul Card: The High Priestess/i);
-    expect(reading).not.toMatch(/Your Shadow Card|The two together/i);
+    expect(reading).toMatch(/Your Shadow Card: The High Priestess/i);
   });
 });

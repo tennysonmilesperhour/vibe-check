@@ -17,7 +17,7 @@ import {
     personalYear, personalMonth, personalDay, karmicDebts,
 } from "@/lib/resonance/numerology";
 import AstrologyProfile from "./AstrologyProfile";
-import { birthCards, cardId, cardOption, yearCard } from "@/lib/resonance/tarotCards";
+import { birthCards, cardId, cardOption, withComputedCard, yearCardOn } from "@/lib/resonance/tarotCards";
 import { todayKey } from "@/lib/dates";
 
 const str = (n) => (n == null ? null : String(n));
@@ -105,8 +105,14 @@ export function HumanDesignForm({ data, onChange }) {
     );
 }
 
+// Before September 30, 2026, the form named the wrong chart positions for
+// these four spheres (Conscious Moon, Conscious Node, Unconscious Sun and
+// Unconscious Node).
+const RELABELED_SPHERES = ['radiance', 'purpose', 'attraction', 'iq'];
+
 export function GeneKeysForm({ data, onChange }) {
-    const set = (key, val) => onChange({ ...data, [key]: val });
+    const set = (key, val) => onChange({ ...data, [key]: val, ...(RELABELED_SPHERES.includes(key) ? { positions_checked: true } : {}) });
+    const recheck = !data?.positions_checked && RELABELED_SPHERES.some((key) => data?.[key]);
     const keyFields = [
         { key: 'life_work', label: "Life's Work (Personality Sun)", hint: "Your work in the world; also your Conscious Sun gate in Human Design" },
         { key: 'evolution', label: "Evolution (Personality Earth)", hint: "The challenges you grow through" },
@@ -117,6 +123,15 @@ export function GeneKeysForm({ data, onChange }) {
     ];
     return (
         <div className="grid md:grid-cols-2 gap-5">
+            {recheck && (
+                <div className="md:col-span-2 text-xs p-3" role="note"
+                    style={{ color: 'var(--gh-ink-soft)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
+                    <p>Earlier versions of this form named the wrong chart positions for Radiance, Purpose, Attraction and IQ. If you looked these up in a Human Design chart, check them against your Gene Keys profile.</p>
+                    <button type="button" onClick={() => onChange({ ...data, positions_checked: true })} className="mt-1 font-bold underline underline-offset-4" style={{ color: 'var(--gh-accent)' }}>
+                        They're right
+                    </button>
+                </div>
+            )}
             {keyFields.map(({ key, label, hint }) => (
                 <Field key={key} label={label} hint={hint}>
                     <SimpleSelect value={data?.[key]} onChange={v => set(key, v)} options={GENE_KEY_NUMBERS} placeholder="Key 1–64" />
@@ -207,18 +222,16 @@ export function TarotForm({ data, onChange, birthDate }) {
 
     // Cards are stored as the "N – Name" select options.
     const cards = birthCards(birthDate);
-    const year = birthDate ? yearCard(birthDate, Number(todayKey().slice(0, 4))) : null;
+    const year = birthDate ? yearCardOn(birthDate, todayKey()) : null;
     const autoBirthCard = cards ? cardOption(cards.personality.id) : null;
     const autoYearCard = year ? cardOption(year.id) : null;
     // The soul card belongs to the computed birth card, not one chosen by hand.
     const autoSoulCard = cards?.soul && (!data?.birth_card || cardId(data.birth_card) === cards.personality.id) ? cardOption(cards.soul.id) : null;
 
-    // Fill in the birth card from the birth date, and follow a changed date,
-    // unless the person chose a card. A card saved before the source was
-    // recorded stays until the person picks one or answers the notice.
+    // Fill in an empty birth card from the birth date. A changed date is
+    // followed where the date is set (followBirthCard).
     useEffect(() => {
-        if (!autoBirthCard || data?.birth_card === autoBirthCard) return;
-        if (!data?.birth_card || data.birth_card_source === 'birth_date') onChange({ ...data, birth_card: autoBirthCard, birth_card_source: 'birth_date' });
+        if (autoBirthCard && !data?.birth_card) onChange(withComputedCard(data, birthDate));
     }, [birthDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const chooseBirthCard = (card) => onChange({ ...data, birth_card: card, birth_card_source: card === autoBirthCard ? 'birth_date' : 'entered' });
@@ -232,7 +245,7 @@ export function TarotForm({ data, onChange, birthDate }) {
                 </div>
             </Field>
             <Field label="Shadow Card" hint="Optional, if a tarot practice you follow names one">
-                <SimpleSelect value={data?.shadow_card} onChange={v => set('shadow_card', v)} options={TAROT_MAJOR_ARCANA} />
+                <SimpleSelect value={data?.shadow_card} onChange={v => onChange({ ...data, shadow_card: v, shadow_card_source: 'entered' })} options={TAROT_MAJOR_ARCANA} />
             </Field>
 
             {(autoSoulCard || autoYearCard) && (

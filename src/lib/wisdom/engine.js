@@ -170,9 +170,7 @@ function tarotArchetypeReading(data, computed) {
   if (soul && soul.name !== birth?.name) {
     sections.push({ h: `Your Soul Card: ${soul.name}`, p: soul.archetype });
   }
-  // A shadow card that repeats the soul card (as the retired Life Path method
-  // filled one in) is already read above.
-  if (shadow && shadow.name !== birth?.name && shadow.name !== soul?.name) {
+  if (shadow && shadow.name !== birth?.name) {
     sections.push({ h: `Your Shadow Card: ${shadow.name}`, p: shadow.shadow });
     sections.push({
       h: "The two together",
@@ -183,7 +181,7 @@ function tarotArchetypeReading(data, computed) {
     sections.push({ h: `This year: ${year.name}`, p: year.year });
   }
   if (computedBirth) {
-    sections.push({ h: "How these are worked out", p: "Vibe Check follows Mary K. Greer's method. Your birth card adds your birth month, day and year and reduces the total to 22 or less, with 22 as The Fool. Your soul card reduces that number to one digit, and your year card uses the same sum with this year." });
+    sections.push({ h: "How these are worked out", p: "Vibe Check follows Mary K. Greer's method. Your birth card adds your birth month, day and year and reduces the total to 22 or less, with 22 as The Fool. Your soul card reduces that number to one digit. Your year card uses the same sum with the current year; if your birthday is in July or later, that year runs from one birthday to the next." });
   }
 
   sections.push({

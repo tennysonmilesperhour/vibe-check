@@ -21,6 +21,7 @@ import SymbolicReadings from "@/features/cosmos/SymbolicReadings";
 import GuardedReading from "@/features/cosmos/GuardedReading";
 import useHardMoment from "@/features/cosmos/useHardMoment";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
+import { followBirthCard, settleTarot } from "@/lib/resonance/tarotCards";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
 import PlantVoice from '@/features/shell/PlantVoice';
@@ -99,7 +100,9 @@ export default function CosmicAddons() {
         try {
             const user = await base44.auth.me();
             if (user?.cosmic_profile) {
-                const merged = { ...EMPTY_PROFILE, ...user.cosmic_profile };
+                const saved = { ...EMPTY_PROFILE, ...user.cosmic_profile };
+                // Tarot cards saved before they recorded their source (tarotCards).
+                const merged = { ...saved, tarot_archetype: settleTarot(saved.tarot_archetype, saved.birth_date) };
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
                 setHasSavedProfile(true);
@@ -134,10 +137,7 @@ export default function CosmicAddons() {
             // `value` is the computed value as the form stores it, where it differs.
             const system = { ...(prev[systemKey] || {}), [field]: String(conflict.value ?? conflict.computed) };
             if (conflict.field === 'astrology.sun_sign') system.sun_source = 'date_estimate';
-            if (conflict.field === 'tarot_archetype.birth_card') {
-                system.birth_card_source = 'birth_date';
-                if (conflict.retiredShadow && system.shadow_card === conflict.retiredShadow) delete system.shadow_card;
-            }
+            if (conflict.field === 'tarot_archetype.birth_card') system.birth_card_source = 'birth_date';
             return { ...prev, [systemKey]: system };
         });
     };
@@ -147,6 +147,13 @@ export default function CosmicAddons() {
         if (conflict.field !== 'tarot_archetype.birth_card') return;
         setProfile(prev => ({ ...prev, tarot_archetype: { ...(prev.tarot_archetype || {}), birth_card_source: 'entered' } }));
     };
+
+    // A birth card worked out from the birth date follows it, even while the tarot form is closed.
+    const setBirthDate = (birthDate) => setProfile(prev => ({
+        ...prev,
+        birth_date: birthDate,
+        tarot_archetype: followBirthCard(prev.tarot_archetype, prev.birth_date, birthDate),
+    }));
 
     const toggleSystem = (systemId) => {
         setProfile(prev => {
@@ -256,7 +263,7 @@ export default function CosmicAddons() {
                                 <div>
                                     <Label style={{ color: 'var(--gh-ink-soft)' }}>Date of Birth</Label>
                                     <Input type="date" className="mt-1" value={profile.birth_date}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_date: e.target.value }))} />
+                                        onChange={e => setBirthDate(e.target.value)} />
                                 </div>
                                 <div>
                                     <Label style={{ color: 'var(--gh-ink-soft)' }}>Time of Birth <span className="text-xs opacity-60">(optional)</span></Label>

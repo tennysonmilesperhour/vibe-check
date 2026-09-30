@@ -5,11 +5,10 @@ import {
   lifePath, expression, soulUrge, personality, birthdayNumber, maturity, karmicDebts,
   personalYear, personalMonth, personalDay,
 } from './numerology.js';
-import { birthCards, cardId, cardOption, retiredCards, yearCard as greerYearCard } from './tarotCards.js';
+import { birthCards, cardId, cardOption, retiredCards, yearCardOn } from './tarotCards.js';
 import { deriveAstrology } from './astrology.js';
 
-// Normalize for comparison; also strips the "N – " prefix the tarot form stores
-// so "5 – The Hierophant" matches the engine's bare "The Hierophant".
+// Normalize for comparison. Tarot cards compare by card id (tarotCards).
 const norm = (v) => String(v ?? '').trim().replace(/^\d+\s*[–-]\s*/, '').toLowerCase();
 
 /**
@@ -28,7 +27,7 @@ export function deriveAll(profile = {}, onDateKey) {
   const birthCard = cards?.personality ?? null;
   const soulCard = cards?.soul ?? null;
   const py = birthDate && onDateKey ? personalYear(birthDate, onDateKey) : null;
-  const yearCard = birthDate && onDateKey ? greerYearCard(birthDate, Number(onDateKey.slice(0, 4))) : null;
+  const yearCard = birthDate && onDateKey ? yearCardOn(birthDate, onDateKey) : null;
 
   const astro = deriveAstrology(birthDate);
 
@@ -61,10 +60,10 @@ export function deriveAll(profile = {}, onDateKey) {
   };
 
   const conflicts = [];
-  const check = (field, entered, computed, source, extra = {}) => {
+  const check = (field, entered, computed, source) => {
     if (entered == null || entered === '' || computed == null) return;
     if (norm(entered) !== norm(computed)) {
-      conflicts.push({ field, entered, computed, source, ...extra });
+      conflicts.push({ field, entered, computed, source });
     }
   };
 
@@ -72,19 +71,22 @@ export function deriveAll(profile = {}, onDateKey) {
   // for review; an explicit choice or unknown value should not be repeatedly challenged.
   if (!profile.astrology?.sun_source) check('astrology.sun_sign', profile.astrology?.sun_sign, astro.sun_sign, 'calendar-based Sun estimate');
   check('numerology.life_path', profile.numerology?.life_path, lp, 'birth date');
-  // A birth card the person chose stays theirs. Any other is checked against
-  // the birth date: `value` is the card as the form stores it, and `retired`
-  // marks a saved card the retired Life Path method filled in, before
-  // birth_card_source was recorded, so the notice can explain the change.
+  // A birth card the person chose stays theirs. Any other is compared with
+  // the birth date's card: `value` is that card as the form stores it,
+  // `retired` marks a card a retired method filled in, and only a card saved
+  // before sources were recorded is offered to keep as it is.
   const tarot = profile.tarot_archetype || {};
-  if (birthCard && tarot.birth_card_source !== 'entered') {
-    const retired = tarot.birth_card_source ? null : retiredCards(birthDate);
-    const isRetired = retired !== null && cardId(tarot.birth_card) === retired.birth;
-    check('tarot_archetype.birth_card', tarot.birth_card, birthCard.name, 'birth date', {
+  const savedCard = tarot.birth_card ? cardId(tarot.birth_card) : null;
+  if (birthCard && tarot.birth_card && tarot.birth_card_source !== 'entered' && savedCard !== birthCard.id) {
+    const legacy = !tarot.birth_card_source;
+    conflicts.push({
+      field: 'tarot_archetype.birth_card',
+      entered: tarot.birth_card,
+      computed: birthCard.name,
+      source: 'birth date',
       value: cardOption(birthCard.id),
-      retired: isRetired,
-      // The retired method's shadow card was this date's soul card, which now shows on its own.
-      retiredShadow: isRetired && retired?.shadow != null ? cardOption(retired.shadow) : null,
+      retired: legacy && savedCard !== null && Boolean(retiredCards(birthDate)?.birth.includes(savedCard)),
+      keepable: legacy,
     });
   }
   if (profile.gene_keys?.life_work && profile.human_design?.conscious_sun_gate) {

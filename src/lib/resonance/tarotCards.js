@@ -60,20 +60,88 @@ export function yearCard(birthDate, year) {
   return card(toGreer(p.m + p.d + year));
 }
 
-// Before Greer's method, Vibe Check filled in the birth card from the Life
-// Path number, and gave Justice (Life Path 11) The High Priestess as a shadow
-// card. A saved card that matches is most likely one the app filled in.
+/**
+ * The year card in effect on a day, or null. Greer counts the year from
+ * January 1 for a birthday from January through June, and from one
+ * birthday to the next for a birthday from July on.
+ * @param {string} birthDate @param {string} dateKey YYYY-MM-DD keys
+ */
+export function yearCardOn(birthDate, dateKey) {
+  const b = birthDateParts(birthDate);
+  const on = birthDateParts(dateKey);
+  if (!b || !on) return null;
+  const beforeBirthday = on.m < b.m || (on.m === b.m && on.d < b.d);
+  return yearCard(birthDate, b.m >= 7 && beforeBirthday ? on.y - 1 : on.y);
+}
+
+// Vibe Check filled in birth cards with two earlier methods. Until July 4,
+// 2026 it used the same sum reduced to 21 or less, so 22 gave The Emperor
+// rather than The Fool. After that it used a card for the Life Path number.
+// Both also filled in a "shadow card" from the birth card's digits.
 /** @type {Record<number, number>} */
-const RETIRED_BIRTH_CARD = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 11: 11, 22: 0, 33: 6 };
+const RETIRED_LIFE_PATH_CARD = { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 11: 11, 22: 0, 33: 6 };
 
 /**
- * The card ids the retired Life Path method filled in for a birth date, or null.
+ * The card ids the retired methods filled in for a birth date, or null.
  * @param {string} birthDate a YYYY-MM-DD key
- * @returns {{ birth: number, shadow: number | null } | null}
+ * @returns {{ birth: number[], shadow: number[] } | null}
  */
 export function retiredCards(birthDate) {
+  const p = birthDateParts(birthDate);
+  if (!p) return null;
+  let total = p.m + p.d + p.y;
+  while (total > 21) total = digitSum(total);
   const lp = lifePath(birthDate);
-  const birth = lp == null ? undefined : RETIRED_BIRTH_CARD[lp];
-  if (birth === undefined) return null;
-  return { birth, shadow: birth > 9 ? digitSum(birth) : null };
+  const byLifePath = lp == null ? undefined : RETIRED_LIFE_PATH_CARD[lp];
+  const birth = [...new Set(byLifePath === undefined ? [total] : [total, byLifePath])];
+  return { birth, shadow: [...new Set(birth.filter((id) => id > 9).map(digitSum))] };
+}
+
+/**
+ * Tarot data with the birth card worked out from the birth date.
+ * @param {Record<string, any> | null | undefined} tarot @param {string} birthDate
+ */
+export function withComputedCard(tarot, birthDate) {
+  const cards = birthCards(birthDate);
+  return cards ? { ...tarot, birth_card: cardOption(cards.personality.id), birth_card_source: 'birth_date' } : tarot;
+}
+
+/**
+ * Tarot data after the birth date changes. A birth card filled in from the
+ * old date, by this method or a retired one, is worked out again from the
+ * new date; a card the person chose stays.
+ * @param {Record<string, any> | null | undefined} tarot
+ * @param {string} previousDate @param {string} nextDate
+ */
+export function followBirthCard(tarot, previousDate, nextDate) {
+  const saved = tarot?.birth_card;
+  if (!saved || tarot.birth_card_source === 'entered') return tarot;
+  const id = cardId(saved);
+  const filledIn = tarot.birth_card_source === 'birth_date'
+    || (id !== null && (id === birthCards(previousDate)?.personality.id || Boolean(retiredCards(previousDate)?.birth.includes(id))));
+  return filledIn ? withComputedCard(tarot, nextDate) : tarot;
+}
+
+/**
+ * Saved tarot data brought up to date, for data saved before cards recorded
+ * where they came from:
+ * - a birth card that matches the birth date's card is marked as worked out
+ *   from it, so it follows a changed date;
+ * - a shadow card a retired method filled in is dropped. It came from the
+ *   birth card's digits, like the soul card that now shows on its own.
+ * A birth card from a retired method that differs stays, for the person to
+ * keep or replace.
+ * @param {Record<string, any> | null | undefined} tarot @param {string} birthDate
+ */
+export function settleTarot(tarot, birthDate) {
+  if (!tarot) return tarot;
+  const next = { ...tarot };
+  if (next.birth_card && !next.birth_card_source && cardId(next.birth_card) === birthCards(birthDate)?.personality.id) {
+    next.birth_card_source = 'birth_date';
+  }
+  const shadow = cardId(next.shadow_card);
+  if (shadow !== null && !next.shadow_card_source && retiredCards(birthDate)?.shadow.includes(shadow)) {
+    delete next.shadow_card;
+  }
+  return next;
 }

@@ -48,10 +48,11 @@ describe('deriveAll', () => {
     expect(Array.isArray(n.karmic_debts)).toBe(true);
   });
 
-  it('adds the year card for the calendar year (Greer)', () => {
-    const { values } = deriveAll(profile, '2026-07-02');
-    // 7 + 15 + 2026 = 2048 -> 14
-    expect(values.tarot_archetype.personal_year_card).toBe('Temperance');
+  it('adds the year card, counted from the birthday for a July birthday (Greer)', () => {
+    // Before July 15: 7 + 15 + 2025 = 2047 -> 13
+    expect(deriveAll(profile, '2026-07-02').values.tarot_archetype.personal_year_card).toBe('Death');
+    // From July 15: 7 + 15 + 2026 = 2048 -> 14
+    expect(deriveAll(profile, '2026-07-15').values.tarot_archetype.personal_year_card).toBe('Temperance');
   });
 
   it('flags an astrology conflict when the entered Sun sign contradicts the date', () => {
@@ -86,23 +87,25 @@ describe('deriveAll', () => {
     expect(conflict.retired).toBe(false);
   });
 
-  it('marks a birth card the retired Life Path method filled in', () => {
+  it('marks a saved birth card a retired method filled in, and offers to keep it', () => {
+    const tarotConflict = (birthDate, card) => deriveAll({ ...profile, birth_date: birthDate, tarot_archetype: { birth_card: card } }, '2026-07-02')
+      .conflicts.find((c) => c.field === 'tarot_archetype.birth_card');
     // Life Path 3 gave The Empress; Greer's method gives The Hanged Man.
-    const legacy = { ...profile, birth_date: '1985-11-23', tarot_archetype: { birth_card: '3 – The Empress' } };
-    const conflict = deriveAll(legacy, '2026-07-02').conflicts.find((c) => c.field === 'tarot_archetype.birth_card');
-    expect(conflict).toMatchObject({ computed: 'The Hanged Man', value: '12 – The Hanged Man', retired: true, retiredShadow: null });
-    // Life Path 11 gave Justice with The High Priestess as its shadow card.
-    const eleven = { ...profile, birth_date: '1960-01-03', tarot_archetype: { birth_card: '11 – Justice', shadow_card: '2 – The High Priestess' } };
-    expect(deriveAll(eleven, '2026-07-02').conflicts.find((c) => c.field === 'tarot_archetype.birth_card'))
-      .toMatchObject({ computed: 'Judgement', retired: true, retiredShadow: '2 – The High Priestess' });
+    expect(tarotConflict('1985-11-23', '3 – The Empress')).toMatchObject({ computed: 'The Hanged Man', value: '12 – The Hanged Man', retired: true, keepable: true });
+    // Life Path 11 gave Justice; Greer's method gives Judgement.
+    expect(tarotConflict('1960-01-03', '11 – Justice')).toMatchObject({ computed: 'Judgement', retired: true });
+    // The first method turned 22 into The Emperor; Greer's gives The Fool.
+    expect(tarotConflict('1950-05-11', '4 – The Emperor')).toMatchObject({ computed: 'The Fool', retired: true });
+    // A card no method gave may come from the person's own practice.
+    expect(tarotConflict('1985-11-23', '16 – The Tower')).toMatchObject({ retired: false, keepable: true });
   });
 
   it('leaves a birth card the person chose alone', () => {
     const kept = { ...profile, birth_date: '1985-11-23', tarot_archetype: { birth_card: '3 – The Empress', birth_card_source: 'entered' } };
     expect(deriveAll(kept, '2026-07-02').conflicts.filter((c) => c.field === 'tarot_archetype.birth_card')).toEqual([]);
-    // A card filled in from an earlier birth date is still checked, and is not the retired method's.
+    // A card filled in from another birth date is still checked, and only replaced.
     const filled = { ...profile, tarot_archetype: { birth_card: '3 – The Empress', birth_card_source: 'birth_date' } };
-    expect(deriveAll(filled, '2026-07-02').conflicts.find((c) => c.field === 'tarot_archetype.birth_card')).toMatchObject({ retired: false });
+    expect(deriveAll(filled, '2026-07-02').conflicts.find((c) => c.field === 'tarot_archetype.birth_card')).toMatchObject({ retired: false, keepable: false });
   });
 
   it('no conflicts when entered matches computed', () => {

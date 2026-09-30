@@ -10,6 +10,10 @@ const FIELD_LABELS = {
   "gene_keys.life_work": "Gene Keys Life's Work",
 };
 
+// The systems a conflict compares, which all need to be turned on.
+const systemsOf = (conflict) =>
+  conflict.field === "gene_keys.life_work" ? ["gene_keys", "human_design"] : [conflict.field.split(".")[0]];
+
 /**
  * Gentle cross-validation: where saved data contradicts what the systems
  * themselves imply, say so and offer the computed value in one tap. Only
@@ -19,7 +23,7 @@ export default function ConflictNotice({ profile, onUseComputed, onKeepSaved }) 
   const conflicts = useMemo(() => {
     try {
       const enabled = profile?.enabled_systems || [];
-      return deriveAll(profile || {}, todayKey()).conflicts.filter((c) => enabled.includes(c.field.split(".")[0]));
+      return deriveAll(profile || {}, todayKey()).conflicts.filter((c) => systemsOf(c).every((system) => enabled.includes(system)));
     } catch {
       return [];
     }
@@ -38,14 +42,14 @@ export default function ConflictNotice({ profile, onUseComputed, onKeepSaved }) 
           <Compass className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "var(--gh-accent)" }} aria-hidden="true" />
           <div className="flex-1 text-sm" style={{ color: "var(--gh-ink)" }}>
             <p>
-              Your saved {FIELD_LABELS[c.field] || c.field.replace(/_/g, " ").replace(".", " · ")} is <strong>{String(c.entered)}</strong>,
+              Your {FIELD_LABELS[c.field] || c.field.replace(/_/g, " ").replace(".", " · ")} is set to <strong>{String(c.entered)}</strong>,
               but your {c.source} implies <strong>{String(c.value ?? c.computed)}</strong>.
             </p>
             {c.field === "astrology.sun_sign" && <p className="text-xs mt-1">An accurate birth chart may differ near a sign boundary. Keep your entered sign if it comes from that chart.</p>}
-            {c.field === "tarot_archetype.birth_card" && (
+            {c.field === "tarot_archetype.birth_card" && c.keepable && (
               <p className="text-xs mt-1">
                 {c.retired
-                  ? "Vibe Check used to fill in this card from your Life Path number. It now follows Mary K. Greer's method, which adds your birth month, day and year, so the card can differ. Keep yours if you prefer it."
+                  ? "Vibe Check filled in this card with an earlier method. It now follows Mary K. Greer's method, so the card can differ. Keep yours if you prefer it."
                   : "Keep yours if it comes from a tarot practice you follow."}
               </p>
             )}
@@ -60,7 +64,7 @@ export default function ConflictNotice({ profile, onUseComputed, onKeepSaved }) 
                   Use {String(c.value ?? c.computed)}
                 </button>
               )}
-              {onKeepSaved && c.field === "tarot_archetype.birth_card" && (
+              {onKeepSaved && c.keepable && (
                 <button
                   type="button"
                   onClick={() => onKeepSaved(c)}

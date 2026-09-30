@@ -3,6 +3,7 @@
 // page loads; settleOnSave squares the tarot cards with the birth date again
 // when the profile is saved, once the date is final.
 import { reconcileTarot, settleTarot } from './tarotCards.js';
+import { enneagramOption, resolveEnneagram, wingOf } from '../wisdom/content/enneagram.js';
 
 // Until September 30, 2026, the Gene Keys form named the wrong chart
 // positions for these spheres (Conscious Moon, Conscious Node, Unconscious
@@ -33,17 +34,28 @@ export function withSphere(geneKeys, key, value) {
  * The profile as the Cosmos page loads it:
  * - tarot cards get a source (settleTarot);
  * - Gene Keys spheres saved under the old labels are marked
- *   `positions_checked: false` until the person checks them.
+ *   `positions_checked: false` until the person checks them;
+ * - an Enneagram type saved under an earlier name gets the form's current
+ *   name for the same number, and a wing that doesn't belong to the type
+ *   goes;
+ * - a saved personal year goes: it changes each birthday, so it is only
+ *   ever worked out from the birth date, like the personal month and day.
  * @param {Record<string, any>} profile
  * @returns {Record<string, any>}
  */
 export function settleCosmicProfile(profile) {
   const geneKeys = profile.gene_keys;
   const recheck = geneKeys && geneKeys.positions_checked === undefined && RELABELED_SPHERES.some((key) => geneKeys[key]);
+  const enneagram = profile.enneagram;
+  const number = enneagram?.type ? resolveEnneagram(enneagram.type)?.number : null;
+  const staleWing = Boolean(number && enneagram.wing && !wingOf(enneagram.wing, number));
+  const renamed = Boolean(number && enneagram.type !== enneagramOption(number));
   return {
     ...profile,
     tarot_archetype: settleTarot(profile.tarot_archetype, profile.birth_date),
     ...(recheck ? { gene_keys: { ...geneKeys, positions_checked: false } } : {}),
+    ...(renamed || staleWing ? { enneagram: { ...enneagram, ...(renamed ? { type: enneagramOption(number) } : {}), ...(staleWing ? { wing: undefined } : {}) } } : {}),
+    ...(profile.numerology?.personal_year !== undefined ? { numerology: { ...profile.numerology, personal_year: undefined } } : {}),
   };
 }
 

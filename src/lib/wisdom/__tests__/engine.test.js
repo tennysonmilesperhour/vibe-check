@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { personalYear } from "../../resonance/numerology";
+import { todayKey } from "../../dates";
 import { systemReading } from "../engine";
 import { tarotReading, integratedReading, synergyReading, patternReading, periodWisdom } from "../readings";
 
@@ -50,10 +52,48 @@ describe("systemReading", () => {
     expect(systemReading("tarot_archetype", PROFILE.tarot_archetype, PROFILE)).toContain("The Emperor");
   });
 
-  it("enneagram names the type and its fear", () => {
+  it("enneagram names the type, its wish and fear, and the wing's type", () => {
     const t = systemReading("enneagram", PROFILE.enneagram, PROFILE).toLowerCase();
-    expect(t).toContain("investigator");
+    expect(t).toContain("type 5: understanding and self-reliance");
+    expect(t).toContain("a wish to understand how things work");
     expect(t).toContain("fear");
+    expect(t).toContain("some of type 4's qualities");
+    // Not any school's type names.
+    expect(t).not.toMatch(/investigator|reformer|individualist|loyalist|enthusiast|challenger|peacemaker/);
+  });
+
+  it("enneagram reads a wing only when it belongs to the type", () => {
+    // A 4w5 wing left over after switching to Type 9.
+    const leftover = systemReading("enneagram", { type: "9 – Peace and harmony", wing: "4w5" }, PROFILE);
+    expect(leftover).not.toMatch(/wing/i);
+    expect(systemReading("enneagram", { type: "9", wing: "9w1" }, PROFILE)).toMatch(/some of Type 1's qualities into Type 9/);
+    expect(systemReading("enneagram", { type: "1", wing: "1w9" }, PROFILE)).toMatch(/some of Type 9's qualities into Type 1/);
+  });
+
+  it("numerology reads the current personal year, not a saved one", () => {
+    const profile = { birth_date: "1990-07-15", enabled_systems: ["numerology"], numerology: {} };
+    const current = personalYear("1990-07-15", todayKey());
+    const saved = current === 1 ? "2" : "1";
+    const reading = systemReading("numerology", { life_path: "5", personal_year: saved }, profile);
+    expect(reading).toContain(`YOUR PERSONAL YEAR (${current})`);
+    expect(reading).not.toContain(`YOUR PERSONAL YEAR (${saved})`);
+  });
+
+  it("numerology says an 8 year and a 3 year", () => {
+    // Birth dates whose personal year today is 8, and 3.
+    const born = (year) => {
+      for (let m = 1; m <= 12; m++) for (let d = 1; d <= 28; d++) {
+        const date = `1990-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        if (personalYear(date, todayKey()) === year) return date;
+      }
+      return null;
+    };
+    for (const [year, article] of [[8, "an"], [3, "a"]]) {
+      const profile = { birth_date: born(year), enabled_systems: ["numerology"] };
+      expect(systemReading("numerology", { life_path: "5" }, profile)).toContain(`reads this as ${article} ${year} year`);
+    }
+    // Without a birth date there is no personal year to read, even a saved one.
+    expect(systemReading("numerology", { life_path: "5", personal_year: "8" }, { enabled_systems: ["numerology"] })).not.toMatch(/personal year|a 8|an 8/i);
   });
 
   it("chakras names the center", () => {
@@ -94,6 +134,13 @@ describe("integratedReading", () => {
   });
   it("prompts when nothing is enabled", () => {
     expect(integratedReading([], {}).length).toBeGreaterThan(20);
+  });
+  it("names a chakra saved as the form's full option, and says an Aries Sun", () => {
+    const profile = { ...PROFILE, astrology: { sun_sign: "Aries", sun_source: "entered" }, chakras: { dominant_center: "Heart (Anahata) – Love & connection" } };
+    const t = integratedReading(["astrology", "chakras"], profile);
+    expect(t).toContain("Chakras offers the Heart center");
+    expect(t).toContain("Astrology offers an Aries Sun");
+    expect(t).not.toContain("Love & connection center");
   });
 });
 
@@ -137,6 +184,12 @@ describe("periodWisdom", () => {
       expect(w.contemplation).toBeTruthy();
     });
   }
+  it("names the numerology cycle it draws on beside astrology", () => {
+    const profile = { ...PROFILE, enabled_systems: ["astrology", "numerology"] };
+    expect(periodWisdom("weekly", profile, null).wisdom).toMatch(/your personal year number is \d/);
+    expect(periodWisdom("daily", profile, null).wisdom).toMatch(/your personal day number is \d/);
+    expect(periodWisdom("monthly", profile, null).wisdom).toMatch(/your personal month number is \d/);
+  });
 });
 
 import { GK_SEQUENCE_META } from '../content/geneKeys';

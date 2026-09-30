@@ -59,6 +59,19 @@ describe('resonanceGraph', () => {
       .toBe('Your birth card, The Fool, counts as 22, the same number as your Life Path.');
   });
 
+  it('labels Enneagram and chakra points from the content, whatever label was saved', () => {
+    const labels = resonanceGraph({
+      ...profile,
+      enabled_systems: ['enneagram', 'chakras'],
+      enneagram: { type: '4 – The Individualist', wing: '4w5' },
+      chakras: { dominant_center: 'Heart (Anahata) – Love & connection' },
+    }, '2026-07-02').nodes.map((n) => n.label);
+    expect(labels).toEqual(['Type 4 – Authenticity and depth (4w5)', 'Heart center']);
+    // A wing that doesn't belong to the type is left out.
+    const leftover = resonanceGraph({ ...profile, enabled_systems: ['enneagram'], enneagram: { type: '9', wing: '4w5' } }, '2026-07-02');
+    expect(leftover.nodes.map((n) => n.label)).toEqual(['Type 9 – Peace and harmony']);
+  });
+
   it('links birth card to its Golden Dawn sign (Hierophant -> Taurus)', () => {
     const edge = graph.edges.find((e) => e.kind === 'astro');
     expect(edge).toBeTruthy();

@@ -1,5 +1,6 @@
 // Cross-system correspondence map
 // Helps surface how different wisdom systems describe the same archetypes
+import { ENNEAGRAM, enneagramOption } from "@/lib/wisdom/content/enneagram";
 
 export const ZODIAC_SIGNS = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
@@ -43,17 +44,8 @@ export const TAROT_MAJOR_ARCANA = [
     "20 – Judgement", "21 – The World"
 ];
 
-export const ENNEAGRAM_TYPES = [
-    "1 – The Reformer",
-    "2 – The Helper",
-    "3 – The Achiever",
-    "4 – The Individualist",
-    "5 – The Investigator",
-    "6 – The Loyalist",
-    "7 – The Enthusiast",
-    "8 – The Challenger",
-    "9 – The Peacemaker"
-];
+// Vibe Check's own theme names, not any Enneagram school's type names.
+export const ENNEAGRAM_TYPES = Object.keys(ENNEAGRAM).map(enneagramOption);
 
 export const ENNEAGRAM_WINGS = [
     "1w9", "1w2", "2w1", "2w3", "3w2", "3w4", "4w3", "4w5", "5w4",

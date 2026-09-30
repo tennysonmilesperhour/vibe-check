@@ -10,7 +10,7 @@ import { GK_SEQUENCE_META, resolveKey } from "./content/geneKeys";
 import { needsPositionCheck, POSITION_CHECK_NOTE } from "@/lib/resonance/settle";
 import { shadowGivesWay } from "@/lib/resonance/tarotCards";
 import { resolveArcana } from "./content/tarotArchetype";
-import { resolveEnneagram, resolveInstinct } from "./content/enneagram";
+import { resolveEnneagram, resolveInstinct, wingOf } from "./content/enneagram";
 import { resolveChakra } from "./content/chakras";
 
 // ── formatting helpers ───────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ function humanDesignReading(data) {
   if (prof) {
     sections.push({ h: `Profile ${prof.key}: the ${prof.name}`, p: prof.text });
   }
-  if (d.definition) sections.push({ h: "Definition", p: `Your definition is ${d.definition}. This describes how energy flows and connects across your chart, and how self-contained or relationship-driven your inner wiring tends to be.` });
+  if (d.definition) sections.push({ h: "Definition", p: `Your chart's definition is ${d.definition}. Human Design uses definition to describe how the defined centers in a chart connect, and reads it as a hint about how much you process on your own or with others. Your experience decides whether that fits.` });
   if (d.strategy && !type) sections.push({ h: "Strategy", p: `Your noted strategy: ${d.strategy}.` });
   if (d.incarnation_cross) sections.push({ h: "Incarnation Cross", p: `Human Design describes your Incarnation Cross, the ${d.incarnation_cross}, as a theme across your life. Take it as one perspective on purpose; your own sense of purpose may differ.` });
   if (d.custom_notes) sections.push({ h: "Your own notes", p: d.custom_notes });
@@ -109,7 +109,9 @@ function numerologyReading(data, computed) {
   const lpKey = reduceToKey(d.life_path);
   const exprKey = reduceToKey(d.expression);
   const soulKey = reduceToKey(d.soul_urge);
-  const yearKey = reduceToKey(d.personal_year);
+  // The personal year changes each birthday, so it is only ever worked out
+  // from the birth date, never read from saved data.
+  const yearKey = reduceToKey(computed.personal_year);
 
   if (!lpKey && !exprKey && !soulKey) {
     return "Add your birth date and full birth name on the Systems tab. Your Life Path comes from your birth date and your Expression and Soul Urge from your name, and the full reading will compose here.";
@@ -120,8 +122,7 @@ function numerologyReading(data, computed) {
     sections.push({ h: `Life Path ${lpKey}: ${n.title}`, p: n.lifePath });
   }
   if (exprKey) {
-    const n = NUMBERS[exprKey];
-    sections.push({ h: `Expression ${exprKey}`, p: `${n.expression} Your name carries the vibration of ${n.title.toLowerCase()}: ${n.core}.` });
+    sections.push({ h: `Expression ${exprKey}`, p: NUMBERS[exprKey].expression });
   }
   if (soulKey) {
     const n = NUMBERS[soulKey];
@@ -131,10 +132,10 @@ function numerologyReading(data, computed) {
   // synthesis
   if (lpKey && soulKey) {
     sections.push({
-      h: "The story your numbers tell",
+      h: "Your numbers together",
       p: lpKey === soulKey
-        ? `Your Life Path and Soul Urge share the number ${lpKey}, a rare alignment: the road you walk and the thing your heart wants are one and the same. When you follow your desire, you are already on your path.`
-        : `Your Life Path ${lpKey} is the road; your Soul Urge ${soulKey} is the reason you walk it. The outer journey of ${NUMBERS[lpKey].core} is powered by the inner longing for ${NUMBERS[soulKey].core}. When those two cooperate, you feel purposeful; when they conflict, notice which one you have been ignoring.`,
+        ? `Your Life Path and Soul Urge share the number ${lpKey}, which numerology reads as the longer arc of a life and what you want underneath pointing the same way. Does that match your experience?`
+        : `Numerology reads the Life Path as the longer arc of a life and the Soul Urge as what you want underneath: here, ${NUMBERS[lpKey].core} beside ${NUMBERS[soulKey].core}. Where do those two work together in your life, and where do they pull apart?`,
     });
   }
 
@@ -147,7 +148,7 @@ function numerologyReading(data, computed) {
 
   sections.push({
     h: "Living it",
-    p: `Numerology is a rhythm you can move with instead of against.${yearKey ? ` Right now you are in a ${yearKey} year, so align your effort with its theme rather than fighting the current.` : ""} Your core number, Life Path ${lpKey || "—"}, is the through-line of a whole lifetime; the yearly numbers are the seasons within it.`,
+    p: `Numerology is one way to think about themes and timing.${yearKey ? ` It reads this as ${yearKey === 8 || yearKey === 11 ? "an" : "a"} ${yearKey} year, linked with ${NUMBERS[yearKey].core}.` : ""} Your own experience decides which of these, if any, are useful.`,
   });
 
   return format(sections);
@@ -205,14 +206,16 @@ function enneagramReading(data) {
   const sections = [];
 
   if (!t) {
-    return "Enter your Enneagram type (1 through 9) on the My Profile tab to unlock your reading. If you are unsure of your type, look for the core fear and desire below that ring truest, that is usually your type talking.";
+    return "Choose an Enneagram type on the My Profile tab to see its reading. A type is something you decide fits you after reading about it, not something a test assigns, and not knowing yet is fine.";
   }
 
-  sections.push({ h: `Type ${t.number}: ${t.name}`, p: `At your core, your basic fear is ${t.fear}, and your basic desire is ${t.desire}. Everything about your personality is, at root, a strategy to avoid that fear and secure that desire.` });
-  sections.push({ h: "The pattern that runs you", p: `Your passion is ${t.passion}. Your mental fixation is ${t.fixation}. These are not moral failings; they are the automatic pattern your type falls into when you are running on autopilot. Seeing it clearly is most of the work.` });
+  sections.push({ h: `Type ${t.number}: ${t.name}`, p: `Enneagram teachers describe Type ${t.number} as organized around a wish ${t.desire}, and a fear of ${t.fear}. If this type fits you, it can help to notice when that fear is steering a choice.` });
+  sections.push({ h: "Patterns to notice", p: `Teachers link this type with ${t.passion}, and a habit of mind described as ${t.fixation}. These are tendencies, not faults, and a feeling can be a fair response to what is happening.` });
 
-  if (d.wing) {
-    sections.push({ h: `Your wing (${d.wing})`, p: `Your wing flavors the core type, lending it an additional set of colors and coping strategies. You are unmistakably a ${t.number}, but the ${d.wing} wing shapes how that ${t.number} shows up, tilting you toward the neighboring type's gifts and tensions.` });
+  // A wing left over from another type isn't read.
+  const wing = wingOf(d.wing, t.number);
+  if (wing) {
+    sections.push({ h: `Your wing (${d.wing})`, p: `In the Enneagram, a wing is one of the two types beside yours, said to add some of its qualities. Teachers read the ${d.wing} wing as bringing some of Type ${wing}'s qualities into Type ${t.number}. Keep what fits.` });
   }
   if (inst) {
     sections.push({ h: `Your instinct: ${inst.label}`, p: inst.text });
@@ -221,8 +224,8 @@ function enneagramReading(data) {
     sections.push({ h: `Your three-center type (${d.tritype})`, p: `Some Enneagram teachers look at the type you lean on in each center, head, heart and body. Together they can describe more of how you think, feel and act. Keep what fits.` });
   }
 
-  sections.push({ h: "Under stress and in growth", p: `When you are stretched thin you move ${t.disintegration}. When you are healthy and growing you move ${t.integration}. Knowing both directions gives you an early-warning system and a map: notice the slide toward stress, and consciously practice the qualities of your growth point.` });
-  sections.push({ h: "The way through", p: `Some Enneagram teachers pair each type with a "holy idea"; for this type it is ${t.holyIdea}. ${t.growth}` });
+  sections.push({ h: "Under stress and in growth", p: `Teachers describe a direction this type may move under stress, ${t.disintegration}, and one in growth, ${t.integration}. Some people find these useful to notice; they are tendencies, not rules.` });
+  sections.push({ h: "A direction for growth", p: `Some Enneagram teachers pair each type with a "holy idea"; for this type it is ${t.holyIdea}. ${t.growth}` });
 
   if (d.custom_notes) sections.push({ h: "Your own notes", p: d.custom_notes });
 

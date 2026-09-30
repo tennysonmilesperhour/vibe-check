@@ -79,11 +79,21 @@ describe("systemReading", () => {
     expect(reading).not.toContain(`YOUR PERSONAL YEAR (${saved})`);
   });
 
-  it("numerology says an 8 year and an 11 year", () => {
-    // Without a birth date, the saved personal year is the one read.
-    const noDate = { enabled_systems: ["numerology"] };
-    expect(systemReading("numerology", { life_path: "5", personal_year: "8" }, noDate)).toMatch(/reads this as an 8 year/);
-    expect(systemReading("numerology", { life_path: "5", personal_year: "3" }, noDate)).toMatch(/reads this as a 3 year/);
+  it("numerology says an 8 year and a 3 year", () => {
+    // Birth dates whose personal year today is 8, and 3.
+    const born = (year) => {
+      for (let m = 1; m <= 12; m++) for (let d = 1; d <= 28; d++) {
+        const date = `1990-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        if (personalYear(date, todayKey()) === year) return date;
+      }
+      return null;
+    };
+    for (const [year, article] of [[8, "an"], [3, "a"]]) {
+      const profile = { birth_date: born(year), enabled_systems: ["numerology"] };
+      expect(systemReading("numerology", { life_path: "5" }, profile)).toContain(`reads this as ${article} ${year} year`);
+    }
+    // Without a birth date there is no personal year to read, even a saved one.
+    expect(systemReading("numerology", { life_path: "5", personal_year: "8" }, { enabled_systems: ["numerology"] })).not.toMatch(/personal year|a 8|an 8/i);
   });
 
   it("chakras names the center", () => {

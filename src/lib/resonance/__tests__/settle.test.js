@@ -54,8 +54,8 @@ describe('settleCosmicProfile', () => {
     const settled = settleCosmicProfile({ birth_date: '1990-07-15', numerology: { life_path: '5', personal_year: '4' } });
     expect(JSON.parse(JSON.stringify(settled.numerology))).toEqual({ life_path: '5' });
     expect(settleCosmicProfile({ numerology: { life_path: '5' } }).numerology).toEqual({ life_path: '5' });
-    // Without a birth date it can't be worked out, so a saved one stays.
-    expect(settleCosmicProfile({ numerology: { personal_year: '7' } }).numerology).toEqual({ personal_year: '7' });
+    // Without a birth date it can't be kept current, so a saved one goes too.
+    expect(JSON.parse(JSON.stringify(settleCosmicProfile({ numerology: { personal_year: '7' } }).numerology))).toEqual({});
   });
 
   it('gives saved tarot cards a source', () => {

@@ -65,6 +65,9 @@ function CardBack() {
 // ── Card Front — geometry-based SVG art ─────────────────────────────────────
 function CardFront({ card, reversed }) {
   const c = card.id % 3 === 0 ? "#b3bd96" : card.id % 3 === 1 ? "#c6b18a" : "#c2b184";
+  // Two keywords fit the card's bottom line only when short; otherwise the first.
+  const keywordPair = card.keywords.slice(0, 2).join('  ·  ');
+  const keywordLine = keywordPair.length > 30 ? card.keywords[0] : keywordPair;
   const isMajor = card.id < 22;
 
   return (
@@ -107,7 +110,7 @@ function CardFront({ card, reversed }) {
       </text>
       <text x="60" y="171" textAnchor="middle" fontSize="5.8" fill={c} opacity="0.5"
         fontFamily="Georgia, serif">
-        {card.keywords.slice(0,2).join('  ·  ')}
+        {keywordLine}
       </text>
       {reversed && (
         <text x="60" y="184" textAnchor="middle" fontSize="5.5" fill="#b59b79" opacity="0.65"

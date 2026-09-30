@@ -109,8 +109,9 @@ function numerologyReading(data, computed) {
   const lpKey = reduceToKey(d.life_path);
   const exprKey = reduceToKey(d.expression);
   const soulKey = reduceToKey(d.soul_urge);
-  // The personal year changes each birthday, so the computed one wins.
-  const yearKey = reduceToKey(computed.personal_year || d.personal_year);
+  // The personal year changes each birthday, so it is only ever worked out
+  // from the birth date, never read from saved data.
+  const yearKey = reduceToKey(computed.personal_year);
 
   if (!lpKey && !exprKey && !soulKey) {
     return "Add your birth date and full birth name on the Systems tab. Your Life Path comes from your birth date and your Expression and Soul Urge from your name, and the full reading will compose here.";

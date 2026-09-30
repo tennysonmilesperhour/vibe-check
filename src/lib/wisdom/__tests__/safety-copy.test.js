@@ -5,9 +5,13 @@ import { FULL_DECK } from '../../../components/tarot/tarotDeck';
 import { ORACLE_DECK } from '../../../components/tarot/oracleDeck';
 import { ARCANA } from '../content/tarotArchetype';
 import { CHAKRAS } from '../content/chakras';
-import { ENNEAGRAM } from '../content/enneagram';
+import { ENNEAGRAM, INSTINCTS } from '../content/enneagram';
 import { HD_AUTHORITIES, HD_TYPES, HD_PROFILES } from '../content/humanDesign';
-import { GENE_KEYS } from '../content/geneKeys';
+import { GENE_KEYS, GK_SEQUENCE_META } from '../content/geneKeys';
+import { NUMBERS } from '../content/numerology';
+import { ZODIAC } from '../content/zodiac';
+import { MINOR_ARCANA } from '../../../components/tarot/tarotDeck';
+import { ENNEAGRAM_TYPES } from '../../../components/cosmic/correspondences';
 import profileFormSource from '../../../components/cosmic/ProfileForm.jsx?raw';
 import correspondencesSource from '../../../components/cosmic/correspondences.jsx?raw';
 
@@ -22,17 +26,50 @@ const PUSHING = /even where it feels risky|pick alive|scares and excites|act lik
 // Lines that told the person who they are because of a card or a chart.
 const IDENTITY = /you carry the soul|you are here to|here to give|soul archetype|draw your archetype|center makes you|this is your gift|characterizes your nature/i;
 
+// Lines that assigned a destiny, a lesson or a fixed nature.
+const DESTINY = /you are meant to|meant to (be|illuminate|lead)|the lesson (is|of)|your destiny|destined|most powerful of|born to|your purpose is|who you grow into|at your core|you are unmistakably|runs you|the vibration of/i;
+
+const SYSTEM_TEXTS = () => [FULL_DECK, ORACLE_DECK, ARCANA, CHAKRAS, ENNEAGRAM, INSTINCTS, HD_AUTHORITIES, HD_TYPES, HD_PROFILES, GENE_KEYS, GK_SEQUENCE_META, NUMBERS, ZODIAC];
+
 const card = (id) => FULL_DECK.find((item) => item.id === id);
 const oracle = (id) => ORACLE_DECK.find((item) => item.id === id);
 const texts = (value) => (typeof value === 'string' ? [value] : Array.isArray(value) ? value.flatMap(texts) : value && typeof value === 'object' ? Object.values(value).flatMap(texts) : []);
 
 describe('symbolic readings never talk over harm', () => {
-  it('keeps the decks and system texts free of bypassing and self-blame', () => {
-    for (const text of texts([FULL_DECK, ORACLE_DECK, ARCANA, CHAKRAS, ENNEAGRAM, HD_AUTHORITIES, HD_TYPES, HD_PROFILES, GENE_KEYS])) {
+  it('keeps the decks and system texts free of bypassing, self-blame, identity and destiny claims', () => {
+    for (const text of texts(SYSTEM_TEXTS())) {
       expect(text).not.toMatch(BYPASSING);
       expect(text).not.toMatch(PUSHING);
+      expect(text).not.toMatch(IDENTITY);
+      expect(text).not.toMatch(DESTINY);
     }
-    for (const text of texts([ARCANA, HD_TYPES, HD_PROFILES])) expect(text).not.toMatch(IDENTITY);
+  });
+
+  it('reads every number and Enneagram type without telling someone who they are', () => {
+    const profile = { birth_date: '1990-07-15', first_name: 'Ann', last_name: 'Lee', enabled_systems: ['numerology', 'enneagram'] };
+    const readings = [
+      ...Object.keys(NUMBERS).map((n) => systemReading('numerology', { life_path: n, expression: n, soul_urge: n, personal_year: n }, profile)),
+      ...Object.keys(ENNEAGRAM).map((n) => systemReading('enneagram', { type: n, wing: `${n}w${n === '9' ? 1 : Number(n) + 1}`, instinct: 'Social (so)', tritype: '459' }, profile)),
+    ];
+    for (const reading of readings) {
+      for (const pattern of [BYPASSING, PUSHING, IDENTITY, DESTINY]) expect(reading).not.toMatch(pattern);
+    }
+  });
+
+  it('gives each minor arcana card its own reading', () => {
+    expect(MINOR_ARCANA).toHaveLength(56);
+    expect(MINOR_ARCANA.map((c) => c.id)).toEqual(Array.from({ length: 56 }, (_, i) => i + 22));
+    expect(MINOR_ARCANA[0].name).toBe('Ace of Wands');
+    expect(MINOR_ARCANA[55].name).toBe('King of Pentacles');
+    expect(new Set(MINOR_ARCANA.map((c) => c.meaning)).size).toBe(56);
+    expect(new Set(MINOR_ARCANA.map((c) => c.reversed)).size).toBe(56);
+    for (const c of MINOR_ARCANA) expect(c.keywords).toHaveLength(3);
+  });
+
+  it('names Enneagram types in Vibe Check\'s own words', () => {
+    const schoolNames = /reformer|helper|achiever|individualist|investigator|loyalist|enthusiast|challenger|peacemaker|perfectionist|giver|performer|romantic|observer|epicure|mediator/i;
+    for (const text of [...ENNEAGRAM_TYPES, ...Object.values(ENNEAGRAM).map((t) => t.name)]) expect(text).not.toMatch(schoolNames);
+    expect(ENNEAGRAM_TYPES[3]).toBe('4 – Authenticity and depth');
   });
 
   it('says so first for questions about safety, a relationship or another person, in their common forms', () => {

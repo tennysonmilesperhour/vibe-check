@@ -1,42 +1,37 @@
-// Human Design content for the local wisdom engine: the five Types with their
-// strategy and signposts, the seven Authorities (how to decide), the twelve
-// Profiles (the role you play), and Definition. Keys are matched loosely so the
-// profile form's free-text values still resolve.
+// Human Design content for the local wisdom engine, in Vibe Check's own words:
+// the five Types with their strategy and signposts, the seven Authorities (how
+// Human Design suggests deciding), and the twelve Profiles. Keys are matched
+// loosely so the profile form's free-text values still resolve.
 
 export const HD_TYPES = {
   Manifestor: {
     strategy: "to inform before you act",
     signature: "peace",
     notSelf: "anger",
-    aura: "closed and repelling, built to initiate and impact",
     body: "Human Design describes Manifestors, roughly a tenth of people, as initiators: people who start things and set others in motion, with energy that tends to come in bursts. Its suggestion for this type is to let the people an action will affect know before acting, which many Manifestors say eases the resistance they meet. Whether this fits you is yours to judge.",
   },
   Generator: {
     strategy: "to wait to respond",
     signature: "satisfaction",
     notSelf: "frustration",
-    aura: "open and enveloping, built to master and sustain",
     body: "Human Design describes Generators as having steady, renewable energy for the work and people they care about, and less for what they don't. Its strategy for this type is to respond: to notice a gut yes or no to what comes along, rather than deciding everything from the mind. Many Generators say that following those responses leaves them satisfied and tired in a good way. Your own experience decides whether it fits.",
   },
   "Manifesting Generator": {
     strategy: "to wait to respond, then inform",
     signature: "satisfaction and peace",
     notSelf: "frustration and anger",
-    aura: "open and enveloping, but fast and multi-tracked",
     body: "Human Design describes Manifesting Generators as Generators who move quickly once they commit, often doing several things at once and skipping steps that feel unneeded. Its suggestion is to respond first, then let the people affected know before leaping. If a fast, many-sided way of working suits you, this may feel familiar; if not, leave it.",
   },
   Projector: {
     strategy: "to wait for the invitation",
     signature: "success",
     notSelf: "bitterness",
-    aura: "focused and absorbing, built to guide",
     body: "Human Design describes Projectors as guides who see deeply into people and systems, with energy that is less steady than a Generator's. It suggests waiting to be invited into big undertakings, such as a role or a project, and resting more than others might. Whether that suits you is yours to judge, and an invitation is never needed to ask for what you need.",
   },
   Reflector: {
     strategy: "to wait a lunar cycle before big decisions",
     signature: "surprise",
     notSelf: "disappointment",
-    aura: "resistant and sampling, a mirror of the community",
     body: "Human Design describes Reflectors, under one percent of people, as fully open: sensitive to the people and places around them, and able to reflect how a community is doing. It suggests giving major decisions about a lunar cycle, around 28 days, and talking them through with people you trust. That timing is for choices you can take time over.",
   },
 };

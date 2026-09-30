@@ -27,66 +27,103 @@ export const MAJOR_ARCANA = [
 ];
 
 const SUITS = [
-  { name: "Wands",    geoType: "flame-wand",     color: "#f97316", element: "Fire",  domain: "passion, creativity, ambition", area: "drive and creativity" },
-  { name: "Cups",     geoType: "chalice",         color: "#38bdf8", element: "Water", domain: "emotions, relationships, intuition", area: "feelings and connection" },
-  { name: "Swords",   geoType: "crossed-swords",  color: "#F5A25E", element: "Air",   domain: "intellect, truth, conflict", area: "thinking and speaking up" },
-  { name: "Pentacles",geoType: "pentagram",        color: "#4ade80", element: "Earth", domain: "material, career, abundance", area: "work and money" },
+  { name: "Wands",    geoType: "flame-wand",     color: "#f97316" },
+  { name: "Cups",     geoType: "chalice",         color: "#38bdf8" },
+  { name: "Swords",   geoType: "crossed-swords",  color: "#F5A25E" },
+  { name: "Pentacles",geoType: "pentagram",        color: "#4ade80" },
 ];
 
-const COURT_MEANINGS = {
-  Page:   { keywords: ["student","curiosity","new energy"],    meaning: "Youthful, curious energy enters — a student of this element's gifts." },
-  Knight: { keywords: ["action","pursuit","adventure"],        meaning: "Bold, driven movement. Pursue your vision with committed momentum." },
-  Queen:  { keywords: ["mastery","nurturing","embodiment"],    meaning: "Mature, embodied wisdom. Lead with the full mastery of this element." },
-  King:   { keywords: ["authority","command","vision"],        meaning: "Sovereign command of this domain. Take your seat of authority wisely." },
-};
-
-const PIP_MEANINGS = {
-  Ace:   { keywords: ["pure potential","seed","gift"],         meaning: "A seed of something new in this area of life." },
-  Two:   { keywords: ["balance","choice","partnership"],       meaning: "A moment of balance, union, or choice between two paths." },
-  Three: { keywords: ["growth","collaboration","expansion"],   meaning: "Initial vision expands through creativity and collaboration." },
-  Four:  { keywords: ["stability","rest","consolidation"],     meaning: "A pause to consolidate gains. Rest, stability, and foundation." },
-  Five:  { keywords: ["conflict","challenge","change"],        meaning: "Tension, conflict, or loss. Conflict doesn't have to mean growth; it can simply be hard." },
-  Six:   { keywords: ["harmony","success","forward motion"],   meaning: "A step toward steadier ground. Notice what has helped." },
-  Seven: { keywords: ["strategy","perseverance","vision"],     meaning: "Hold your ground with strategic clarity and unwavering vision." },
-  Eight: { keywords: ["movement","speed","mastery"],           meaning: "Rapid movement and focused mastery accelerate your path." },
-  Nine:  { keywords: ["resilience","completion","wisdom"],     meaning: "Near the end of a cycle — draw on all you've learned with resilience." },
-  Ten:   { keywords: ["completion","fulfillment","burden"],    meaning: "An ending, or a load carried to its limit. What would help you set some of it down?" },
+// Upright and reversed meanings for each of the 56 minor arcana, written for
+// Vibe Check from the traditional Rider-Waite-Smith readings of each card.
+// Keywords read as "a card of <first> and <second>".
+const MINOR_MEANINGS = {
+  Wands: {
+    Ace:    { keywords: ["inspiration", "a new spark", "creative energy"], meaning: "A spark of energy or a new idea. What has caught your interest lately, and what small step would let you try it?", reversed: "A spark that hasn't caught yet, or energy running low. It is fine to wait until you have more to give." },
+    Two:    { keywords: ["planning", "choosing a direction", "looking ahead"], meaning: "Planning, and weighing where to go next. What would you choose if you looked a little further ahead?", reversed: "Hesitating over a plan, or staying with what is familiar. What would make the next step feel more manageable?" },
+    Three:  { keywords: ["expansion", "foresight", "early progress"], meaning: "Plans starting to move and a wider view opening up. What is already underway, and what are you watching for?", reversed: "Delays, or plans that haven't gone as hoped. Frustration makes sense; what could you adjust, if anything?" },
+    Four:   { keywords: ["celebration", "homecoming", "a milestone"], meaning: "A milestone, a welcome, a reason to celebrate. What have you reached that deserves marking, and who would you like to mark it with?", reversed: "A celebration that feels uneasy, or tension where you want to feel at home. You don't have to pretend to feel festive." },
+    Five:   { keywords: ["competition", "friction", "many voices"], meaning: "Competition and friction, with many voices at once. Is this a lively contest or a draining one, and where do you want to put your energy?", reversed: "Friction easing, or conflict being avoided. Avoiding a fight can be wise; so can saying what you need." },
+    Six:    { keywords: ["recognition", "a win", "confidence"], meaning: "Recognition and a win, large or small. Where has your effort paid off, and can you let yourself enjoy it?", reversed: "Recognition that hasn't come, or doubting your own success. Your effort counts whether or not others notice it." },
+    Seven:  { keywords: ["standing your ground", "conviction", "defending a position"], meaning: "Holding a position under pressure. What are you standing up for, and is it worth the energy it takes?", reversed: "Feeling worn down by constant pressure. You can decide which positions to keep defending and where to ask for backup." },
+    Eight:  { keywords: ["momentum", "swift movement", "news"], meaning: "Things moving fast: news, travel, or momentum. What is picking up speed, and what pace works for you?", reversed: "Delays, or a rush that feels out of control. What would help you find a workable pace?" },
+    Nine:   { keywords: ["resilience", "persistence", "guardedness"], meaning: "Weary but still standing, near the end of a long effort. What has kept you going, and what would help you rest?", reversed: "Exhaustion, or staying on guard long after it helps. Being tired is a reason to rest, not a sign you have done something wrong." },
+    Ten:    { keywords: ["burden", "responsibility", "overload"], meaning: "Carrying a heavy load, maybe more than one person should. What could you set down, share, or ask for help with?", reversed: "Starting to put some of the load down, or feeling close to your limit. Asking for help is a reasonable response to too much." },
+    Page:   { keywords: ["enthusiasm", "discovery", "fresh ideas"], meaning: "Enthusiasm and a curious, exploring energy, sometimes linked to someone young at heart. What would you like to explore just for the fun of it?", reversed: "Ideas that start and stall, or hesitation about something new. Not every spark needs to become a project." },
+    Knight: { keywords: ["passion", "boldness", "adventure"], meaning: "Passion and bold movement, sometimes impatient. What are you eager to chase, and how fast do you want to go?", reversed: "Haste, restlessness, or plans stalled by frustration. A pause can keep energy from scattering." },
+    Queen:  { keywords: ["confidence", "warmth", "determination"], meaning: "Warm, confident energy that draws people in. Where would you like to show up more fully today?", reversed: "Confidence running low, or warmth stretched thin. What would help you feel steadier?" },
+    King:   { keywords: ["vision", "leadership", "initiative"], meaning: "Vision and the drive to lead it. What larger aim do you care about, and who would you like beside you in it?", reversed: "Impatience, or expecting too much of yourself or others. A vision can move at a humane pace." },
+  },
+  Cups: {
+    Ace:    { keywords: ["love", "emotional openness", "compassion"], meaning: "An opening of feeling: love, compassion, or creative flow. Where do you feel moved right now, and what would you like to do with that feeling?", reversed: "Feelings held back, or a sense of emptiness. Feelings can come in their own time." },
+    Two:    { keywords: ["partnership", "mutual connection", "attraction"], meaning: "A connection between two people that feels mutual. What makes a relationship feel balanced to you?", reversed: "A connection feeling one-sided or out of step. How you are treated in a relationship matters more than any card." },
+    Three:  { keywords: ["friendship", "celebration", "community"], meaning: "Friendship and shared celebration. Who do you enjoy being with, and when did you last get together?", reversed: "Feeling left out, or a social scene that has become draining. Choosing a quieter night is allowed." },
+    Four:   { keywords: ["contemplation", "withdrawal", "reevaluation"], meaning: "Withdrawing to think, maybe missing what is on offer. What are you tired of, and is there something you haven't noticed yet?", reversed: "Interest returning, or a withdrawal that has lasted a long time. If everything has felt flat for a while, talking with someone can help." },
+    Five:   { keywords: ["grief", "loss", "regret"], meaning: "Grief over what was lost. Loss deserves time. What, or who, is still with you, when you are ready to look?", reversed: "Grief starting to shift, or sorrow that is still heavy. There is no schedule for grief." },
+    Six:    { keywords: ["nostalgia", "memory", "kindness"], meaning: "Memories, nostalgia, and simple kindness. What from your past do you want to carry with you, and what can stay there?", reversed: "Being pulled back into the past, or ready to look forward. Not every memory is a comfort, and you choose which ones to revisit." },
+    Seven:  { keywords: ["choices", "imagination", "wishful thinking"], meaning: "Many options, some real and some wishful. Which possibilities are within reach, and which are daydreams to enjoy as daydreams?", reversed: "Clarity after confusion, or too many options to choose from. Narrowing to two or three can help." },
+    Eight:  { keywords: ["walking away", "searching for meaning", "a change of course"], meaning: "Turning from something that no longer feels fulfilling, to look for more. What feels finished, and what are you looking for?", reversed: "Unsure whether to stay or go, or wandering without a direction. Big choices like this can take time, and you can talk them through with someone you trust." },
+    Nine:   { keywords: ["contentment", "satisfaction", "enjoyment"], meaning: "Contentment, sometimes called the wish card. What has gone well lately, and what does being satisfied feel like for you?", reversed: "Contentment that feels just out of reach, or wanting more than what you have. What would enough look like?" },
+    Ten:    { keywords: ["belonging", "emotional fulfillment", "harmony"], meaning: "A sense of belonging and shared happiness. Where do you feel at home with people, and what helps that feeling grow?", reversed: "Tension where you hoped for harmony, or an ideal of family that doesn't match your life. Belonging can come from people you choose." },
+    Page:   { keywords: ["sensitivity", "creative curiosity", "tenderness"], meaning: "A tender, imaginative energy, open to feeling and surprise. What small creative or emotional impulse could you follow today?", reversed: "Feeling easily hurt, or creative ideas kept private. You decide what to share and when." },
+    Knight: { keywords: ["romance", "idealism", "following your heart"], meaning: "Romance, charm, and following your heart. What are you drawn toward, and does it fit what you value?", reversed: "Moodiness, or an ideal that doesn't match reality. Charm is not the same as care; notice whether someone's words and actions line up." },
+    Queen:  { keywords: ["compassion", "intuition", "emotional depth"], meaning: "Compassion and deep, intuitive care. How could you offer that care to yourself as well as to others?", reversed: "Caring for others at your own expense, or feeling swamped by their feelings. Your needs count too." },
+    King:   { keywords: ["emotional steadiness", "diplomacy", "calm"], meaning: "Calm, steady feeling, able to hold strong emotions without being swept away. What helps you stay steady when things get intense?", reversed: "Feelings held down, or moods that swing. Steadiness is different from never feeling anything." },
+  },
+  Swords: {
+    Ace:    { keywords: ["clarity", "truth", "a breakthrough"], meaning: "A moment of clarity or a new idea. What has become clearer, and what would you like to say or decide with it?", reversed: "Confusion, or a truth that is hard to see yet. It is fine to gather more information before deciding." },
+    Two:    { keywords: ["a difficult choice", "indecision", "a stalemate"], meaning: "A hard choice, and perhaps not wanting to look at it yet. What would help you see both sides more clearly?", reversed: "New information arriving, or feeling overwhelmed by a decision. You can decide one piece at a time." },
+    Three:  { keywords: ["heartbreak", "grief", "painful truth"], meaning: "Heartbreak or painful news. Hurt like this is real, and it takes the time it takes. Who could keep you company in it?", reversed: "Pain starting to ease, or sorrow that lingers. Both are part of grieving, and neither needs to be hurried." },
+    Four:   { keywords: ["rest", "recovery", "retreat"], meaning: "Rest and recovery. Where could you let yourself stop for a while, without having to earn it?", reversed: "Restlessness, or running on empty. Rest is a need, not a reward." },
+    Five:   { keywords: ["conflict", "tension", "a hollow win"], meaning: "Conflict where winning may cost more than it gives. What outcome do you actually want, and what would it cost?", reversed: "Making peace after a conflict, or tension that lingers. If someone is hostile toward you, that is theirs to answer for." },
+    Six:    { keywords: ["transition", "moving away from difficulty", "calmer waters"], meaning: "Moving from a hard time toward calmer ground. What are you leaving behind, and what support do you have for the crossing?", reversed: "A transition that has stalled, or unfinished business. Change can be slow, and it is fine to need help with it." },
+    Seven:  { keywords: ["deception", "secrecy", "strategy"], meaning: "Strategy, secrecy, or someone not being straight. Where do you want more honesty, from others or from yourself? If you have been deceived, that is not your fault.", reversed: "Something hidden coming to light, or a choice to come clean. What would help you trust what you know?" },
+    Eight:  { keywords: ["feeling trapped", "restriction", "limited options"], meaning: "Feeling boxed in, with few options in view. Which limits are real, and which could you test? If someone else is keeping you in place, support is here whenever you want it.", reversed: "Seeing a way out, or starting to loosen a restriction. Small steps count." },
+    Nine:   { keywords: ["anxiety", "worry", "sleepless nights"], meaning: "Worry and sleepless nights. Anxious thoughts can feel louder at night. What would help you feel a little safer or less alone right now?", reversed: "Worry beginning to ease, or anxiety that feels too heavy to carry alone. Reaching out to someone you trust, or to support, can help." },
+    Ten:    { keywords: ["a painful ending", "exhaustion", "betrayal"], meaning: "A painful ending, or feeling you have hit bottom. What happened may be deeply unfair. What do you need most right now?", reversed: "Slowly getting up after something painful, or still feeling pinned down. Recovery has no set pace, and help can make it lighter." },
+    Page:   { keywords: ["curiosity", "new ideas", "vigilance"], meaning: "A curious, questioning mind. What would you like to find out, and who could you ask?", reversed: "Hasty words, or talk without follow-through. What is worth saying, and what can wait?" },
+    Knight: { keywords: ["drive", "fast thinking", "ambition"], meaning: "Fast thinking and a drive to charge ahead. What are you rushing toward, and what might you miss at this speed?", reversed: "Impulsiveness, or words that land harder than intended. Slowing down can protect you and others." },
+    Queen:  { keywords: ["clear boundaries", "honesty", "independence"], meaning: "Clear thinking, honest words, and firm boundaries. What would you say if you spoke plainly and kindly?", reversed: "Sharpness or coldness, perhaps after being hurt. A boundary can be firm without shutting out warmth." },
+    King:   { keywords: ["clear judgement", "fairness", "authority"], meaning: "Clear judgement and fair authority. What would a fair decision here look like, based on what you know?", reversed: "Power or cleverness used against others. If someone uses their authority over you unfairly, that is theirs to answer for." },
+  },
+  Pentacles: {
+    Ace:    { keywords: ["a new opportunity", "resources", "practical beginnings"], meaning: "A practical opportunity in work, money, health, or home. What could you plant now that might grow over time?", reversed: "An opportunity that slipped past, or plans that need firmer footing. What would you want in place before starting?" },
+    Two:    { keywords: ["balance", "juggling", "adaptability"], meaning: "Juggling several demands at once. What needs your attention first, and what could wait?", reversed: "Too many things at once, or balls starting to drop. Letting something go is a reasonable choice when there is too much." },
+    Three:  { keywords: ["collaboration", "craft", "teamwork"], meaning: "Skilled work and collaboration. Who do you build well with, and what could you make together?", reversed: "Teamwork that isn't working, or skills overlooked. What would help the work go more smoothly?" },
+    Four:   { keywords: ["security", "saving", "holding on"], meaning: "Holding on to what gives you security. What are you protecting, and is holding it this tightly still helping?", reversed: "Loosening your grip, or worry about having enough. Money worries are real; what would ease them a little?" },
+    Five:   { keywords: ["hardship", "worry about money", "feeling left out"], meaning: "Hard times, material or otherwise, and feeling left out in the cold. Hardship is not a personal failing. Where could you find support, even a little?", reversed: "Hard times beginning to ease, or help within reach. Accepting support is a sensible choice." },
+    Six:    { keywords: ["generosity", "giving and receiving", "fairness"], meaning: "Giving and receiving. Where are you giving, where are you receiving, and does the exchange feel fair?", reversed: "Giving with strings attached, or an exchange out of balance. Help should not come with control." },
+    Seven:  { keywords: ["patience", "long-term effort", "assessment"], meaning: "Pausing to see how a long effort is growing. What is working, and what would you change?", reversed: "Impatience with slow results, or effort that isn't paying off. You can revise the plan without judging yourself." },
+    Eight:  { keywords: ["diligence", "skill", "practice"], meaning: "Steady practice and careful work. What skill are you building, and how much effort do you want to give it?", reversed: "Perfectionism, or work that has lost its meaning. Good enough is sometimes the right standard." },
+    Nine:   { keywords: ["self-sufficiency", "comfort", "independence"], meaning: "Comfort and independence you have built. What do you enjoy about what you have made for yourself?", reversed: "Working too hard to enjoy it, or independence that feels shaky. What would let you enjoy a little of what you have?" },
+    Ten:    { keywords: ["legacy", "long-term security", "family"], meaning: "Long-term security, family, and what passes between generations. What do you want to build or pass on?", reversed: "Strain over money or family, or security that feels uncertain. You don't have to carry family expectations alone." },
+    Page:   { keywords: ["study", "a new skill", "practical ambition"], meaning: "A student's focus: learning a skill or starting something practical. What would you like to learn, one step at a time?", reversed: "Putting off a plan, or losing focus. A smaller first step can make starting easier." },
+    Knight: { keywords: ["steady effort", "reliability", "routine"], meaning: "Slow, reliable, steady effort. What routine is serving you well, and is the pace sustainable?", reversed: "Feeling stuck in a routine, or working without rest. What small change would bring back some energy?" },
+    Queen:  { keywords: ["practical care", "resourcefulness", "home"], meaning: "Practical care for home, food, body, and resources. How could you look after your own needs today, the way you might for someone else?", reversed: "Caring for everyone except yourself, or work and home pulling against each other. Your own care counts." },
+    King:   { keywords: ["stability", "provision", "abundance"], meaning: "Material stability, and the ability to provide. What does security mean to you, and what helps you feel it?", reversed: "Holding on too tightly to money, or using it to control. Money used to control someone is a form of harm; support is here if that is happening to you." },
+  },
 };
 
 const NUM_NAMES = ["Ace","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten"];
 const COURT_NAMES = ["Page","Knight","Queen","King"];
 
+// Ids 22 to 77 in this order (each suit's Ace to Ten, then its court), which
+// saved readings rely on.
 function buildMinorArcana() {
   const cards = [];
   let id = 22;
   SUITS.forEach(suit => {
-    NUM_NAMES.forEach(num => {
-      const pip = PIP_MEANINGS[num];
+    [...NUM_NAMES, ...COURT_NAMES].forEach(rank => {
+      const { keywords, meaning, reversed } = MINOR_MEANINGS[suit.name][rank];
       cards.push({
         id: id++,
-        name: `${num} of ${suit.name}`,
-        roman: num,
+        name: `${rank} of ${suit.name}`,
+        roman: rank,
         geoType: suit.geoType,
         color: suit.color,
         shadow: suit.color,
-        keywords: [`${suit.domain.split(",")[0].trim()}`, ...pip.keywords.slice(0,2)],
-        meaning: `${pip.meaning} In the realm of ${suit.element} (${suit.domain}).`,
-        reversed: `It can point to ${suit.area} feeling harder than usual. What would help right now?`,
-        suit: suit.name,
-      });
-    });
-    COURT_NAMES.forEach(court => {
-      const c = COURT_MEANINGS[court];
-      cards.push({
-        id: id++,
-        name: `${court} of ${suit.name}`,
-        roman: court,
-        geoType: suit.geoType,
-        color: suit.color,
-        shadow: suit.color,
-        keywords: [...c.keywords.slice(0,2), suit.domain.split(",")[0].trim()],
-        meaning: `${c.meaning} Element: ${suit.element} — ${suit.domain}.`,
-        reversed: `The ${court.toLowerCase()}'s qualities may feel out of reach or overdone, around ${suit.area}.`,
+        keywords,
+        meaning,
+        reversed,
         suit: suit.name,
       });
     });

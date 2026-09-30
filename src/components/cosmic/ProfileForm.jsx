@@ -75,20 +75,20 @@ export function HumanDesignForm({ data, onChange }) {
     const set = (key, val) => onChange({ ...data, [key]: val });
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Type" hint="Your fundamental energetic strategy for engaging with life">
+            <Field label="Type" hint="From your Human Design chart: Manifestor, Generator, Manifesting Generator, Projector or Reflector">
                 <SimpleSelect value={data?.type} onChange={v => set('type', v)} options={HUMAN_DESIGN_TYPES} />
             </Field>
-            <Field label="Authority" hint="Your inner decision-making intelligence">
+            <Field label="Authority" hint="What Human Design suggests relying on when you decide">
                 <SimpleSelect value={data?.authority} onChange={v => set('authority', v)} options={HUMAN_DESIGN_AUTHORITIES} />
             </Field>
-            <Field label="Profile" hint="Your role in the world and how you learn">
+            <Field label="Profile" hint="Two numbers, such as 2/4, that Human Design links with how you learn and relate">
                 <SimpleSelect value={data?.profile} onChange={v => set('profile', v)} options={HUMAN_DESIGN_PROFILES} />
             </Field>
-            <Field label="Definition" hint="How consistently your energy flows">
+            <Field label="Definition" hint="How Human Design describes the links between the defined centers in your chart">
                 <SimpleSelect value={data?.definition} onChange={v => set('definition', v)} options={["Single Definition", "Split Definition", "Triple Split", "Quadruple Split"]} />
             </Field>
             <div className="md:col-span-2">
-                <Field label="Incarnation Cross" hint="Your life's overarching purpose theme">
+                <Field label="Incarnation Cross" hint="A theme Human Design links with your chart as a whole">
                     <Input className="mt-1" value={data?.incarnation_cross || ''} onChange={e => set('incarnation_cross', e.target.value)} placeholder="e.g. Right Angle Cross of the Sphinx" />
                 </Field>
             </div>
@@ -169,13 +169,13 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
     }, [birthDate, firstName, lastName]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fields = [
-        { key: 'life_path', label: 'Life Path Number', hint: 'The path itself — from your birth date' },
-        { key: 'expression', label: 'Expression Number', hint: 'Your gifts & destiny — from your full name' },
-        { key: 'soul_urge', label: 'Soul Urge Number', hint: "Your heart's desire — from the vowels in your name" },
-        { key: 'personality', label: 'Personality Number', hint: 'Your outer self — from the consonants in your name' },
-        { key: 'birthday', label: 'Birthday Number', hint: 'A special gift — from the day you were born' },
-        { key: 'maturity', label: 'Maturity Number', hint: 'Who you grow into — Life Path + Expression' },
-        { key: 'personal_year', label: 'Personal Year Number', hint: 'This year’s theme — birth date + current year' },
+        { key: 'life_path', label: 'Life Path Number', hint: 'From your birth date. Numerology reads it as the longer arc of a life' },
+        { key: 'expression', label: 'Expression Number', hint: 'From your full birth name. Numerology links it with talents and ways of working' },
+        { key: 'soul_urge', label: 'Soul Urge Number', hint: 'From the vowels in your name. Numerology links it with what you want underneath' },
+        { key: 'personality', label: 'Personality Number', hint: 'From the consonants in your name. Numerology links it with how others first see you' },
+        { key: 'birthday', label: 'Birthday Number', hint: 'From the day of the month you were born' },
+        { key: 'maturity', label: 'Maturity Number', hint: 'Your Life Path plus your Expression. Numerology links it with later life' },
+        { key: 'personal_year', label: 'Personal Year Number', hint: 'From your birth date and the current year' },
     ];
 
     return (
@@ -197,7 +197,7 @@ export function NumerologyForm({ data, onChange, birthDate, firstName, lastName 
                     </div>
                     {debts.length > 0 && (
                         <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>
-                            Karmic debt: {debts.map(d => `${d.number} (${d.source})`).join(', ')}
+                            Karmic debt numbers: {debts.map(d => `${d.number} (${d.source})`).join(', ')}. A traditional numerology term for 13, 14, 16 and 19; it doesn't mean you owe anything.
                         </p>
                     )}
                 </div>
@@ -270,13 +270,13 @@ export function EnneagramForm({ data, onChange }) {
 
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Type" hint="Your core motivation — the fear you avoid and the desire that drives you">
+            <Field label="Type" hint="The type whose description fits you best. Teachers describe each by a central wish and fear">
                 <SimpleSelect value={data?.type} onChange={v => set('type', v)} options={ENNEAGRAM_TYPES} />
             </Field>
-            <Field label="Wing" hint="The neighboring type that flavors how your core type expresses">
+            <Field label="Wing" hint="One of the two types beside yours, said to add some of its qualities">
                 <SimpleSelect value={data?.wing} onChange={v => set('wing', v)} options={wingOptions} />
             </Field>
-            <Field label="Instinctual Variant" hint="Which survival drive leads: self-preservation, social, or one-to-one">
+            <Field label="Instinctual Variant" hint="Which of three instincts teachers describe as leading: self-preservation, social, or one-to-one">
                 <SimpleSelect value={data?.instinct} onChange={v => set('instinct', v)} options={ENNEAGRAM_INSTINCTS} />
             </Field>
             <Field label="Three-center type" hint="Optional: the type you lean on in each center, head, heart and body, e.g. 469 or 358">

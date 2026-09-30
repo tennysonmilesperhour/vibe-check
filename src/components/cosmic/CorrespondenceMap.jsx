@@ -171,7 +171,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
           </div>
         ) : (
           <div className="text-center py-6">
-            <p className="text-xs mb-3" style={{ color: 'var(--gh-ink-muted)' }}>Composed exactly across your active systems — the story they tell together</p>
+            <p className="text-xs mb-3" style={{ color: 'var(--gh-ink-muted)' }}>Composed from the systems you have turned on, side by side</p>
             <button type="button" onClick={generateDeepMap} disabled={enabledSystems.length === 0} className="ink-button text-sm disabled:opacity-50">
               Weave the integrated reading
             </button>

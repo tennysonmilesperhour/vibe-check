@@ -122,18 +122,14 @@ function collectSignals(enabled, profile, computed) {
     const sun = astrologyPlacements(profile.astrology || {}, computed.astrology || {}).find(p => p.id === "sun")?.sign;
     if (sun && ZODIAC[sun]) out.push({
       system: "astrology", label: "Astrology", short: `a ${sun} Sun`,
-      essence: ZODIAC[sun].gift, verb: `live out ${ZODIAC[sun].keywords[0]} and ${ZODIAC[sun].keywords[1]}`,
-      short2: sun, element: ZODIAC[sun].element,
-      tell: `when you drift into ${ZODIAC[sun].shadow}`,
+      essence: ZODIAC[sun].gift,
     });
   }
   if (enabled.includes("human_design")) {
     const type = resolveType(profile.human_design?.type);
     if (type) out.push({
       system: "human_design", label: "Human Design", short: `the ${type}`,
-      essence: `to honor your ${type} strategy, ${HD_TYPES[type].strategy}`,
-      verb: `operate as a ${type}, ${HD_TYPES[type].strategy}`,
-      tell: `when you feel ${HD_TYPES[type].notSelf} instead of ${HD_TYPES[type].signature}`,
+      essence: `the ${type} strategy (${HD_TYPES[type].strategy})`,
     });
   }
   if (enabled.includes("numerology")) {
@@ -141,8 +137,7 @@ function collectSignals(enabled, profile, computed) {
     if (lp) out.push({
       system: "numerology", label: "Numerology", short: `Life Path ${lp}`,
       fromBirthDate: lp === reduceToKey(computed.numerology?.life_path),
-      essence: NUMBERS[lp].core, verb: NUMBERS[lp].core,
-      tell: `when you avoid the lesson of the ${NUMBERS[lp].title}`,
+      essence: NUMBERS[lp].core,
     });
   }
   if (enabled.includes("tarot_archetype")) {
@@ -150,32 +145,28 @@ function collectSignals(enabled, profile, computed) {
     if (birth) out.push({
       system: "tarot_archetype", label: "Tarot", short: `the archetype of ${birth.name}`,
       fromBirthDate: birth.name === resolveArcana(computed.tarot_archetype?.birth_card)?.name,
-      essence: `the path of ${birth.keywords[0]}`, verb: `embody ${birth.name}`,
-      tell: `when you forget you carry ${birth.name}`,
+      essence: `the path of ${birth.keywords[0]}`,
     });
   }
   if (enabled.includes("enneagram")) {
     const t = resolveEnneagram(profile.enneagram?.type);
     if (t) out.push({
-      system: "enneagram", label: "Enneagram", short: `Type ${t.number}, the ${t.name}`,
-      essence: `the desire ${t.desire}`, verb: `move past the fear of ${t.fear} toward ${t.desire}`,
-      tell: `when ${t.passion} takes over`,
+      system: "enneagram", label: "Enneagram", short: `Type ${t.number} (${t.name.toLowerCase()})`,
+      essence: `the wish ${t.desire}`,
     });
   }
   if (enabled.includes("gene_keys")) {
     const lifeWork = profile.gene_keys?.life_work || computed.gene_keys?.life_work;
     if (lifeWork) out.push({
       system: "gene_keys", label: "Gene Keys", short: `Life's Work in Gene Key ${lifeWork}`,
-      essence: `your Life's Work Gene Key ${lifeWork}`, verb: `open your Life's Work key`,
-      tell: `when you slip into its Shadow`,
+      essence: `your Life's Work Gene Key ${lifeWork}`,
     });
   }
   if (enabled.includes("chakras")) {
     const c = profile.chakras?.dominant_center;
     if (c) out.push({
-      system: "chakras", label: "Chakras", short: `a ${c}-centered energy`,
-      essence: `your ${c} center`, verb: `keep your ${c} center balanced`,
-      tell: `when that center goes quiet or overheats`,
+      system: "chakras", label: "Chakras", short: `the ${c} center`,
+      essence: `the themes of the ${c} center`,
     });
   }
   return out;
@@ -228,7 +219,7 @@ export function synergyReading(mine = {}, theirs = null, name = "this person") {
   // number rhythm
   if (myLP && theirLP) {
     paras.push(myLP === theirLP
-      ? `You share a Life Path (${myLP}, the ${NUMBERS[myLP].title}). Numerology would say you may recognize each other's motives; whether that is true is for your own experience to show.`
+      ? `You share a Life Path (${myLP}, linked with ${NUMBERS[myLP].core}). Numerology would say you may recognize each other's motives; whether that is true is for your own experience to show.`
       : `Your Life Paths, ${myLP} and ${theirLP}, are different. Numerology links yours with ${NUMBERS[myLP].core} and ${name}'s with ${NUMBERS[theirLP].core}. That can open a conversation about what each of you values; it doesn't explain or excuse how either of you acts.`);
   }
 
@@ -333,7 +324,7 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
   if (astrology) {
     const cycle = ({ daily: num.personal_day, weekly: num.personal_year, monthly: num.personal_month, yearly: num.personal_year })[periodType];
     const number = NUMBERS[reduceToKey(cycle)];
-    return number ? { ...astrology, wisdom: `${astrology.wisdom}\n\nFrom your optional numerology practice: ${number.core}. Consider whether that question belongs beside this reflection.` } : astrology;
+    return number ? { ...astrology, wisdom: `${astrology.wisdom}\n\nFrom your optional numerology practice: numerology links this cycle with ${number.core}. ${number.question}` } : astrology;
   }
   const name = (profile.first_name || "").trim();
 
@@ -346,8 +337,7 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
     const parts = [];
     if (moon) parts.push(`The ${moon.name.toLowerCase()} can be a symbolic prompt: ${moonGuidance(moon.name)}`);
     if (pd && NUMBERS[reduceToKey(pd)]) {
-      const n = NUMBERS[reduceToKey(pd)];
-      parts.push(`Your personal day resonates with the ${n.title.toLowerCase()}, ${n.core}. ${dayAdvice(reduceToKey(pd))}`);
+      parts.push(`Numerology links personal day ${pd} with ${NUMBERS[reduceToKey(pd)].core}.`);
     }
 
     return {
@@ -376,8 +366,8 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
     return {
       theme: "This month's current",
       wisdom: pm && NUMBERS[pm]
-        ? `You are in a personal ${pm} month, colored by the ${NUMBERS[pm].title.toLowerCase()}: ${NUMBERS[pm].core}. ${NUMBERS[pm].personalYear.replace("A year", "This month").replace("year", "month")}`
-        : `This month, let your longer rhythms lead. ${lp ? `The pull of your Life Path ${lp}, ${NUMBERS[lp].core}, is the tide underneath the daily weather.` : "Notice the tide underneath the daily weather."}`,
+        ? `Numerology links a personal ${pm} month with ${NUMBERS[pm].core}. ${NUMBERS[pm].question}`
+        : `This month, notice which longer themes keep coming up for you.${lp ? ` Numerology links your Life Path ${lp} with ${NUMBERS[lp].core}.` : ""}`,
       contemplation: "What is ripening in me that I keep rushing?",
     };
   }
@@ -387,8 +377,8 @@ export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
   return {
     theme: "The year you are in",
     wisdom: py && NUMBERS[py]
-      ? `This is a personal ${py} year for you, the season of the ${NUMBERS[py].title.toLowerCase()}. ${NUMBERS[py].personalYear} ${lp ? `Underneath the year runs your lifelong Life Path ${lp}: ${NUMBERS[lp].core}.` : ""}`
-      : `Look back at what mattered this year and choose what you want to carry forward. ${lp ? `Your Life Path ${lp} names the longer arc: ${NUMBERS[lp].core}.` : ""}`,
+      ? `${NUMBERS[py].personalYear}${lp ? ` Numerology links your Life Path ${lp} with ${NUMBERS[lp].core}.` : ""}`
+      : `Look back at what mattered this year and choose what you want to carry forward.${lp ? ` Numerology links your Life Path ${lp} with ${NUMBERS[lp].core}.` : ""}`,
     contemplation: "If this year had one theme, what would you call it?",
   };
 }
@@ -404,26 +394,14 @@ function moonGuidance(name) {
   return "notice the sky while choosing a pace that fits your needs.";
 }
 
-function dayAdvice(key) {
-  const map = {
-    1: "A day to begin, take the first step.", 2: "A day for patience and connection.",
-    3: "A day to express and enjoy.", 4: "A day to do the solid work.",
-    5: "A day for flexibility and change.", 6: "A day to tend home and heart.",
-    7: "A day to slow down and reflect.", 8: "A day to act with purpose and power.",
-    9: "A day to finish and release.", 11: "A day to trust your intuition.",
-    22: "A day to build something real.", 33: "A day to give with an open heart.",
-  };
-  return map[key] || "";
-}
-
 function dayContemplation(key) {
   const map = {
     1: "Where am I waiting for permission I could give myself?", 2: "Who could I reach toward today?",
-    3: "What wants to be expressed through me?", 4: "What small brick can I lay today?",
+    3: "What would I enjoy expressing today?", 4: "What small brick can I lay today?",
     5: "Where am I gripping when I could loosen?", 6: "Who, including me, needs tending?",
     7: "What am I too busy to hear?", 8: "Where can I step into my own authority?",
     9: "What am I ready to let go of?", 11: "What is my intuition already telling me?",
-    22: "What am I here to build?", 33: "Where can my care take real form?",
+    22: "What would I like to build, one piece at a time?", 33: "Where can my care take real form?",
   };
   return map[key] || "What is today asking of me?";
 }

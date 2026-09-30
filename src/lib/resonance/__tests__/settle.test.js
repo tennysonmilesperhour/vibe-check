@@ -38,6 +38,12 @@ describe('settleCosmicProfile', () => {
     expect(settleOnSave(unsourced).tarot_archetype).toEqual(unsourced.tarot_archetype);
   });
 
+  it('gives an Enneagram type saved under an earlier name its current name', () => {
+    expect(settleCosmicProfile({ enneagram: { type: '4 – The Individualist', wing: '4w5' } }).enneagram).toEqual({ type: '4 – Authenticity and depth', wing: '4w5' });
+    expect(settleCosmicProfile({ enneagram: { type: '4 – Authenticity and depth' } }).enneagram).toEqual({ type: '4 – Authenticity and depth' });
+    expect(settleCosmicProfile({ enneagram: {} }).enneagram).toEqual({});
+  });
+
   it('gives saved tarot cards a source', () => {
     const settled = settleCosmicProfile({ birth_date: '1985-11-23', tarot_archetype: { birth_card: '3 – The Empress' } });
     expect(settled.tarot_archetype).toEqual({ birth_card: '3 – The Empress', birth_card_source: 'retired' });

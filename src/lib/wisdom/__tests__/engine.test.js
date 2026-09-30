@@ -50,10 +50,14 @@ describe("systemReading", () => {
     expect(systemReading("tarot_archetype", PROFILE.tarot_archetype, PROFILE)).toContain("The Emperor");
   });
 
-  it("enneagram names the type and its fear", () => {
+  it("enneagram names the type, its wish and fear, and the wing's type", () => {
     const t = systemReading("enneagram", PROFILE.enneagram, PROFILE).toLowerCase();
-    expect(t).toContain("investigator");
+    expect(t).toContain("type 5: understanding and self-reliance");
+    expect(t).toContain("a wish to be capable");
     expect(t).toContain("fear");
+    expect(t).toContain("some of type 4's qualities");
+    // Not any school's type names.
+    expect(t).not.toMatch(/investigator|reformer|individualist|loyalist|enthusiast|challenger|peacemaker/);
   });
 
   it("chakras names the center", () => {

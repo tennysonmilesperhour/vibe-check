@@ -30,7 +30,7 @@ export default function InviteModal({ open, onClose }) {
     try {
       await navigator.share({
         title: "Vibe Check",
-        text: "One honest check-in each evening. Weave your chart with mine.",
+        text: "A private journal for noticing your own patterns. Nothing of mine is shared with you, and nothing of yours with me.",
         url: inviteUrl,
       });
     } catch {

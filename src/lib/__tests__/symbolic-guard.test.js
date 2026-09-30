@@ -35,6 +35,12 @@ describe('symbolic readings wait after a hard moment', () => {
     expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: false })).toBe(false);
     expect(guardWaiting({ fetchStatus: 'idle', isPending: false, isStale: true })).toBe(false);
     expect(guardWaiting({ fetchStatus: 'idle', isPending: true, isStale: true })).toBe(false);
+    // An old answer that holds a hard moment stands, offline or slow...
+    const low = { kind: 'low', date: '2026-09-28' };
+    expect(guardWaiting({ fetchStatus: 'paused', isPending: false, isStale: true, data: low })).toBe(false);
+    expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: true, data: low })).toBe(false);
+    // ...unless a save has since made it out of date.
+    expect(guardWaiting({ fetchStatus: 'fetching', isPending: false, isStale: true, isInvalidated: true, data: low })).toBe(true);
   });
 
   it('lets the first answer decide for the visit', () => {

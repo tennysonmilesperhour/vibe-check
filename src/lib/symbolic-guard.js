@@ -32,12 +32,16 @@ export function recentHardMoment({ checkIns = [], journal = [] } = {}, today = t
 
 /**
  * Whether the guard is still waiting on its check, from its query's state: a
- * request running or paused offline, with no answer yet or only a stale one.
- * A failed or disabled check isn't waiting, so readings show as usual.
- * @param {{ fetchStatus: string, isPending: boolean, isStale: boolean }} query
+ * request running or paused offline, with no answer yet, an answer a save has
+ * since made out of date, or an old answer of "no hard moment". An old answer
+ * that holds a hard moment stands, so the pause shows at once. A failed or
+ * disabled check isn't waiting, so readings show as usual.
+ * @param {{ fetchStatus: string, isPending: boolean, isStale: boolean, isInvalidated?: boolean, data?: unknown }} query
  */
-export function guardWaiting({ fetchStatus, isPending, isStale }) {
-  return (fetchStatus === 'fetching' || fetchStatus === 'paused') && (isPending || isStale);
+export function guardWaiting({ fetchStatus, isPending, isStale, isInvalidated = false, data = null }) {
+  if (fetchStatus !== 'fetching' && fetchStatus !== 'paused') return false;
+  if (isPending || isInvalidated) return true;
+  return isStale && !data;
 }
 
 /**

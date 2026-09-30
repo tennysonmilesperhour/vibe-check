@@ -222,10 +222,10 @@ function chakraReading(data) {
     return "Choose your dominant or focus chakra on the Systems tab to unlock your reading. If you are unsure, notice which theme below is most alive for you right now, whether it is safety, creativity, power, love, voice, insight, or meaning.";
   }
 
-  sections.push({ h: `Your center: ${c.name} (${c.sanskrit})`, p: `Located at the ${c.location} and associated with the element of ${c.element} and the color ${c.color}, your dominant center governs ${c.theme}. This is where much of your energy naturally concentrates.` });
-  sections.push({ h: "When it is balanced", p: `In balance, this center makes you ${c.balanced}. This is your gift when the energy here is flowing cleanly.` });
+  sections.push({ h: `The center you chose: ${c.name} (${c.sanskrit})`, p: `Chakra traditions place this center at the ${c.location} and associate it with the element of ${c.element}, the color ${c.color}, and ${c.theme}.` });
+  sections.push({ h: "When it is balanced", p: `Some teachers describe this center in balance with qualities like being ${c.balanced}. Take that as a lens to reflect with; it doesn't say who you are.` });
   sections.push({ h: "When this area feels hard", p: `Some modern chakra teachers link experiences like ${c.blocked} to this center. That is a symbolic lens, not a diagnosis: a feeling doesn't mean something in you is blocked, and it may be a fair response to what is happening.` });
-  sections.push({ h: "How the centers relate", p: `Your dominant center does not stand alone, it colors the whole system. A strong ${c.name} center draws energy that the others may need too, so part of your practice is making sure the neighboring centers are not left depleted or overworked in its shadow.` });
+  sections.push({ h: "How the centers relate", p: `Chakra traditions read the centers together, so attention to the ${c.name} center can sit beside attention to the others.` });
   sections.push({ h: "Practices to balance it", p: `To tend your ${c.name} center: ${c.practices}` });
 
   if (d.custom_notes) sections.push({ h: "Your own notes", p: d.custom_notes });

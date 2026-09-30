@@ -6,14 +6,14 @@ const SLOW_CHECK_MS = 5000;
 
 /**
  * A symbolic reading, or the pause in its place after a hard moment. The
- * choice to read anyway is kept by the page, so it holds across its tabs.
- * Skipping a slow check opens only this reading: the other tabs still pause
- * if the check then finds a hard moment, and this one stays open.
+ * page keeps both choices: reading anyway holds across its tabs, and
+ * skipping a slow check (onSkipCheck) opens only the tab it was made on, for
+ * the visit, while other tabs still pause if the check then finds a hard
+ * moment.
  */
-export default function GuardedReading({ guard, readAnyway, onReadAnyway, compact = false, children }) {
-  const [skippedCheck, setSkippedCheck] = useState(false);
-  if (readAnyway || skippedCheck) return children;
-  if (guard.checking) return <CheckingRecord waitingSince={guard.waitingSince} onSkip={() => setSkippedCheck(true)} compact={compact} />;
+export default function GuardedReading({ guard, readAnyway, onReadAnyway, onSkipCheck = onReadAnyway, compact = false, children }) {
+  if (readAnyway) return children;
+  if (guard.checking) return <CheckingRecord waitingSince={guard.waitingSince} onSkip={onSkipCheck} compact={compact} />;
   if (guard.moment) return <ReadingPause moment={guard.moment} onShowAnyway={onReadAnyway} compact={compact} />;
   return children;
 }

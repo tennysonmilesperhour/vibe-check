@@ -322,7 +322,7 @@ export function ChakraForm({ data, onChange }) {
     };
     return (
         <div className="grid md:grid-cols-2 gap-5">
-            <Field label="Dominant Center" hint="The chakra that most characterizes your nature">
+            <Field label="Dominant Center" hint="The chakra you want to focus on">
                 <SimpleSelect value={data?.dominant_center} onChange={v => set('dominant_center', v)} options={CHAKRA_CENTERS} />
             </Field>
             <div className="md:col-span-2">

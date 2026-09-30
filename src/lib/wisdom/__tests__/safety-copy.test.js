@@ -20,7 +20,7 @@ const BYPASSING = /universe (supports|is benevolent)|gift from the universe|mean
 const PUSHING = /even where it feels risky|pick alive|scares and excites|act like it|you need to walk through|what needs to end\.|one clean, kind cut|necessary (collapse|disruption|pause|aloneness)|must fall|shadow teacher|it teaches|trust that endings|new life follows every ending|only real risk|reclaim (your|the) power|power you gave away|forgive, and rise|don't make big decisions|reframe today's worry|repeat:|blocked \w+ energy|raw emotion untempered|lack of faith|inability to move on|no truth in the now|you usually regret|not failures|savior or a scapegoat|not a moment for pushing|changes the trajectory|stop deflecting|without the counterweight/i;
 
 // Lines that told the person who they are because of a card or a chart.
-const IDENTITY = /you carry the soul|you are here to|soul archetype|draw your archetype/i;
+const IDENTITY = /you carry the soul|you are here to|here to give|soul archetype|draw your archetype|center makes you|this is your gift|characterizes your nature/i;
 
 const card = (id) => FULL_DECK.find((item) => item.id === id);
 const oracle = (id) => ORACLE_DECK.find((item) => item.id === id);
@@ -114,14 +114,21 @@ describe('symbolic readings never talk over harm', () => {
       first_name: 'Wren', birth_date: '1990-04-12',
       enabled_systems: ['astrology', 'human_design', 'gene_keys', 'numerology', 'tarot_archetype', 'chakras'],
       astrology: { sun_sign: 'Aries' }, human_design: { type: 'Generator', authority: 'Emotional', profile: '1/3' }, gene_keys: { life_work: '55' },
-      numerology: {}, tarot_archetype: {}, chakras: { dominant: 'heart' },
+      numerology: {}, tarot_archetype: {}, chakras: { dominant_center: 'Heart (Anahata)' },
     };
     const rendered = [
       integratedReading(profile.enabled_systems, profile),
       ...['human_design', 'gene_keys', 'tarot_archetype', 'chakras'].map((system) => JSON.stringify(systemReading(system, profile[system], profile))),
       ...['daily', 'weekly', 'monthly', 'yearly'].map((period) => JSON.stringify(periodWisdom(period, profile, null))),
     ];
+    expect(rendered.join(' ')).toMatch(/The center you chose: Heart/i); // the chakra reading really renders
     for (const text of rendered) expect(text).not.toMatch(IDENTITY);
-    for (const source of [profileFormSource, correspondencesSource]) expect(source).not.toMatch(/soul archetype|attract into your life/i);
+    for (const source of [profileFormSource, correspondencesSource]) expect(source).not.toMatch(/soul archetype|attract into your life|characterizes your nature/i);
+  });
+
+  it('only calls a Life Path and a birth card one calculation when both came from the birth date', () => {
+    const base = { birth_date: '1990-04-12', enabled_systems: ['numerology', 'tarot_archetype'] };
+    expect(integratedReading(base.enabled_systems, { ...base, numerology: {}, tarot_archetype: {} })).toMatch(/one calculation read two ways/);
+    expect(integratedReading(base.enabled_systems, { ...base, numerology: { life_path: '7' }, tarot_archetype: { birth_card: 'The Lovers' } })).not.toMatch(/same root number/);
   });
 });

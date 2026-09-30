@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry } from '@/api/entities';
 import { addDaysKey, todayKey } from '@/lib/dates';
@@ -15,8 +15,10 @@ import { GUARD_DAYS, guardWaiting, recentHardMoment, settleDecision } from '@/li
  */
 export default function useHardMoment() {
   const { user } = useAuth();
+  const client = useQueryClient();
+  const queryKey = ['living', user?.id, 'hard-moment'];
   const query = useQuery({
-    queryKey: ['living', user?.id, 'hard-moment'],
+    queryKey,
     queryFn: async () => {
       const since = addDaysKey(todayKey(), -(GUARD_DAYS - 1));
       const [checkIns, journal] = await Promise.allSettled([
@@ -35,7 +37,11 @@ export default function useHardMoment() {
   const waitingSince = useRef(Date.now()).current;
   const current = query.data || null;
   const [decided, setDecided] = useState(/** @type {typeof current | undefined} */ (undefined));
-  const settled = settleDecision(decided, guardWaiting(query), current);
+  const waiting = guardWaiting({
+    fetchStatus: query.fetchStatus, isPending: query.isPending, isStale: query.isStale,
+    isInvalidated: client.getQueryState(queryKey)?.isInvalidated ?? false, data: query.data,
+  });
+  const settled = settleDecision(decided, waiting, current);
   useEffect(() => { if (decided === undefined && settled !== undefined) setDecided(settled); }, [decided, settled]);
   return { moment: settled ?? null, checking: settled === undefined, waitingSince };
 }

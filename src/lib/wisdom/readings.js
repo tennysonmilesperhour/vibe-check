@@ -140,6 +140,7 @@ function collectSignals(enabled, profile, computed) {
     const lp = reduceToKey(profile.numerology?.life_path || computed.numerology?.life_path);
     if (lp) out.push({
       system: "numerology", label: "Numerology", short: `Life Path ${lp}`,
+      fromBirthDate: lp === reduceToKey(computed.numerology?.life_path),
       essence: NUMBERS[lp].core, verb: NUMBERS[lp].core,
       tell: `when you avoid the lesson of the ${NUMBERS[lp].title}`,
     });
@@ -148,6 +149,7 @@ function collectSignals(enabled, profile, computed) {
     const birth = resolveArcana(profile.tarot_archetype?.birth_card || computed.tarot_archetype?.birth_card);
     if (birth) out.push({
       system: "tarot_archetype", label: "Tarot", short: `the archetype of ${birth.name}`,
+      fromBirthDate: birth.name === resolveArcana(computed.tarot_archetype?.birth_card)?.name,
       essence: `the path of ${birth.keywords[0]}`, verb: `embody ${birth.name}`,
       tell: `when you forget you carry ${birth.name}`,
     });
@@ -186,7 +188,8 @@ function findResonances(signals) {
   const num = signals.find((s) => s.system === "numerology");
   const tarot = signals.find((s) => s.system === "tarot_archetype");
   const gk = signals.find((s) => s.system === "gene_keys");
-  if (num && tarot) pairs.push(`Your ${num.short} and ${tarot.short} both come from the same root number, so treat them as one calculation read two ways.`);
+  // Only true when both were worked out from the birth date, not typed in.
+  if (num?.fromBirthDate && tarot?.fromBirthDate) pairs.push(`Your ${num.short} and ${tarot.short} both come from the same root number, so treat them as one calculation read two ways.`);
   if (hd && gk) pairs.push(`Your Human Design and Gene Keys share one source, the 64 hexagrams; your Life's Work key is literally your Conscious Sun gate.`);
   if (astro && tarot) pairs.push(`Some Western esoteric traditions associate particular tarot cards with signs or planets. These correspondences offer another symbolic perspective, not confirmation of a prediction.`);
   return pairs;

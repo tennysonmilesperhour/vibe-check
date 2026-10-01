@@ -6,7 +6,8 @@ import { todayKey } from '@/lib/dates';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import { downloadJson } from '@/features/export/download';
 import { redactExport } from '@/lib/export-file';
-import { entryPeople, peopleNameReplacer, personLabels } from '@/lib/people';
+import { entryPeople, personLabels } from '@/lib/people';
+import { peopleNameReplacer } from '@/lib/name-replacer';
 import ExportPassword, { exportPasswordError } from '@/features/export/ExportPassword';
 
 // Past this length the preview takes a moment to lay out, so the rest waits

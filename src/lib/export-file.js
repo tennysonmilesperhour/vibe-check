@@ -72,7 +72,7 @@ const WHOLE_NAMES_ONLY = new Set(['emotions']);
 
 /**
  * A chosen-entries export without internal owner ids, and with people's
- * names replaced when a replacer is given (see peopleNameReplacer).
+ * names replaced when a replacer is given (see name-replacer.js).
  * @param {any} document
  * @param {((text: string, options?: { parts?: boolean | 'phrase' }) => string) | null} replaceNames
  */

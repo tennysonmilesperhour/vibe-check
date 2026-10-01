@@ -6,7 +6,8 @@
 import { endOfMonth, startOfWeek } from 'date-fns';
 import { addDaysKey, dateKey, diffDaysKeys, parseLocalDate, todayKey } from './dates.js';
 import { entryStates, filterEntries, validDateKey } from './living-patterns.js';
-import { BOUNDARY_ANSWERS, INTERACTION_FEELINGS, entryPeople, peopleNameReplacer, personLabels } from './people.js';
+import { BOUNDARY_ANSWERS, INTERACTION_FEELINGS, entryPeople, personLabels } from './people.js';
+import { peopleNameReplacer } from './name-replacer.js';
 import { ALIGNMENTS, OUTCOMES, STRESS_STATES, practiceById } from './practices.js';
 
 // Weeks read well up to about four months; past that, months.

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildCompleteExport, openExportFile, summarizeExport, exportCounts, redactExport, EXPORT_TABLES } from '../export-file.js';
-import { peopleNameReplacer, personLabels } from '../people.js';
+import { personLabels } from '../people.js';
+import { peopleNameReplacer } from '../name-replacer.js';
 import { encryptJson } from '../crypto.js';
 
 const tables = {

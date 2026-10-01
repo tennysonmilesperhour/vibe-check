@@ -143,7 +143,8 @@ export function buildShareSummary({ entries, sessions = [], people = [], start, 
   const replacer = hideNames ? peopleNameReplacer(people, (person) => labelOf(person.id)) : null;
   // Words of a longer name count in free text and in feeling phrases of
   // several words ("Missing Jordan"), not in a one-word feeling.
-  const replaceNames = (/** @type {string} */ text, parts = true) => (replacer ? replacer(text, { parts: parts || /\s/.test(text.trim()) }) : text);
+  const replaceNames = (/** @type {string} */ text, /** @type {boolean | 'phrase'} */ parts = true) => (replacer ? replacer(text, { parts }) : text);
+  const feelingsOf = (/** @type {any} */ entry) => wordsOf(entry.emotions).map((word) => replaceNames(word, 'phrase'));
 
   const grouping = stretches(first, last, weekStartsOn);
   const byStretch = grouping.stretches.map(() => /** @type {any[]} */ ([]));
@@ -185,7 +186,7 @@ export function buildShareSummary({ entries, sessions = [], people = [], start, 
       kind: kindOf(entry),
       mood: score(entry.mood_score, 1, 10),
       states: entryStates(entry).map(stateLabel),
-      emotions: wordsOf(entry.emotions).map((word) => replaceNames(word, false)),
+      emotions: feelingsOf(entry),
       people: entryPeople(entry).map(labelOf),
       parts,
     };
@@ -208,7 +209,8 @@ export function buildShareSummary({ entries, sessions = [], people = [], start, 
       stressHighestToday: stressKinds.filter((kind) => kind === 'highest-today').length,
     },
     states: daysWith(rows, (entry) => entryStates(entry)).map(({ value, days }) => ({ id: value, label: stateLabel(value), days })),
-    emotions: daysWith(rows, (entry) => wordsOf(entry.emotions)).slice(0, TOP_WORDS).map(({ value, days }) => ({ label: replaceNames(value, false), days })),
+    // Counted after names are replaced, so two forms of one name count together.
+    emotions: daysWith(rows, feelingsOf).slice(0, TOP_WORDS).map(({ value, days }) => ({ label: value, days })),
     bodyCues: daysWith(rows, (entry) => wordsOf(entry.stress_context?.body_cues)).map(({ value, days }) => ({ label: value, days })),
     interactions: {
       total: interactions.length,

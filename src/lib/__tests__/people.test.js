@@ -252,6 +252,42 @@ describe('replacing names: descriptors, pasted names and other scripts', () => {
   });
 });
 
+describe('replacing names across languages', () => {
+  it('finds the given name of a Chinese, Korean or Japanese name saved without a space', () => {
+    const replace = peopleNameReplacer([{ id: 'k', name: '김민수' }, { id: 'c', name: '王小明' }, { id: 'j', name: '田中太郎' }], (person) => person.id);
+    expect(replace('민수가 왔다. 我和小明吃饭. 田中さんと話した')).toBe('k가 왔다. 我和c吃饭. jさんと話した');
+  });
+
+  it('reads Hebrew and Arabic prefixes only before longer names, and never a lone alef', () => {
+    const replace = peopleNameReplacer([{ id: 'h', name: 'حمد' }, { id: 'b', name: 'בר' }, { id: 'l', name: 'לי' }, { id: 'd', name: 'דוד' }], (person) => person.id);
+    expect(replace('قابلت احمد اليوم ثم وحمد')).toBe('قابلت احمد اليوم ثم وh');
+    expect(replace('כבר אמרתי לו, זה שלי, ודוד הגיע')).toBe('כבר אמרתי לו, זה שלי, וd הגיע');
+  });
+
+  it('never takes a word naming someone else, or a connector, as a name', () => {
+    const replace = peopleNameReplacer([
+      { id: 'c', name: "Chris' mom" }, { id: 'u', name: 'أم أحمد' }, { id: 'm', name: 'محمد بن سلمان' },
+      { id: 'r', name: 'Maria do Carmo' }, { id: 'j', name: 'Jen und Tom' }, { id: 's', name: 'Sam or Sammy' },
+    ], (person) => person.id);
+    expect(replace("Chris came over. Chris' mom called.")).toBe('Chris came over. c called.');
+    expect(replace('هل تريد شاي أم قهوة؟ بن عربي. أحمد هنا. سلمان أيضا')).toBe('هل تريد شاي أم قهوة؟ بن عربي. أحمد هنا. m أيضا');
+    expect(replace('Do you know? Und dann. Or maybe. Carmo, Jen, Sammy.')).toBe('Do you know? Und dann. Or maybe. r, j, s.');
+  });
+
+  it('finds a Latin name joined to another script, and joins by capitals only in tags', () => {
+    const replace = peopleNameReplacer([{ id: 's', name: 'Sam' }, { id: 'j', name: 'Jordan' }, { id: 'd', name: 'Donald' }, { id: 'a', name: 'Shawn Lee' }, { id: 'n', name: 'Ann' }], (person) => person.id);
+    expect(replace('הלכתי עם Sam וSam חזר, אמרתי לJordan. Говорил с Samом. وSam')).toBe('הלכתי עם s וs חזר, אמרתי לj. Говорил с sом. وs');
+    expect(replace("Grabbed McDonald's with DeShawn and JoAnn. #SamBirthday @mySam")).toBe("Grabbed McDonald's with DeShawn and JoAnn. #sBirthday @mys");
+  });
+
+  it('treats a feeling phrase in a script without spaces as a phrase', () => {
+    const replace = peopleNameReplacer([{ id: 'c', name: '王 小明' }, { id: 'j', name: 'Jordan Smith' }], (person) => person.id);
+    expect(replace('想念小明', { parts: 'phrase' })).toBe('想念c');
+    expect(replace('Missing Jordan', { parts: 'phrase' })).toBe('Missing j');
+    expect(replace('Jordan', { parts: 'phrase' })).toBe('Jordan');
+  });
+});
+
 describe('labels for people', () => {
   it('numbers people in the order they were added, and people since removed apart', () => {
     const labels = personLabels([{ id: 'b', created_at: '2026-02-01' }, { id: 'a', created_at: '2026-01-01' }], ['gone-2', 'a', 'gone-1', 'gone-2']);

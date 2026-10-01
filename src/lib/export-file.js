@@ -74,7 +74,7 @@ const WHOLE_NAMES_ONLY = new Set(['emotions']);
  * A chosen-entries export without internal owner ids, and with people's
  * names replaced when a replacer is given (see peopleNameReplacer).
  * @param {any} document
- * @param {((text: string, options?: { parts?: boolean }) => string) | null} replaceNames
+ * @param {((text: string, options?: { parts?: boolean | 'phrase' }) => string) | null} replaceNames
  */
 export function redactExport(document, replaceNames) {
   /** @returns {any} */
@@ -86,7 +86,7 @@ export function redactExport(document, replaceNames) {
     }
     if (!replaceNames || typeof value !== 'string' || FIXED_FIELDS.has(key)) return value;
     // A feeling phrase of several words ("Missing Jordan") gets every match.
-    return replaceNames(value, { parts: !wholeOnly || /\s/.test(value.trim()) });
+    return replaceNames(value, { parts: wholeOnly ? 'phrase' : true });
   };
   return clean(document);
 }

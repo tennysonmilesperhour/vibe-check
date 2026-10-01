@@ -76,6 +76,11 @@ describe('a summary to share', () => {
     expect(scores.rows.map((row) => `${row.start}..${row.end}:${row.days}`)).toEqual(['2026-05-10..2026-05-31:1', '2026-06-01..2026-06-30:0', '2026-07-01..2026-07-31:1', '2026-08-01..2026-08-31:0', '2026-09-01..2026-09-30:0', '2026-10-01..2026-10-31:0']);
   });
 
+  it('counts feeling words after names are replaced, so forms of one name count together', () => {
+    const feelings = timelineEntries([{ id: 'f1', date: '2026-09-01', emotions: ['Missing Sam Lee'] }, { id: 'f2', date: '2026-09-02', emotions: ['Missing Sammy'] }], []);
+    expect(buildShareSummary({ entries: feelings, people, start: '2026-09-01', end: '2026-09-02', today: '2026-09-02' }).emotions).toEqual([{ label: 'Missing Person 2', days: 2 }]);
+  });
+
   it('counts days, not entries, and feeling words in any letter case together', () => {
     const summary = buildShareSummary(base);
     expect(summary.states).toEqual([{ id: 'on-edge', label: 'Fight or flight', days: 2 }, { id: 'shutdown', label: 'Shutdown', days: 1 }]);

@@ -219,7 +219,13 @@ export function personLabels(people, ids = []) {
 const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
 // Words in a saved name that are never a name on their own: titles and
 // small linking words ("Sam from work").
-const NEVER_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'my', 'the', 'and', 'of', 'from', 'at', 'in', 'with', 'for', 'to', 'on', 'by']);
+const NEVER_NAMES = new Set([
+  'mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'my', 'the', 'and', 'or', 'of', 'from', 'at', 'in', 'with', 'for', 'to', 'on', 'by',
+  'und', 'et', 'ou', 'בן', 'בת', 'بن', 'ابن', 'بنت',
+]);
+// A saved name that starts with "mother of" or "father of" (أم أحمد) names
+// someone through their child, so only the whole name is theirs.
+const KUNYA = new Set(['أم', 'ام', 'أبو', 'ابو']);
 // Family, role and place words ("Mike Work", "Sarah From Yoga"): a name
 // on their own only as the first word of a saved name ("Son Heung-min").
 const ROLE_WORDS = new Set([
@@ -230,11 +236,20 @@ const ROLE_WORDS = new Set([
 ]);
 // The particles inside names ("de la Cruz"): a name when capitalized
 // ("Al Green", "Minh Le", "Van Morrison").
-const PARTICLES = new Set(['de', 'da', 'di', 'del', 'della', 'la', 'le', 'van', 'von', 'der', 'den', 'du', 'bin', 'al', 'el']);
-// One-letter words that attach to the front of a Hebrew or Arabic word
-// ("and", "to", "the"...), as in ודוד, "and David".
-const PREFIXES = /[והבכלמשوفبلكال]/u;
-const PREFIXED_SCRIPTS = /[\p{Script=Hebrew}\p{Script=Arabic}]/u;
+const PARTICLES = new Set(['de', 'da', 'di', 'do', 'dos', 'das', 'del', 'della', 'la', 'le', 'van', 'von', 'der', 'den', 'du', 'bin', 'al', 'el']);
+// Letters that attach to the front of a Hebrew or Arabic word ("and", "to",
+// "from", and the Arabic article ال), as in ודוד, "and David". Checked only
+// for names of three letters or more, where they cannot make another word.
+const ATTACHED = {
+  Hebrew: /(?:^|[^\p{L}\p{M}])[ובכלמש]{1,3}$/u,
+  Arabic: /(?:^|[^\p{L}\p{M}])(?:[وفبلك]{0,2}ال|[وفبلك]{1,2})$/u,
+};
+// The script of a letter, so a letter of another script ends a word: Sam
+// stands on its own in 今天和Sam吃饭, וSam or Samом.
+const SCRIPTS = ['Latin', 'Cyrillic', 'Greek', 'Armenian', 'Georgian', 'Hebrew', 'Arabic', 'Devanagari', 'Bengali', 'Gurmukhi', 'Gujarati',
+  'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Sinhala', 'Thai', 'Lao', 'Khmer', 'Myanmar', 'Ethiopic', 'Han', 'Hiragana', 'Katakana', 'Hangul']
+  .map((name) => /** @type {[string, RegExp]} */ ([name, new RegExp(`\\p{Script=${name}}`, 'u')]));
+const scriptOf = (/** @type {string} */ ch) => SCRIPTS.find(([, test]) => test.test(ch))?.[0] || '';
 // Scripts in which names are usually written with a capital.
 const CAPITALIZED = /[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Script=Armenian}]/u;
 // Invisible marks that come along when a name is pasted: zero-width space,
@@ -250,12 +265,15 @@ const DECORATION = /^[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D\s]+|[\p{P}
 const POSSESSIVE = /['’ʼ]s$|s['’ʼ]$/iu;
 const APOSTROPHE = /['’ʼ]/;
 const DIGIT = /\p{N}/u;
-// Letters and the marks that combine with them carry a word on; an
-// apostrophe, a digit, punctuation or a space ends it.
+// Letters of the same script, and the marks that combine with them, carry
+// a word on; an apostrophe, a digit, punctuation, a space or a letter of
+// another script ends it.
 const WORD = /[\p{L}\p{M}]/u;
-// A letter from a script written without spaces does not carry on a word
-// in another script: in 今天和Sam吃饭, Sam stands on its own.
-const continuesWord = (/** @type {string} */ ch) => Boolean(ch) && WORD.test(ch) && !APOSTROPHE.test(ch) && !UNSPACED.test(ch);
+const MARK = /\p{M}/u;
+const continuesWord = (/** @type {string} */ ch, /** @type {string} */ neighbour) => {
+  if (!ch || !WORD.test(ch) || APOSTROPHE.test(ch)) return false;
+  return MARK.test(ch) || scriptOf(ch) === scriptOf(neighbour);
+};
 const hasCase = (/** @type {string} */ ch) => ch.toLowerCase() !== ch.toUpperCase();
 const isUpper = (/** @type {string} */ ch) => hasCase(ch) && ch === ch.toUpperCase();
 const isLower = (/** @type {string} */ ch) => hasCase(ch) && ch === ch.toLowerCase();
@@ -278,17 +296,14 @@ function charBefore(text, index) {
 }
 
 /**
- * Whether up to three prefix letters, then the start of a word, come
- * before an index, as in ולדוד.
+ * Whether a match sits inside a hashtag or handle (#SamBirthday), where the
+ * capitals show where a joined name starts and ends.
  * @param {string} text @param {number} index
  */
-function prefixedAt(text, index) {
+function inTag(text, index) {
   let at = index;
-  for (let count = 0; count < 3 && at > 0 && PREFIXES.test(text[at - 1]); count += 1) {
-    at -= 1;
-    if (!continuesWord(charBefore(text, at))) return true;
-  }
-  return false;
+  while (at > 0 && /[\p{L}\p{M}\p{N}_]/u.test(charBefore(text, at))) at -= charBefore(text, at).length;
+  return at > 0 && /[#@]/.test(text[at - 1]);
 }
 
 /** The whole character at an index, or ''. @param {string} text @param {number} index */
@@ -309,7 +324,9 @@ const charAt = (text, index) => (index < text.length ? String.fromCodePoint(/** 
  * @param {any[]} people
  * @param {(person: any) => string} labelOf
  * @param {(person: any) => unknown[]} [extra]
- * @returns {(text: string, options?: { parts?: boolean }) => string}
+ * @returns {(text: string, options?: { parts?: boolean | 'phrase' }) => string}
+ *   parts: false matches whole saved names only; 'phrase' allows words of a
+ *   longer name when the text runs to several words, as a feeling phrase may.
  */
 export function peopleNameReplacer(people, labelOf, extra = () => []) {
   /** @type {Map<string, string>} */
@@ -336,12 +353,22 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
         // "张 伟" is written 张伟 in running text.
         if (UNSPACED.test(whole) && /\s/.test(whole)) add(whole.replace(/\s+/g, ''), label, true);
       }
+      // A Chinese or Korean name saved without a space: the given name, and
+      // for four characters both halves, as people write them on their own.
+      if (/^(?:\p{Script=Han}{3,4}|\p{Script=Hangul}{3,4})$/u.test(bare)) {
+        const chars = [...bare];
+        if (chars.length === 3) add(chars.slice(1).join(''), label, false);
+        else { add(chars.slice(0, 2).join(''), label, false); add(chars.slice(2).join(''), label, false); }
+      }
       // Couples and aliases are often saved as "Jen&Tom" or "Sam/Samuel".
-      const words = bare.split(/[\s/&+|,]+/).map((word) => word.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '')).filter(Boolean);
-      if (words.length < 2) continue;
-      words.forEach((word, position) => {
+      const raw = bare.split(/[\s/&+|,]+/).filter(Boolean);
+      if (raw.length < 2 || KUNYA.has(raw[0])) continue;
+      raw.forEach((piece, position) => {
+        // "Sam's" in "Sam's mom", or "Chris'" in "Chris' mom", names someone else.
+        if (POSSESSIVE.test(piece.replace(/[^\p{L}\p{M}\p{N}'’ʼ]+$/u, ''))) return;
+        const word = piece.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
         const lower = word.toLowerCase();
-        if ((word.match(/\p{L}/gu) || []).length < 2 || NEVER_NAMES.has(lower) || POSSESSIVE.test(word)) return;
+        if ((word.match(/\p{L}/gu) || []).length < 2 || NEVER_NAMES.has(lower)) return;
         if (PARTICLES.has(lower) && word === lower) return;
         if (ROLE_WORDS.has(lower) && (position > 0 || word === lower)) return;
         add(word, label, false);
@@ -367,7 +394,8 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
     const name = longest(spellings);
     // A one-letter name ("T") matches only as saved, so the t in "don't" stays.
     const exactCase = (name.match(/\p{L}/gu) || []).length < 2;
-    const prefixed = PREFIXED_SCRIPTS.test(name);
+    const attached = ATTACHED[scriptOf(name)];
+    const prefixed = attached && (name.match(/\p{L}/gu) || []).length >= 3 ? attached : null;
     const owners = whole.size ? whole : part;
     const token = tokenFor([...owners].join(' or '));
     const unspaced = UNSPACED.test(name);
@@ -387,11 +415,12 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
           // A name joined to a word, as in #SamBirthday, still counts when
           // the capitals show where it starts and ends; so does a Hebrew or
           // Arabic name after the letters that attach to the front of words.
-          const leftOk = !continuesWord(before) || (isLower(before) && isUpper(first)) || (prefixed && prefixedAt(text, offset));
-          const rightOk = !continuesWord(after) || (isLower(last) && isUpper(after));
+          const tag = inTag(text, offset);
+          const leftOk = !continuesWord(before, first) || (tag && isLower(before) && isUpper(first)) || Boolean(prefixed?.test(text.slice(Math.max(0, offset - 8), offset)));
+          const rightOk = !continuesWord(after, last) || (tag && isLower(last) && isUpper(after));
           if (!leftOk || !rightOk) return match;
           // In DON'T or IT'S, the letter after the apostrophe is not a name.
-          if (exactCase && APOSTROPHE.test(before) && continuesWord(charBefore(text, offset - before.length))) return match;
+          if (exactCase && APOSTROPHE.test(before) && continuesWord(charBefore(text, offset - before.length), first)) return match;
         }
         // "Sam2" reads "Person 1 2", not "Person 12".
         return `${DIGIT.test(before) ? ' ' : ''}${token}${DIGIT.test(after) ? ' ' : ''}`;
@@ -404,6 +433,7 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
   });
   return (text, { parts = true } = {}) => {
     const original = String(text ?? '');
+    const useParts = parts === 'phrase' ? /\s/.test(original.trim()) || UNSPACED.test(original) : parts;
     // Invisible marks inside a name in the text, as in a pasted copy, do not
     // hide it.
     const normalized = original.normalize('NFC').replace(INVISIBLE, '');
@@ -421,7 +451,7 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
     // A rule runs only where its first word appears at all.
     let folded = fold(current);
     for (const rule of rules) {
-      if ((rule.isPart && !parts) || !folded.includes(rule.hint)) continue;
+      if ((rule.isPart && !useParts) || !folded.includes(rule.hint)) continue;
       const next = rule.apply(current);
       if (next !== current) { current = next; folded = fold(current); }
     }

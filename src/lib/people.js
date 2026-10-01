@@ -217,9 +217,18 @@ export function personLabels(people, ids = []) {
 // (Chinese, Japanese, Thai, and Korean, where particles attach to names), so
 // they are matched inside longer runs of letters too.
 const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
-// Words in a saved name that are not a name on their own.
-const NOT_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'aunt', 'auntie', 'uncle', 'grandma', 'grandpa', 'nana', 'papa', 'mom', 'mum', 'dad', 'my', 'the', 'and', 'of']);
+// Capitalized words in a saved name that are not a name on their own:
+// titles, family words, and places people are known from ("Sam From Work").
+// Words written in lowercase in the saved name never count.
+const NOT_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'aunt', 'auntie', 'uncle', 'grandma', 'grandpa', 'nana', 'papa', 'mom', 'mum', 'dad', 'my', 'the', 'and', 'of', 'from', 'at', 'in', 'work', 'school', 'gym', 'home', 'office', 'team', 'class', 'church', 'club', 'neighbor', 'neighbour', 'friend', 'boss', 'coworker', 'colleague']);
+// Scripts in which names are usually written with a capital.
+const CAPITALIZED = /[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Script=Armenian}]/u;
+// Invisible marks that come along when a name is pasted: zero-width space,
+// direction marks and embeddings, and the byte order mark. Joiners stay, as
+// some scripts need them.
+const INVISIBLE = /[\u200B\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
 const APOSTROPHE = /['’ʼ]/;
+const DIGIT = /\p{N}/u;
 // Letters and the marks that combine with them carry a word on; an
 // apostrophe, a digit, punctuation or a space ends it.
 const WORD = /[\p{L}\p{M}]/u;
@@ -231,11 +240,12 @@ const isLower = (/** @type {string} */ ch) => hasCase(ch) && ch === ch.toLowerCa
 const fold = (/** @type {string} */ text) => text.toLowerCase().replace(/ı/g, 'i').replace(/\u0307/g, '').replace(/['’ʼ]/g, '');
 
 /** @param {unknown} value */
-const cleanName = (value) => (typeof value === 'string' ? value.normalize('NFC').trim() : '');
+const cleanName = (value) => (typeof value === 'string' ? value.normalize('NFC').replace(INVISIBLE, '').trim() : '');
 const withoutNote = (/** @type {string} */ name) => name.replace(/\s*\([^)]*\)\s*$/, '').trim();
-// Any apostrophe, any run of spaces, and any form of i stand for each other.
+// Any apostrophe or none, any run of spaces, and any form of i stand for
+// each other.
 const namePattern = (/** @type {string} */ name) => escapeRegex(name)
-  .replace(/['’ʼ]/g, "['’ʼ]").replace(/\s+/g, '\\s+').replace(/[iIıİ]/g, '[iIıİ]');
+  .replace(/['’ʼ]/g, "['’ʼ]?").replace(/\s+/g, '\\s+').replace(/[iIıİ]/g, '[iIıİ]');
 
 /** The whole character before an index, or ''. @param {string} text @param {number} index */
 function charBefore(text, index) {
@@ -265,12 +275,14 @@ const charAt = (text, index) => (index < text.length ? String.fromCodePoint(/** 
  * @returns {(text: string, options?: { parts?: boolean }) => string}
  */
 export function peopleNameReplacer(people, labelOf, extra = () => []) {
-  /** @type {Map<string, { name: string, whole: Set<string>, part: Set<string> }>} */
+  // Spellings that differ only in case or apostrophes share one rule.
+  /** @type {Map<string, { spellings: Set<string>, whole: Set<string>, part: Set<string> }>} */
   const variants = new Map();
   const add = (/** @type {string} */ name, /** @type {string} */ label, /** @type {boolean} */ whole) => {
     if (!name || !label) return;
     const key = fold(name).replace(/\s+/g, ' ');
-    const found = variants.get(key) || { name, whole: new Set(), part: new Set() };
+    const found = variants.get(key) || { spellings: new Set(), whole: new Set(), part: new Set() };
+    found.spellings.add(name);
     (whole ? found.whole : found.part).add(label);
     variants.set(key, found);
   };
@@ -288,7 +300,9 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
       const words = bare.split(/\s+/).map((word) => word.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '')).filter(Boolean);
       if (words.length < 2) continue;
       for (const word of words) {
+        const first = charAt(word, 0);
         if ((word.match(/\p{L}/gu) || []).length < 2 || NOT_NAMES.has(word.toLowerCase())) continue;
+        if (CAPITALIZED.test(first) && !isUpper(first)) continue;
         add(word, label, false);
       }
     }
@@ -299,35 +313,40 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
   // name contains, so no label is matched again by a later, shorter name.
   /** @type {string[]} */
   const tokens = [];
-  const rules = [...variants.values()].sort((a, b) => b.name.length - a.name.length).map(({ name, whole, part }) => {
+  const longest = (/** @type {Set<string>} */ spellings) => [...spellings].sort((a, b) => b.length - a.length)[0];
+  const rules = [...variants.values()].sort((a, b) => longest(b.spellings).length - longest(a.spellings).length).map(({ spellings, whole, part }) => {
+    const name = longest(spellings);
     const owners = whole.size ? whole : part;
     const token = `\uE000${String.fromCharCode(0xE100 + tokens.length)}\uE001`;
     tokens.push([...owners].join(' or '));
     const unspaced = UNSPACED.test(name);
     const isPart = !whole.size;
     const hint = fold(name.split(/\s+/)[0]);
-    const pattern = new RegExp(namePattern(name), 'giu');
+    const pattern = new RegExp([...spellings].sort((a, b) => b.length - a.length).map(namePattern).join('|'), 'giu');
     return { isPart, hint, apply: (/** @type {string} */ text) => text.replace(pattern, (match, offset) => {
         const first = charAt(match, 0);
-        // A word of a longer name counts only when it starts with a capital.
-        if (isPart && hasCase(first) && !isUpper(first)) return match;
-        if (unspaced) return token;
+        // A word of a longer name counts only when it starts with a capital,
+        // in scripts where names are written that way.
+        if (isPart && CAPITALIZED.test(first) && !isUpper(first)) return match;
         const before = charBefore(text, offset);
         const after = charAt(text, offset + match.length);
-        const last = charBefore(match, match.length);
-        // A name joined to a word, as in #SamBirthday, still counts when the
-        // capitals show where it starts and ends.
-        const leftOk = !continuesWord(before) || (isLower(before) && isUpper(first));
-        const rightOk = !continuesWord(after) || (isLower(last) && isUpper(after));
-        if (!leftOk || !rightOk) return match;
+        if (!unspaced) {
+          const last = charBefore(match, match.length);
+          // A name joined to a word, as in #SamBirthday, still counts when
+          // the capitals show where it starts and ends.
+          const leftOk = !continuesWord(before) || (isLower(before) && isUpper(first));
+          const rightOk = !continuesWord(after) || (isLower(last) && isUpper(after));
+          if (!leftOk || !rightOk) return match;
+        }
         // "Sam2" reads "Person 1 2", not "Person 12".
-        const digit = /\p{N}/u;
-        return `${digit.test(before) ? ' ' : ''}${token}${digit.test(after) ? ' ' : ''}`;
+        return `${DIGIT.test(before) ? ' ' : ''}${token}${DIGIT.test(after) ? ' ' : ''}`;
       }) };
   });
   const restore = (/** @type {string} */ text) => text.replace(/\uE000([\uE100-\uF8FF])\uE001/g, (match, code) => tokens[code.charCodeAt(0) - 0xE100] ?? match);
   return (text, { parts = true } = {}) => {
-    let current = String(text ?? '').normalize('NFC');
+    const original = String(text ?? '');
+    const normalized = original.normalize('NFC');
+    let current = normalized;
     // A rule runs only where its first word appears at all.
     let folded = fold(current);
     for (const rule of rules) {
@@ -335,6 +354,6 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
       const next = rule.apply(current);
       if (next !== current) { current = next; folded = fold(current); }
     }
-    return restore(current);
+    return current === normalized ? original : restore(current);
   };
 }

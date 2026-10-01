@@ -102,9 +102,10 @@ const personIds = (entry) => [entry.person_ids, entry.high_moment?.person_ids, e
   .filter((id) => typeof id === 'string');
 
 // For a file that does not carry the people its entries name. Chosen-entry
-// files may have replaced names with labels like "Person 1".
+// files may have replaced names with labels like "Person 1" or
+// "Removed person 1".
 /** @param {any[]} entries */
-const peopleNamedBy = (entries) => [...new Set(entries.flatMap(personIds))].map((id) => ({ id, name: /^Person \d+$/.test(id) ? id : 'Unnamed person' }));
+const peopleNamedBy = (entries) => [...new Set(entries.flatMap(personIds))].map((id) => ({ id, name: /^(Removed person|Person) \d+$/.test(id) ? id : 'Unnamed person' }));
 
 /**
  * Counts by kind of record in an opened export.

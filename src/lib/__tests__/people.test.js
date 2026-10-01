@@ -178,6 +178,38 @@ describe('replacing people\'s names with labels', () => {
   });
 });
 
+describe('replacing names: descriptors, pasted names and other scripts', () => {
+  it('takes only name words from a saved name, not where the person is from', () => {
+    const replace = peopleNameReplacer([{ id: 'a', name: 'Sam from work' }, { id: 'b', name: 'Jen at gym' }, { id: 'c', name: 'Kim From Work' }], (person) => person.id);
+    expect(replace('Work was hard. At lunch I cried. Gym helped. From then on, Sam and Jen and Kim stayed.')).toBe('Work was hard. At lunch I cried. Gym helped. From then on, a and b and c stayed.');
+  });
+
+  it('keeps a space between a label and a digit in any script', () => {
+    const replace = peopleNameReplacer([{ id: 'f', name: '小明' }, { id: 'g', name: '민수' }], (person) => (person.id === 'f' ? 'Person 6' : 'Removed person 1'));
+    expect(replace('小明3点来的, 민수2')).toBe('Person 6 3点来的, Removed person 1 2');
+  });
+
+  it('ignores invisible marks pasted into a saved name', () => {
+    const replace = peopleNameReplacer([{ id: 'd', name: 'Dana Cohen‏' }], () => 'Person 1');
+    expect(replace('Dana Cohen came. Cohen too.')).toBe('Person 1 came. Person 1 too.');
+  });
+
+  it('matches a spelling with or without its apostrophe', () => {
+    const replace = peopleNameReplacer([{ id: 'o', name: "O'Brien", legacy_names: ['OBrien'] }, { id: 'n', name: 'Dangelo', legacy_names: ["D'Angelo"] }], (person) => person.id);
+    expect(replace("OBrien called, then O'Brien and Obrien. D’Angelo and Dangelo.")).toBe('o called, then o and o. n and n.');
+  });
+
+  it('returns text no name touched exactly as it was', () => {
+    const replace = peopleNameReplacer([{ id: 's', name: 'Sam' }], () => 'Person 1');
+    expect(replace('樂 and José')).toBe('樂 and José');
+  });
+
+  it('finds words of a longer name in scripts without capitals for names', () => {
+    const replace = peopleNameReplacer([{ id: 'n', name: 'ნინო ბერიძე' }], () => 'Person 1');
+    expect(replace('ნინო მოვიდა. ბერიძე წავიდა.')).toBe('Person 1 მოვიდა. Person 1 წავიდა.');
+  });
+});
+
 describe('labels for people', () => {
   it('numbers people in the order they were added, and people since removed apart', () => {
     const labels = personLabels([{ id: 'b', created_at: '2026-02-01' }, { id: 'a', created_at: '2026-01-01' }], ['gone-2', 'a', 'gone-1', 'gone-2']);

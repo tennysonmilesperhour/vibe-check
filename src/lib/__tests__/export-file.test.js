@@ -94,7 +94,7 @@ describe('older exports', () => {
   it('summarizes a chosen-entries export, with the labels that replaced names', () => {
     const selected = {
       app: 'Vibe Check', format_version: 1, range: { start: '2026-09-01', end: '2026-09-30' },
-      entries: [{ id: 'c1', kind: 'day', key: 'day:c1', date: '2026-09-01', mood_score: 6, notes: 'Saw Person 1.', person_ids: ['Person 1', 'b2c4'] }],
+      entries: [{ id: 'c1', kind: 'day', key: 'day:c1', date: '2026-09-01', mood_score: 6, notes: 'Saw Person 1.', person_ids: ['Person 1', 'b2c4', 'Removed person 2'] }],
       practice_sessions: [], report_reflections: [],
     };
     const summary = summarizeExport(selected);
@@ -102,7 +102,7 @@ describe('older exports', () => {
     expect(summary.range).toEqual({ start: '2026-09-01', end: '2026-09-30' });
     expect(summary.counts.map((c) => c.count)).toEqual([1, 0, 0]);
     expect(rowsSummary(summary)).toEqual([['2026-09-01', 'day', 'day:c1', false]]);
-    expect(summary.people).toEqual([{ id: 'Person 1', name: 'Person 1' }, { id: 'b2c4', name: 'Unnamed person' }]);
+    expect(summary.people).toEqual([{ id: 'Person 1', name: 'Person 1' }, { id: 'b2c4', name: 'Unnamed person' }, { id: 'Removed person 2', name: 'Removed person 2' }]);
   });
 
   it('opens the Settings export from before September 2026, plain or encrypted', async () => {

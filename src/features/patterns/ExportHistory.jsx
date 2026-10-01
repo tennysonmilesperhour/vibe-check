@@ -14,7 +14,7 @@ const PREVIEW_LIMIT = 200000;
 // Fields the person writes in, where a first or last name on its own is
 // replaced too. Elsewhere only whole names are, so a fixed answer such as
 // "More settled" stays as it is.
-const FREE_TEXT = new Set(['notes', 'description', 'gratitude', 'situation', 'response', 'need', 'intention', 'before_notes', 'after_notes']);
+const FREE_TEXT = new Set(['notes', 'description', 'gratitude', 'situation', 'response', 'need', 'intention', 'before_notes', 'after_notes', 'who_involved', 'activities']);
 
 export default function ExportHistory({ data, initial, onClose }) {
   const [start, setStart] = useState(initial.start || data.entries.at(-1)?.date || todayKey());

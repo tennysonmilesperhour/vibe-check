@@ -199,6 +199,22 @@ describe('replacing names: descriptors, pasted names and other scripts', () => {
     expect(replace("OBrien called, then O'Brien and Obrien. D’Angelo and Dangelo.")).toBe('o called, then o and o. n and n.');
   });
 
+  it('matches a one-letter name only as saved', () => {
+    const replace = peopleNameReplacer([{ id: 't', name: 'T' }], () => 'Person 1');
+    expect(replace("T helped, but I don't know t.")).toBe("Person 1 helped, but I don't know t.");
+  });
+
+  it('never takes a possessive or decoration as a name', () => {
+    const replace = peopleNameReplacer([{ id: 's', name: 'Sam' }, { id: 'm', name: "Sam's mom" }, { id: 'j', name: 'Jess 💜' }, { id: 'k', name: 'Jordan smith' }], (person) => person.id);
+    expect(replace("Sam's party was fun. Sam's mom came. Jess came over. Smith was rude.")).toBe("s's party was fun. m came. j came over. k was rude.");
+  });
+
+  it('protects ids and times inside text, and turns a person\'s id into their label', () => {
+    const id = '3c1f0e2a-ed41-4c2b-9d3e-7f0a1b2c3d4e';
+    const replace = peopleNameReplacer([{ id, name: 'Ed' }, { id: 'p-t', name: 'T' }], (person) => (person.id === id ? 'Person 1' : 'Person 2'), (person) => [person.id]);
+    expect(replace(`day:aaaaaaaa-ed00-4000-8000-000000000001 at 2026-09-01T10:00:00+00:00 with ${id}, Ed and T`)).toBe('day:aaaaaaaa-ed00-4000-8000-000000000001 at 2026-09-01T10:00:00+00:00 with Person 1, Person 1 and Person 2');
+  });
+
   it('returns text no name touched exactly as it was', () => {
     const replace = peopleNameReplacer([{ id: 's', name: 'Sam' }], () => 'Person 1');
     expect(replace('樂 and José')).toBe('樂 and José');

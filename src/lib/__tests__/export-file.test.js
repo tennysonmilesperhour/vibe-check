@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildCompleteExport, openExportFile, summarizeExport, exportCounts, EXPORT_TABLES } from '../export-file.js';
+import { buildCompleteExport, openExportFile, summarizeExport, exportCounts, redactExport, EXPORT_TABLES } from '../export-file.js';
+import { peopleNameReplacer, personLabels } from '../people.js';
 import { encryptJson } from '../crypto.js';
 
 const tables = {
@@ -123,5 +124,65 @@ describe('older exports', () => {
     expect(await openExportFile(JSON.stringify(earliest))).toEqual({ document: earliest });
     expect(summarizeExport(earliest).counts.map((c) => [c.label, c.count])).toEqual([['Check-ins', 1], ['Low-mood notices', 2]]);
     expect(summarizeExport(earliest).people).toEqual([{ id: '0b1c', name: 'Unnamed person' }]);
+  });
+});
+
+describe('replacing names in a chosen-entries export', () => {
+  const jordan = '3c1f0e2a-ed41-4c2b-9d3e-7f0a1b2c3d4e';
+  const ed = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
+  const people = [
+    { id: jordan, name: 'Jordan Smith', created_at: '2026-01-01' },
+    { id: ed, name: 'Ed', created_at: '2026-02-01' },
+    { id: 'p-t', name: 'T', created_at: '2026-03-01' },
+    { id: 'p-low', name: 'Jasmine Low', created_at: '2026-04-01' },
+  ];
+  const labels = personLabels(people);
+  const replace = peopleNameReplacer(people, (person) => labels.get(person.id), (person) => [person.id]);
+  const document = {
+    app: 'Vibe Check', format_version: 1, range: { start: '2026-09-01', end: '2026-09-30' },
+    entries: [{
+      id: 'aaaaaaaa-ed00-4000-8000-000000000001', key: 'day:aaaaaaaa-ed00-4000-8000-000000000001', user_id: 'owner', kind: 'day', date: '2026-09-01',
+      occurred_at: '2026-09-01T10:00:00+00:00', notes: 'Coffee with Jordan, then Ed called.', activities: ['Coffee with Jordan'], emotions: ['Low'],
+      person_ids: [jordan], high_moment: { who_involved: 'Jordan and mom' }, stress_context: { body_cues: ['Low energy'], state_ids: ['on-edge'] },
+    }],
+    practice_sessions: [{ id: 's1', outcome: 'More settled', source_pattern: 'on-edge:habit:Coffee with Jordan', after_notes: 'T helped.' }],
+    report_reflections: [],
+    report: {
+      habits: [{ label: 'Coffee with Jordan', sources: [{ entry_key: 'day:aaaaaaaa-ed00-4000-8000-000000000001' }] }],
+      emotions: [{ label: 'Low', sources: [] }],
+      patterns: [
+        { key: 'on-edge:habit:Coffee with Jordan', state: 'on-edge', context: { type: 'habit', id: 'Coffee with Jordan', label: 'Coffee with Jordan' } },
+        { key: `on-edge:person:${jordan}`, state: 'on-edge', context: { type: 'person', id: jordan, label: 'Jordan Smith' } },
+      ],
+    },
+  };
+
+  it('replaces names wherever the person wrote them or the report copied them', () => {
+    const out = redactExport(document, replace);
+    const [entry] = out.entries;
+    expect(entry.notes).toBe('Coffee with Person 1, then Person 2 called.');
+    expect(entry.activities).toEqual(['Coffee with Person 1']);
+    expect(entry.person_ids).toEqual(['Person 1']);
+    expect(entry.high_moment.who_involved).toBe('Person 1 and mom');
+    expect(out.practice_sessions[0]).toMatchObject({ source_pattern: 'on-edge:habit:Coffee with Person 1', after_notes: 'Person 3 helped.' });
+    expect(out.report.habits[0].label).toBe('Coffee with Person 1');
+    expect(out.report.patterns.map((pattern) => [pattern.key, pattern.context.id, pattern.context.label])).toEqual([
+      ['on-edge:habit:Coffee with Person 1', 'Coffee with Person 1', 'Coffee with Person 1'],
+      ['on-edge:person:Person 1', 'Person 1', 'Person 1'],
+    ]);
+  });
+
+  it('leaves fixed answers, ids, times and feeling words as they are', () => {
+    const [entry] = redactExport(document, replace).entries;
+    expect(entry).not.toHaveProperty('user_id');
+    expect(entry.id).toBe('aaaaaaaa-ed00-4000-8000-000000000001');
+    expect(entry.key).toBe('day:aaaaaaaa-ed00-4000-8000-000000000001');
+    expect(entry.occurred_at).toBe('2026-09-01T10:00:00+00:00');
+    expect(entry.emotions).toEqual(['Low']);
+    expect(entry.stress_context).toEqual({ body_cues: ['Low energy'], state_ids: ['on-edge'] });
+    expect(redactExport(document, replace).practice_sessions[0].outcome).toBe('More settled');
+    expect(redactExport(document, replace).report.emotions[0].label).toBe('Low');
+    // Without a replacer only the owner ids go.
+    expect(redactExport(document, null).entries[0]).toMatchObject({ notes: 'Coffee with Jordan, then Ed called.', person_ids: [jordan] });
   });
 });

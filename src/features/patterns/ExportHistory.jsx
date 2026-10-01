@@ -5,16 +5,13 @@ import { encryptJson } from '@/lib/crypto';
 import { todayKey } from '@/lib/dates';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import { downloadJson } from '@/features/export/download';
+import { redactExport } from '@/lib/export-file';
 import { entryPeople, peopleNameReplacer, personLabels } from '@/lib/people';
 import ExportPassword, { exportPasswordError } from '@/features/export/ExportPassword';
 
 // Past this length the preview takes a moment to lay out, so the rest waits
 // to be asked for. The download always holds everything.
 const PREVIEW_LIMIT = 200000;
-// Fields the person writes in, where a first or last name on its own is
-// replaced too. Elsewhere only whole names are, so a fixed answer such as
-// "More settled" stays as it is.
-const FREE_TEXT = new Set(['notes', 'description', 'gratitude', 'situation', 'response', 'need', 'intention', 'before_notes', 'after_notes', 'who_involved', 'activities']);
 
 export default function ExportHistory({ data, initial, onClose }) {
   const [start, setStart] = useState(initial.start || data.entries.at(-1)?.date || todayKey());
@@ -45,8 +42,7 @@ export default function ExportHistory({ data, initial, onClose }) {
     const removed = [...new Set(ids)].filter((id) => !data.people.some((person) => person.id === id)).map((id) => ({ id }));
     return peopleNameReplacer([...data.people, ...removed], (person) => labels.get(person.id), (person) => [person.id, person.linked_user_email]);
   }, [data.people, data.entries]);
-  // Built only to preview and download it: names are replaced in every
-  // string, and words of a longer name only in what the person wrote.
+  // Built only to preview and download it (see redactExport).
   const payload = useMemo(() => {
     if (!preview || !identityOk) return null;
     const rows = candidates.filter((entry) => !excluded.includes(entry.key));
@@ -62,13 +58,7 @@ export default function ExportHistory({ data, initial, onClose }) {
     };
     const document = { app: 'Vibe Check', format_version: 1, range: { start, end }, scope: 'User-selected entries; unselected entries are excluded.', entries: rows, practice_sessions: practices, report_reflections: reflections,
       ...(initial.report ? { report: references(buildReport(rows, { type: initial.report.type, start, end }, practices, data.people, data.preferences.pattern_feedback)) } : {}) };
-    const clean = (value, key = '') => {
-      if (Array.isArray(value)) return value.map((child) => clean(child, key));
-      if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([name]) => name !== 'user_id').map(([name, child]) => [name, clean(child, name)]));
-      if (redact && typeof value === 'string') return replaceNames(value, { parts: FREE_TEXT.has(key) });
-      return value;
-    };
-    return clean(document);
+    return redactExport(document, redact ? replaceNames : null);
   }, [data, start, end, excluded, redact, includePractices, includeReflections, initial.report, preview, identityOk, replaceNames]);
   async function download() {
     if (!valid || !payload) { setError('Choose a valid date range through today.'); return; }

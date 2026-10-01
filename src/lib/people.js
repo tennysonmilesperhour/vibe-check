@@ -217,16 +217,30 @@ export function personLabels(people, ids = []) {
 // (Chinese, Japanese, Thai, and Korean, where particles attach to names), so
 // they are matched inside longer runs of letters too.
 const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
-// Capitalized words in a saved name that are not a name on their own:
-// titles, family words, and places people are known from ("Sam From Work").
-// Words written in lowercase in the saved name never count.
-const NOT_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'aunt', 'auntie', 'uncle', 'grandma', 'grandpa', 'nana', 'papa', 'mom', 'mum', 'dad', 'my', 'the', 'and', 'of', 'from', 'at', 'in', 'work', 'school', 'gym', 'home', 'office', 'team', 'class', 'church', 'club', 'neighbor', 'neighbour', 'friend', 'boss', 'coworker', 'colleague']);
+// Words in a saved name that are not a name on their own: titles, family
+// and role words, places people are known from ("Sam from work"), and the
+// particles inside names such as "de la Cruz".
+const NOT_NAMES = new Set([
+  'mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'my', 'the', 'and', 'of', 'from', 'at', 'in', 'with', 'for', 'to', 'on', 'by',
+  'aunt', 'auntie', 'uncle', 'grandma', 'grandpa', 'nana', 'papa', 'mom', 'mum', 'dad', 'brother', 'sister', 'son', 'daughter', 'wife',
+  'husband', 'partner', 'boyfriend', 'girlfriend', 'cousin', 'niece', 'nephew', 'baby', 'ex', 'best', 'old', 'new', 'little', 'big',
+  'friend', 'boss', 'coworker', 'colleague', 'neighbor', 'neighbour', 'roommate', 'landlord', 'therapist', 'doctor', 'teacher', 'coach', 'manager',
+  'work', 'school', 'gym', 'home', 'office', 'team', 'class', 'church', 'club',
+  'de', 'da', 'di', 'del', 'della', 'la', 'le', 'van', 'von', 'der', 'den', 'du', 'bin', 'al', 'el',
+]);
 // Scripts in which names are usually written with a capital.
 const CAPITALIZED = /[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Script=Armenian}]/u;
 // Invisible marks that come along when a name is pasted: zero-width space,
 // direction marks and embeddings, and the byte order mark. Joiners stay, as
 // some scripts need them.
-const INVISIBLE = /[\u200B\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g;
+const INVISIBLE = /[\u00AD\u061C\u180E\u200B\u200E\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g;
+// Ids and timestamps inside text are never read as names; a person's id
+// becomes their label as a whole.
+const MACHINE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/gi;
+// Decoration around a saved name, such as "Jess 💜".
+const DECORATION = /^[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D\s]+|[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D\s]+$/gu;
+// "Sam's" in "Sam's mom" names someone else.
+const POSSESSIVE = /['’ʼ]s$|s['’ʼ]$/iu;
 const APOSTROPHE = /['’ʼ]/;
 const DIGIT = /\p{N}/u;
 // Letters and the marks that combine with them carry a word on; an
@@ -275,6 +289,8 @@ const charAt = (text, index) => (index < text.length ? String.fromCodePoint(/** 
  * @returns {(text: string, options?: { parts?: boolean }) => string}
  */
 export function peopleNameReplacer(people, labelOf, extra = () => []) {
+  /** @type {Map<string, string>} */
+  const exactIds = new Map();
   // Spellings that differ only in case or apostrophes share one rule.
   /** @type {Map<string, { spellings: Set<string>, whole: Set<string>, part: Set<string> }>} */
   const variants = new Map();
@@ -291,8 +307,8 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
     const label = labelOf(person);
     const saved = [person.name, ...(Array.isArray(person.legacy_names) ? person.legacy_names : [])].map(cleanName).filter(Boolean);
     for (const name of saved) {
-      const bare = withoutNote(name);
-      for (const whole of [name, bare]) {
+      const bare = withoutNote(name).replace(DECORATION, '');
+      for (const whole of [name, bare].filter(Boolean)) {
         add(whole, label, true);
         // "张 伟" is written 张伟 in running text.
         if (UNSPACED.test(whole) && /\s/.test(whole)) add(whole.replace(/\s+/g, ''), label, true);
@@ -300,30 +316,38 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
       const words = bare.split(/\s+/).map((word) => word.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '')).filter(Boolean);
       if (words.length < 2) continue;
       for (const word of words) {
-        const first = charAt(word, 0);
-        if ((word.match(/\p{L}/gu) || []).length < 2 || NOT_NAMES.has(word.toLowerCase())) continue;
-        if (CAPITALIZED.test(first) && !isUpper(first)) continue;
+        if ((word.match(/\p{L}/gu) || []).length < 2 || NOT_NAMES.has(word.toLowerCase()) || POSSESSIVE.test(word)) continue;
         add(word, label, false);
       }
     }
-    for (const value of extra(person)) add(cleanName(value), label, true);
+    for (const value of extra(person)) {
+      const exact = cleanName(value);
+      if (exact.match(MACHINE)?.[0] === exact) exactIds.set(exact.toLowerCase(), label);
+      else add(exact, label, true);
+    }
   }
 
   // Each match becomes a placeholder of private-use characters, which no
   // name contains, so no label is matched again by a later, shorter name.
+  // A placeholder holds its index in two private-use characters.
+  const SPAN = 0x700;
+  const placeholder = (/** @type {number} */ index) => `\uE000${String.fromCharCode(0xE100 + Math.floor(index / SPAN), 0xE100 + (index % SPAN))}\uE001`;
   /** @type {string[]} */
   const tokens = [];
+  const tokenFor = (/** @type {string} */ value) => placeholder(tokens.push(value) - 1);
   const longest = (/** @type {Set<string>} */ spellings) => [...spellings].sort((a, b) => b.length - a.length)[0];
   const rules = [...variants.values()].sort((a, b) => longest(b.spellings).length - longest(a.spellings).length).map(({ spellings, whole, part }) => {
     const name = longest(spellings);
+    // A one-letter name ("T") matches only as saved, so the t in "don't" stays.
+    const exactCase = (name.match(/\p{L}/gu) || []).length < 2;
     const owners = whole.size ? whole : part;
-    const token = `\uE000${String.fromCharCode(0xE100 + tokens.length)}\uE001`;
-    tokens.push([...owners].join(' or '));
+    const token = tokenFor([...owners].join(' or '));
     const unspaced = UNSPACED.test(name);
     const isPart = !whole.size;
     const hint = fold(name.split(/\s+/)[0]);
     const pattern = new RegExp([...spellings].sort((a, b) => b.length - a.length).map(namePattern).join('|'), 'giu');
     return { isPart, hint, apply: (/** @type {string} */ text) => text.replace(pattern, (match, offset) => {
+        if (exactCase && !spellings.has(match)) return match;
         const first = charAt(match, 0);
         // A word of a longer name counts only when it starts with a capital,
         // in scripts where names are written that way.
@@ -342,11 +366,25 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
         return `${DIGIT.test(before) ? ' ' : ''}${token}${DIGIT.test(after) ? ' ' : ''}`;
       }) };
   });
-  const restore = (/** @type {string} */ text) => text.replace(/\uE000([\uE100-\uF8FF])\uE001/g, (match, code) => tokens[code.charCodeAt(0) - 0xE100] ?? match);
+  const fixedTokens = tokens.length;
+  const restore = (/** @type {string} */ text, /** @type {string[]} */ kept) => text.replace(/\uE000([\uE100-\uE7FF])([\uE100-\uE7FF])\uE001/g, (match, high, low) => {
+    const index = (high.charCodeAt(0) - 0xE100) * SPAN + (low.charCodeAt(0) - 0xE100);
+    return (index < fixedTokens ? tokens[index] : kept[index - fixedTokens]) ?? match;
+  });
   return (text, { parts = true } = {}) => {
     const original = String(text ?? '');
     const normalized = original.normalize('NFC');
-    let current = normalized;
+    // Ids and timestamps are set aside first: a person's id becomes their
+    // label, and any other is kept exactly as it was.
+    /** @type {string[]} */
+    const kept = [];
+    let labelled = false;
+    let current = normalized.replace(MACHINE, (match) => {
+      const label = exactIds.get(match.toLowerCase());
+      if (label) labelled = true;
+      return placeholder(fixedTokens + kept.push(label ?? match) - 1);
+    });
+    const setAside = current;
     // A rule runs only where its first word appears at all.
     let folded = fold(current);
     for (const rule of rules) {
@@ -354,6 +392,6 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
       const next = rule.apply(current);
       if (next !== current) { current = next; folded = fold(current); }
     }
-    return current === normalized ? original : restore(current);
+    return current !== setAside || labelled ? restore(current, kept) : original;
   };
 }

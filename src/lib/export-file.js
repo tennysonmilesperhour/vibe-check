@@ -58,6 +58,38 @@ export function buildCompleteExport({ profile, tables, exportedAt }) {
   };
 }
 
+// Fields in a chosen-entries export that hold fixed answers, dates or
+// times, which are never rewritten; feeling words, matched only against
+// whole saved names. Everything else, what the person wrote and anything
+// copied from it into the report, gets every kind of name match, so a field
+// this list does not know about errs toward replacing.
+const FIXED_FIELDS = new Set([
+  'date', 'period_key', 'start', 'end', 'occurred_at', 'created_at', 'updated_at', 'kind', 'entry_kind', 'type', 'period_type',
+  'status', 'outcome', 'alignment', 'interaction_feeling', 'boundary_respected', 'stress_measure', 'practice_id', 'state_id', 'state',
+  'state_ids', 'asked_steps', 'body_cues', 'app', 'scope', 'format_version',
+]);
+const WHOLE_NAMES_ONLY = new Set(['emotions']);
+
+/**
+ * A chosen-entries export without internal owner ids, and with people's
+ * names replaced when a replacer is given (see peopleNameReplacer).
+ * @param {any} document
+ * @param {((text: string, options?: { parts?: boolean }) => string) | null} replaceNames
+ */
+export function redactExport(document, replaceNames) {
+  /** @returns {any} */
+  const clean = (/** @type {any} */ value, key = '', wholeOnly = false) => {
+    if (Array.isArray(value)) return value.map((child) => clean(child, key, wholeOnly));
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.entries(value).filter(([name]) => name !== 'user_id')
+        .map(([name, child]) => [name, clean(child, name, wholeOnly || WHOLE_NAMES_ONLY.has(name))]));
+    }
+    if (!replaceNames || typeof value !== 'string' || FIXED_FIELDS.has(key)) return value;
+    return replaceNames(value, { parts: !wholeOnly });
+  };
+  return clean(document);
+}
+
 /** @param {any} value */
 const isEncrypted = (value) => Boolean(value) && typeof value === 'object' && value.cipher === 'AES-256-GCM' && typeof value.data === 'string';
 

@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { currentOwner } from '@/api/owner';
 import {
   DailyCheckIn, JournalEntry, CheckInDraft, Person, PracticeSession, ReportReflection,
   Reading, BoundaryAlert, HealingProgress, VibePreference, CosmicWisdom,
@@ -59,11 +60,18 @@ async function readAll(entity, signal) {
  */
 export async function collectCompleteExport({ signal } = {}) {
   if (signal?.aborted) throw new DOMException('The export was stopped.', 'AbortError');
+  const owner = currentOwner();
   const reads = new AbortController();
   const stop = () => reads.abort();
   signal?.addEventListener('abort', stop);
   try {
     const [me, ...rows] = await Promise.all([base44.auth.me(), ...EXPORT_SOURCES.map(([, entity]) => readAll(entity, reads.signal))]);
+    // If another account signs in on this browser mid-read, later pages come
+    // back as theirs. Every row must belong to the account that asked.
+    const account = owner || me.id;
+    if (me.id !== account || rows.some((table) => table.some((row) => row.user_id !== account))) {
+      throw new Error('The signed-in account changed while your record was being gathered.');
+    }
     const { email, full_name, cosmic_profile, boundary_settings, people_migrated_at, created_date, updated_date } = me;
     return buildCompleteExport({
       profile: { email, full_name, cosmic_profile, boundary_settings, people_migrated_at, created_at: created_date, updated_at: updated_date },

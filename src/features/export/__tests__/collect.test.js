@@ -71,12 +71,20 @@ describe('collecting the complete export', () => {
       if (key !== 'daily_check_ins') return;
       const table = h.state.store.daily_check_ins;
       table.splice(table.findIndex((row) => row.id === 'c00005'), 1);
-      table.push({ id: 'c99999', created_at: '2026-09-02T00:00:00Z' });
+      table.push({ id: 'c99999', user_id: 'u1', created_at: '2026-09-02T00:00:00Z' });
     };
     const file = await collectCompleteExport();
     const read = new Set(file.tables.daily_check_ins.map((row) => row.id));
     expect(h.state.store.daily_check_ins.every((row) => read.has(row.id))).toBe(true);
     expect(read.has('c01200')).toBe(true);
+  });
+
+  it('refuses a file that mixes accounts, as after another sign-in mid-read', async () => {
+    h.state.afterFirstPage = (key) => {
+      if (key !== 'daily_check_ins') return;
+      for (const row of h.state.store.daily_check_ins.slice(600)) row.user_id = 'u2';
+    };
+    await expect(collectCompleteExport()).rejects.toThrow('The signed-in account changed while your record was being gathered.');
   });
 
   it('fails as a whole when one table fails, and stops the other reads', async () => {

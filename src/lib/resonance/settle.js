@@ -1,7 +1,9 @@
 // Saved cosmic profiles brought up to date, for data saved before a change
 // in how Vibe Check works it out. settleCosmicProfile runs when the Cosmos
 // page loads; settleOnSave squares the tarot cards with the birth date again
-// when the profile is saved, once the date is final.
+// when the profile is saved, once the date is final. Both leave out the
+// birth time and place, which Vibe Check no longer asks for, so a save
+// removes any kept from before.
 import { reconcileTarot, settleTarot } from './tarotCards.js';
 import { enneagramOption, resolveEnneagram, wingOf } from '../wisdom/content/enneagram.js';
 
@@ -9,6 +11,22 @@ import { enneagramOption, resolveEnneagram, wingOf } from '../wisdom/content/enn
 // positions for these spheres (Conscious Moon, Conscious Node, Unconscious
 // Sun and Unconscious Node).
 export const RELABELED_SPHERES = ['radiance', 'purpose', 'attraction', 'iq'];
+
+// Birth time and place: asked for until October 2026, though nothing in
+// Vibe Check used them. Profiles brought over from Base44 may keep the
+// whole place in birth_location.
+const RETIRED_FIELDS = new Set(['birth_time', 'birth_city', 'birth_state', 'birth_country', 'birth_location']);
+
+/** @param {Record<string, any>} profile */
+const withoutRetired = (profile) => Object.fromEntries(Object.entries(profile).filter(([key]) => !RETIRED_FIELDS.has(key)));
+
+/**
+ * Whether a saved profile still holds a birth time or place, which its next
+ * save removes.
+ * @param {Record<string, any> | null | undefined} profile
+ */
+export const holdsRetiredFields = (profile) =>
+  Boolean(profile) && [...RETIRED_FIELDS].some((key) => typeof profile?.[key] === 'string' ? profile[key].trim() !== '' : profile?.[key] != null);
 
 export const POSITION_CHECK_NOTE = 'Earlier versions of Vibe Check named the wrong chart positions for Radiance, Purpose, Attraction and IQ. If you looked yours up in a Human Design chart, check them against your Gene Keys profile.';
 
@@ -51,7 +69,7 @@ export function settleCosmicProfile(profile) {
   const staleWing = Boolean(number && enneagram.wing && !wingOf(enneagram.wing, number));
   const renamed = Boolean(number && enneagram.type !== enneagramOption(number));
   return {
-    ...profile,
+    ...withoutRetired(profile),
     tarot_archetype: settleTarot(profile.tarot_archetype, profile.birth_date),
     ...(recheck ? { gene_keys: { ...geneKeys, positions_checked: false } } : {}),
     ...(renamed || staleWing ? { enneagram: { ...enneagram, ...(renamed ? { type: enneagramOption(number) } : {}), ...(staleWing ? { wing: undefined } : {}) } } : {}),
@@ -66,5 +84,5 @@ export function settleCosmicProfile(profile) {
  * @returns {Record<string, any>}
  */
 export function settleOnSave(profile) {
-  return { ...profile, tarot_archetype: reconcileTarot(profile.tarot_archetype, profile.birth_date) };
+  return { ...withoutRetired(profile), tarot_archetype: reconcileTarot(profile.tarot_archetype, profile.birth_date) };
 }

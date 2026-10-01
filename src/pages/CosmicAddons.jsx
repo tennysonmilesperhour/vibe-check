@@ -22,7 +22,7 @@ import GuardedReading from "@/features/cosmos/GuardedReading";
 import useHardMoment from "@/features/cosmos/useHardMoment";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
 import { followBirthCard, withComputedCard } from "@/lib/resonance/tarotCards";
-import { settleCosmicProfile, settleOnSave } from "@/lib/resonance/settle";
+import { holdsRetiredFields, settleCosmicProfile, settleOnSave } from "@/lib/resonance/settle";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
 import PlantVoice from '@/features/shell/PlantVoice';
@@ -33,10 +33,6 @@ const EMPTY_PROFILE = {
     first_name: "",
     last_name: "",
     birth_date: "",
-    birth_time: "",
-    birth_city: "",
-    birth_state: "",
-    birth_country: "",
     enabled_systems: ["astrology"],
     astrology: {},
     human_design: {},
@@ -69,6 +65,8 @@ export default function CosmicAddons() {
     // Readings come from the person's own choices: a saved profile or changes
     // on this page, never from the page's starting defaults.
     const [hasSavedProfile, setHasSavedProfile] = useState(false);
+    // A birth time or place saved before October 2026, which a save removes.
+    const [heldBirthPlace, setHeldBirthPlace] = useState(false);
     const loomRef = useRef(null);
 
     // Two-way URL sync: back button and refresh keep your place.
@@ -105,6 +103,7 @@ export default function CosmicAddons() {
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
                 setHasSavedProfile(true);
+                setHeldBirthPlace(holdsRetiredFields(user.cosmic_profile));
             }
             setProfileLoad('ready');
         } catch {
@@ -125,6 +124,7 @@ export default function CosmicAddons() {
             setProfile(prev => (prev === profile ? settled : prev));
             setSavedSnapshot(JSON.stringify(settled));
             setHasSavedProfile(true);
+            setHeldBirthPlace(false);
             toast({ title: "Cosmic profile saved", description: "Your loom and readings now weave from these systems." });
         } catch (e) {
             toast({ title: "Could not save", description: e?.message, variant: "destructive" });
@@ -209,6 +209,13 @@ export default function CosmicAddons() {
                     <ConflictNotice profile={profile} onUseComputed={useComputed} onKeepSaved={keepSaved} />
                 </div>
 
+                {/* Above the tabs, since a save from any of them removes these. */}
+                {heldBirthPlace && (
+                    <p className="mb-6 p-3 text-sm" role="note" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', color: 'var(--gh-ink)' }}>
+                        Your saved profile still holds a birth time or place you entered before. Nothing uses it, and saving your cosmos removes it.
+                    </p>
+                )}
+
                 {isDirty && (
                     <div className="sticky top-2 z-30 mb-6 flex items-center justify-between p-3"
                         style={{ background: 'var(--gh-ink)', color: 'var(--gh-field)' }}>
@@ -242,11 +249,11 @@ export default function CosmicAddons() {
                             <SystemToggle enabledSystems={enabledSystems} onToggle={toggleSystem} />
                         </div>
 
-                        {/* Birth Data */}
+                        {/* Name and birth date */}
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth data</h3>
+                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth date</h3>
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
-                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac.
+                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac. Vibe Check doesn't ask for your birth time or place, since nothing here uses them.
                             </p>
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
@@ -260,34 +267,11 @@ export default function CosmicAddons() {
                                         onChange={e => setProfile(prev => ({ ...prev, last_name: e.target.value }))} />
                                 </div>
                             </div>
-                            <div className="grid md:grid-cols-3 gap-4">
+                            <div className="grid md:grid-cols-2 gap-4">
                                 <div>
                                     <Label style={{ color: 'var(--gh-ink-soft)' }}>Date of Birth</Label>
                                     <Input type="date" className="mt-1" value={profile.birth_date}
                                         onChange={e => setBirthDate(e.target.value)} />
-                                </div>
-                                <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Time of Birth <span className="text-xs opacity-60">(optional)</span></Label>
-                                    <Input type="time" className="mt-1" value={profile.birth_time}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_time: e.target.value }))} />
-                                </div>
-                                <div />
-                            </div>
-                            <div className="grid md:grid-cols-3 gap-4 mt-4">
-                                <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>City of Birth</Label>
-                                    <Input className="mt-1" placeholder="e.g. Denver" value={profile.birth_city || ''}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_city: e.target.value }))} />
-                                </div>
-                                <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>State / Region <span className="text-xs opacity-60">(optional)</span></Label>
-                                    <Input className="mt-1" placeholder="e.g. Colorado" value={profile.birth_state || ''}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_state: e.target.value }))} />
-                                </div>
-                                <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Country of Birth</Label>
-                                    <Input className="mt-1" placeholder="e.g. United States" value={profile.birth_country || ''}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_country: e.target.value }))} />
                                 </div>
                             </div>
                         </div>

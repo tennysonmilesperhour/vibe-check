@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { needsPositionCheck, settleCosmicProfile, settleOnSave, withSphere } from '../settle.js';
+import { holdsRetiredFields, needsPositionCheck, settleCosmicProfile, settleOnSave, withSphere } from '../settle.js';
 
 describe('settleCosmicProfile', () => {
   it('asks for a check of Gene Keys spheres saved under the old labels', () => {
@@ -56,6 +56,22 @@ describe('settleCosmicProfile', () => {
     expect(settleCosmicProfile({ numerology: { life_path: '5' } }).numerology).toEqual({ life_path: '5' });
     // Without a birth date it can't be kept current, so a saved one goes too.
     expect(JSON.parse(JSON.stringify(settleCosmicProfile({ numerology: { personal_year: '7' } }).numerology))).toEqual({});
+  });
+
+  it('leaves out a saved birth time and place, on load and on save', () => {
+    const saved = { first_name: 'Ana', birth_date: '1990-07-15', birth_time: '06:30', birth_city: 'Denver', birth_state: 'Colorado', birth_country: 'United States', birth_location: 'Denver, Colorado, USA', enabled_systems: ['astrology'] };
+    const kept = { first_name: 'Ana', birth_date: '1990-07-15', enabled_systems: ['astrology'] };
+    for (const settled of [settleCosmicProfile(saved), settleOnSave(saved)]) {
+      expect(Object.keys(settled).filter((key) => key.startsWith('birth_'))).toEqual(['birth_date']);
+      expect(settled).toMatchObject(kept);
+    }
+  });
+
+  it('knows when a saved profile still holds a birth time or place', () => {
+    expect(holdsRetiredFields({ birth_date: '1990-07-15', birth_time: '06:30' })).toBe(true);
+    expect(holdsRetiredFields({ birth_location: 'Denver, Colorado, USA' })).toBe(true);
+    expect(holdsRetiredFields({ birth_date: '1990-07-15', birth_time: '', birth_city: '  ', birth_country: null })).toBe(false);
+    expect(holdsRetiredFields(null)).toBe(false);
   });
 
   it('gives saved tarot cards a source', () => {

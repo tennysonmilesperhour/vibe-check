@@ -20,7 +20,6 @@ export const DailyCheckIn = makeEntity();
 export const Person = makeEntity();
 export const Reading = makeEntity();
 export const Relationship = makeEntity();
-export const Connection = makeEntity();
 export const BoundaryAlert = makeEntity();
 export const HealingProgress = makeEntity();
 export const CosmicWisdom = makeEntity();

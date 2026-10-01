@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Person, Relationship, Connection, DailyCheckIn, JournalEntry } from "@/entities/all";
+import { Person, Relationship, DailyCheckIn, JournalEntry } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import PlantVoice from '@/features/shell/PlantVoice';
 import { synergyReading } from "@/lib/wisdom/readings";
@@ -55,7 +55,7 @@ export default function People() {
 
   const load = useCallback(async () => {
     try {
-      await migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
+      await migratePeople({ Person, Relationship, auth: base44.auth }).catch(() => {});
       const [ppl, ci, entries, me] = await Promise.all([Person.all(), DailyCheckIn.all("-date"), JournalEntry.all('-date'), base44.auth.me().catch(() => null)]);
       // A failed account read keeps what was known, so readings don't vanish.
       if (me) {

@@ -48,13 +48,13 @@ describe('dedupePeopleDrafts', () => {
   it('merges drafts with the same lowercase name, unioning fields', () => {
     const drafts = [
       { name: 'Mom', qualities: ['kind'], legacy_names: ['mother'] },
-      { name: 'mom', qualities: ['funny'], linked_user_email: 'mom@x.com', legacy_names: [] },
+      { name: 'mom', qualities: ['funny'], boundary_notes: 'Calls on Sundays', legacy_names: [] },
     ];
     const out = dedupePeopleDrafts(drafts);
     expect(out).toHaveLength(1);
     expect(out[0].name).toBe('Mom');
     expect(out[0].qualities.sort()).toEqual(['funny', 'kind']);
-    expect(out[0].linked_user_email).toBe('mom@x.com');
+    expect(out[0].boundary_notes).toBe('Calls on Sundays');
     expect(out[0].legacy_names).toContain('mother');
   });
 });

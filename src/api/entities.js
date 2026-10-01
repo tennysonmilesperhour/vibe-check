@@ -191,7 +191,6 @@ const retired = (name) => ({
   delete: async () => true,
 });
 export const Relationship = retired('Relationship');
-export const Connection = retired('Connection');
 
 // Cross-user lookup (synergy snapshot refresh) is not possible client-side
 // under RLS; returns empty so callers degrade gracefully. A share model can
@@ -204,5 +203,5 @@ export const User = {
 export default {
   DailyCheckIn, Person, Reading, BoundaryAlert, HealingProgress, CosmicWisdom,
   JournalEntry, PracticeSession, ReportReflection, VibePreference, CheckInDraft,
-  Relationship, Connection, User,
+  Relationship, User,
 };

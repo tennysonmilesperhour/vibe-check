@@ -58,6 +58,15 @@ describe('settleCosmicProfile', () => {
     expect(JSON.parse(JSON.stringify(settleCosmicProfile({ numerology: { personal_year: '7' } }).numerology))).toEqual({});
   });
 
+  it('leaves out a saved birth time and place, on load and on save', () => {
+    const saved = { first_name: 'Ana', birth_date: '1990-07-15', birth_time: '06:30', birth_city: 'Denver', birth_state: 'Colorado', birth_country: 'United States', enabled_systems: ['astrology'] };
+    const kept = { first_name: 'Ana', birth_date: '1990-07-15', enabled_systems: ['astrology'] };
+    for (const settled of [settleCosmicProfile(saved), settleOnSave(saved)]) {
+      expect(Object.keys(settled).filter((key) => /^birth_(time|city|state|country)$/.test(key))).toEqual([]);
+      expect(settled).toMatchObject(kept);
+    }
+  });
+
   it('gives saved tarot cards a source', () => {
     const settled = settleCosmicProfile({ birth_date: '1985-11-23', tarot_archetype: { birth_card: '3 – The Empress' } });
     expect(settled.tarot_archetype).toEqual({ birth_card: '3 – The Empress', birth_card_source: 'retired' });

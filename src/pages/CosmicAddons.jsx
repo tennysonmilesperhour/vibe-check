@@ -33,10 +33,6 @@ const EMPTY_PROFILE = {
     first_name: "",
     last_name: "",
     birth_date: "",
-    birth_time: "",
-    birth_city: "",
-    birth_state: "",
-    birth_country: "",
     enabled_systems: ["astrology"],
     astrology: {},
     human_design: {},
@@ -242,11 +238,11 @@ export default function CosmicAddons() {
                             <SystemToggle enabledSystems={enabledSystems} onToggle={toggleSystem} />
                         </div>
 
-                        {/* Birth Data */}
+                        {/* Name and birth date */}
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth data</h3>
+                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>Name & birth date</h3>
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
-                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac.
+                                Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac. Vibe Check doesn't ask for your birth time or place, since nothing here uses them.
                             </p>
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
@@ -260,34 +256,11 @@ export default function CosmicAddons() {
                                         onChange={e => setProfile(prev => ({ ...prev, last_name: e.target.value }))} />
                                 </div>
                             </div>
-                            <div className="grid md:grid-cols-3 gap-4">
+                            <div className="grid md:grid-cols-2 gap-4">
                                 <div>
                                     <Label style={{ color: 'var(--gh-ink-soft)' }}>Date of Birth</Label>
                                     <Input type="date" className="mt-1" value={profile.birth_date}
                                         onChange={e => setBirthDate(e.target.value)} />
-                                </div>
-                                <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Time of Birth <span className="text-xs opacity-60">(optional)</span></Label>
-                                    <Input type="time" className="mt-1" value={profile.birth_time}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_time: e.target.value }))} />
-                                </div>
-                                <div />
-                            </div>
-                            <div className="grid md:grid-cols-3 gap-4 mt-4">
-                                <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>City of Birth</Label>
-                                    <Input className="mt-1" placeholder="e.g. Denver" value={profile.birth_city || ''}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_city: e.target.value }))} />
-                                </div>
-                                <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>State / Region <span className="text-xs opacity-60">(optional)</span></Label>
-                                    <Input className="mt-1" placeholder="e.g. Colorado" value={profile.birth_state || ''}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_state: e.target.value }))} />
-                                </div>
-                                <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Country of Birth</Label>
-                                    <Input className="mt-1" placeholder="e.g. United States" value={profile.birth_country || ''}
-                                        onChange={e => setProfile(prev => ({ ...prev, birth_country: e.target.value }))} />
                                 </div>
                             </div>
                         </div>

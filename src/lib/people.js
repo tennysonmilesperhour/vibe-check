@@ -99,12 +99,10 @@ export async function migratePeople({ Person, Relationship, Connection, auth }) 
       boundary_notes: r.boundary_notes || '',
       legacy_names: [],
     })),
+    // Another account's email address and chart are not copied.
     ...connections.map((c) => ({
-      name: c.target_name || c.target_email,
+      name: c.target_name,
       person_type: c.connection_type || 'friend',
-      linked_user_email: c.target_email,
-      cosmic_snapshot: c.target_cosmic_profile || null,
-      snapshot_updated_at: c.updated_date || c.created_date,
       legacy_names: [],
     })),
   ].filter((d) => d.name);

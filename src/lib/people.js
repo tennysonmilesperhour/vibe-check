@@ -273,8 +273,11 @@ const MACHINE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d
 // words ("Kim❤️").
 const DECORATION = /^[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D\s]+|[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D\s]+$/gu;
 const EDGES = /^[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D]+|[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D]+$/gu;
+// What separates the words, couples and aliases of a saved name ("Jen&Tom",
+// "Sam/Samuel", "Alex, Lexi"), commas of other scripts included.
+const NAME_BREAK = /[\s/&+|,،、，;；]+/u;
 // A single word in quotes inside a saved name: a nickname.
-const QUOTED_WORD = /(^|\s)['‘’"“”]([^'‘’"“”\s]+)['‘’"“”](?=\s|$)/gu;
+const QUOTED_WORD = /(^|[\s/&+|,،、，;；])['‘’"“”]([^'‘’"“”\s/&+|,،、，;；]+)['‘’"“”](?=[\s/&+|,،、，;；]|$)/gu;
 // "Sam's" in "Sam's mom" names someone else.
 const POSSESSIVE = /['’ʼ]s$|s['’ʼ]$/iu;
 const APOSTROPHE = /['’ʼ]/;
@@ -392,18 +395,19 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
       }
       for (const part of cjkNameParts(bare)) add(part, label, false);
       // Couples and aliases are often saved as "Jen&Tom" or "Sam/Samuel".
-      const raw = bare.split(/[\s/&+|,]+/).filter(Boolean);
-      if (raw.length < 2 || KUNYA.has(raw[0])) continue;
+      const raw = bare.split(NAME_BREAK).filter(Boolean);
+      const trimmed = raw.map((piece) => piece.replace(EDGES, ''));
+      if (raw.length < 2 || KUNYA.has(trimmed[0])) continue;
       // "Servant of" (عبد) and the word after it make one given name, wherever
       // it stands (عبد الرحمن بن عبد الله).
-      /** @type {string[]} */
+      /** @type {{ piece: string, servant?: string }[]} */
       const pieces = [];
       for (let i = 0; i < raw.length; i += 1) {
-        if (raw[i] === SERVANT_OF && raw[i + 1]) { pieces.push(`${raw[i]} ${raw[i + 1]}`); i += 1; }
-        else pieces.push(raw[i]);
+        if (trimmed[i] === SERVANT_OF && trimmed[i + 1]) { pieces.push({ piece: raw[i], servant: `${SERVANT_OF} ${trimmed[i + 1]}` }); i += 1; }
+        else pieces.push({ piece: raw[i] });
       }
-      pieces.forEach((piece, position) => {
-        if (piece.startsWith(`${SERVANT_OF} `)) { add(piece, label, false); return; }
+      pieces.forEach(({ piece, servant }, position) => {
+        if (servant) { add(servant, label, false); return; }
         // "Sam's" in "Sam's mom", or "Chris'" in "Chris' mom", names someone else.
         if (POSSESSIVE.test(piece.replace(/[^\p{L}\p{M}\p{N}'’ʼ]+$/u, ''))) return;
         const word = piece.replace(EDGES, '');

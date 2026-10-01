@@ -334,6 +334,15 @@ describe('replacing names: nicknames, titles and connectors', () => {
     expect(replace('إن شاء الله. والله تعبت. صديقي العزيز. هل تريد شاي أم قهوة؟ أحمد هنا. بن عربي. سلمان هنا')).toBe('إن شاء الله. والله تعبت. صديقي العزيز. هل تريد شاي أم قهوة؟ أحمد هنا. بن عربي. s هنا');
   });
 
+  it('unwraps quoted nicknames beside separators, and trims both words of a servant-of name', () => {
+    const replace = peopleNameReplacer([
+      { id: 'c', name: "Christopher 'Chris', neighbor" }, { id: 'b', name: "Charles 'Chas'/'Charlie' Brown" }, { id: 'j', name: "'Jess'&Tom" },
+      { id: 'm', name: 'محمد عبد الله، جاري' }, { id: 'e', name: 'سعيد عبد الله💚 العمري' }, { id: 'q', name: '«عبد الرحمن» الخالد' },
+    ], (person) => person.id);
+    expect(replace('Chris called. Chas and Charlie came. Jess and Tom too.')).toBe('c called. b and b came. j and j too.');
+    expect(replace('عبد الله اتصل. محمد هنا. عبد الرحمن جاء. العمري هنا')).toBe('m or e اتصل. m هنا. q جاء. e هنا');
+  });
+
   it('keeps both readings of a three-character name, and a leading quoted nickname', () => {
     const replace = peopleNameReplacer([{ id: 'j', name: '金子轩' }, { id: 'x', name: '許志明' }, { id: 'c', name: "'Chris' Jones" }, { id: 'g', name: '‘Gus’ Lee' }], (person) => person.id);
     expect(replace('子轩来了。志明也来了。Chris called. Gus called.')).toBe('j来了。x也来了。c called. g called.');

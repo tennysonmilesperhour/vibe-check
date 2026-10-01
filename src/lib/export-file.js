@@ -2,7 +2,7 @@
 // portable file, and the reader that opens an export again inside the app.
 // Nothing here uploads or stores anything.
 import { decryptJson } from './crypto.js';
-import { validDateKey } from './living-patterns.js';
+import { timelineEntries, validDateKey } from './living-patterns.js';
 
 /** The tables in a complete export, in the order the viewer lists them. */
 export const EXPORT_TABLES = [
@@ -97,67 +97,66 @@ const rowsOf = (value) => (Array.isArray(value) ? value.filter((row) => row && t
 const textOf = (value) => (typeof value === 'string' ? value : '');
 
 /** @param {any} entry */
-const stampOf = (entry) => textOf(entry.occurred_at) || textOf(entry.created_at);
-
-/**
- * Check-ins and journal entries, newest first, shaped as the journal shows
- * them. Unlike the app's timeline it keeps unfinished journal entries, and
- * it holds up against a hand-edited file.
- * @param {any[]} checkIns @param {any[]} journal
- */
-function fileTimeline(checkIns, journal) {
-  return [
-    ...checkIns.map((row, i) => ({ ...row, kind: 'day', key: `day:${row.id ?? i}` })),
-    ...journal.map((row, i) => ({ ...row, entry_kind: row.kind, kind: 'journal', key: `journal:${row.id ?? i}` })),
-  ].filter((entry) => validDateKey(entry.date))
-    .sort((a, b) => b.date.localeCompare(a.date) || stampOf(b).localeCompare(stampOf(a)) || a.key.localeCompare(b.key));
-}
-
-/** @param {any} entry */
 const personIds = (entry) => [entry.person_ids, entry.high_moment?.person_ids, entry.low_moment?.person_ids]
   .flatMap((list) => (Array.isArray(list) ? list : []))
   .filter((id) => typeof id === 'string');
 
+// For a file that does not carry the people its entries name. Chosen-entry
+// files may have replaced names with labels like "Person 1".
+/** @param {any[]} entries */
+const peopleNamedBy = (entries) => [...new Set(entries.flatMap(personIds))].map((id) => ({ id, name: /^Person \d+$/.test(id) ? id : 'Unnamed person' }));
+
+/**
+ * Counts by kind of record in an opened export.
+ * @param {any} document
+ * @returns {{ key: string, label: string, count: number }[]}
+ */
+export function exportCounts(document) {
+  const kind = exportKind(document);
+  if (kind === 'complete') {
+    const tables = document.tables && typeof document.tables === 'object' ? document.tables : {};
+    return EXPORT_TABLES.map(([key, label]) => ({ key, label, count: rowsOf(tables[key]).length }))
+      .filter(({ key, count }) => count > 0 || !RETIRED_TABLES.has(key));
+  }
+  if (kind === 'earlier') return EARLIER_PARTS.filter(([key]) => Array.isArray(document[key])).map(([key, label]) => ({ key, label, count: rowsOf(document[key]).length }));
+  return SELECTED_PARTS.map(([key, label]) => ({ key, label, count: rowsOf(document?.[key]).length }));
+}
+
 /**
  * What the viewer shows for an opened export: its kind, when it was made
  * or what it covers, counts by kind of record, its check-ins and journal
- * entries newest first, and the people those entries name.
+ * entries newest first (unfinished ones too), and the people those entries
+ * name.
  * @param {any} document
  */
 export function summarizeExport(document) {
   const kind = exportKind(document);
+  const counts = exportCounts(document);
   if (kind === 'complete') {
     const tables = document.tables && typeof document.tables === 'object' ? document.tables : {};
     return {
-      kind,
+      kind, counts, range: null,
       exportedAt: textOf(document.exported_at) || null,
-      range: null,
-      counts: EXPORT_TABLES.map(([key, label]) => ({ key, label, count: rowsOf(tables[key]).length }))
-        .filter(({ key, count }) => count > 0 || !RETIRED_TABLES.has(key)),
-      entries: fileTimeline(rowsOf(tables.daily_check_ins), rowsOf(tables.vibe_journal_entries)),
+      entries: timelineEntries(rowsOf(tables.daily_check_ins), rowsOf(tables.vibe_journal_entries), { drafts: true }),
       people: rowsOf(tables.people),
     };
   }
   if (kind === 'earlier') {
+    const entries = timelineEntries(rowsOf(document.check_ins), []);
     return {
-      kind,
+      kind, counts, range: null,
       exportedAt: textOf(document.export_date) || null,
-      range: null,
-      counts: EARLIER_PARTS.filter(([key]) => Array.isArray(document[key])).map(([key, label]) => ({ key, label, count: rowsOf(document[key]).length })),
-      entries: fileTimeline(rowsOf(document.check_ins), []),
-      people: rowsOf(document.people),
+      entries,
+      // The earliest of these files did not include people.
+      people: Array.isArray(document.people) ? rowsOf(document.people) : peopleNamedBy(entries),
     };
   }
-  // Chosen entries: names may have been replaced with labels like "Person 1",
-  // and the people themselves are not in the file.
   const entries = rowsOf(document?.entries);
   const range = document?.range && typeof document.range === 'object' ? document.range : null;
   return {
-    kind: 'selected',
-    exportedAt: null,
+    kind: 'selected', counts, exportedAt: null,
     range: range && validDateKey(range.start) && validDateKey(range.end) ? { start: range.start, end: range.end } : null,
-    counts: SELECTED_PARTS.map(([key, label]) => ({ key, label, count: rowsOf(document?.[key]).length })),
     entries,
-    people: [...new Set(entries.flatMap(personIds))].map((id) => ({ id, name: /^Person \d+$/.test(id) ? id : 'Unnamed person' })),
+    people: peopleNamedBy(entries),
   };
 }

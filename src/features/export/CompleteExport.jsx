@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import { encryptJson } from '@/lib/crypto';
-import { summarizeExport } from '@/lib/export-file';
+import { exportCounts } from '@/lib/export-file';
 import { todayKey } from '@/lib/dates';
 import { collectCompleteExport } from './collect';
 import { downloadJson } from './download';
+import ExportPassword, { exportPasswordError } from './ExportPassword';
 
 /** Download everything Vibe Check keeps for the account, after the password check. */
 export default function CompleteExport({ onClose }) {
@@ -19,7 +20,7 @@ export default function CompleteExport({ onClose }) {
   const [repeat, setRepeat] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const counts = useMemo(() => (file ? summarizeExport(file).counts : []), [file]);
+  const counts = useMemo(() => (file ? exportCounts(file) : []), [file]);
 
   useEffect(() => {
     if (!identityOk) return undefined;
@@ -33,9 +34,8 @@ export default function CompleteExport({ onClose }) {
   }, [identityOk, attempt]);
 
   async function download() {
-    if (encrypt && password.length < 8) { setError('Use an export password with at least eight characters.'); return; }
-    // The password cannot be recovered, so a typo would lock the file for good.
-    if (encrypt && password !== repeat) { setError('The two passwords are different. Type the same password in both.'); return; }
+    const passwordError = encrypt ? exportPasswordError(password, repeat) : '';
+    if (passwordError) { setError(passwordError); return; }
     setBusy(true); setError('');
     try {
       downloadJson(encrypt ? await encryptJson(file, password) : file, `vibe-check-complete-${todayKey()}${encrypt ? '.encrypted' : ''}.json`);
@@ -55,10 +55,7 @@ export default function CompleteExport({ onClose }) {
         <p className="living-muted text-xs">Plus your profile: account email, name, low-mood settings and any optional systems you set up.</p>
         <label className="flex gap-3 text-sm"><input type="checkbox" checked={encrypt} onChange={(e) => setEncrypt(e.target.checked)} />Encrypt the file with a password</label>
         {encrypt
-          ? <>
-            <label className="living-label">Export password<input className="living-input mt-2" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /><span className="living-muted text-xs">At least eight characters. It is not stored and cannot be recovered, and you will need it to open the file.</span></label>
-            <label className="living-label">Repeat the export password<input className="living-input mt-2" type="password" autoComplete="new-password" value={repeat} onChange={(e) => setRepeat(e.target.value)} /></label>
-          </>
+          ? <ExportPassword password={password} repeat={repeat} onPassword={setPassword} onRepeat={setRepeat} />
           : <p className="living-muted text-xs">Without a password, anyone who gets the file can read everything in it, including your journal and safety plan.</p>}
         {error && <p className="living-error" role="alert">{error}</p>}
         <button className="ink-button" disabled={busy} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted file' : 'Download file'}</button>

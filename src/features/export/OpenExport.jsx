@@ -46,7 +46,8 @@ export default function OpenExport({ onClose }) {
       const result = await openExportFile(fileText, filePassword);
       if (id !== attempt.current) return;
       if ('encrypted' in result) setNeedsPassword(true);
-      else { setSummary(summarizeExport(result.document)); setNeedsPassword(false); setPassword(''); }
+      // The text is kept only for another password try.
+      else { setSummary(summarizeExport(result.document)); setNeedsPassword(false); setPassword(''); setText(null); }
     } catch (err) { if (id === attempt.current) setError(err.message); }
     if (id === attempt.current) setBusy(false);
   }

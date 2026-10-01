@@ -30,25 +30,26 @@ export const EXPORT_SOURCES = EXPORT_TABLES.map(([key]) => {
 
 const PAGE = 500;
 
+/** @param {any} row */
+const createdAt = (row) => (typeof row.created_at === 'string' ? row.created_at : '');
+
 /**
- * Every row of a table, oldest first, so a row saved during the export
- * lands at the end rather than shifting the pages. Reading goes on until a
- * page comes back empty: a short page is not the end when the server caps
- * pages below the size asked for. A row seen twice is kept once.
+ * Every row of a table, oldest first. Pages follow the last id read, so a
+ * row deleted meanwhile cannot make the next page skip one.
  */
 async function readAll(entity, signal) {
-  const rows = [];
-  const seen = new Set();
-  for (let offset = 0; ;) {
-    const page = await entity.list('created_date', PAGE, offset, { signal });
-    if (!page.length) return rows;
-    offset += page.length;
-    for (const row of page) {
-      if (seen.has(row.id)) continue;
-      seen.add(row.id);
-      rows.push(row);
+  const first = await entity.pageAfter(null, PAGE, { withTotal: true, signal });
+  const rows = [...first.rows];
+  // The first page is the whole table when it holds the total counted with
+  // it. Otherwise read on until a page comes back empty: a short page alone
+  // may be the server's cap rather than the end.
+  if (first.total === null || rows.length < first.total) {
+    for (let page = first.rows; page.length;) {
+      page = (await entity.pageAfter(page.at(-1).id, PAGE, { signal })).rows;
+      rows.push(...page);
     }
   }
+  return rows.sort((a, b) => createdAt(a).localeCompare(createdAt(b)) || String(a.id).localeCompare(String(b.id)));
 }
 
 /**
@@ -57,14 +58,15 @@ async function readAll(entity, signal) {
  * @param {{ signal?: AbortSignal }} [options]
  */
 export async function collectCompleteExport({ signal } = {}) {
+  if (signal?.aborted) throw new DOMException('The export was stopped.', 'AbortError');
   const reads = new AbortController();
   const stop = () => reads.abort();
   signal?.addEventListener('abort', stop);
   try {
     const [me, ...rows] = await Promise.all([base44.auth.me(), ...EXPORT_SOURCES.map(([, entity]) => readAll(entity, reads.signal))]);
-    const { email, full_name, cosmic_profile, boundary_settings, people_migrated_at } = me;
+    const { email, full_name, cosmic_profile, boundary_settings, people_migrated_at, created_date, updated_date } = me;
     return buildCompleteExport({
-      profile: { email, full_name, cosmic_profile, boundary_settings, people_migrated_at },
+      profile: { email, full_name, cosmic_profile, boundary_settings, people_migrated_at, created_at: created_date, updated_at: updated_date },
       tables: Object.fromEntries(EXPORT_SOURCES.map(([key], i) => [key, rows[i]])),
       exportedAt: new Date().toISOString(),
     });

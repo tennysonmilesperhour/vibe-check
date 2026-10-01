@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCompleteExport, openExportFile, summarizeExport, EXPORT_TABLES } from '../export-file.js';
+import { buildCompleteExport, openExportFile, summarizeExport, exportCounts, EXPORT_TABLES } from '../export-file.js';
 import { encryptJson } from '../crypto.js';
 
 const tables = {
@@ -63,7 +63,8 @@ describe('the complete export', () => {
   });
 
   it('counts what the file holds, and a retired feature only when there is some', () => {
-    const counts = summarizeExport(document).counts;
+    const counts = exportCounts(document);
+    expect(summarizeExport(document).counts).toEqual(counts);
     expect(counts.find((c) => c.key === 'vibe_journal_entries')).toEqual({ key: 'vibe_journal_entries', label: 'Journal entries', count: 3 });
     expect(counts.find((c) => c.key === 'readings')?.count).toBe(0);
     expect(counts.some((c) => c.key === 'cosmic_wisdom')).toBe(false);
@@ -117,9 +118,10 @@ describe('older exports', () => {
     expect(summary).toMatchObject({ kind: 'earlier', exportedAt: '2026-08-01T10:00:00Z', range: null, people: [{ id: 'p1', name: 'Sam' }] });
     expect(rowsSummary(summary)).toEqual([['2026-07-31', 'day', 'day:c2', false], ['2026-07-30', 'day', 'day:c1', false]]);
     expect(summary.counts.map((c) => [c.label, c.count])).toEqual([['Check-ins', 2], ['People', 1], ['Card readings', 0], ['Earlier AI wisdom', 1], ['Low-mood notices', 1], ['Practice board items', 0]]);
-    // The earliest shape: low-mood notices were "alerts".
-    const earliest = { export_date: '2026-07-02T10:00:00Z', cosmic_profile: null, check_ins: [], alerts: [{ id: 'a1' }, { id: 'a2' }] };
+    // The earliest shape: low-mood notices were "alerts", and people were not included.
+    const earliest = { export_date: '2026-07-02T10:00:00Z', cosmic_profile: null, check_ins: [{ id: 'c1', date: '2026-07-01', person_ids: ['0b1c'] }], alerts: [{ id: 'a1' }, { id: 'a2' }] };
     expect(await openExportFile(JSON.stringify(earliest))).toEqual({ document: earliest });
-    expect(summarizeExport(earliest).counts.map((c) => [c.label, c.count])).toEqual([['Check-ins', 0], ['Low-mood notices', 2]]);
+    expect(summarizeExport(earliest).counts.map((c) => [c.label, c.count])).toEqual([['Check-ins', 1], ['Low-mood notices', 2]]);
+    expect(summarizeExport(earliest).people).toEqual([{ id: '0b1c', name: 'Unnamed person' }]);
   });
 });

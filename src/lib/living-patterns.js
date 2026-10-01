@@ -10,12 +10,19 @@ export function validDateKey(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parseLocalDate(value).getTime()) && dateKey(parseLocalDate(value)) === value;
 }
 
-/** Normalize separately authored moments without combining them into a daily mood. */
-export function timelineEntries(checkIns = [], journal = []) {
+/** @param {any} entry */
+const stampOf = (entry) => (typeof entry.occurred_at === 'string' && entry.occurred_at) || (typeof entry.created_at === 'string' && entry.created_at) || '';
+
+/**
+ * Normalize separately authored moments without combining them into a daily mood.
+ * @param {any[]} [checkIns] @param {any[]} [journal]
+ * @param {{ drafts?: boolean }} [options] drafts: keep unfinished journal entries, as the export reader does
+ */
+export function timelineEntries(checkIns = [], journal = [], { drafts = false } = {}) {
   return [
-    ...checkIns.map((entry) => ({ ...entry, kind: 'day', key: `day:${entry.id}` })),
-    ...journal.filter((entry) => !entry.is_draft).map((entry) => ({ ...entry, entry_kind: entry.kind, kind: 'journal', key: `journal:${entry.id}` })),
-  ].filter((entry) => validDateKey(entry.date)).sort((a, b) => b.date.localeCompare(a.date) || (b.occurred_at || b.created_at || '').localeCompare(a.occurred_at || a.created_at || '') || a.key.localeCompare(b.key));
+    ...checkIns.map((entry, i) => ({ ...entry, kind: 'day', key: `day:${entry.id ?? i}` })),
+    ...journal.filter((entry) => drafts || !entry.is_draft).map((entry, i) => ({ ...entry, entry_kind: entry.kind, kind: 'journal', key: `journal:${entry.id ?? i}` })),
+  ].filter((entry) => validDateKey(entry.date)).sort((a, b) => b.date.localeCompare(a.date) || stampOf(b).localeCompare(stampOf(a)) || a.key.localeCompare(b.key));
 }
 
 /**

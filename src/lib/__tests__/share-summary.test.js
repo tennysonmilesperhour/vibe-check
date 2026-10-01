@@ -52,6 +52,8 @@ describe('a summary to share', () => {
     expect(buildShareSummary({ entries: [], start: '0202-09-01', end: '2026-09-20', today: '2026-09-20' }).scores.rows.length).toBeLessThanOrEqual(241);
     // Dates before anything was recorded stay as chosen.
     expect(buildShareSummary({ ...base, start: '2025-01-01', end: '2025-01-31' })).toMatchObject({ start: '2025-01-01', end: '2025-01-31', recordedDays: 0 });
+    // Dates after today end today, and never start after they end.
+    expect(buildShareSummary({ ...base, start: '2026-12-01', end: '2026-12-31' })).toMatchObject({ start: '2026-09-20', end: '2026-09-20', calendarDays: 1 });
   });
 
   it('averages daily check-in scores by week, ignoring values off the scale', () => {
@@ -90,10 +92,10 @@ describe('a summary to share', () => {
       { id: 'p-samlee', label: 'Person 2', total: 2, feelings: [{ value: 'strained', count: 1 }, { value: 'unsafe', count: 1 }] },
       { id: 'p-sam', label: 'Person 1', total: 1, feelings: [{ value: 'supportive', count: 1 }] },
       { id: 'p-zo', label: 'Person 3', total: 1, feelings: [{ value: 'not recorded', count: 1 }] },
-      { id: 'p-gone', label: 'Person 5', total: 1, feelings: [{ value: 'strained', count: 1 }] },
+      { id: 'p-gone', label: 'Removed person 1', total: 1, feelings: [{ value: 'strained', count: 1 }] },
     ]);
     // Another stretch of days keeps everyone's label.
-    expect(buildShareSummary({ ...base, start: '2026-09-03', end: '2026-09-05' }).interactions.people.map((row) => [row.id, row.label])).toEqual([['p-samlee', 'Person 2'], ['p-zo', 'Person 3'], ['p-gone', 'Person 5']]);
+    expect(buildShareSummary({ ...base, start: '2026-09-03', end: '2026-09-05' }).interactions.people.map((row) => [row.id, row.label])).toEqual([['p-samlee', 'Person 2'], ['p-zo', 'Person 3'], ['p-gone', 'Removed person 1']]);
     expect(buildShareSummary({ ...base, hideNames: false }).interactions.people.map((row) => row.label)).toEqual(['Sam Lee', 'A person you removed', 'Sam', 'Zo']);
   });
 

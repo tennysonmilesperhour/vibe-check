@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchPersonByText, mentionsPerson, dedupePeopleDrafts, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing, peopleNameReplacer } from '../people.js';
+import { matchPersonByText, mentionsPerson, dedupePeopleDrafts, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing, peopleNameReplacer, personLabels } from '../people.js';
 
 const people = [
   { id: 'p1', name: 'Mom', legacy_names: ['mother', 'mama'] },
@@ -118,44 +118,69 @@ describe('people recorded together from picker tags', () => {
 });
 
 describe('replacing people\'s names with labels', () => {
-  const labelOf = (person) => ({ a: 'Person 1', b: 'Person 2', c: 'Person 3', d: 'Person 4', e: 'Person 5', f: 'Person 6', g: 'Person 7', h: 'Person 8' })[person.id];
+  const labelOf = (person) => ({ a: 'Person 1', b: 'Person 2', c: 'Person 3', d: 'Person 4', e: 'Person 5', f: 'Person 6', g: 'Person 7', h: 'Person 8', i: 'Person 9', j: 'Person 10' })[person.id];
   const crowd = [
     { id: 'a', name: 'Sam' },
     { id: 'b', name: 'Jordan Smith' },
     { id: 'c', name: 'Mr. Kent' },
     { id: 'd', name: 'Alex (work)' },
     { id: 'e', name: 'Alex', legacy_names: ['Lexi'] },
-    { id: 'f', name: '小明' },
+    { id: 'f', name: '王 小明' },
     { id: 'g', name: '민수' },
     { id: 'h', name: "O'Brien" },
+    { id: 'i', name: "Lily (Sam's mom)" },
+    { id: 'j', name: 'Ayşe Yılmaz' },
   ];
   const replace = peopleNameReplacer(crowd, labelOf);
 
-  it('replaces full names in any case as whole words, and capitalized parts of longer names', () => {
+  it('replaces whole saved names in any case, and words of a longer name when they start with a capital', () => {
     expect(replace('Sam, sam and SAM. Samantha and the same.')).toBe('Person 1, Person 1 and Person 1. Samantha and the same.');
-    expect(replace('Jordan called. Smith too. jordan stayed home. Jordan Smith left.')).toBe('Person 2 called. Person 2 too. jordan stayed home. Person 2 left.');
+    expect(replace('Jordan called. SMITH too. jordan stayed home. Jordan Smith left.')).toBe('Person 2 called. Person 2 too. jordan stayed home. Person 2 left.');
     expect(replace('Mr. Kent waved, then Kent left. Mr. Brown stayed.')).toBe('Person 3 waved, then Person 3 left. Mr. Brown stayed.');
+    expect(replace('Jordan called.', { parts: false })).toBe('Jordan called.');
+  });
+
+  it('never takes a word from a note in brackets as a name', () => {
+    expect(replace("Sam's party was fun. Lily came, and her mom.")).toBe("Person 1's party was fun. Person 9 came, and her mom.");
   });
 
   it('gives both labels to a name two people share', () => {
     expect(replace('Alex shouted. Lexi helped.')).toBe('Person 4 or Person 5 shouted. Person 5 helped.');
   });
 
+  it('finds a name joined to digits, an underscore, or a capitalized word', () => {
+    expect(replace('#SamBirthday with Sam2 and Sam_K, not Sams or SAMANTHA.')).toBe('#Person 1Birthday with Person 1 2 and Person 1_K, not Sams or SAMANTHA.');
+  });
+
   it('matches names written without spaces around them', () => {
-    expect(replace('我和小明吃饭')).toBe('我和Person 6吃饭');
+    expect(replace('我和王小明吃饭, 小明也来了')).toBe('我和Person 6吃饭, Person 6也来了');
     expect(replace('민수가 왔다')).toBe('Person 7가 왔다');
   });
 
-  it('matches either apostrophe and either way of writing an accent', () => {
-    expect(replace('O’Brien and o\'brien')).toBe('Person 8 and Person 8');
-    const decomposed = peopleNameReplacer([{ id: 'x', name: 'José' }], () => 'Person 9');
-    expect(decomposed('José came, then José.')).toBe('Person 9 came, then Person 9.');
-    expect(peopleNameReplacer([{ id: 'y', name: 'İrem' }], () => 'Person 10')('İrem came.')).toBe('Person 10 came.');
+  it('matches any apostrophe, either way of writing an accent, and Turkish i', () => {
+    expect(replace('O’Brien and o\'brien and Oʼbrien')).toBe('Person 8 and Person 8 and Person 8');
+    expect(replace('AYŞE YILMAZ and Yilmaz')).toBe('Person 10 and Person 10');
+    const decomposed = peopleNameReplacer([{ id: 'x', name: 'José' }, { id: 'y', name: 'İrem' }, { id: 'z', name: 'Dee' }], (person) => person.id);
+    expect(decomposed('José came, then José, then irem, IREM and Deeʼs car.')).toBe('x came, then x, then y, y and zʼs car.');
   });
 
-  it('replaces extra strings such as ids, and never a label it just wrote', () => {
-    const withIds = peopleNameReplacer([{ id: 'uuid-1', name: 'Or' }, { id: 'uuid-2', name: 'Person' }], (person) => (person.id === 'uuid-1' ? 'Person 1' : 'Person 2'), (person) => [person.id]);
-    expect(withIds('uuid-1 and Or or Person')).toBe('Person 1 and Person 1 Person 1 Person 2');
+  it('keeps marks with the letters they belong to', () => {
+    const hindi = peopleNameReplacer([{ id: 'r', name: 'राम' }, { id: 'p', name: 'प्रिया शर्मा' }], (person) => person.id);
+    expect(hindi('रामा आई, राम आया')).toBe('रामा आई, r आया');
+    expect(hindi('शर्म की बात, शर्मा जी')).toBe('शर्म की बात, p जी');
+  });
+
+  it('replaces extra strings such as ids, and never a label it just wrote or text it did not', () => {
+    const withIds = peopleNameReplacer([{ id: 'uuid-1', name: 'Or' }, { id: 'uuid-2', name: '0' }], (person) => (person.id === 'uuid-1' ? 'Person 1' : 'Person 2'), (person) => [person.id]);
+    expect(withIds('uuid-1 and Or or 0')).toBe('Person 1 and Person 1 Person 1 Person 2');
+    expect(withIds(' stays')).toBe(' stays');
     expect(peopleNameReplacer([], () => 'x')('Nothing to replace')).toBe('Nothing to replace');
+  });
+});
+
+describe('labels for people', () => {
+  it('numbers people in the order they were added, and people since removed apart', () => {
+    const labels = personLabels([{ id: 'b', created_at: '2026-02-01' }, { id: 'a', created_at: '2026-01-01' }], ['gone-2', 'a', 'gone-1', 'gone-2']);
+    expect([...labels]).toEqual([['a', 'Person 1'], ['b', 'Person 2'], ['gone-1', 'Removed person 1'], ['gone-2', 'Removed person 2']]);
   });
 });

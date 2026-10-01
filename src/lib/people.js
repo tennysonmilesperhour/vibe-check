@@ -198,41 +198,78 @@ export function peopleInAddedOrder(people) {
   return people.filter((person) => person?.id).sort((a, b) => added(a).localeCompare(added(b)) || String(a.id).localeCompare(String(b.id)));
 }
 
+/**
+ * Labels for people in a shared record: "Person 1", "Person 2" and so on in
+ * the order people were added, and "Removed person 1" and so on for ids
+ * still on entries whose person is gone, so the two never collide. Numbers
+ * stay the same from one summary or export to the next unless someone added
+ * earlier is removed.
+ * @param {any[]} people @param {Iterable<string>} [ids] ids that appear on entries
+ * @returns {Map<string, string>}
+ */
+export function personLabels(people, ids = []) {
+  const labels = new Map(peopleInAddedOrder(people).map((person, i) => [person.id, `Person ${i + 1}`]));
+  [...new Set(ids)].filter((id) => id && !labels.has(id)).sort().forEach((id, i) => labels.set(id, `Removed person ${i + 1}`));
+  return labels;
+}
+
 // Names in these scripts are usually written without spaces around them
 // (Chinese, Japanese, Thai, and Korean, where particles attach to names), so
 // they are matched inside longer runs of letters too.
 const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
 // Words in a saved name that are not a name on their own.
-const NOT_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'aunt', 'auntie', 'uncle', 'grandma', 'grandpa', 'nana', 'papa', 'mom', 'mum', 'dad', 'my', 'the', 'and', 'of', 'from', 'at', 'work']);
-const LETTER = /\p{L}/gu;
+const NOT_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'aunt', 'auntie', 'uncle', 'grandma', 'grandpa', 'nana', 'papa', 'mom', 'mum', 'dad', 'my', 'the', 'and', 'of']);
+const APOSTROPHE = /['’ʼ]/;
+// Letters and the marks that combine with them carry a word on; an
+// apostrophe, a digit, punctuation or a space ends it.
+const WORD = /[\p{L}\p{M}]/u;
+const continuesWord = (/** @type {string} */ ch) => Boolean(ch) && WORD.test(ch) && !APOSTROPHE.test(ch);
+const hasCase = (/** @type {string} */ ch) => ch.toLowerCase() !== ch.toUpperCase();
+const isUpper = (/** @type {string} */ ch) => hasCase(ch) && ch === ch.toUpperCase();
+const isLower = (/** @type {string} */ ch) => hasCase(ch) && ch === ch.toLowerCase();
+// Comparisons that ignore letter case, including Turkish dotted and dotless i.
+const fold = (/** @type {string} */ text) => text.toLowerCase().replace(/ı/g, 'i').replace(/\u0307/g, '').replace(/['’ʼ]/g, '');
 
 /** @param {unknown} value */
 const cleanName = (value) => (typeof value === 'string' ? value.normalize('NFC').trim() : '');
-// Straight and curly apostrophes stand for each other.
-const namePattern = (/** @type {string} */ name) => escapeRegex(name).replace(/['’ʼ]/g, "['’ʼ]");
+const withoutNote = (/** @type {string} */ name) => name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+// Any apostrophe, any run of spaces, and any form of i stand for each other.
+const namePattern = (/** @type {string} */ name) => escapeRegex(name)
+  .replace(/['’ʼ]/g, "['’ʼ]").replace(/\s+/g, '\\s+').replace(/[iIıİ]/g, '[iIıİ]');
+
+/** The whole character before an index, or ''. @param {string} text @param {number} index */
+function charBefore(text, index) {
+  if (index <= 0) return '';
+  const low = text.charCodeAt(index - 1);
+  return index > 1 && low >= 0xdc00 && low <= 0xdfff ? text.slice(index - 2, index) : text[index - 1];
+}
+
+/** The whole character at an index, or ''. @param {string} text @param {number} index */
+const charAt = (text, index) => (index < text.length ? String.fromCodePoint(/** @type {number} */ (text.codePointAt(index))) : '');
 
 /**
  * Replaces people's names in free text with labels. For each person it
- * matches the saved name in any letter case, the name without a trailing
- * note in brackets ("Jordan (work)"), earlier names, and each word of a
- * longer name on its own ("Jordan", "Smith") when written with a capital as
- * names usually are; extra exact strings, such as ids, can be added. Matches
- * are whole words, except in scripts written without spaces. A name that
- * two people share is replaced with both labels. Names of people no longer
+ * matches, as whole words:
+ * - the saved name and earlier names, in any letter case, with or without a
+ *   trailing note in brackets ("Jordan (work)");
+ * - in free text, each word of a longer name on its own ("Jordan", "Smith")
+ *   when it starts with a capital, as names usually are;
+ * - extra exact strings such as ids.
+ * In scripts written without spaces, names match inside longer runs of
+ * letters. A name two people share gets both labels, and a whole saved name
+ * outranks the same word inside a longer name. Names of people no longer
  * saved, and names spelled another way, cannot be known and stay.
  * @param {any[]} people
  * @param {(person: any) => string} labelOf
  * @param {(person: any) => unknown[]} [extra]
- * @returns {(text: string) => string}
+ * @returns {(text: string, options?: { parts?: boolean }) => string}
  */
 export function peopleNameReplacer(people, labelOf, extra = () => []) {
-  // A whole saved name outranks the same word as part of a longer name:
-  // "Sam" is the person saved as Sam, not Sam Lee.
   /** @type {Map<string, { name: string, whole: Set<string>, part: Set<string> }>} */
   const variants = new Map();
   const add = (/** @type {string} */ name, /** @type {string} */ label, /** @type {boolean} */ whole) => {
     if (!name || !label) return;
-    const key = name.toLowerCase();
+    const key = fold(name).replace(/\s+/g, ' ');
     const found = variants.get(key) || { name, whole: new Set(), part: new Set() };
     (whole ? found.whole : found.part).add(label);
     variants.set(key, found);
@@ -240,34 +277,64 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
   for (const person of people) {
     if (!person) continue;
     const label = labelOf(person);
-    const full = [person.name, ...(Array.isArray(person.legacy_names) ? person.legacy_names : [])].map(cleanName).filter(Boolean);
-    const names = [...new Set(full.flatMap((name) => [name, name.replace(/\s*\([^)]*\)\s*$/, '').trim()]))].filter(Boolean);
-    for (const name of names) {
-      add(name, label, true);
-      const words = name.split(/\s+/).map((word) => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''));
+    const saved = [person.name, ...(Array.isArray(person.legacy_names) ? person.legacy_names : [])].map(cleanName).filter(Boolean);
+    for (const name of saved) {
+      const bare = withoutNote(name);
+      for (const whole of [name, bare]) {
+        add(whole, label, true);
+        // "张 伟" is written 张伟 in running text.
+        if (UNSPACED.test(whole) && /\s/.test(whole)) add(whole.replace(/\s+/g, ''), label, true);
+      }
+      const words = bare.split(/\s+/).map((word) => word.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '')).filter(Boolean);
       if (words.length < 2) continue;
       for (const word of words) {
-        if ((word.match(LETTER) || []).length < 2 || NOT_NAMES.has(word.toLowerCase())) continue;
-        add(word.charAt(0).toUpperCase() + word.slice(1), label, false);
+        if ((word.match(/\p{L}/gu) || []).length < 2 || NOT_NAMES.has(word.toLowerCase())) continue;
+        add(word, label, false);
       }
     }
     for (const value of extra(person)) add(cleanName(value), label, true);
   }
-  // Each match becomes a placeholder first, so no label is matched again by
-  // a later, shorter name.
-  const labels = [];
-  const rules = [...variants.values()]
-    .sort((a, b) => b.name.length - a.name.length)
-    .map(({ name, whole, part }) => {
-      const token = `\uE000${labels.push([...(whole.size ? whole : part)].join(' or ')) - 1}\uE001`;
-      const flags = whole.size ? 'giu' : 'gu';
-      if (UNSPACED.test(name)) {
-        const inside = new RegExp(namePattern(name), flags);
-        return (/** @type {string} */ text) => text.replace(inside, token);
-      }
-      const pattern = new RegExp(`(^|[^\\p{L}\\p{N}_])${namePattern(name)}(?=[^\\p{L}\\p{N}_]|$)`, flags);
-      return (/** @type {string} */ text) => text.replace(pattern, (_, before) => before + token);
-    });
-  return (text) => rules.reduce((current, rule) => rule(current), String(text ?? '').normalize('NFC'))
-    .replace(/\uE000(\d+)\uE001/g, (_, index) => labels[Number(index)]);
+
+  // Each match becomes a placeholder of private-use characters, which no
+  // name contains, so no label is matched again by a later, shorter name.
+  /** @type {string[]} */
+  const tokens = [];
+  const rules = [...variants.values()].sort((a, b) => b.name.length - a.name.length).map(({ name, whole, part }) => {
+    const owners = whole.size ? whole : part;
+    const token = `\uE000${String.fromCharCode(0xE100 + tokens.length)}\uE001`;
+    tokens.push([...owners].join(' or '));
+    const unspaced = UNSPACED.test(name);
+    const isPart = !whole.size;
+    const hint = fold(name.split(/\s+/)[0]);
+    const pattern = new RegExp(namePattern(name), 'giu');
+    return { isPart, hint, apply: (/** @type {string} */ text) => text.replace(pattern, (match, offset) => {
+        const first = charAt(match, 0);
+        // A word of a longer name counts only when it starts with a capital.
+        if (isPart && hasCase(first) && !isUpper(first)) return match;
+        if (unspaced) return token;
+        const before = charBefore(text, offset);
+        const after = charAt(text, offset + match.length);
+        const last = charBefore(match, match.length);
+        // A name joined to a word, as in #SamBirthday, still counts when the
+        // capitals show where it starts and ends.
+        const leftOk = !continuesWord(before) || (isLower(before) && isUpper(first));
+        const rightOk = !continuesWord(after) || (isLower(last) && isUpper(after));
+        if (!leftOk || !rightOk) return match;
+        // "Sam2" reads "Person 1 2", not "Person 12".
+        const digit = /\p{N}/u;
+        return `${digit.test(before) ? ' ' : ''}${token}${digit.test(after) ? ' ' : ''}`;
+      }) };
+  });
+  const restore = (/** @type {string} */ text) => text.replace(/\uE000([\uE100-\uF8FF])\uE001/g, (match, code) => tokens[code.charCodeAt(0) - 0xE100] ?? match);
+  return (text, { parts = true } = {}) => {
+    let current = String(text ?? '').normalize('NFC');
+    // A rule runs only where its first word appears at all.
+    let folded = fold(current);
+    for (const rule of rules) {
+      if ((rule.isPart && !parts) || !folded.includes(rule.hint)) continue;
+      const next = rule.apply(current);
+      if (next !== current) { current = next; folded = fold(current); }
+    }
+    return restore(current);
+  };
 }

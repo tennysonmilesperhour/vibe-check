@@ -5,12 +5,16 @@ import { encryptJson } from '@/lib/crypto';
 import { todayKey } from '@/lib/dates';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import { downloadJson } from '@/features/export/download';
-import { peopleInAddedOrder, peopleNameReplacer } from '@/lib/people';
+import { entryPeople, peopleNameReplacer, personLabels } from '@/lib/people';
 import ExportPassword, { exportPasswordError } from '@/features/export/ExportPassword';
 
 // Past this length the preview takes a moment to lay out, so the rest waits
 // to be asked for. The download always holds everything.
 const PREVIEW_LIMIT = 200000;
+// Fields the person writes in, where a first or last name on its own is
+// replaced too. Elsewhere only whole names are, so a fixed answer such as
+// "More settled" stays as it is.
+const FREE_TEXT = new Set(['notes', 'description', 'gratitude', 'situation', 'response', 'need', 'intention', 'before_notes', 'after_notes']);
 
 export default function ExportHistory({ data, initial, onClose }) {
   const [start, setStart] = useState(initial.start || data.entries.at(-1)?.date || todayKey());
@@ -32,7 +36,19 @@ export default function ExportHistory({ data, initial, onClose }) {
   const confirmIdentity = useCallback(() => setIdentityOk(true), []);
   const valid = validDateKey(start) && validDateKey(end) && start <= end && end <= todayKey();
   const candidates = filterEntries(data.entries, { start, end });
+  // The same labels and matching as the summary to share, built once per
+  // record: saved people in the order they were added, people since removed
+  // by the ids still on entries, and their ids and old emails too.
+  const replaceNames = useMemo(() => {
+    const ids = data.entries.flatMap(entryPeople);
+    const labels = personLabels(data.people, ids);
+    const removed = [...new Set(ids)].filter((id) => !data.people.some((person) => person.id === id)).map((id) => ({ id }));
+    return peopleNameReplacer([...data.people, ...removed], (person) => labels.get(person.id), (person) => [person.id, person.linked_user_email]);
+  }, [data.people, data.entries]);
+  // Built only to preview and download it: names are replaced in every
+  // string, and words of a longer name only in what the person wrote.
   const payload = useMemo(() => {
+    if (!preview || !identityOk) return null;
     const rows = candidates.filter((entry) => !excluded.includes(entry.key));
     const practices = includePractices ? data.sessions.filter((entry) => entry.date >= start && entry.date <= end) : [];
     const reflections = includeReflections ? data.reflections.filter((entry) => entry.period_key >= start && entry.period_key <= end) : [];
@@ -46,20 +62,16 @@ export default function ExportHistory({ data, initial, onClose }) {
     };
     const document = { app: 'Vibe Check', format_version: 1, range: { start, end }, scope: 'User-selected entries; unselected entries are excluded.', entries: rows, practice_sessions: practices, report_reflections: reflections,
       ...(initial.report ? { report: references(buildReport(rows, { type: initial.report.type, start, end }, practices, data.people, data.preferences.pattern_feedback)) } : {}) };
-    // The same labels and matching as the summary to share: people numbered
-    // in the order they were added, their ids and old emails replaced too.
-    const labels = new Map(peopleInAddedOrder(data.people).map((person, n) => [person.id, `Person ${n + 1}`]));
-    const replaceNames = peopleNameReplacer(data.people, (person) => labels.get(person.id), (person) => [person.id, person.linked_user_email]);
-    const clean = (value) => {
-      if (Array.isArray(value)) return value.map(clean);
-      if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'user_id').map(([key, child]) => [key, clean(child)]));
-      if (redact && typeof value === 'string') return replaceNames(value);
+    const clean = (value, key = '') => {
+      if (Array.isArray(value)) return value.map((child) => clean(child, key));
+      if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([name]) => name !== 'user_id').map(([name, child]) => [name, clean(child, name)]));
+      if (redact && typeof value === 'string') return replaceNames(value, { parts: FREE_TEXT.has(key) });
       return value;
     };
     return clean(document);
-  }, [data, start, end, excluded, redact, includePractices, includeReflections, initial.report]);
+  }, [data, start, end, excluded, redact, includePractices, includeReflections, initial.report, preview, identityOk, replaceNames]);
   async function download() {
-    if (!valid) { setError('Choose a valid date range through today.'); return; }
+    if (!valid || !payload) { setError('Choose a valid date range through today.'); return; }
     const passwordError = encrypt ? exportPasswordError(password, repeat) : '';
     if (passwordError) { setError(passwordError); return; }
     setBusy(true); setError('');
@@ -68,7 +80,7 @@ export default function ExportHistory({ data, initial, onClose }) {
     } catch (err) { setError(err.message); }
     setBusy(false);
   }
-  const previewText = useMemo(() => (preview && identityOk ? JSON.stringify(payload, null, 2) : ''), [preview, identityOk, payload]);
+  const previewText = useMemo(() => (payload ? JSON.stringify(payload, null, 2) : ''), [payload]);
   const hidePreview = () => { setPreview(false); setFullPreview(false); };
   const change = (setter) => (value) => { setter(value); hidePreview(); };
   return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}><DialogContent className="living-dialog"><DialogHeader><DialogTitle>Choose what leaves your journal</DialogTitle><DialogDescription>Preview the complete contents before downloading. Nothing is emailed or sent to an AI provider.</DialogDescription></DialogHeader>

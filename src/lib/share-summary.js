@@ -6,7 +6,7 @@
 import { endOfMonth, startOfWeek } from 'date-fns';
 import { addDaysKey, dateKey, diffDaysKeys, parseLocalDate, todayKey } from './dates.js';
 import { entryStates, filterEntries, validDateKey } from './living-patterns.js';
-import { BOUNDARY_ANSWERS, INTERACTION_FEELINGS, entryPeople, peopleInAddedOrder, peopleNameReplacer } from './people.js';
+import { BOUNDARY_ANSWERS, INTERACTION_FEELINGS, entryPeople, peopleNameReplacer, personLabels } from './people.js';
 import { ALIGNMENTS, OUTCOMES, STRESS_STATES, practiceById } from './practices.js';
 
 // Weeks read well up to about four months; past that, months.
@@ -33,19 +33,14 @@ const isInteraction = (entry) => entry.kind === 'journal' && (entry.entry_kind =
 export const kindOf = (entry) => (entry.kind === 'day' ? 'Daily check-in' : isInteraction(entry) ? 'Interaction' : 'Journal');
 
 /**
- * Labels for everyone who can appear: "Person 1", "Person 2" and so on in
- * the order people were added, so a person keeps their label from one
- * summary to the next; or their names. Someone tagged but since removed
- * still gets a label.
+ * Labels for everyone who can appear (see personLabels), or their names.
  * @param {any[]} people @param {any[]} rows @param {boolean} hideNames
  */
 function labelPeople(people, rows, hideNames) {
-  const known = peopleInAddedOrder(people);
-  const knownIds = new Set(known.map((person) => person.id));
-  const removed = [...new Set(rows.flatMap(entryPeople))].filter((id) => !knownIds.has(id)).sort((a, b) => String(a).localeCompare(String(b)));
-  const labels = new Map(known.map((person, i) => [person.id, hideNames ? `Person ${i + 1}` : textOf(person.name) || `Person ${i + 1}`]));
-  removed.forEach((id, i) => labels.set(id, hideNames ? `Person ${known.length + i + 1}` : 'A person you removed'));
-  return labels;
+  const labels = personLabels(people, rows.flatMap(entryPeople));
+  if (hideNames) return labels;
+  const names = new Map(people.filter((person) => person?.id).map((person) => [person.id, textOf(person.name)]));
+  return new Map([...labels].map(([id, label]) => [id, names.get(id) || (names.has(id) ? label : 'A person you removed')]));
 }
 
 /** @param {number[]} values */
@@ -138,12 +133,16 @@ export function buildShareSummary({ entries, sessions = [], people = [], start, 
   const firstRecord = [...own.map((entry) => entry.date), ...ownSessions.map((session) => session.date)].filter(validDateKey).sort()[0];
   const oldest = addDaysKey(last, -OLDEST_DAYS);
   const from = firstRecord && firstRecord > start && firstRecord <= last ? firstRecord : start;
-  const first = from < oldest ? oldest : from;
+  const bounded = from < oldest ? oldest : from;
+  const first = bounded > last ? last : bounded;
   const rows = filterEntries(own, { start: first, end: last });
   const checkIns = rows.filter((entry) => entry.kind === 'day');
-  const labels = labelPeople(people, rows, hideNames);
+  // Labelled across the whole record, so labels do not depend on the dates.
+  const labels = labelPeople(people, own, hideNames);
   const labelOf = (/** @type {string} */ id) => labels.get(id) || 'A person';
-  const replaceNames = hideNames ? peopleNameReplacer(people, (person) => labelOf(person.id)) : (/** @type {string} */ text) => text;
+  const replacer = hideNames ? peopleNameReplacer(people, (person) => labelOf(person.id)) : null;
+  // Words of a longer name count in free text, not in feeling words.
+  const replaceNames = (/** @type {string} */ text, parts = true) => (replacer ? replacer(text, { parts }) : text);
 
   const grouping = stretches(first, last, weekStartsOn);
   const byStretch = grouping.stretches.map(() => /** @type {any[]} */ ([]));
@@ -185,7 +184,7 @@ export function buildShareSummary({ entries, sessions = [], people = [], start, 
       kind: kindOf(entry),
       mood: score(entry.mood_score, 1, 10),
       states: entryStates(entry).map(stateLabel),
-      emotions: wordsOf(entry.emotions).map(replaceNames),
+      emotions: wordsOf(entry.emotions).map((word) => replaceNames(word, false)),
       people: entryPeople(entry).map(labelOf),
       parts,
     };
@@ -208,7 +207,7 @@ export function buildShareSummary({ entries, sessions = [], people = [], start, 
       stressHighestToday: stressKinds.filter((kind) => kind === 'highest-today').length,
     },
     states: daysWith(rows, (entry) => entryStates(entry)).map(({ value, days }) => ({ id: value, label: stateLabel(value), days })),
-    emotions: daysWith(rows, (entry) => wordsOf(entry.emotions)).slice(0, TOP_WORDS).map(({ value, days }) => ({ label: replaceNames(value), days })),
+    emotions: daysWith(rows, (entry) => wordsOf(entry.emotions)).slice(0, TOP_WORDS).map(({ value, days }) => ({ label: replaceNames(value, false), days })),
     bodyCues: daysWith(rows, (entry) => wordsOf(entry.stress_context?.body_cues)).map(({ value, days }) => ({ label: value, days })),
     interactions: {
       total: interactions.length,

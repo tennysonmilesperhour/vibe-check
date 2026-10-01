@@ -340,6 +340,8 @@ describe('replacing names: nicknames, titles and connectors', () => {
       { id: 'm', name: 'محمد عبد الله، جاري' }, { id: 'e', name: 'سعيد عبد الله💚 العمري' }, { id: 'q', name: '«عبد الرحمن» الخالد' },
     ], (person) => person.id);
     expect(replace('Chris called. Chas and Charlie came. Jess and Tom too.')).toBe('c called. b and b came. j and j too.');
+    const more = peopleNameReplacer([{ id: 'k', name: "Charles 'Chuck/Chas' Brown" }, { id: 'u', name: 'أم💚 أحمد' }, { id: 'a', name: 'أبو❤️ علي' }], (person) => person.id);
+    expect(more('Chas called. Chuck too. أم أحمد اتصلت. أبو علي اتصل. هل تريد شاي أم قهوة؟ أحمد هنا')).toBe('k called. k too. u اتصلت. a اتصل. هل تريد شاي أم قهوة؟ أحمد هنا');
     expect(replace('عبد الله اتصل. محمد هنا. عبد الرحمن جاء. العمري هنا')).toBe('m or e اتصل. m هنا. q جاء. e هنا');
   });
 

@@ -277,7 +277,7 @@ const EDGES = /^[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D]+|[\p{P}\p{S}\p
 // "Sam/Samuel", "Alex, Lexi"), commas of other scripts included.
 const NAME_BREAK = /[\s/&+|,،、，;；]+/u;
 // A single word in quotes inside a saved name: a nickname.
-const QUOTED_WORD = /(^|[\s/&+|,،、，;；])['‘’"“”]([^'‘’"“”\s/&+|,،、，;；]+)['‘’"“”](?=[\s/&+|,،、，;；]|$)/gu;
+const QUOTED_WORD = /(^|[\s/&+|,،、，;；])['‘’"“”]([^'‘’"“”\s]+)['‘’"“”](?=[\s/&+|,،、，;；]|$)/gu;
 // "Sam's" in "Sam's mom" names someone else.
 const POSSESSIVE = /['’ʼ]s$|s['’ʼ]$/iu;
 const APOSTROPHE = /['’ʼ]/;
@@ -397,7 +397,9 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
       // Couples and aliases are often saved as "Jen&Tom" or "Sam/Samuel".
       const raw = bare.split(NAME_BREAK).filter(Boolean);
       const trimmed = raw.map((piece) => piece.replace(EDGES, ''));
-      if (raw.length < 2 || KUNYA.has(trimmed[0])) continue;
+      if (raw.length < 2) continue;
+      // A decorated "mother of" name (أم💚 أحمد) is matched whole as written.
+      if (KUNYA.has(trimmed[0])) { add(trimmed.filter(Boolean).join(' '), label, true); continue; }
       // "Servant of" (عبد) and the word after it make one given name, wherever
       // it stands (عبد الرحمن بن عبد الله).
       /** @type {{ piece: string, servant?: string }[]} */

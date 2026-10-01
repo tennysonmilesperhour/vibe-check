@@ -26,6 +26,7 @@ async function me() {
     cosmic_profile: profile?.cosmic_profile || null,
     boundary_settings: profile?.boundary_settings || null,
     people_migrated_at: profile?.people_migrated_at || null,
+    created_date: profile?.created_at || null,
     updated_date: profile?.updated_at || null,
   };
 }

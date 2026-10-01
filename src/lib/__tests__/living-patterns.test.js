@@ -20,6 +20,12 @@ describe('a whole history, including difficult moments', () => {
     expect(report.interactions[0].mood_score).toBe(2);
     expect(report.interactions[0].entry_kind).toBe('interaction');
   });
+  it('keeps unfinished drafts only when asked, and orders a day by time even with odd stamps', () => {
+    const journal = [day('draft', '2026-09-07', 1, { is_draft: true, created_at: '2026-09-07T22:00:00Z' }), day('late', '2026-09-07', 5, { occurred_at: '2026-09-07T21:00:00Z' }), day('odd', '2026-09-07', 4, { created_at: 7 })];
+    expect(timelineEntries([], journal).map((entry) => entry.key)).toEqual(['journal:late', 'journal:odd']);
+    expect(timelineEntries([], journal, { drafts: true }).map((entry) => entry.key)).toEqual(['journal:draft', 'journal:late', 'journal:odd']);
+    expect(timelineEntries([{ date: '2026-09-07' }]).map((entry) => entry.key)).toEqual(['day:0']);
+  });
   it('keeps missing chart days empty, including explicit zero stress', () => {
     const chart = historyChart([day('1', '2026-03-07', 3), day('2', '2026-03-09', 9, { stress_context: { stress_score: 0 } })], '2026-03-07', '2026-03-09');
     expect(chart.map((point) => point.mood)).toEqual([3, null, 9]);

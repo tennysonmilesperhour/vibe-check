@@ -73,6 +73,24 @@ function makeEntity(table) {
       return fetchAllPages((limit, offset) => this.list(sort, limit, offset), 500);
     },
 
+    /**
+     * Up to limit rows in id order, after the given id (from the start when
+     * it is null). Paging by id rather than offset means a row deleted
+     * between pages cannot push another past the next page. withTotal also
+     * asks for the number of rows in the table.
+     * @param {string | null} after @param {number} limit
+     * @param {{ withTotal?: boolean, signal?: AbortSignal }} [options]
+     * @returns {Promise<{ rows: any[], total: number | null }>}
+     */
+    async pageAfter(after, limit, { withTotal = false, signal } = {}) {
+      let query = supabase.from(table).select('*', withTotal ? { count: 'exact' } : undefined).order('id', { ascending: true }).limit(limit);
+      if (after != null) query = query.gt('id', after);
+      if (signal) query = query.abortSignal(signal);
+      const { data, error, count } = await query;
+      if (error) throw error;
+      return { rows: (data || []).map(outbound), total: Number.isFinite(count) ? count : null };
+    },
+
     async filter(criteria = {}, sort = '-created_date', limit = 100) {
       const { column, ascending } = parseSort(sort);
       let query = supabase.from(table).select('*');

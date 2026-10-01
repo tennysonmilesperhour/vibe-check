@@ -5,8 +5,21 @@
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-const toB64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
-const fromB64 = (str) => Uint8Array.from(atob(str), (c) => c.charCodeAt(0));
+// In chunks: one call with every byte of a large buffer throws once it
+// passes the engine's argument limit, a few hundred kilobytes. apply and the
+// plain loop below are several times faster than spreading or mapping.
+const toB64 = (buf) => {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+};
+const fromB64 = (str) => {
+  const binary = atob(str);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+};
 
 async function deriveKey(password, salt) {
   const material = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);

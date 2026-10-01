@@ -4,6 +4,12 @@ import { filterEntries, buildReport, validDateKey } from '@/lib/living-patterns'
 import { encryptJson } from '@/lib/crypto';
 import { todayKey } from '@/lib/dates';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
+import { downloadJson } from '@/features/export/download';
+import ExportPassword, { exportPasswordError } from '@/features/export/ExportPassword';
+
+// Past this length the preview takes a moment to lay out, so the rest waits
+// to be asked for. The download always holds everything.
+const PREVIEW_LIMIT = 200000;
 
 export default function ExportHistory({ data, initial, onClose }) {
   const [start, setStart] = useState(initial.start || data.entries.at(-1)?.date || todayKey());
@@ -13,9 +19,11 @@ export default function ExportHistory({ data, initial, onClose }) {
   const [includePractices, setIncludePractices] = useState(false);
   const [includeReflections, setIncludeReflections] = useState(false);
   const [password, setPassword] = useState('');
+  const [repeat, setRepeat] = useState('');
   const [encrypt, setEncrypt] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [fullPreview, setFullPreview] = useState(false);
   const [error, setError] = useState('');
   // The preview and the download ask for the password (unless confirmed
   // recently), so someone holding an unlocked device can't walk away with it.
@@ -48,30 +56,30 @@ export default function ExportHistory({ data, initial, onClose }) {
   }, [data, start, end, excluded, redact, includePractices, includeReflections, initial.report]);
   async function download() {
     if (!valid) { setError('Choose a valid date range through today.'); return; }
-    if (encrypt && password.length < 8) { setError('Use an export password with at least eight characters.'); return; }
+    const passwordError = encrypt ? exportPasswordError(password, repeat) : '';
+    if (passwordError) { setError(passwordError); return; }
     setBusy(true); setError('');
     try {
-      const result = encrypt ? await encryptJson(payload, password) : payload;
-      const url = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' }));
-      const link = Object.assign(document.createElement('a'), { href: url, download: `vibe-check-${start}-${end}${encrypt ? '.encrypted' : ''}.json` });
-      document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      downloadJson(encrypt ? await encryptJson(payload, password) : payload, `vibe-check-${start}-${end}${encrypt ? '.encrypted' : ''}.json`);
     } catch (err) { setError(err.message); }
     setBusy(false);
   }
-  const change = (setter) => (value) => { setter(value); setPreview(false); };
+  const previewText = useMemo(() => (preview && identityOk ? JSON.stringify(payload, null, 2) : ''), [preview, identityOk, payload]);
+  const hidePreview = () => { setPreview(false); setFullPreview(false); };
+  const change = (setter) => (value) => { setter(value); hidePreview(); };
   return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}><DialogContent className="living-dialog"><DialogHeader><DialogTitle>Choose what leaves your journal</DialogTitle><DialogDescription>Preview the complete contents before downloading. Nothing is emailed or sent to an AI provider.</DialogDescription></DialogHeader>
     <div className="space-y-5"><div className="grid sm:grid-cols-2 gap-3"><label className="living-label">From<input className="living-input mt-2" type="date" max={todayKey()} value={start} onChange={(e) => change(setStart)(e.target.value)} /></label><label className="living-label">Through<input className="living-input mt-2" type="date" max={todayKey()} value={end} onChange={(e) => change(setEnd)(e.target.value)} /></label></div>
-      <details><summary className="living-label cursor-pointer">Choose entries · {candidates.filter((entry) => !excluded.includes(entry.key)).length} of {candidates.length} selected</summary><div className="max-h-52 overflow-y-auto mt-3 space-y-2">{candidates.map((entry) => <label className="flex gap-2 items-start text-sm" key={entry.key}><input type="checkbox" checked={!excluded.includes(entry.key)} onChange={() => { setPreview(false); setExcluded((items) => items.includes(entry.key) ? items.filter((key) => key !== entry.key) : [...items, entry.key]); }} /><span>{entry.date} · {entry.kind === 'day' ? 'Check-in' : 'Journal'} · {(entry.notes || entry.low_moment?.description || entry.high_moment?.description || 'Recorded feelings').slice(0, 70)}</span></label>)}</div></details>
+      <details><summary className="living-label cursor-pointer">Choose entries · {candidates.filter((entry) => !excluded.includes(entry.key)).length} of {candidates.length} selected</summary><div className="max-h-52 overflow-y-auto mt-3 space-y-2">{candidates.map((entry) => <label className="flex gap-2 items-start text-sm" key={entry.key}><input type="checkbox" checked={!excluded.includes(entry.key)} onChange={() => { hidePreview(); setExcluded((items) => items.includes(entry.key) ? items.filter((key) => key !== entry.key) : [...items, entry.key]); }} /><span>{entry.date} · {entry.kind === 'day' ? 'Check-in' : 'Journal'} · {(entry.notes || entry.low_moment?.description || entry.high_moment?.description || 'Recorded feelings').slice(0, 70)}</span></label>)}</div></details>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={redact} onChange={(e) => change(setRedact)(e.target.checked)} /><span>Replace known people’s names and identifiers with private labels.<span className="living-muted block text-xs mt-1">Names typed only in journal text may remain. Review the preview before sharing.</span></span></label>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={includePractices} onChange={(e) => change(setIncludePractices)(e.target.checked)} />Include practice responses within these dates</label>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={includeReflections} onChange={(e) => change(setIncludeReflections)(e.target.checked)} />Include saved report reflections whose period starts within these dates</label>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={encrypt} onChange={(e) => setEncrypt(e.target.checked)} />Encrypt the downloaded file with a password</label>
-      {encrypt && <label className="living-label">Export password<input className="living-input mt-2" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /><span className="living-muted text-xs">This password is not stored and cannot be recovered. The preview below remains readable on this screen.</span></label>}
+      {encrypt && <ExportPassword password={password} repeat={repeat} onPassword={setPassword} onRepeat={setRepeat} note="The preview below stays readable on this screen." />}
       {!valid && <p className="living-error" role="alert">Choose a valid date range through today.</p>}
       {error && <p className="living-error" role="alert">{error}</p>}
       <button className="living-secondary" disabled={!valid} onClick={() => setPreview(true)}>Preview complete export</button>
       {preview && (identityOk
-        ? <><pre className="export-preview" aria-label="Complete export preview">{JSON.stringify(payload, null, 2)}</pre><button className="ink-button" disabled={busy || !valid} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted JSON' : 'Download JSON'}</button><p className="living-muted text-xs">A portable copy for your own records or a tool you choose. No external account is required.</p></>
+        ? <><pre className="export-preview" aria-label="Complete export preview">{fullPreview ? previewText : previewText.slice(0, PREVIEW_LIMIT)}</pre>{!fullPreview && previewText.length > PREVIEW_LIMIT && <p className="living-muted text-xs">The preview shows the first {PREVIEW_LIMIT.toLocaleString()} characters of {previewText.length.toLocaleString()}. <button type="button" className="underline" onClick={() => setFullPreview(true)}>Show all of it</button></p>}<button className="ink-button" disabled={busy || !valid} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted JSON' : 'Download JSON'}</button><p className="living-muted text-xs">A portable copy for your own records or a tool you choose. No external account is required.</p></>
         : <ConfirmIdentity action="see and download your export" onConfirmed={confirmIdentity} />)}
     </div>
   </DialogContent></Dialog>;

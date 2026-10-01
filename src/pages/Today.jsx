@@ -11,7 +11,7 @@ import { moonPhase } from "@/lib/resonance/moon";
 import MoonGlyph from "@/features/loom/MoonGlyph";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { migratePeople } from "@/lib/people";
-import { Person, Relationship, Connection } from "@/entities/all";
+import { Person, Relationship } from "@/entities/all";
 import SkyField from "@/features/shell/SkyField";
 import PageTransition from "@/features/shell/PageTransition";
 import CheckInCeremony from "@/features/today/CheckInCeremony";
@@ -77,7 +77,7 @@ export default function Today() {
   useEffect(() => {
     load();
     // one-time data migration, safe to call every mount
-    migratePeople({ Person, Relationship, Connection, auth: base44.auth }).catch(() => {});
+    migratePeople({ Person, Relationship, auth: base44.auth }).catch(() => {});
   }, [load]);
 
   const moon = moonPhase(todayKey());

@@ -72,10 +72,12 @@ export function dedupePeopleDrafts(drafts) {
 }
 
 /**
- * One-time, idempotent migration: Relationship + Connection -> Person.
+ * One-time, idempotent migration: Relationship -> Person.
  * Safe to call on every mount; bails fast once people exist or marker is set.
+ * Base44 connections are not brought over: they held other accounts' email
+ * addresses and charts.
  */
-export async function migratePeople({ Person, Relationship, Connection, auth }) {
+export async function migratePeople({ Person, Relationship, auth }) {
   const me = await auth.me();
   if (me?.people_migrated_at) return { migrated: false };
 
@@ -85,27 +87,16 @@ export async function migratePeople({ Person, Relationship, Connection, auth }) 
     return { migrated: false };
   }
 
-  const [relationships, connections] = await Promise.all([
-    Relationship.list().catch(() => []),
-    Connection.list().catch(() => []),
-  ]);
+  const relationships = await Relationship.list().catch(() => []);
 
-  const drafts = [
-    ...relationships.map((r) => ({
-      name: r.name,
-      person_type: r.relationship_type || 'other',
-      qualities: r.qualities || [],
-      concerns: r.concerns || [],
-      boundary_notes: r.boundary_notes || '',
-      legacy_names: [],
-    })),
-    // Another account's email address and chart are not copied.
-    ...connections.map((c) => ({
-      name: c.target_name,
-      person_type: c.connection_type || 'friend',
-      legacy_names: [],
-    })),
-  ].filter((d) => d.name);
+  const drafts = relationships.map((r) => ({
+    name: r.name,
+    person_type: r.relationship_type || 'other',
+    qualities: r.qualities || [],
+    concerns: r.concerns || [],
+    boundary_notes: r.boundary_notes || '',
+    legacy_names: [],
+  })).filter((d) => d.name);
 
   const merged = dedupePeopleDrafts(drafts);
   for (const draft of merged) {

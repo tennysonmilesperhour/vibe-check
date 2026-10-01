@@ -22,7 +22,7 @@ import GuardedReading from "@/features/cosmos/GuardedReading";
 import useHardMoment from "@/features/cosmos/useHardMoment";
 import ConflictNotice from "@/features/cosmos/ConflictNotice";
 import { followBirthCard, withComputedCard } from "@/lib/resonance/tarotCards";
-import { settleCosmicProfile, settleOnSave } from "@/lib/resonance/settle";
+import { holdsRetiredFields, settleCosmicProfile, settleOnSave } from "@/lib/resonance/settle";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
 import PlantVoice from '@/features/shell/PlantVoice';
@@ -65,6 +65,8 @@ export default function CosmicAddons() {
     // Readings come from the person's own choices: a saved profile or changes
     // on this page, never from the page's starting defaults.
     const [hasSavedProfile, setHasSavedProfile] = useState(false);
+    // A birth time or place saved before October 2026, which a save removes.
+    const [heldBirthPlace, setHeldBirthPlace] = useState(false);
     const loomRef = useRef(null);
 
     // Two-way URL sync: back button and refresh keep your place.
@@ -101,6 +103,7 @@ export default function CosmicAddons() {
                 setProfile(merged);
                 setSavedSnapshot(JSON.stringify(merged));
                 setHasSavedProfile(true);
+                setHeldBirthPlace(holdsRetiredFields(user.cosmic_profile));
             }
             setProfileLoad('ready');
         } catch {
@@ -121,6 +124,7 @@ export default function CosmicAddons() {
             setProfile(prev => (prev === profile ? settled : prev));
             setSavedSnapshot(JSON.stringify(settled));
             setHasSavedProfile(true);
+            setHeldBirthPlace(false);
             toast({ title: "Cosmic profile saved", description: "Your loom and readings now weave from these systems." });
         } catch (e) {
             toast({ title: "Could not save", description: e?.message, variant: "destructive" });
@@ -244,6 +248,7 @@ export default function CosmicAddons() {
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
                                 Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac. Vibe Check doesn't ask for your birth time or place, since nothing here uses them.
                             </p>
+                            {heldBirthPlace && <p className="text-sm mb-5" role="note" style={{ color: 'var(--gh-ink)' }}>Your saved profile still holds a birth time or place you entered before. Saving your cosmos removes it.</p>}
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <Label style={{ color: 'var(--gh-ink-soft)' }}>First Name</Label>

@@ -182,6 +182,8 @@ textarea.living-input { resize: vertical; }
 .summary-words { white-space: pre-wrap; margin-top: 6px; }
 @media (max-width: 560px) { .summary-document { padding: 20px 16px; } .summary-table { font-size: .78rem; } .summary-table th, .summary-table td { padding: 6px 4px; } }
 @media print {
+  /* Whatever the app lock covers stays covered on paper. */
+  [inert], .app-update-toast, .app-toast-viewport { display: none !important; }
   @page { margin: 16mm; }
   body { background: #fff !important; }
   .summary-screen-only { display: none !important; }

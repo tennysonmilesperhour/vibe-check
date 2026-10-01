@@ -2,7 +2,12 @@
 // Replaces the old load-bearing substring match ("Mom" matched "Tom's mommy")
 // with whole-word matching against names and legacy aliases.
 
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** @param {string} s */
+export const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** How an interaction felt, and whether a boundary was respected: the journal's choices. */
+export const INTERACTION_FEELINGS = ['supportive', 'strained', 'unsafe', 'mixed', 'unsure'];
+export const BOUNDARY_ANSWERS = ['yes', 'no', 'unsure'];
 
 function aliasesOf(person) {
   return [person.name, ...(person.legacy_names || [])].filter(Boolean);
@@ -181,4 +186,88 @@ export function arrangeOrbitRing(people, entries) {
     ordered.push(remaining.shift());
   }
   return ordered;
+}
+
+/**
+ * People in the order they were added, the order "Person 1", "Person 2" and
+ * so on follow wherever names are replaced with labels.
+ * @param {any[]} people
+ */
+export function peopleInAddedOrder(people) {
+  const added = (/** @type {any} */ person) => (typeof person?.created_at === 'string' ? person.created_at : '');
+  return people.filter((person) => person?.id).sort((a, b) => added(a).localeCompare(added(b)) || String(a.id).localeCompare(String(b.id)));
+}
+
+// Names in these scripts are usually written without spaces around them
+// (Chinese, Japanese, Thai, and Korean, where particles attach to names), so
+// they are matched inside longer runs of letters too.
+const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
+// Words in a saved name that are not a name on their own.
+const NOT_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'aunt', 'auntie', 'uncle', 'grandma', 'grandpa', 'nana', 'papa', 'mom', 'mum', 'dad', 'my', 'the', 'and', 'of', 'from', 'at', 'work']);
+const LETTER = /\p{L}/gu;
+
+/** @param {unknown} value */
+const cleanName = (value) => (typeof value === 'string' ? value.normalize('NFC').trim() : '');
+// Straight and curly apostrophes stand for each other.
+const namePattern = (/** @type {string} */ name) => escapeRegex(name).replace(/['’ʼ]/g, "['’ʼ]");
+
+/**
+ * Replaces people's names in free text with labels. For each person it
+ * matches the saved name in any letter case, the name without a trailing
+ * note in brackets ("Jordan (work)"), earlier names, and each word of a
+ * longer name on its own ("Jordan", "Smith") when written with a capital as
+ * names usually are; extra exact strings, such as ids, can be added. Matches
+ * are whole words, except in scripts written without spaces. A name that
+ * two people share is replaced with both labels. Names of people no longer
+ * saved, and names spelled another way, cannot be known and stay.
+ * @param {any[]} people
+ * @param {(person: any) => string} labelOf
+ * @param {(person: any) => unknown[]} [extra]
+ * @returns {(text: string) => string}
+ */
+export function peopleNameReplacer(people, labelOf, extra = () => []) {
+  // A whole saved name outranks the same word as part of a longer name:
+  // "Sam" is the person saved as Sam, not Sam Lee.
+  /** @type {Map<string, { name: string, whole: Set<string>, part: Set<string> }>} */
+  const variants = new Map();
+  const add = (/** @type {string} */ name, /** @type {string} */ label, /** @type {boolean} */ whole) => {
+    if (!name || !label) return;
+    const key = name.toLowerCase();
+    const found = variants.get(key) || { name, whole: new Set(), part: new Set() };
+    (whole ? found.whole : found.part).add(label);
+    variants.set(key, found);
+  };
+  for (const person of people) {
+    if (!person) continue;
+    const label = labelOf(person);
+    const full = [person.name, ...(Array.isArray(person.legacy_names) ? person.legacy_names : [])].map(cleanName).filter(Boolean);
+    const names = [...new Set(full.flatMap((name) => [name, name.replace(/\s*\([^)]*\)\s*$/, '').trim()]))].filter(Boolean);
+    for (const name of names) {
+      add(name, label, true);
+      const words = name.split(/\s+/).map((word) => word.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''));
+      if (words.length < 2) continue;
+      for (const word of words) {
+        if ((word.match(LETTER) || []).length < 2 || NOT_NAMES.has(word.toLowerCase())) continue;
+        add(word.charAt(0).toUpperCase() + word.slice(1), label, false);
+      }
+    }
+    for (const value of extra(person)) add(cleanName(value), label, true);
+  }
+  // Each match becomes a placeholder first, so no label is matched again by
+  // a later, shorter name.
+  const labels = [];
+  const rules = [...variants.values()]
+    .sort((a, b) => b.name.length - a.name.length)
+    .map(({ name, whole, part }) => {
+      const token = `\uE000${labels.push([...(whole.size ? whole : part)].join(' or ')) - 1}\uE001`;
+      const flags = whole.size ? 'giu' : 'gu';
+      if (UNSPACED.test(name)) {
+        const inside = new RegExp(namePattern(name), flags);
+        return (/** @type {string} */ text) => text.replace(inside, token);
+      }
+      const pattern = new RegExp(`(^|[^\\p{L}\\p{N}_])${namePattern(name)}(?=[^\\p{L}\\p{N}_]|$)`, flags);
+      return (/** @type {string} */ text) => text.replace(pattern, (_, before) => before + token);
+    });
+  return (text) => rules.reduce((current, rule) => rule(current), String(text ?? '').normalize('NFC'))
+    .replace(/\uE000(\d+)\uE001/g, (_, index) => labels[Number(index)]);
 }

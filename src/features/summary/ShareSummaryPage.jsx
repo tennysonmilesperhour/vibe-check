@@ -4,7 +4,7 @@ import { ArrowLeft, Printer } from 'lucide-react';
 import { useLivingData, usePreferences } from '@/features/patterns/useLivingData';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import QuickExit from '@/features/safety/QuickExit';
-import { buildShareSummary } from '@/lib/share-summary';
+import { buildShareSummary, kindOf } from '@/lib/share-summary';
 import { addDaysKey, todayKey } from '@/lib/dates';
 import { entryText, filterEntries, validDateKey } from '@/lib/living-patterns';
 import SummaryDocument from './SummaryDocument';
@@ -17,7 +17,6 @@ const SECTIONS = [
   ['alignment', 'Whether your responses felt like you'],
 ];
 const QUICK_RANGES = [[14, 'Last 2 weeks'], [30, 'Last 30 days'], [90, 'Last 90 days']];
-const kindLabel = (entry) => (entry.kind === 'day' ? 'Check-in' : entry.interaction_feeling ? 'Interaction' : 'Journal');
 
 /** A summary of chosen dates to print or save as a PDF and bring to someone. */
 export default function ShareSummaryPage() {
@@ -80,6 +79,7 @@ export default function ShareSummaryPage() {
         </div>
         {living.isLoading && <p className="living-muted" role="status">Gathering your record…</p>}
         {living.isError && <p className="living-error" role="alert">Your record could not load. <button type="button" className="underline" onClick={() => living.refetch()}>Try again</button></p>}
+        {living.reloadFailed && <p className="living-error" role="alert">Your record couldn't refresh, so this summary may be out of date. <button type="button" className="underline" onClick={() => living.refetch()}>{living.isFetching ? 'Trying…' : 'Try again'}</button></p>}
         {data && <>
           <fieldset className="space-y-3">
             <legend className="living-label">Dates</legend>
@@ -94,11 +94,11 @@ export default function ShareSummaryPage() {
             <legend className="living-label">What to include</legend>
             {SECTIONS.map(([key, label]) => <label key={key} className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-0.5 shrink-0" checked={include[key]} onChange={(e) => setInclude((current) => ({ ...current, [key]: e.target.checked }))} />{label}</label>)}
           </fieldset>
-          <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-0.5 shrink-0" checked={hideNames} onChange={(e) => setHideNames(e.target.checked)} /><span>Replace people's names with labels such as Person 1<span className="living-muted block text-xs mt-1">Names are replaced wherever they stand as a whole word, so an everyday word that is also someone's name is replaced too. A name spelled another way may remain, so read the summary before you share it.</span></span></label>
+          <label className="flex items-start gap-3 text-sm"><input type="checkbox" className="mt-0.5 shrink-0" checked={hideNames} onChange={(e) => setHideNames(e.target.checked)} /><span>Replace people's names with labels such as Person 1<span className="living-muted block text-xs mt-1">Saved names are replaced in any letter case, and a first or last name on its own when it starts with a capital. An everyday word that is also someone's name is replaced too. A name spelled another way, or the name of someone you have removed from your people, can remain, so read the summary before you share it.</span></span></label>
           <details className="space-y-2">
             <summary className="living-label cursor-pointer">Add your words from chosen entries · {chosenInRange} chosen</summary>
             <p className="living-muted text-xs mt-2">Only the entries you tick are included, with their full text.</p>
-            {candidates.length ? <div className="max-h-72 overflow-y-auto space-y-2 mt-2">{candidates.map((entry) => <label key={entry.key} className="flex gap-2 items-start text-sm"><input type="checkbox" className="mt-0.5 shrink-0" checked={chosen.includes(entry.key)} onChange={() => toggleEntry(entry.key)} /><span>{entry.date} · {kindLabel(entry)} · {(entryText(entry) || 'No written words').slice(0, 80)}</span></label>)}</div> : <p className="living-muted text-sm mt-2">No entries in these dates.</p>}
+            {candidates.length ? <div className="max-h-72 overflow-y-auto space-y-2 mt-2">{candidates.map((entry) => <label key={entry.key} className="flex gap-2 items-start text-sm"><input type="checkbox" className="mt-0.5 shrink-0" checked={chosen.includes(entry.key)} onChange={() => toggleEntry(entry.key)} /><span>{entry.date} · {kindOf(entry)} · {(entryText(entry) || 'No written words').slice(0, 80)}</span></label>)}</div> : <p className="living-muted text-sm mt-2">No entries in these dates.</p>}
           </details>
           <label className="living-label">Something you would like to talk about (optional)<textarea className="living-input mt-2" rows={3} maxLength={4000} value={note} onChange={(e) => setNote(e.target.value)} /><span className="living-muted text-xs">Shown at the top of the summary. It is not saved.</span></label>
         </>}

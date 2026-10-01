@@ -5,6 +5,7 @@ import { encryptJson } from '@/lib/crypto';
 import { todayKey } from '@/lib/dates';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import { downloadJson } from '@/features/export/download';
+import { peopleInAddedOrder, peopleNameReplacer } from '@/lib/people';
 import ExportPassword, { exportPasswordError } from '@/features/export/ExportPassword';
 
 // Past this length the preview takes a moment to lay out, so the rest waits
@@ -45,11 +46,14 @@ export default function ExportHistory({ data, initial, onClose }) {
     };
     const document = { app: 'Vibe Check', format_version: 1, range: { start, end }, scope: 'User-selected entries; unselected entries are excluded.', entries: rows, practice_sessions: practices, report_reflections: reflections,
       ...(initial.report ? { report: references(buildReport(rows, { type: initial.report.type, start, end }, practices, data.people, data.preferences.pattern_feedback)) } : {}) };
-    const substitutions = data.people.flatMap((person, i) => [person.id, person.name, person.name?.replace(/ \(Demo\)$/, ''), ...(person.legacy_names || []), person.linked_user_email].filter(Boolean).map((name) => [name, `Person ${i + 1}`])).sort((a, b) => b[0].length - a[0].length);
+    // The same labels and matching as the summary to share: people numbered
+    // in the order they were added, their ids and old emails replaced too.
+    const labels = new Map(peopleInAddedOrder(data.people).map((person, n) => [person.id, `Person ${n + 1}`]));
+    const replaceNames = peopleNameReplacer(data.people, (person) => labels.get(person.id), (person) => [person.id, person.linked_user_email]);
     const clean = (value) => {
       if (Array.isArray(value)) return value.map(clean);
       if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'user_id').map(([key, child]) => [key, clean(child)]));
-      if (redact && typeof value === 'string') { for (const [name, replacement] of substitutions) value = value.split(name).join(replacement); }
+      if (redact && typeof value === 'string') return replaceNames(value);
       return value;
     };
     return clean(document);
@@ -70,7 +74,7 @@ export default function ExportHistory({ data, initial, onClose }) {
   return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}><DialogContent className="living-dialog"><DialogHeader><DialogTitle>Choose what leaves your journal</DialogTitle><DialogDescription>Preview the complete contents before downloading. Nothing is emailed or sent to an AI provider.</DialogDescription></DialogHeader>
     <div className="space-y-5"><div className="grid sm:grid-cols-2 gap-3"><label className="living-label">From<input className="living-input mt-2" type="date" max={todayKey()} value={start} onChange={(e) => change(setStart)(e.target.value)} /></label><label className="living-label">Through<input className="living-input mt-2" type="date" max={todayKey()} value={end} onChange={(e) => change(setEnd)(e.target.value)} /></label></div>
       <details><summary className="living-label cursor-pointer">Choose entries · {candidates.filter((entry) => !excluded.includes(entry.key)).length} of {candidates.length} selected</summary><div className="max-h-52 overflow-y-auto mt-3 space-y-2">{candidates.map((entry) => <label className="flex gap-2 items-start text-sm" key={entry.key}><input type="checkbox" checked={!excluded.includes(entry.key)} onChange={() => { hidePreview(); setExcluded((items) => items.includes(entry.key) ? items.filter((key) => key !== entry.key) : [...items, entry.key]); }} /><span>{entry.date} · {entry.kind === 'day' ? 'Check-in' : 'Journal'} · {(entry.notes || entry.low_moment?.description || entry.high_moment?.description || 'Recorded feelings').slice(0, 70)}</span></label>)}</div></details>
-      <label className="flex gap-3 text-sm"><input type="checkbox" checked={redact} onChange={(e) => change(setRedact)(e.target.checked)} /><span>Replace known people’s names and identifiers with private labels.<span className="living-muted block text-xs mt-1">Names typed only in journal text may remain. Review the preview before sharing.</span></span></label>
+      <label className="flex gap-3 text-sm"><input type="checkbox" checked={redact} onChange={(e) => change(setRedact)(e.target.checked)} /><span>Replace known people’s names and identifiers with private labels.<span className="living-muted block text-xs mt-1">Saved names are replaced in any letter case, in your words too, and a first or last name on its own when it starts with a capital. A name spelled another way can remain. Review the preview before sharing.</span></span></label>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={includePractices} onChange={(e) => change(setIncludePractices)(e.target.checked)} />Include practice responses within these dates</label>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={includeReflections} onChange={(e) => change(setIncludeReflections)(e.target.checked)} />Include saved report reflections whose period starts within these dates</label>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={encrypt} onChange={(e) => setEncrypt(e.target.checked)} />Encrypt the downloaded file with a password</label>

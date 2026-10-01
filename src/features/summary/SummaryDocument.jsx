@@ -17,6 +17,7 @@ function Score({ value }) {
 }
 
 const counts = (items) => items.map((item) => `${capitalize(item.value)} ${item.count}`).join(' · ');
+const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
 
 /**
  * The summary as it prints: what the person recorded, in their own terms.
@@ -37,9 +38,9 @@ export default function SummaryDocument({ summary, include, prepared }) {
     <section>
       <h2>At a glance</h2>
       <ul className="summary-facts">
-        <li><strong>{summary.recordedDays}</strong> of {summary.calendarDays} days have an entry</li>
-        <li><strong>{summary.checkIns}</strong> daily check-ins</li>
-        <li><strong>{summary.journalEntries}</strong> journal entries</li>
+        <li><strong>{summary.recordedDays}</strong> of {summary.calendarDays} {summary.calendarDays === 1 ? 'day' : 'days'} {summary.recordedDays === 1 ? 'has' : 'have'} an entry</li>
+        <li><strong>{summary.checkIns}</strong> {summary.checkIns === 1 ? 'daily check-in' : 'daily check-ins'}</li>
+        <li><strong>{summary.journalEntries}</strong> {summary.journalEntries === 1 ? 'journal entry' : 'journal entries'}</li>
       </ul>
       <p className="summary-muted">A day without an entry is not counted as a good or a bad day.</p>
     </section>
@@ -73,11 +74,11 @@ export default function SummaryDocument({ summary, include, prepared }) {
     {include.interactions && <section>
       <h2>Interactions with people</h2>
       {interactions.total ? <>
-        <p>{interactions.total} {interactions.total === 1 ? 'interaction' : 'interactions'} recorded. How they felt: {counts(interactions.feelings)}.</p>
-        {interactions.boundaries.length > 0 && <p>Was my boundary respected? {counts(interactions.boundaries)}.</p>}
+        <p>{plural(interactions.total, 'interaction', 'interactions')} recorded. How they felt: {counts(interactions.feelings)}.</p>
+        <p>Was my boundary respected? {counts(interactions.boundaries)}.</p>
         {interactions.people.length > 0 && <table className="summary-table">
           <thead><tr><th>Person</th><th>Interactions</th><th>How they felt</th></tr></thead>
-          <tbody>{interactions.people.map((person) => <tr key={person.label}><th>{person.label}</th><td>{person.total}</td><td>{counts(person.feelings)}</td></tr>)}</tbody>
+          <tbody>{interactions.people.map((person) => <tr key={person.id}><th>{person.label}</th><td>{person.total}</td><td>{counts(person.feelings)}</td></tr>)}</tbody>
         </table>}
         {summary.hideNames && <p className="summary-muted">People are named by label. I can say who they are.</p>}
       </> : <p>No interactions were recorded in these dates.</p>}
@@ -86,13 +87,16 @@ export default function SummaryDocument({ summary, include, prepared }) {
     {include.practices && <section>
       <h2>Practices I tried</h2>
       {summary.practices.length ? <ul className="summary-list">{summary.practices.map((practice) => <li key={practice.id}>
-        <strong>{practice.title}</strong>: {practice.attempts} {practice.attempts === 1 ? 'time' : 'times'}. {practice.outcomes.length ? `Afterwards I felt: ${practice.outcomes.map((item) => `${item.value.toLowerCase()} ${item.count}`).join(', ')}` : 'No response given'}{practice.outcomes.length && practice.noResponse ? `, no response ${practice.noResponse}` : ''}.
+        <strong>{practice.title}</strong>: {plural(practice.attempts, 'time', 'times')}. Afterwards I felt: {practice.outcomes.map((item) => `${item.value.toLowerCase()} ${item.count}`).join(', ')}.
       </li>)}</ul> : <p>No practices were recorded in these dates.</p>}
     </section>}
 
     {include.alignment && <section>
       <h2>Whether my responses felt like me</h2>
-      {summary.alignment.length ? <p>{summary.alignment.map((item) => `${item.label} ${item.count}`).join(' · ')}</p> : <p>Not recorded in these dates.</p>}
+      {summary.alignment.entries.length || summary.alignment.practices.length ? <>
+        {summary.alignment.entries.length > 0 && <p>In check-ins and journal entries: {summary.alignment.entries.map((item) => `${item.label} ${item.count}`).join(' · ')}</p>}
+        {summary.alignment.practices.length > 0 && <p>After practices: {summary.alignment.practices.map((item) => `${item.label} ${item.count}`).join(' · ')}</p>}
+      </> : <p>Not recorded in these dates.</p>}
     </section>}
 
     {summary.words.length > 0 && <section>

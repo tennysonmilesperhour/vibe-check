@@ -14,6 +14,7 @@ import PatternCalendar from '@/features/patterns/PatternCalendar';
 import { todayKey, addDaysKey, parseLocalDate, diffDaysKeys } from '@/lib/dates';
 import { filterEntries, historyChart, stateCards, stressPatterns, validDateKey } from '@/lib/living-patterns';
 import { STRESS_STATES } from '@/lib/practices';
+import { INTERACTION_FEELINGS } from '@/lib/people';
 
 const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', 'Year'], ['all', 'All time'], ['custom', 'Custom']];
 
@@ -87,7 +88,7 @@ function Patterns() {
         {chart.some((point) => point.stressKind === 'at-check-in') && chart.some((point) => point.stressKind === 'highest-today') && <p className="living-muted text-xs">This view mixes two kinds of check-in stress: older check-ins rated stress at that moment, newer ones rate the day's highest. Each check-in in your journal says which.</p>}
         <Link className="living-text-link" to={`/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal' })}`}>Read the entries behind this view <ArrowRight size={15} /></Link>
       </section>
-      {filtered.some((entry) => entry.interaction_feeling) && <section className="living-card space-y-4"><h2>How interactions felt</h2><p className="living-muted">Your labels for individual encounters, kept separate from the day’s mood.</p><div className="living-chips">{['supportive', 'strained', 'unsafe', 'mixed', 'unsure'].map((feeling) => <span key={feeling} className={`living-tag ${feeling === 'unsafe' ? 'living-tag-alert' : ''}`}>{feeling}: {filtered.filter((entry) => entry.interaction_feeling === feeling).length}</span>)}</div><Link className="living-text-link" to={`/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal' })}`}>Read these moments <ArrowRight size={15} /></Link></section>}
+      {filtered.some((entry) => entry.interaction_feeling) && <section className="living-card space-y-4"><h2>How interactions felt</h2><p className="living-muted">Your labels for individual encounters, kept separate from the day’s mood.</p><div className="living-chips">{INTERACTION_FEELINGS.map((feeling) => <span key={feeling} className={`living-tag ${feeling === 'unsafe' ? 'living-tag-alert' : ''}`}>{feeling}: {filtered.filter((entry) => entry.interaction_feeling === feeling).length}</span>)}</div><Link className="living-text-link" to={`/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal' })}`}>Read these moments <ArrowRight size={15} /></Link></section>}
       <StressPatternCards patterns={patterns} data={data} onFeedback={feedback} />
       <div className="living-card flex flex-wrap justify-between items-center gap-4"><div><h2>See the week or month together.</h2><p className="living-muted mt-2">Source entries, recurring themes, and relevant practices.</p></div><button className="ink-button" onClick={() => change('tab', 'reports')}>Open your reports <ArrowRight size={15} /></button></div>
     </>}

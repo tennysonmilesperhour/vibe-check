@@ -180,8 +180,34 @@ describe('replacing people\'s names with labels', () => {
 
 describe('replacing names: descriptors, pasted names and other scripts', () => {
   it('takes only name words from a saved name, not where the person is from', () => {
-    const replace = peopleNameReplacer([{ id: 'a', name: 'Sam from work' }, { id: 'b', name: 'Jen at gym' }, { id: 'c', name: 'Kim From Work' }], (person) => person.id);
-    expect(replace('Work was hard. At lunch I cried. Gym helped. From then on, Sam and Jen and Kim stayed.')).toBe('Work was hard. At lunch I cried. Gym helped. From then on, a and b and c stayed.');
+    const replace = peopleNameReplacer([{ id: 'a', name: 'Sam from work' }, { id: 'b', name: 'Jen at gym' }, { id: 'c', name: 'Kim From Work' }, { id: 'd', name: 'Mike Work' }], (person) => person.id);
+    expect(replace('Work was hard. At lunch I cried. Gym helped. From then on, Sam and Jen and Kim and Mike stayed.')).toBe('Work was hard. At lunch I cried. Gym helped. From then on, a and b and c and d stayed.');
+  });
+
+  it('counts capitalized particles, and a role word that leads a name, as names', () => {
+    const replace = peopleNameReplacer([{ id: 'a', name: 'Al Green' }, { id: 'b', name: 'Minh Le' }, { id: 'c', name: 'Ludwig van Beethoven' }, { id: 'd', name: 'Son Heung-min' }, { id: 'e', name: 'Mom Linda' }], (person) => person.id);
+    expect(replace('Al called. Le was late. A van passed. Beethoven played. Son scored. Mom and Linda came.')).toBe('a called. b was late. A van passed. c played. d scored. e and e came.');
+  });
+
+  it('splits couples and aliases saved without spaces', () => {
+    const replace = peopleNameReplacer([{ id: 'a', name: 'Sam/Samuel' }, { id: 'b', name: 'Jen&Tom' }], (person) => person.id);
+    expect(replace('Sam came, then Samuel. Jen and Tom visited.')).toBe('a came, then a. b and b visited.');
+  });
+
+  it('finds a name next to Chinese, Japanese, Korean or Thai text, and after Hebrew and Arabic prefixes', () => {
+    const replace = peopleNameReplacer([{ id: 's', name: 'Sam' }, { id: 'm', name: 'Mina Kim' }, { id: 'd', name: 'דוד' }, { id: 'h', name: 'محمد' }], (person) => person.id);
+    expect(replace('今天和Sam吃饭了, Samさんと会った, Mina가 왔다, ไปกับSamแล้ว')).toBe('今天和s吃饭了, sさんと会った, m가 왔다, ไปกับsแล้ว');
+    expect(replace('הלכתי עם דוד ודוד חזר, אמרתי לדוד. ومحمد')).toBe('הלכתי עם d וd חזר, אמרתי לd. وh');
+  });
+
+  it('finds a name with an invisible mark inside it in the text', () => {
+    const replace = peopleNameReplacer([{ id: 'a', name: 'Alexandra' }], () => 'Person 1');
+    expect(replace('Saw Alexan\u00ADdra and Alexandra')).toBe('Saw Person 1 and Person 1');
+  });
+
+  it('keeps a one-letter name out of capitalized contractions', () => {
+    const replace = peopleNameReplacer([{ id: 't', name: 'T' }, { id: 's', name: 'S' }], (person) => person.id);
+    expect(replace("I DON'T KNOW, IT'S fine. T's car. S came.")).toBe("I DON'T KNOW, IT'S fine. t's car. s came.");
   });
 
   it('keeps a space between a label and a digit in any script', () => {

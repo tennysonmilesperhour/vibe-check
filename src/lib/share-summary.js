@@ -141,8 +141,9 @@ export function buildShareSummary({ entries, sessions = [], people = [], start, 
   const labels = labelPeople(people, own, hideNames);
   const labelOf = (/** @type {string} */ id) => labels.get(id) || 'A person';
   const replacer = hideNames ? peopleNameReplacer(people, (person) => labelOf(person.id)) : null;
-  // Words of a longer name count in free text, not in feeling words.
-  const replaceNames = (/** @type {string} */ text, parts = true) => (replacer ? replacer(text, { parts }) : text);
+  // Words of a longer name count in free text and in feeling phrases of
+  // several words ("Missing Jordan"), not in a one-word feeling.
+  const replaceNames = (/** @type {string} */ text, parts = true) => (replacer ? replacer(text, { parts: parts || /\s/.test(text.trim()) }) : text);
 
   const grouping = stretches(first, last, weekStartsOn);
   const byStretch = grouping.stretches.map(() => /** @type {any[]} */ ([]));

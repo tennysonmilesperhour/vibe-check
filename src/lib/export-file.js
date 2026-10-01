@@ -60,7 +60,7 @@ export function buildCompleteExport({ profile, tables, exportedAt }) {
 
 // Fields in a chosen-entries export that hold fixed answers, dates or
 // times, which are never rewritten; feeling words, matched only against
-// whole saved names. Everything else, what the person wrote and anything
+// whole saved names unless they run to several words. Everything else, what the person wrote and anything
 // copied from it into the report, gets every kind of name match, so a field
 // this list does not know about errs toward replacing.
 const FIXED_FIELDS = new Set([
@@ -85,7 +85,8 @@ export function redactExport(document, replaceNames) {
         .map(([name, child]) => [name, clean(child, name, wholeOnly || WHOLE_NAMES_ONLY.has(name))]));
     }
     if (!replaceNames || typeof value !== 'string' || FIXED_FIELDS.has(key)) return value;
-    return replaceNames(value, { parts: !wholeOnly });
+    // A feeling phrase of several words ("Missing Jordan") gets every match.
+    return replaceNames(value, { parts: !wholeOnly || /\s/.test(value.trim()) });
   };
   return clean(document);
 }

@@ -217,17 +217,24 @@ export function personLabels(people, ids = []) {
 // (Chinese, Japanese, Thai, and Korean, where particles attach to names), so
 // they are matched inside longer runs of letters too.
 const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
-// Words in a saved name that are not a name on their own: titles, family
-// and role words, places people are known from ("Sam from work"), and the
-// particles inside names such as "de la Cruz".
-const NOT_NAMES = new Set([
-  'mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'my', 'the', 'and', 'of', 'from', 'at', 'in', 'with', 'for', 'to', 'on', 'by',
+// Words in a saved name that are never a name on their own: titles and
+// small linking words ("Sam from work").
+const NEVER_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'my', 'the', 'and', 'of', 'from', 'at', 'in', 'with', 'for', 'to', 'on', 'by']);
+// Family, role and place words ("Mike Work", "Sarah From Yoga"): a name
+// on their own only as the first word of a saved name ("Son Heung-min").
+const ROLE_WORDS = new Set([
   'aunt', 'auntie', 'uncle', 'grandma', 'grandpa', 'nana', 'papa', 'mom', 'mum', 'dad', 'brother', 'sister', 'son', 'daughter', 'wife',
   'husband', 'partner', 'boyfriend', 'girlfriend', 'cousin', 'niece', 'nephew', 'baby', 'ex', 'best', 'old', 'new', 'little', 'big',
   'friend', 'boss', 'coworker', 'colleague', 'neighbor', 'neighbour', 'roommate', 'landlord', 'therapist', 'doctor', 'teacher', 'coach', 'manager',
-  'work', 'school', 'gym', 'home', 'office', 'team', 'class', 'church', 'club',
-  'de', 'da', 'di', 'del', 'della', 'la', 'le', 'van', 'von', 'der', 'den', 'du', 'bin', 'al', 'el',
+  'work', 'school', 'gym', 'home', 'office', 'team', 'class', 'church', 'club', 'yoga', 'cell', 'mobile',
 ]);
+// The particles inside names ("de la Cruz"): a name when capitalized
+// ("Al Green", "Minh Le", "Van Morrison").
+const PARTICLES = new Set(['de', 'da', 'di', 'del', 'della', 'la', 'le', 'van', 'von', 'der', 'den', 'du', 'bin', 'al', 'el']);
+// One-letter words that attach to the front of a Hebrew or Arabic word
+// ("and", "to", "the"...), as in ודוד, "and David".
+const PREFIXES = /[והבכלמשوفبلكال]/u;
+const PREFIXED_SCRIPTS = /[\p{Script=Hebrew}\p{Script=Arabic}]/u;
 // Scripts in which names are usually written with a capital.
 const CAPITALIZED = /[\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Script=Armenian}]/u;
 // Invisible marks that come along when a name is pasted: zero-width space,
@@ -246,7 +253,9 @@ const DIGIT = /\p{N}/u;
 // Letters and the marks that combine with them carry a word on; an
 // apostrophe, a digit, punctuation or a space ends it.
 const WORD = /[\p{L}\p{M}]/u;
-const continuesWord = (/** @type {string} */ ch) => Boolean(ch) && WORD.test(ch) && !APOSTROPHE.test(ch);
+// A letter from a script written without spaces does not carry on a word
+// in another script: in 今天和Sam吃饭, Sam stands on its own.
+const continuesWord = (/** @type {string} */ ch) => Boolean(ch) && WORD.test(ch) && !APOSTROPHE.test(ch) && !UNSPACED.test(ch);
 const hasCase = (/** @type {string} */ ch) => ch.toLowerCase() !== ch.toUpperCase();
 const isUpper = (/** @type {string} */ ch) => hasCase(ch) && ch === ch.toUpperCase();
 const isLower = (/** @type {string} */ ch) => hasCase(ch) && ch === ch.toLowerCase();
@@ -266,6 +275,20 @@ function charBefore(text, index) {
   if (index <= 0) return '';
   const low = text.charCodeAt(index - 1);
   return index > 1 && low >= 0xdc00 && low <= 0xdfff ? text.slice(index - 2, index) : text[index - 1];
+}
+
+/**
+ * Whether up to three prefix letters, then the start of a word, come
+ * before an index, as in ולדוד.
+ * @param {string} text @param {number} index
+ */
+function prefixedAt(text, index) {
+  let at = index;
+  for (let count = 0; count < 3 && at > 0 && PREFIXES.test(text[at - 1]); count += 1) {
+    at -= 1;
+    if (!continuesWord(charBefore(text, at))) return true;
+  }
+  return false;
 }
 
 /** The whole character at an index, or ''. @param {string} text @param {number} index */
@@ -313,12 +336,16 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
         // "张 伟" is written 张伟 in running text.
         if (UNSPACED.test(whole) && /\s/.test(whole)) add(whole.replace(/\s+/g, ''), label, true);
       }
-      const words = bare.split(/\s+/).map((word) => word.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '')).filter(Boolean);
+      // Couples and aliases are often saved as "Jen&Tom" or "Sam/Samuel".
+      const words = bare.split(/[\s/&+|,]+/).map((word) => word.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '')).filter(Boolean);
       if (words.length < 2) continue;
-      for (const word of words) {
-        if ((word.match(/\p{L}/gu) || []).length < 2 || NOT_NAMES.has(word.toLowerCase()) || POSSESSIVE.test(word)) continue;
+      words.forEach((word, position) => {
+        const lower = word.toLowerCase();
+        if ((word.match(/\p{L}/gu) || []).length < 2 || NEVER_NAMES.has(lower) || POSSESSIVE.test(word)) return;
+        if (PARTICLES.has(lower) && word === lower) return;
+        if (ROLE_WORDS.has(lower) && (position > 0 || word === lower)) return;
         add(word, label, false);
-      }
+      });
     }
     for (const value of extra(person)) {
       const exact = cleanName(value);
@@ -340,6 +367,7 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
     const name = longest(spellings);
     // A one-letter name ("T") matches only as saved, so the t in "don't" stays.
     const exactCase = (name.match(/\p{L}/gu) || []).length < 2;
+    const prefixed = PREFIXED_SCRIPTS.test(name);
     const owners = whole.size ? whole : part;
     const token = tokenFor([...owners].join(' or '));
     const unspaced = UNSPACED.test(name);
@@ -357,10 +385,13 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
         if (!unspaced) {
           const last = charBefore(match, match.length);
           // A name joined to a word, as in #SamBirthday, still counts when
-          // the capitals show where it starts and ends.
-          const leftOk = !continuesWord(before) || (isLower(before) && isUpper(first));
+          // the capitals show where it starts and ends; so does a Hebrew or
+          // Arabic name after the letters that attach to the front of words.
+          const leftOk = !continuesWord(before) || (isLower(before) && isUpper(first)) || (prefixed && prefixedAt(text, offset));
           const rightOk = !continuesWord(after) || (isLower(last) && isUpper(after));
           if (!leftOk || !rightOk) return match;
+          // In DON'T or IT'S, the letter after the apostrophe is not a name.
+          if (exactCase && APOSTROPHE.test(before) && continuesWord(charBefore(text, offset - before.length))) return match;
         }
         // "Sam2" reads "Person 1 2", not "Person 12".
         return `${DIGIT.test(before) ? ' ' : ''}${token}${DIGIT.test(after) ? ' ' : ''}`;
@@ -373,7 +404,9 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
   });
   return (text, { parts = true } = {}) => {
     const original = String(text ?? '');
-    const normalized = original.normalize('NFC');
+    // Invisible marks inside a name in the text, as in a pasted copy, do not
+    // hide it.
+    const normalized = original.normalize('NFC').replace(INVISIBLE, '');
     // Ids and timestamps are set aside first: a person's id becomes their
     // label, and any other is kept exactly as it was.
     /** @type {string[]} */

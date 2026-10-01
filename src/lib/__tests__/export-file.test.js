@@ -142,7 +142,7 @@ describe('replacing names in a chosen-entries export', () => {
     app: 'Vibe Check', format_version: 1, range: { start: '2026-09-01', end: '2026-09-30' },
     entries: [{
       id: 'aaaaaaaa-ed00-4000-8000-000000000001', key: 'day:aaaaaaaa-ed00-4000-8000-000000000001', user_id: 'owner', kind: 'day', date: '2026-09-01',
-      occurred_at: '2026-09-01T10:00:00+00:00', notes: 'Coffee with Jordan, then Ed called.', activities: ['Coffee with Jordan'], emotions: ['Low'],
+      occurred_at: '2026-09-01T10:00:00+00:00', notes: 'Coffee with Jordan, then Ed called.', activities: ['Coffee with Jordan'], emotions: ['Low', 'Missing Jordan'],
       person_ids: [jordan], high_moment: { who_involved: 'Jordan and mom' }, stress_context: { body_cues: ['Low energy'], state_ids: ['on-edge'] },
     }],
     practice_sessions: [{ id: 's1', outcome: 'More settled', source_pattern: 'on-edge:habit:Coffee with Jordan', after_notes: 'T helped.' }],
@@ -178,7 +178,7 @@ describe('replacing names in a chosen-entries export', () => {
     expect(entry.id).toBe('aaaaaaaa-ed00-4000-8000-000000000001');
     expect(entry.key).toBe('day:aaaaaaaa-ed00-4000-8000-000000000001');
     expect(entry.occurred_at).toBe('2026-09-01T10:00:00+00:00');
-    expect(entry.emotions).toEqual(['Low']);
+    expect(entry.emotions).toEqual(['Low', 'Missing Person 1']);
     expect(entry.stress_context).toEqual({ body_cues: ['Low energy'], state_ids: ['on-edge'] });
     expect(redactExport(document, replace).practice_sessions[0].outcome).toBe('More settled');
     expect(redactExport(document, replace).report.emotions[0].label).toBe('Low');

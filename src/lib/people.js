@@ -223,9 +223,11 @@ const NEVER_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof
 // "son of" and "daughter of" inside a name (דוד בן גוריון, محمد بن سلمان):
 // a name on their own only as its first word (בן לוי, Ben Levi).
 const CONNECTORS = new Set(['בן', 'בת', 'بن', 'ابن', 'بنت']);
-// A saved name that starts with "mother of", "father of" (أم أحمد) or
-// "servant of" (عبد الله) is one name: only the whole of it is matched.
-const WHOLE_ONLY_STARTS = new Set(['أم', 'ام', 'أبو', 'ابو', 'عبد']);
+// A saved name that starts with "mother of" or "father of" (أم أحمد) names
+// someone through their child: only the whole of it is matched.
+const KUNYA = new Set(['أم', 'ام', 'أبو', 'ابو']);
+// "Servant of" (عبد) makes one given name with the word after it (عبد الله).
+const SERVANT_OF = 'عبد';
 // Family, role and place words ("Mike Work", "Sarah From Yoga"): a name
 // on their own only as the first word of a saved name ("Son Heung-min").
 const ROLE_WORDS = new Set([
@@ -240,7 +242,7 @@ const PARTICLES = new Set(['de', 'da', 'di', 'do', 'dos', 'das', 'del', 'della',
 // A Chinese, Korean or Japanese name saved without a space is split only
 // after a common surname, and never into a title or a family or role word
 // (王医生, 张老师, 여자친구), so other doctors and friends keep their words.
-const CHINESE_SURNAMES = new Set([...'王李张刘陈杨黄赵吴周徐孙马朱胡郭何高林罗郑梁谢宋唐许韩冯邓曹彭曾肖田董袁潘于蒋蔡余杜叶程苏魏吕丁任沈姚卢姜崔钟谭陆汪范金石廖贾夏韦付方白邹孟熊秦邱江尹薛闫段雷侯龙史陶黎贺顾毛郝龚邵万钱严覃武戴莫孔向汤張劉陳楊黃趙吳孫馬鄭謝韓馮鄧蕭葉蘇呂盧鍾譚陸賈閻龍賀顧龔萬錢湯']);
+const CHINESE_SURNAMES = new Set([...'王李张刘陈杨黄赵吴周徐孙马朱胡郭何高林罗郑梁谢宋唐许韩冯邓曹彭曾肖田董袁潘于蒋蔡余杜叶程苏魏吕丁任沈姚卢姜崔钟谭陆汪范金石廖贾夏韦付方白邹孟熊秦邱江尹薛闫段雷侯龙史陶黎贺顾毛郝龚邵万钱严覃武戴莫孔向汤張劉陳楊黃趙吳孫馬鄭謝韓馮鄧蕭葉蘇呂盧鍾譚陸賈閻龍賀顧龔萬錢湯許羅蔣鄒韋嚴範']);
 const COMPOUND_SURNAMES = new Set(['欧阳', '歐陽', '司马', '司馬', '诸葛', '諸葛', '上官', '皇甫', '东方', '東方', '南宫', '南宮', '夏侯', '慕容', '令狐', '公孙', '公孫', '尉迟', '尉遲', '남궁', '황보', '제갈', '선우', '독고', '사공', '서문']);
 const JAPANESE_SURNAMES = new Set(['佐藤', '鈴木', '高橋', '田中', '伊藤', '渡辺', '山本', '中村', '小林', '加藤', '吉田', '山田', '山口', '松本', '井上', '木村', '清水', '山崎', '池田', '橋本', '阿部', '石川', '山下', '中島', '石井', '小川', '前田', '岡田', '藤田', '後藤', '近藤', '村上', '遠藤', '青木', '坂本', '斉藤', '福田', '太田', '西村', '藤井', '金子', '岡本', '藤原', '中野', '三浦', '原田', '中川', '松田', '竹内', '小野', '田村', '中山', '和田', '石田', '森田', '上田', '内田', '柴田', '酒井', '宮崎', '横山', '高木', '安藤', '宮本', '大野', '小島', '谷口', '今井', '工藤', '高田', '増田', '丸山', '杉山', '村田', '大塚', '新井', '小山', '平野', '野口', '武田', '松井', '千葉', '岩崎', '木下', '佐野', '野村', '松尾', '菊地', '杉本', '古川', '大西', '島田', '水野', '桜井', '高野', '吉川', '山内', '西田', '飯田', '菊池', '西川', '北村', '安田', '川口', '平田', '中田', '服部', '岩田', '土屋', '本田', '樋口', '秋山', '田口', '永井', '山中', '中西', '吉村', '川上', '石原', '大橋']);
 const KOREAN_SURNAMES = new Set([...'김이박최정강조윤장임한오서신권황안송류유전홍고문양손배백허남심노하곽성차주우구민진나지엄채원천방공현함변염추도소석선설마길연위표명기반왕금옥육인맹']);
@@ -332,9 +334,9 @@ function cjkNameParts(name) {
   if (COMPOUND_SURNAMES.has(head) || JAPANESE_SURNAMES.has(head)) {
     parts.push(head);
     if (chars.length === 4) parts.push(chars.slice(2).join(''));
-  } else if (chars.length === 3 && (CHINESE_SURNAMES.has(chars[0]) || KOREAN_SURNAMES.has(chars[0]))) {
-    parts.push(chars.slice(1).join(''));
   }
+  // Both readings of a three-character name stay: 金子轩 is 金 子轩 as well.
+  if (chars.length === 3 && (CHINESE_SURNAMES.has(chars[0]) || KOREAN_SURNAMES.has(chars[0]))) parts.push(chars.slice(1).join(''));
   return parts.filter((part) => !CJK_ROLE_WORDS.has(part));
 }
 
@@ -384,8 +386,14 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
       }
       for (const part of cjkNameParts(bare)) add(part, label, false);
       // Couples and aliases are often saved as "Jen&Tom" or "Sam/Samuel".
-      const raw = bare.split(/[\s/&+|,]+/).filter(Boolean);
-      if (raw.length < 2 || WHOLE_ONLY_STARTS.has(raw[0])) continue;
+      // Pieces come from the name before decoration is trimmed, so a quoted
+      // nickname that leads it ("'Chris' Jones") keeps its quotes.
+      const raw = withoutNote(name).split(/[\s/&+|,]+/).filter(Boolean);
+      if (raw.length < 2 || KUNYA.has(raw[0])) continue;
+      if (raw[0] === SERVANT_OF) {
+        add(`${raw[0]} ${raw[1]}`, label, false);
+        raw.splice(0, 2);
+      }
       raw.forEach((piece, position) => {
         // A nickname in quotes ("Christopher 'Chris' Jones") is a name word.
         const unquoted = piece.match(/^['‘’"“”](.+)['‘’"“”]$/u)?.[1];

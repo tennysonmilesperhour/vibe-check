@@ -319,9 +319,15 @@ describe('replacing names: nicknames, titles and connectors', () => {
     expect(replace('בן התקשר. יש לי בן אחד')).toBe('b התקשר. יש לי b אחד');
   });
 
-  it('keeps names that start with "servant of" whole', () => {
-    const replace = peopleNameReplacer([{ id: 'a', name: 'عبد الله' }, { id: 'r', name: 'عبد الرحمن' }], (person) => person.id);
+  it('keeps "servant of" with the word after it', () => {
+    const replace = peopleNameReplacer([{ id: 'a', name: 'عبد الله' }, { id: 'r', name: 'عبد الرحمن' }, { id: 'o', name: 'عبد الله العمري' }], (person) => person.id);
     expect(replace('إن شاء الله سأكون بخير. والله تعبت. بسم الله الرحمن الرحيم. عبد الله هنا')).toBe('إن شاء الله سأكون بخير. والله تعبت. بسم الله الرحمن الرحيم. a هنا');
+    expect(replace('العمري هنا')).toBe('o هنا');
+  });
+
+  it('keeps both readings of a three-character name, and a leading quoted nickname', () => {
+    const replace = peopleNameReplacer([{ id: 'j', name: '金子轩' }, { id: 'x', name: '許志明' }, { id: 'c', name: "'Chris' Jones" }, { id: 'g', name: '‘Gus’ Lee' }], (person) => person.id);
+    expect(replace('子轩来了。志明也来了。Chris called. Gus called.')).toBe('j来了。x也来了。c called. g called.');
   });
 });
 

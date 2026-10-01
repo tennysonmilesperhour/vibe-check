@@ -20,6 +20,15 @@ describe('encryptJson / decryptJson', () => {
     await expect(decryptJson(envelope, 'wrong')).rejects.toThrow();
   });
 
+  it('round-trips a large history', async () => {
+    // A few megabytes: building the base64 from one spread call threw past a
+    // few hundred kilobytes.
+    const entries = Array.from({ length: 6000 }, (_, i) => ({ date: '2026-07-02', notes: `Entry ${i}: ${'a quiet evening walk '.repeat(20)}` }));
+    const envelope = await encryptJson({ entries }, 'correct horse battery');
+    expect(envelope.data.length).toBeGreaterThan(2_000_000);
+    expect((await decryptJson(envelope, 'correct horse battery')).entries).toHaveLength(6000);
+  });
+
   it('produces distinct ciphertexts per call (fresh salt + iv)', async () => {
     const a = await encryptJson({ a: 1 }, 'pw');
     const b = await encryptJson({ a: 1 }, 'pw');

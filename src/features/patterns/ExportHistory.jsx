@@ -4,6 +4,11 @@ import { filterEntries, buildReport, validDateKey } from '@/lib/living-patterns'
 import { encryptJson } from '@/lib/crypto';
 import { todayKey } from '@/lib/dates';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
+import { downloadJson } from '@/features/export/download';
+
+// A preview longer than this would make the page slow to scroll and type in;
+// the download always holds everything.
+const PREVIEW_LIMIT = 200000;
 
 export default function ExportHistory({ data, initial, onClose }) {
   const [start, setStart] = useState(initial.start || data.entries.at(-1)?.date || todayKey());
@@ -51,13 +56,11 @@ export default function ExportHistory({ data, initial, onClose }) {
     if (encrypt && password.length < 8) { setError('Use an export password with at least eight characters.'); return; }
     setBusy(true); setError('');
     try {
-      const result = encrypt ? await encryptJson(payload, password) : payload;
-      const url = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' }));
-      const link = Object.assign(document.createElement('a'), { href: url, download: `vibe-check-${start}-${end}${encrypt ? '.encrypted' : ''}.json` });
-      document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      downloadJson(encrypt ? await encryptJson(payload, password) : payload, `vibe-check-${start}-${end}${encrypt ? '.encrypted' : ''}.json`);
     } catch (err) { setError(err.message); }
     setBusy(false);
   }
+  const previewText = useMemo(() => (preview && identityOk ? JSON.stringify(payload, null, 2) : ''), [preview, identityOk, payload]);
   const change = (setter) => (value) => { setter(value); setPreview(false); };
   return <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}><DialogContent className="living-dialog"><DialogHeader><DialogTitle>Choose what leaves your journal</DialogTitle><DialogDescription>Preview the complete contents before downloading. Nothing is emailed or sent to an AI provider.</DialogDescription></DialogHeader>
     <div className="space-y-5"><div className="grid sm:grid-cols-2 gap-3"><label className="living-label">From<input className="living-input mt-2" type="date" max={todayKey()} value={start} onChange={(e) => change(setStart)(e.target.value)} /></label><label className="living-label">Through<input className="living-input mt-2" type="date" max={todayKey()} value={end} onChange={(e) => change(setEnd)(e.target.value)} /></label></div>
@@ -71,7 +74,7 @@ export default function ExportHistory({ data, initial, onClose }) {
       {error && <p className="living-error" role="alert">{error}</p>}
       <button className="living-secondary" disabled={!valid} onClick={() => setPreview(true)}>Preview complete export</button>
       {preview && (identityOk
-        ? <><pre className="export-preview" aria-label="Complete export preview">{JSON.stringify(payload, null, 2)}</pre><button className="ink-button" disabled={busy || !valid} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted JSON' : 'Download JSON'}</button><p className="living-muted text-xs">A portable copy for your own records or a tool you choose. No external account is required.</p></>
+        ? <><pre className="export-preview" aria-label="Complete export preview">{previewText.slice(0, PREVIEW_LIMIT)}</pre>{previewText.length > PREVIEW_LIMIT && <p className="living-muted text-xs">The preview shows the first {PREVIEW_LIMIT.toLocaleString()} characters of {previewText.length.toLocaleString()}. The download holds all of it. Choose fewer entries to see everything here.</p>}<button className="ink-button" disabled={busy || !valid} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted JSON' : 'Download JSON'}</button><p className="living-muted text-xs">A portable copy for your own records or a tool you choose. No external account is required.</p></>
         : <ConfirmIdentity action="see and download your export" onConfirmed={confirmIdentity} />)}
     </div>
   </DialogContent></Dialog>;

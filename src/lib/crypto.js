@@ -5,7 +5,14 @@
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-const toB64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+// In chunks: spreading a whole large buffer into one call throws once it
+// passes the engine's argument limit, a few hundred kilobytes.
+const toB64 = (buf) => {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+};
 const fromB64 = (str) => Uint8Array.from(atob(str), (c) => c.charCodeAt(0));
 
 async function deriveKey(password, salt) {

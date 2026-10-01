@@ -2,7 +2,12 @@
 // Replaces the old load-bearing substring match ("Mom" matched "Tom's mommy")
 // with whole-word matching against names and legacy aliases.
 
-const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** @param {string} s */
+export const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** How an interaction felt, and whether a boundary was respected: the journal's choices. */
+export const INTERACTION_FEELINGS = ['supportive', 'strained', 'unsafe', 'mixed', 'unsure'];
+export const BOUNDARY_ANSWERS = ['yes', 'no', 'unsure'];
 
 function aliasesOf(person) {
   return [person.name, ...(person.legacy_names || [])].filter(Boolean);
@@ -181,4 +186,29 @@ export function arrangeOrbitRing(people, entries) {
     ordered.push(remaining.shift());
   }
   return ordered;
+}
+
+/**
+ * People in the order they were added, the order "Person 1", "Person 2" and
+ * so on follow wherever names are replaced with labels.
+ * @param {any[]} people
+ */
+export function peopleInAddedOrder(people) {
+  const added = (/** @type {any} */ person) => (typeof person?.created_at === 'string' ? person.created_at : '');
+  return people.filter((person) => person?.id).sort((a, b) => added(a).localeCompare(added(b)) || String(a.id).localeCompare(String(b.id)));
+}
+
+/**
+ * Labels for people in a shared record: "Person 1", "Person 2" and so on in
+ * the order people were added, and "Removed person 1" and so on for ids
+ * still on entries whose person is gone, so the two never collide. Numbers
+ * stay the same from one summary or export to the next unless someone added
+ * earlier is removed.
+ * @param {any[]} people @param {Iterable<string>} [ids] ids that appear on entries
+ * @returns {Map<string, string>}
+ */
+export function personLabels(people, ids = []) {
+  const labels = new Map(peopleInAddedOrder(people).map((person, i) => [person.id, `Person ${i + 1}`]));
+  [...new Set(ids)].filter((id) => id && !labels.has(id)).sort().forEach((id, i) => labels.set(id, `Removed person ${i + 1}`));
+  return labels;
 }

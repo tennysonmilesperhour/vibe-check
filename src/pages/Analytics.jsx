@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowRight, Download } from 'lucide-react';
+import { ArrowRight, Download, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import PageTransition from '@/features/shell/PageTransition';
 import PlantVoice from '@/features/shell/PlantVoice';
@@ -14,6 +14,7 @@ import PatternCalendar from '@/features/patterns/PatternCalendar';
 import { todayKey, addDaysKey, parseLocalDate, diffDaysKeys } from '@/lib/dates';
 import { filterEntries, historyChart, stateCards, stressPatterns, validDateKey } from '@/lib/living-patterns';
 import { STRESS_STATES } from '@/lib/practices';
+import { INTERACTION_FEELINGS } from '@/lib/people';
 
 const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', 'Year'], ['all', 'All time'], ['custom', 'Custom']];
 
@@ -69,7 +70,7 @@ function Patterns() {
 
   const showExport = exporting || (params.get('export') === '1' ? { start, end } : null);
   return <div className="field-wash min-h-screen"><PageTransition className="living-page space-y-8">
-    <header className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR HISTORY BELONGS TO YOU · ALWAYS FREE</p><h1>The whole pattern.</h1><p className="living-muted mt-3">People, habits, hard days, good days. Keep them in view together.</p></div><button className="living-secondary" onClick={() => openExport()}><Download size={16} />Choose an export</button></header>
+    <header className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR HISTORY BELONGS TO YOU · ALWAYS FREE</p><h1>The whole pattern.</h1><p className="living-muted mt-3">People, habits, hard days, good days. Keep them in view together.</p></div><div className="flex flex-wrap gap-3"><Link className="living-secondary" to={`/Summary?${new URLSearchParams(valid ? { start, end } : {})}`}><FileText size={16} aria-hidden="true" />A summary to share</Link><button className="living-secondary" onClick={() => openExport()}><Download size={16} />Choose an export</button></div></header>
     {living.reloadFailed && <p className="living-error" role="alert">Your record couldn't refresh, so what shows may be out of date. <button type="button" className="underline" onClick={() => living.refetch()}>{living.isFetching ? 'Trying…' : 'Try again'}</button></p>}
     <nav className="living-tabs" aria-label="Patterns sections">{[['patterns', 'Patterns'], ['reports', 'Weekly & monthly'], ['journal', 'Journal & history']].map(([id, label]) => <button key={id} type="button" aria-current={tab === id ? 'page' : undefined} onClick={() => change('tab', id)}>{label}</button>)}</nav>
     {['patterns', 'journal'].includes(tab) && <section className="living-card space-y-4" aria-label="History filters"><div className="living-chips" aria-label="Date range">{RANGES.map(([value, label]) => <button type="button" className="living-chip" key={value} aria-pressed={range === value} onClick={() => change('range', value)}>{label}</button>)}</div>
@@ -87,7 +88,7 @@ function Patterns() {
         {chart.some((point) => point.stressKind === 'at-check-in') && chart.some((point) => point.stressKind === 'highest-today') && <p className="living-muted text-xs">This view mixes two kinds of check-in stress: older check-ins rated stress at that moment, newer ones rate the day's highest. Each check-in in your journal says which.</p>}
         <Link className="living-text-link" to={`/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal' })}`}>Read the entries behind this view <ArrowRight size={15} /></Link>
       </section>
-      {filtered.some((entry) => entry.interaction_feeling) && <section className="living-card space-y-4"><h2>How interactions felt</h2><p className="living-muted">Your labels for individual encounters, kept separate from the day’s mood.</p><div className="living-chips">{['supportive', 'strained', 'unsafe', 'mixed', 'unsure'].map((feeling) => <span key={feeling} className={`living-tag ${feeling === 'unsafe' ? 'living-tag-alert' : ''}`}>{feeling}: {filtered.filter((entry) => entry.interaction_feeling === feeling).length}</span>)}</div><Link className="living-text-link" to={`/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal' })}`}>Read these moments <ArrowRight size={15} /></Link></section>}
+      {filtered.some((entry) => entry.interaction_feeling) && <section className="living-card space-y-4"><h2>How interactions felt</h2><p className="living-muted">Your labels for individual encounters, kept separate from the day’s mood.</p><div className="living-chips">{INTERACTION_FEELINGS.map((feeling) => <span key={feeling} className={`living-tag ${feeling === 'unsafe' ? 'living-tag-alert' : ''}`}>{feeling}: {filtered.filter((entry) => entry.interaction_feeling === feeling).length}</span>)}</div><Link className="living-text-link" to={`/Analytics?${new URLSearchParams({ ...Object.fromEntries(params), tab: 'journal' })}`}>Read these moments <ArrowRight size={15} /></Link></section>}
       <StressPatternCards patterns={patterns} data={data} onFeedback={feedback} />
       <div className="living-card flex flex-wrap justify-between items-center gap-4"><div><h2>See the week or month together.</h2><p className="living-muted mt-2">Source entries, recurring themes, and relevant practices.</p></div><button className="ink-button" onClick={() => change('tab', 'reports')}>Open your reports <ArrowRight size={15} /></button></div>
     </>}

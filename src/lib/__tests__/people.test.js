@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchPersonByText, mentionsPerson, dedupePeopleDrafts, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing } from '../people.js';
+import { matchPersonByText, mentionsPerson, dedupePeopleDrafts, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing, personLabels } from '../people.js';
 
 const people = [
   { id: 'p1', name: 'Mom', legacy_names: ['mother', 'mama'] },
@@ -114,5 +114,12 @@ describe('people recorded together from picker tags', () => {
     expect(orderPeopleForOrbit(people, entries).map((person) => person.id)).toEqual(['p1', 'p2', 'p3']);
     expect(arrangeOrbitRing([people[2], people[0], people[1]], entries).map((person) => person.id)[0]).toBe('p3');
     expect(arrangeOrbitRing([people[2], people[0], people[1]], entries).map((person) => person.id)[1]).toBe('p1');
+  });
+});
+
+describe('labels for people', () => {
+  it('numbers people in the order they were added, and people since removed apart', () => {
+    const labels = personLabels([{ id: 'b', created_at: '2026-02-01' }, { id: 'a', created_at: '2026-01-01' }], ['gone-2', 'a', 'gone-1', 'gone-2']);
+    expect([...labels]).toEqual([['a', 'Person 1'], ['b', 'Person 2'], ['gone-1', 'Removed person 1'], ['gone-2', 'Removed person 2']]);
   });
 });

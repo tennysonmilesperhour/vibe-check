@@ -41,10 +41,18 @@ export default function SettingsSheet({ open, onOpenChange }) {
   const [deletionFinished, setDeletionFinished] = useState(false);
   const [ExportDialog, setExportDialog] = useState(null);
   const [exportLoadError, setExportLoadError] = useState('');
+  // Only the last button pressed opens its dialog, and only while Settings is open.
+  const exportRequest = useRef(0);
+  useEffect(() => { if (!open) exportRequest.current += 1; }, [open]);
   async function showExportDialog(load) {
+    const request = ++exportRequest.current;
     setExportLoadError('');
-    try { const { default: dialog } = await load(); setExportDialog(() => dialog); }
-    catch { setExportLoadError('This part of Vibe Check did not load. Reload the app and try again.'); }
+    try {
+      const { default: dialog } = await load();
+      if (request === exportRequest.current) setExportDialog(() => dialog);
+    } catch {
+      if (request === exportRequest.current) setExportLoadError('This part of Vibe Check did not load. Reload the app and try again.');
+    }
   }
   // Deleting asks for the password first (see ConfirmIdentity).
   const [identityOk, setIdentityOk] = useState(false);

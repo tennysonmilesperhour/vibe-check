@@ -5,5 +5,6 @@ export function downloadJson(value, filename) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // Some browsers ask before saving; the file must still be there when they do.
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }

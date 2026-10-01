@@ -6,8 +6,8 @@ import { todayKey } from '@/lib/dates';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import { downloadJson } from '@/features/export/download';
 
-// A preview longer than this would make the page slow to scroll and type in;
-// the download always holds everything.
+// Past this length the preview takes a moment to lay out, so the rest waits
+// to be asked for. The download always holds everything.
 const PREVIEW_LIMIT = 200000;
 
 export default function ExportHistory({ data, initial, onClose }) {
@@ -18,9 +18,11 @@ export default function ExportHistory({ data, initial, onClose }) {
   const [includePractices, setIncludePractices] = useState(false);
   const [includeReflections, setIncludeReflections] = useState(false);
   const [password, setPassword] = useState('');
+  const [repeat, setRepeat] = useState('');
   const [encrypt, setEncrypt] = useState(false);
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(false);
+  const [fullPreview, setFullPreview] = useState(false);
   const [error, setError] = useState('');
   // The preview and the download ask for the password (unless confirmed
   // recently), so someone holding an unlocked device can't walk away with it.
@@ -54,6 +56,8 @@ export default function ExportHistory({ data, initial, onClose }) {
   async function download() {
     if (!valid) { setError('Choose a valid date range through today.'); return; }
     if (encrypt && password.length < 8) { setError('Use an export password with at least eight characters.'); return; }
+    // The password cannot be recovered, so a typo would lock the file for good.
+    if (encrypt && password !== repeat) { setError('The two passwords are different. Type the same password in both.'); return; }
     setBusy(true); setError('');
     try {
       downloadJson(encrypt ? await encryptJson(payload, password) : payload, `vibe-check-${start}-${end}${encrypt ? '.encrypted' : ''}.json`);
@@ -69,12 +73,12 @@ export default function ExportHistory({ data, initial, onClose }) {
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={includePractices} onChange={(e) => change(setIncludePractices)(e.target.checked)} />Include practice responses within these dates</label>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={includeReflections} onChange={(e) => change(setIncludeReflections)(e.target.checked)} />Include saved report reflections whose period starts within these dates</label>
       <label className="flex gap-3 text-sm"><input type="checkbox" checked={encrypt} onChange={(e) => setEncrypt(e.target.checked)} />Encrypt the downloaded file with a password</label>
-      {encrypt && <label className="living-label">Export password<input className="living-input mt-2" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /><span className="living-muted text-xs">This password is not stored and cannot be recovered. The preview below remains readable on this screen.</span></label>}
+      {encrypt && <><label className="living-label">Export password<input className="living-input mt-2" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /><span className="living-muted text-xs">This password is not stored and cannot be recovered. The preview below remains readable on this screen.</span></label><label className="living-label">Repeat the export password<input className="living-input mt-2" type="password" autoComplete="new-password" value={repeat} onChange={(e) => setRepeat(e.target.value)} /></label></>}
       {!valid && <p className="living-error" role="alert">Choose a valid date range through today.</p>}
       {error && <p className="living-error" role="alert">{error}</p>}
       <button className="living-secondary" disabled={!valid} onClick={() => setPreview(true)}>Preview complete export</button>
       {preview && (identityOk
-        ? <><pre className="export-preview" aria-label="Complete export preview">{previewText.slice(0, PREVIEW_LIMIT)}</pre>{previewText.length > PREVIEW_LIMIT && <p className="living-muted text-xs">The preview shows the first {PREVIEW_LIMIT.toLocaleString()} characters of {previewText.length.toLocaleString()}. The download holds all of it. Choose fewer entries to see everything here.</p>}<button className="ink-button" disabled={busy || !valid} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted JSON' : 'Download JSON'}</button><p className="living-muted text-xs">A portable copy for your own records or a tool you choose. No external account is required.</p></>
+        ? <><pre className="export-preview" aria-label="Complete export preview">{fullPreview ? previewText : previewText.slice(0, PREVIEW_LIMIT)}</pre>{!fullPreview && previewText.length > PREVIEW_LIMIT && <p className="living-muted text-xs">The preview shows the first {PREVIEW_LIMIT.toLocaleString()} characters of {previewText.length.toLocaleString()}. <button type="button" className="underline" onClick={() => setFullPreview(true)}>Show all of it</button></p>}<button className="ink-button" disabled={busy || !valid} onClick={download}>{busy ? 'Preparing file…' : encrypt ? 'Download encrypted JSON' : 'Download JSON'}</button><p className="living-muted text-xs">A portable copy for your own records or a tool you choose. No external account is required.</p></>
         : <ConfirmIdentity action="see and download your export" onConfirmed={confirmIdentity} />)}
     </div>
   </DialogContent></Dialog>;

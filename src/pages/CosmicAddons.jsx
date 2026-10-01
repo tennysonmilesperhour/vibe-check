@@ -209,6 +209,13 @@ export default function CosmicAddons() {
                     <ConflictNotice profile={profile} onUseComputed={useComputed} onKeepSaved={keepSaved} />
                 </div>
 
+                {/* Above the tabs, since a save from any of them removes these. */}
+                {heldBirthPlace && (
+                    <p className="mb-6 p-3 text-sm" role="note" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', color: 'var(--gh-ink)' }}>
+                        Your saved profile still holds a birth time or place you entered before. Nothing uses it, and saving your cosmos removes it.
+                    </p>
+                )}
+
                 {isDirty && (
                     <div className="sticky top-2 z-30 mb-6 flex items-center justify-between p-3"
                         style={{ background: 'var(--gh-ink)', color: 'var(--gh-field)' }}>
@@ -248,7 +255,6 @@ export default function CosmicAddons() {
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
                                 Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac. Vibe Check doesn't ask for your birth time or place, since nothing here uses them.
                             </p>
-                            {heldBirthPlace && <p className="text-sm mb-5" role="note" style={{ color: 'var(--gh-ink)' }}>Your saved profile still holds a birth time or place you entered before. Saving your cosmos removes it.</p>}
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <Label style={{ color: 'var(--gh-ink-soft)' }}>First Name</Label>

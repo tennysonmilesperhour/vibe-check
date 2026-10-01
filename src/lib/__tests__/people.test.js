@@ -288,6 +288,43 @@ describe('replacing names across languages', () => {
   });
 });
 
+describe('replacing names: nicknames, titles and connectors', () => {
+  it('counts a nickname in quotes as a name word', () => {
+    const replace = peopleNameReplacer([{ id: 'c', name: "Christopher 'Chris' Jones" }, { id: 'r', name: 'Robert ‘Bobs’ Smith' }], (person) => person.id);
+    expect(replace('Chris called. Jones too. Bobs waved.')).toBe('c called. c too. r waved.');
+  });
+
+  it('splits a Chinese, Korean or Japanese name only after a common surname, never into a title', () => {
+    const replace = peopleNameReplacer([
+      { id: 'w', name: '王医生' }, { id: 'z', name: '张老师' }, { id: 'e', name: '前男友' }, { id: 'g', name: '여자친구' }, { id: 'o', name: '어머니' },
+      { id: 't', name: '田中翔' }, { id: 'x', name: '王小明（同事）' },
+    ], (person) => person.id);
+    expect(replace('我去看了医生，医生说没事。李老师也在。我和男友吵架了。친구랑 놀았다. 할머니 댁에 갔다. 王医生来了')).toBe('我去看了医生，医生说没事。李老师也在。我和男友吵架了。친구랑 놀았다. 할머니 댁에 갔다. w来了');
+    expect(replace('田中さんと話した。我和王小明吃饭, 小明也来了')).toBe('tさんと話した。我和x吃饭, x也来了');
+  });
+
+  it('keeps a one-word feeling in any script, and finds a name inside a longer phrase', () => {
+    const replace = peopleNameReplacer([{ id: 'k', name: '김기쁨' }, { id: 'y', name: '杨开心' }, { id: 'c', name: '王小明' }], (person) => person.id);
+    expect(['기쁨', '开心', '想念小明'].map((word) => replace(word, { parts: 'phrase' }))).toEqual(['기쁨', '开心', '想念c']);
+  });
+
+  it('finds every name in a hashtag, after earlier names and with a fullwidth sign', () => {
+    const replace = peopleNameReplacer([{ id: 'p', name: 'Sam Lee' }, { id: 't', name: 'Tom' }, { id: 'j', name: 'Jordan Smith' }], (person) => person.id);
+    expect(replace('#SamLeeBirthday #JordanSmithWedding #SamAndTom ＃SamBirthday')).toBe('#ppBirthday #jjWedding #pAndt ＃pBirthday');
+  });
+
+  it('reads "or", "und" and "son of" as names only where they lead or are capitalized', () => {
+    const replace = peopleNameReplacer([{ id: 'o', name: 'Or Levi' }, { id: 's', name: 'Sam or Sammy' }, { id: 'b', name: 'בן לוי' }, { id: 'd', name: 'דוד בן גוריון' }], (person) => person.id);
+    expect(replace('Or came over, then Levi. Or maybe not.')).toBe('o came over, then o. o maybe not.');
+    expect(replace('בן התקשר. יש לי בן אחד')).toBe('b התקשר. יש לי b אחד');
+  });
+
+  it('keeps names that start with "servant of" whole', () => {
+    const replace = peopleNameReplacer([{ id: 'a', name: 'عبد الله' }, { id: 'r', name: 'عبد الرحمن' }], (person) => person.id);
+    expect(replace('إن شاء الله سأكون بخير. والله تعبت. بسم الله الرحمن الرحيم. عبد الله هنا')).toBe('إن شاء الله سأكون بخير. والله تعبت. بسم الله الرحمن الرحيم. a هنا');
+  });
+});
+
 describe('labels for people', () => {
   it('numbers people in the order they were added, and people since removed apart', () => {
     const labels = personLabels([{ id: 'b', created_at: '2026-02-01' }, { id: 'a', created_at: '2026-01-01' }], ['gone-2', 'a', 'gone-1', 'gone-2']);

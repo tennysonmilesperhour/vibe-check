@@ -219,13 +219,13 @@ export function personLabels(people, ids = []) {
 const UNSPACED = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
 // Words in a saved name that are never a name on their own: titles and
 // small linking words ("Sam from work").
-const NEVER_NAMES = new Set([
-  'mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'my', 'the', 'and', 'or', 'of', 'from', 'at', 'in', 'with', 'for', 'to', 'on', 'by',
-  'und', 'et', 'ou', 'בן', 'בת', 'بن', 'ابن', 'بنت',
-]);
-// A saved name that starts with "mother of" or "father of" (أم أحمد) names
-// someone through their child, so only the whole name is theirs.
-const KUNYA = new Set(['أم', 'ام', 'أبو', 'ابو']);
+const NEVER_NAMES = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'miss', 'sir', 'prof', 'my', 'the', 'and', 'of', 'from', 'at', 'in', 'with', 'for', 'to', 'on', 'by']);
+// "son of" and "daughter of" inside a name (דוד בן גוריון, محمد بن سلمان):
+// a name on their own only as its first word (בן לוי, Ben Levi).
+const CONNECTORS = new Set(['בן', 'בת', 'بن', 'ابن', 'بنت']);
+// A saved name that starts with "mother of", "father of" (أم أحمد) or
+// "servant of" (عبد الله) is one name: only the whole of it is matched.
+const WHOLE_ONLY_STARTS = new Set(['أم', 'ام', 'أبو', 'ابو', 'عبد']);
 // Family, role and place words ("Mike Work", "Sarah From Yoga"): a name
 // on their own only as the first word of a saved name ("Son Heung-min").
 const ROLE_WORDS = new Set([
@@ -236,7 +236,15 @@ const ROLE_WORDS = new Set([
 ]);
 // The particles inside names ("de la Cruz"): a name when capitalized
 // ("Al Green", "Minh Le", "Van Morrison").
-const PARTICLES = new Set(['de', 'da', 'di', 'do', 'dos', 'das', 'del', 'della', 'la', 'le', 'van', 'von', 'der', 'den', 'du', 'bin', 'al', 'el']);
+const PARTICLES = new Set(['de', 'da', 'di', 'do', 'dos', 'das', 'del', 'della', 'la', 'le', 'van', 'von', 'der', 'den', 'du', 'bin', 'al', 'el', 'or', 'und', 'et', 'ou']);
+// A Chinese, Korean or Japanese name saved without a space is split only
+// after a common surname, and never into a title or a family or role word
+// (王医生, 张老师, 여자친구), so other doctors and friends keep their words.
+const CHINESE_SURNAMES = new Set([...'王李张刘陈杨黄赵吴周徐孙马朱胡郭何高林罗郑梁谢宋唐许韩冯邓曹彭曾肖田董袁潘于蒋蔡余杜叶程苏魏吕丁任沈姚卢姜崔钟谭陆汪范金石廖贾夏韦付方白邹孟熊秦邱江尹薛闫段雷侯龙史陶黎贺顾毛郝龚邵万钱严覃武戴莫孔向汤張劉陳楊黃趙吳孫馬鄭謝韓馮鄧蕭葉蘇呂盧鍾譚陸賈閻龍賀顧龔萬錢湯']);
+const COMPOUND_SURNAMES = new Set(['欧阳', '歐陽', '司马', '司馬', '诸葛', '諸葛', '上官', '皇甫', '东方', '東方', '南宫', '南宮', '夏侯', '慕容', '令狐', '公孙', '公孫', '尉迟', '尉遲', '남궁', '황보', '제갈', '선우', '독고', '사공', '서문']);
+const JAPANESE_SURNAMES = new Set(['佐藤', '鈴木', '高橋', '田中', '伊藤', '渡辺', '山本', '中村', '小林', '加藤', '吉田', '山田', '山口', '松本', '井上', '木村', '清水', '山崎', '池田', '橋本', '阿部', '石川', '山下', '中島', '石井', '小川', '前田', '岡田', '藤田', '後藤', '近藤', '村上', '遠藤', '青木', '坂本', '斉藤', '福田', '太田', '西村', '藤井', '金子', '岡本', '藤原', '中野', '三浦', '原田', '中川', '松田', '竹内', '小野', '田村', '中山', '和田', '石田', '森田', '上田', '内田', '柴田', '酒井', '宮崎', '横山', '高木', '安藤', '宮本', '大野', '小島', '谷口', '今井', '工藤', '高田', '増田', '丸山', '杉山', '村田', '大塚', '新井', '小山', '平野', '野口', '武田', '松井', '千葉', '岩崎', '木下', '佐野', '野村', '松尾', '菊地', '杉本', '古川', '大西', '島田', '水野', '桜井', '高野', '吉川', '山内', '西田', '飯田', '菊池', '西川', '北村', '安田', '川口', '平田', '中田', '服部', '岩田', '土屋', '本田', '樋口', '秋山', '田口', '永井', '山中', '中西', '吉村', '川上', '石原', '大橋']);
+const KOREAN_SURNAMES = new Set([...'김이박최정강조윤장임한오서신권황안송류유전홍고문양손배백허남심노하곽성차주우구민진나지엄채원천방공현함변염추도소석선설마길연위표명기반왕금옥육인맹']);
+const CJK_ROLE_WORDS = new Set(['医生', '醫生', '老师', '老師', '先生', '女士', '小姐', '阿姨', '叔叔', '同学', '同學', '同事', '老板', '老闆', '经理', '經理', '男友', '女友', '朋友', '妈妈', '媽媽', '爸爸', '哥哥', '姐姐', '弟弟', '妹妹', '太太', '夫人', '律师', '律師', '教授', '医师', '醫師', '护士', '護士', '师傅', '師傅', '先輩', '後輩', '部長', '課長', '社長', '선생', '친구', '엄마', '아빠', '언니', '오빠', '누나', '형님', '사장', '부장', '과장', '대리', '선배', '후배', '여친', '남친']);
 // Letters that attach to the front of a Hebrew or Arabic word ("and", "to",
 // "from", and the Arabic article ال), as in ודוד, "and David". Checked only
 // for names of three letters or more, where they cannot make another word.
@@ -282,7 +290,7 @@ const fold = (/** @type {string} */ text) => text.toLowerCase().replace(/ı/g, '
 
 /** @param {unknown} value */
 const cleanName = (value) => (typeof value === 'string' ? value.normalize('NFC').replace(INVISIBLE, '').trim() : '');
-const withoutNote = (/** @type {string} */ name) => name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+const withoutNote = (/** @type {string} */ name) => name.replace(/\s*[(（][^)）]*[)）]\s*$/u, '').trim();
 // Any apostrophe or none, any run of spaces, and any form of i stand for
 // each other.
 const namePattern = (/** @type {string} */ name) => escapeRegex(name)
@@ -302,12 +310,33 @@ function charBefore(text, index) {
  */
 function inTag(text, index) {
   let at = index;
-  while (at > 0 && /[\p{L}\p{M}\p{N}_]/u.test(charBefore(text, at))) at -= charBefore(text, at).length;
-  return at > 0 && /[#@]/.test(text[at - 1]);
+  // Placeholders of names already found in the same tag count as letters.
+  while (at > 0 && /[\p{L}\p{M}\p{N}_\uE000-\uE7FF]/u.test(charBefore(text, at))) at -= charBefore(text, at).length;
+  return at > 0 && /[#@＃＠]/.test(text[at - 1]);
 }
 
 /** The whole character at an index, or ''. @param {string} text @param {number} index */
 const charAt = (text, index) => (index < text.length ? String.fromCodePoint(/** @type {number} */ (text.codePointAt(index))) : '');
+
+/**
+ * The given name, and the surname where it is long enough to stand alone,
+ * of a Chinese, Korean or Japanese name saved without a space.
+ * @param {string} name
+ * @returns {string[]}
+ */
+function cjkNameParts(name) {
+  if (!/^(?:\p{Script=Han}{3,4}|\p{Script=Hangul}{3,4})$/u.test(name)) return [];
+  const chars = [...name];
+  const head = chars.slice(0, 2).join('');
+  const parts = [];
+  if (COMPOUND_SURNAMES.has(head) || JAPANESE_SURNAMES.has(head)) {
+    parts.push(head);
+    if (chars.length === 4) parts.push(chars.slice(2).join(''));
+  } else if (chars.length === 3 && (CHINESE_SURNAMES.has(chars[0]) || KOREAN_SURNAMES.has(chars[0]))) {
+    parts.push(chars.slice(1).join(''));
+  }
+  return parts.filter((part) => !CJK_ROLE_WORDS.has(part));
+}
 
 /**
  * Replaces people's names in free text with labels. For each person it
@@ -353,24 +382,20 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
         // "张 伟" is written 张伟 in running text.
         if (UNSPACED.test(whole) && /\s/.test(whole)) add(whole.replace(/\s+/g, ''), label, true);
       }
-      // A Chinese or Korean name saved without a space: the given name, and
-      // for four characters both halves, as people write them on their own.
-      if (/^(?:\p{Script=Han}{3,4}|\p{Script=Hangul}{3,4})$/u.test(bare)) {
-        const chars = [...bare];
-        if (chars.length === 3) add(chars.slice(1).join(''), label, false);
-        else { add(chars.slice(0, 2).join(''), label, false); add(chars.slice(2).join(''), label, false); }
-      }
+      for (const part of cjkNameParts(bare)) add(part, label, false);
       // Couples and aliases are often saved as "Jen&Tom" or "Sam/Samuel".
       const raw = bare.split(/[\s/&+|,]+/).filter(Boolean);
-      if (raw.length < 2 || KUNYA.has(raw[0])) continue;
+      if (raw.length < 2 || WHOLE_ONLY_STARTS.has(raw[0])) continue;
       raw.forEach((piece, position) => {
+        // A nickname in quotes ("Christopher 'Chris' Jones") is a name word.
+        const unquoted = piece.match(/^['‘’"“”](.+)['‘’"“”]$/u)?.[1];
         // "Sam's" in "Sam's mom", or "Chris'" in "Chris' mom", names someone else.
-        if (POSSESSIVE.test(piece.replace(/[^\p{L}\p{M}\p{N}'’ʼ]+$/u, ''))) return;
-        const word = piece.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
+        if (!unquoted && POSSESSIVE.test(piece.replace(/[^\p{L}\p{M}\p{N}'’ʼ]+$/u, ''))) return;
+        const word = (unquoted || piece).replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
         const lower = word.toLowerCase();
         if ((word.match(/\p{L}/gu) || []).length < 2 || NEVER_NAMES.has(lower)) return;
         if (PARTICLES.has(lower) && word === lower) return;
-        if (ROLE_WORDS.has(lower) && (position > 0 || word === lower)) return;
+        if ((ROLE_WORDS.has(lower) || CONNECTORS.has(word)) && (position > 0 || word === lower && hasCase(word.charAt(0)))) return;
         add(word, label, false);
       });
     }
@@ -390,7 +415,7 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
   const tokens = [];
   const tokenFor = (/** @type {string} */ value) => placeholder(tokens.push(value) - 1);
   const longest = (/** @type {Set<string>} */ spellings) => [...spellings].sort((a, b) => b.length - a.length)[0];
-  const rules = [...variants.values()].sort((a, b) => longest(b.spellings).length - longest(a.spellings).length).map(({ spellings, whole, part }) => {
+  const rules = [...variants].sort(([, a], [, b]) => longest(b.spellings).length - longest(a.spellings).length).map(([key, { spellings, whole, part }]) => {
     const name = longest(spellings);
     // A one-letter name ("T") matches only as saved, so the t in "don't" stays.
     const exactCase = (name.match(/\p{L}/gu) || []).length < 2;
@@ -402,7 +427,7 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
     const isPart = !whole.size;
     const hint = fold(name.split(/\s+/)[0]);
     const pattern = new RegExp([...spellings].sort((a, b) => b.length - a.length).map(namePattern).join('|'), 'giu');
-    return { isPart, hint, apply: (/** @type {string} */ text) => text.replace(pattern, (match, offset) => {
+    return { isPart, hint, key, apply: (/** @type {string} */ text) => text.replace(pattern, (match, offset) => {
         if (exactCase && !spellings.has(match)) return match;
         const first = charAt(match, 0);
         // A word of a longer name counts only when it starts with a capital,
@@ -433,7 +458,10 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
   });
   return (text, { parts = true } = {}) => {
     const original = String(text ?? '');
-    const useParts = parts === 'phrase' ? /\s/.test(original.trim()) || UNSPACED.test(original) : parts;
+    const useParts = Boolean(parts);
+    // In a feeling phrase, a word of a longer name that is the whole phrase
+    // ("Low", 开心) stays a feeling.
+    const wholeText = parts === 'phrase' ? fold(original.normalize('NFC').trim()).replace(/\s+/g, ' ') : null;
     // Invisible marks inside a name in the text, as in a pasted copy, do not
     // hide it.
     const normalized = original.normalize('NFC').replace(INVISIBLE, '');
@@ -451,7 +479,7 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
     // A rule runs only where its first word appears at all.
     let folded = fold(current);
     for (const rule of rules) {
-      if ((rule.isPart && !useParts) || !folded.includes(rule.hint)) continue;
+      if ((rule.isPart && (!useParts || rule.key === wholeText)) || !folded.includes(rule.hint)) continue;
       const next = rule.apply(current);
       if (next !== current) { current = next; folded = fold(current); }
     }

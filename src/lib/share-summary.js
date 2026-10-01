@@ -144,7 +144,13 @@ export function buildShareSummary({ entries, sessions = [], people = [], start, 
   // Words of a longer name count in free text and in feeling phrases of
   // several words ("Missing Jordan"), not in a one-word feeling.
   const replaceNames = (/** @type {string} */ text, /** @type {boolean | 'phrase'} */ parts = true) => (replacer ? replacer(text, { parts }) : text);
-  const feelingsOf = (/** @type {any} */ entry) => wordsOf(entry.emotions).map((word) => replaceNames(word, 'phrase'));
+  // Feeling words repeat, so each is replaced once.
+  const feelingCache = new Map();
+  const feeling = (/** @type {string} */ word) => {
+    if (!feelingCache.has(word)) feelingCache.set(word, replaceNames(word, 'phrase'));
+    return feelingCache.get(word);
+  };
+  const feelingsOf = (/** @type {any} */ entry) => wordsOf(entry.emotions).map(feeling);
 
   const grouping = stretches(first, last, weekStartsOn);
   const byStretch = grouping.stretches.map(() => /** @type {any[]} */ ([]));

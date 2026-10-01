@@ -269,8 +269,12 @@ const INVISIBLE = /[\u00AD\u061C\u180E\u200B\u200E\u200F\u202A-\u202E\u2060-\u20
 // Ids and timestamps inside text are never read as names; a person's id
 // becomes their label as a whole.
 const MACHINE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/gi;
-// Decoration around a saved name, such as "Jess 💜".
+// Decoration around a saved name, such as "Jess 💜", and around each of its
+// words ("Kim❤️").
 const DECORATION = /^[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D\s]+|[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D\s]+$/gu;
+const EDGES = /^[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D]+|[\p{P}\p{S}\p{Extended_Pictographic}\uFE0F\u200D]+$/gu;
+// A single word in quotes inside a saved name: a nickname.
+const QUOTED_WORD = /(^|\s)['‘’"“”]([^'‘’"“”\s]+)['‘’"“”](?=\s|$)/gu;
 // "Sam's" in "Sam's mom" names someone else.
 const POSSESSIVE = /['’ʼ]s$|s['’ʼ]$/iu;
 const APOSTROPHE = /['’ʼ]/;
@@ -378,7 +382,9 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
     const label = labelOf(person);
     const saved = [person.name, ...(Array.isArray(person.legacy_names) ? person.legacy_names : [])].map(cleanName).filter(Boolean);
     for (const name of saved) {
-      const bare = withoutNote(name).replace(DECORATION, '');
+      // A nickname in quotes ("Christopher 'Chris' Jones", "'Chris' Jones")
+      // loses its quotes first, so trimming decoration cannot split them.
+      const bare = withoutNote(name).replace(QUOTED_WORD, '$1$2').replace(DECORATION, '');
       for (const whole of [name, bare].filter(Boolean)) {
         add(whole, label, true);
         // "张 伟" is written 张伟 in running text.
@@ -386,20 +392,21 @@ export function peopleNameReplacer(people, labelOf, extra = () => []) {
       }
       for (const part of cjkNameParts(bare)) add(part, label, false);
       // Couples and aliases are often saved as "Jen&Tom" or "Sam/Samuel".
-      // Pieces come from the name before decoration is trimmed, so a quoted
-      // nickname that leads it ("'Chris' Jones") keeps its quotes.
-      const raw = withoutNote(name).split(/[\s/&+|,]+/).filter(Boolean);
+      const raw = bare.split(/[\s/&+|,]+/).filter(Boolean);
       if (raw.length < 2 || KUNYA.has(raw[0])) continue;
-      if (raw[0] === SERVANT_OF) {
-        add(`${raw[0]} ${raw[1]}`, label, false);
-        raw.splice(0, 2);
+      // "Servant of" (عبد) and the word after it make one given name, wherever
+      // it stands (عبد الرحمن بن عبد الله).
+      /** @type {string[]} */
+      const pieces = [];
+      for (let i = 0; i < raw.length; i += 1) {
+        if (raw[i] === SERVANT_OF && raw[i + 1]) { pieces.push(`${raw[i]} ${raw[i + 1]}`); i += 1; }
+        else pieces.push(raw[i]);
       }
-      raw.forEach((piece, position) => {
-        // A nickname in quotes ("Christopher 'Chris' Jones") is a name word.
-        const unquoted = piece.match(/^['‘’"“”](.+)['‘’"“”]$/u)?.[1];
+      pieces.forEach((piece, position) => {
+        if (piece.startsWith(`${SERVANT_OF} `)) { add(piece, label, false); return; }
         // "Sam's" in "Sam's mom", or "Chris'" in "Chris' mom", names someone else.
-        if (!unquoted && POSSESSIVE.test(piece.replace(/[^\p{L}\p{M}\p{N}'’ʼ]+$/u, ''))) return;
-        const word = (unquoted || piece).replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
+        if (POSSESSIVE.test(piece.replace(/[^\p{L}\p{M}\p{N}'’ʼ]+$/u, ''))) return;
+        const word = piece.replace(EDGES, '');
         const lower = word.toLowerCase();
         if ((word.match(/\p{L}/gu) || []).length < 2 || NEVER_NAMES.has(lower)) return;
         if (PARTICLES.has(lower) && word === lower) return;

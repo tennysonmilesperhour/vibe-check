@@ -325,6 +325,15 @@ describe('replacing names: nicknames, titles and connectors', () => {
     expect(replace('العمري هنا')).toBe('o هنا');
   });
 
+  it('handles decoration, quotes and servant-of names wherever they stand', () => {
+    const replace = peopleNameReplacer([
+      { id: 'k', name: 'Alex Kim❤️' }, { id: 'h', name: '💚 عبد الله' }, { id: 'r', name: 'عبد الرحمن بن عبد الله' }, { id: 'u', name: '«أم أحمد»' },
+      { id: 'd', name: '⚽ Son Heung-min' }, { id: 'q', name: '‘Chris Jones’' }, { id: 's', name: 'عبد الله بن سلمان' },
+    ], (person) => person.id);
+    expect(replace('Kim was sweet. Son scored. Jones called.')).toBe('k was sweet. d scored. q called.');
+    expect(replace('إن شاء الله. والله تعبت. صديقي العزيز. هل تريد شاي أم قهوة؟ أحمد هنا. بن عربي. سلمان هنا')).toBe('إن شاء الله. والله تعبت. صديقي العزيز. هل تريد شاي أم قهوة؟ أحمد هنا. بن عربي. s هنا');
+  });
+
   it('keeps both readings of a three-character name, and a leading quoted nickname', () => {
     const replace = peopleNameReplacer([{ id: 'j', name: '金子轩' }, { id: 'x', name: '許志明' }, { id: 'c', name: "'Chris' Jones" }, { id: 'g', name: '‘Gus’ Lee' }], (person) => person.id);
     expect(replace('子轩来了。志明也来了。Chris called. Gus called.')).toBe('j来了。x也来了。c called. g called.');

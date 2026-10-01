@@ -21,6 +21,7 @@ const Privacy = lazy(() => import('@/pages/Privacy'));
 const Terms = lazy(() => import('@/pages/Terms'));
 const Support = lazy(() => import('@/pages/Support'));
 const SupportNow = lazy(() => import('@/pages/SupportNow'));
+const ShareSummary = lazy(() => import('@/features/summary/ShareSummaryPage'));
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
@@ -80,6 +81,8 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      {/* Prints on its own, without the app's navigation around it. */}
+      <Route path="/Summary" element={<RouteErrorBoundary key="/Summary"><ShareSummary /></RouteErrorBoundary>} />
       {/* legacy routes from the pre-golden-hour IA */}
       <Route path="/Dashboard" element={<Navigate to="/Today" replace />} />
       <Route path="/DailyLog" element={<Navigate to="/Today" replace />} />

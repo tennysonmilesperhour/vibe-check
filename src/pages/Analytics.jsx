@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowRight, Download } from 'lucide-react';
+import { ArrowRight, Download, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import PageTransition from '@/features/shell/PageTransition';
 import PlantVoice from '@/features/shell/PlantVoice';
@@ -69,7 +69,7 @@ function Patterns() {
 
   const showExport = exporting || (params.get('export') === '1' ? { start, end } : null);
   return <div className="field-wash min-h-screen"><PageTransition className="living-page space-y-8">
-    <header className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR HISTORY BELONGS TO YOU · ALWAYS FREE</p><h1>The whole pattern.</h1><p className="living-muted mt-3">People, habits, hard days, good days. Keep them in view together.</p></div><button className="living-secondary" onClick={() => openExport()}><Download size={16} />Choose an export</button></header>
+    <header className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR HISTORY BELONGS TO YOU · ALWAYS FREE</p><h1>The whole pattern.</h1><p className="living-muted mt-3">People, habits, hard days, good days. Keep them in view together.</p></div><div className="flex flex-wrap gap-3"><Link className="living-secondary" to={`/Summary?${new URLSearchParams(valid ? { start, end } : {})}`}><FileText size={16} aria-hidden="true" />A summary to share</Link><button className="living-secondary" onClick={() => openExport()}><Download size={16} />Choose an export</button></div></header>
     {living.reloadFailed && <p className="living-error" role="alert">Your record couldn't refresh, so what shows may be out of date. <button type="button" className="underline" onClick={() => living.refetch()}>{living.isFetching ? 'Trying…' : 'Try again'}</button></p>}
     <nav className="living-tabs" aria-label="Patterns sections">{[['patterns', 'Patterns'], ['reports', 'Weekly & monthly'], ['journal', 'Journal & history']].map(([id, label]) => <button key={id} type="button" aria-current={tab === id ? 'page' : undefined} onClick={() => change('tab', id)}>{label}</button>)}</nav>
     {['patterns', 'journal'].includes(tab) && <section className="living-card space-y-4" aria-label="History filters"><div className="living-chips" aria-label="Date range">{RANGES.map(([value, label]) => <button type="button" className="living-chip" key={value} aria-pressed={range === value} onClick={() => change('range', value)}>{label}</button>)}</div>

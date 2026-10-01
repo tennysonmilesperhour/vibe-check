@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Download, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, ArrowRight, FileText } from 'lucide-react';
 import { ReportReflection } from '@/api/entities';
 import { reportPeriod, previousPeriod, buildReport, entryText } from '@/lib/living-patterns';
 import { addDaysKey, todayKey } from '@/lib/dates';
@@ -62,7 +62,7 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
       <p className="living-muted">{period.start} – {period.end} · {report.partial ? 'In progress; includes entries through today' : 'Completed period'} · Your local calendar{type === 'weekly' ? `, ${weekStart === 0 ? 'Sunday' : 'Monday'} week start` : ''}.</p>
       <div className="living-stats"><div><span>RECORDED DAYS</span><strong>{report.days}<small> / {report.calendarDays}</small></strong></div><div><span>UNRECORDED DAYS</span><strong>{report.missing}</strong></div><div><span>DAILY MOOD RANGE</span><strong>{report.moods ? `${report.moods.min}–${report.moods.max}` : '—'}<small>{report.moods ? ' / 10' : ''}</small></strong></div></div>
       <p className="living-muted text-sm">{report.rows.length} journal and daily entries. Daily mood uses {report.moods?.count || 0} check-ins; interaction feelings remain separate. Page filters do not narrow this full-period report.</p>
-      <button className="living-secondary" type="button" onClick={() => onExport({ start: period.start, end: period.end > todayKey() ? todayKey() : period.end, report })}><Download size={16} />Preview a report export</button>
+      <div className="flex flex-wrap gap-3"><button className="living-secondary" type="button" onClick={() => onExport({ start: period.start, end: period.end > todayKey() ? todayKey() : period.end, report })}><Download size={16} />Preview a report export</button><Link className="living-secondary" to={`/Summary?${new URLSearchParams({ start: period.start, end: period.end > todayKey() ? todayKey() : period.end })}`}><FileText size={16} aria-hidden="true" />A summary to share</Link></div>
     </section>
 
     <PlantVoice>{report.days ? <>Let us keep the whole {type === 'monthly' ? 'month' : 'week'} in view. You recorded {report.days} days{report.missing ? ` and left ${report.missing} unrecorded` : ''}. A good moment can sit beside a difficult one. What do you want to remember about the pattern?</> : 'This period has no journal entries yet. Nothing needs to be invented to fill the space. You can begin with one moment or choose a practice for now.'}</PlantVoice>

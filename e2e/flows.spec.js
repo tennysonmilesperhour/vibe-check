@@ -34,10 +34,13 @@ test('adding a person puts them in orbit', async ({ page, backend }) => {
   expect(written(backend, 'people')).toEqual([expect.objectContaining({ name: 'Robin' })]);
 });
 
-test('a practice opens straight to its steps', async ({ page }) => {
+test('a practice opens straight to its steps, and keeping it saves how it went', async ({ page, backend }) => {
   await page.goto('/Practice?tab=somatic&state=on-edge');
   await page.getByRole('button', { name: 'Try find your surroundings' }).click();
   await expect(page.getByText('Notice three neutral things around you.', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'Clearer', exact: true }).click();
+  await page.getByRole('button', { name: 'Keep this practice experience' }).click();
+  await expect.poll(() => written(backend, 'vibe_practice_sessions')).toEqual([expect.objectContaining({ practice_id: 'orient', state_id: 'on-edge', outcome: 'Clearer' })]);
 });
 
 test('signing out ends the session on this device', async ({ page, backend }, testInfo) => {

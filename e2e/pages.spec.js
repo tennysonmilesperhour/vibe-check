@@ -13,6 +13,14 @@ for (const { path, heading, marker } of PAGES) {
   });
 }
 
+test('pages arrive with the production security headers', async ({ page }) => {
+  for (const path of ['/Today', '/privacy']) {
+    const headers = (await page.goto(path)).headers();
+    expect(headers['content-security-policy']).toContain("script-src 'self'");
+    expect(headers['x-frame-options']).toBe('DENY');
+  }
+});
+
 test('people show in orbit', async ({ page }) => {
   await page.goto('/People');
   for (const name of ['Mara', 'Dad', 'Priya', 'Jules']) await expect(page.locator('.orbit-person', { hasText: name })).toBeVisible();

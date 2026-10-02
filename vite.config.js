@@ -32,12 +32,17 @@ const versionFilePlugin = () => {
 
 // `vite preview` sends the headers Vercel sends for every page (vercel.json),
 // so local previews and the browser tests run under the production
-// Content-Security-Policy.
-const PRODUCTION_HEADERS = Object.fromEntries(
-  JSON.parse(readFileSync(path.resolve(__dirname, 'vercel.json'), 'utf8'))
-    .headers.find((rule) => rule.source === '/(.*)')
-    .headers.map(({ key, value }) => [key, value])
-)
+// Content-Security-Policy. A missing or reshaped rule leaves preview without
+// them (the browser tests check they arrive) rather than breaking builds.
+function productionHeaders() {
+  try {
+    const rules = JSON.parse(readFileSync(path.resolve(__dirname, 'vercel.json'), 'utf8')).headers || []
+    const everyPage = rules.find((rule) => rule.source === '/(.*)')
+    return Object.fromEntries((everyPage?.headers || []).map(({ key, value }) => [key, value]))
+  } catch {
+    return {}
+  }
+}
 
 export default defineConfig(({ mode }) => ({
   define: {
@@ -77,7 +82,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   preview: {
-    headers: PRODUCTION_HEADERS,
+    headers: productionHeaders(),
   },
   resolve: {
     alias: [

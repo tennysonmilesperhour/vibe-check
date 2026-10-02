@@ -91,15 +91,6 @@ export function createMockSupabase({ fixture, nowIso }) {
   const user = fixture?.user ?? null;
   const token = user ? makeSession(user).access_token : null;
   const store = {};
-  for (const [table, rows] of Object.entries(fixture?.tables ?? {})) {
-    const schema = SCHEMA.get(table);
-    if (!schema) throw new Error(`persona fills ${table}, which no migration creates`);
-    for (const row of rows) {
-      const unknown = Object.keys(row).filter((column) => !schema.columns.has(column));
-      if (unknown.length) throw new Error(`persona row in ${table} has columns no migration defines: ${unknown.join(', ')}`);
-    }
-    store[table] = structuredClone(rows);
-  }
   let tick = 0;
   let ids = 0;
   const stamp = () => { tick += 1; return new Date(new Date(nowIso).getTime() + tick * 1000).toISOString(); };
@@ -172,6 +163,23 @@ export function createMockSupabase({ fixture, nowIso }) {
     if (ownerOf(table, row) !== undefined && ownerOf(table, row) !== user?.id) return [403, '42501', `new row violates row-level security policy for table "${table}"`];
     return null;
   }
+
+  // The persona's rows go in by the same rules as the app's writes, so the
+  // tests never run on data the real database couldn't hold.
+  const fixtureProblems = [];
+  for (const [table, rows] of Object.entries(fixture?.tables ?? {})) {
+    const schema = SCHEMA.get(table);
+    if (!schema) { fixtureProblems.push(`${table}: no migration creates it`); continue; }
+    store[table] = [];
+    for (const row of structuredClone(rows)) {
+      const problem = invalid(table, schema, row, { insert: true });
+      const clash = schema.unique.find((key) => store[table].some((other) => key.every((column) => row[column] != null && String(other[column]) === String(row[column]))));
+      if (problem) fixtureProblems.push(`${table} ${row.id}: ${problem[2]}`);
+      else if (clash) fixtureProblems.push(`${table} ${row.id}: repeats the unique key (${clash.join(', ')})`);
+      else store[table].push(row);
+    }
+  }
+  if (fixtureProblems.length) throw new Error(`The persona doesn't fit the schema:\n${fixtureProblems.join('\n')}`);
 
   async function rest(route, request, url) {
     const table = url.pathname.replace('/rest/v1/', '');

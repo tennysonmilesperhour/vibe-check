@@ -18,6 +18,8 @@ export const test = base.extend({
   persona: ['established', { option: true }],
   /** For a test that makes a request fail on purpose: the browser logs each failed load. */
   allowFailedRequests: [false, { option: true }],
+  /** Refusals a test expects, such as the duplicate key a second tab's save meets (patterns matched against faults). */
+  expectedFaults: [[], { option: true }],
 
   backend: async ({ context, persona, baseURL }, use) => {
     const fixture = persona ? PERSONAS[persona]() : null;
@@ -39,7 +41,7 @@ export const test = base.extend({
     await use(backend);
   },
 
-  page: async ({ page, backend, baseURL, allowFailedRequests }, use) => {
+  page: async ({ page, backend, baseURL, allowFailedRequests, expectedFaults }, use) => {
     await page.clock.setFixedTime(new Date(NOW));
     const appOrigin = new URL(baseURL).origin;
     const problems = [];
@@ -57,9 +59,12 @@ export const test = base.extend({
       if (request.url().startsWith(appOrigin) && !/ERR_ABORTED/.test(request.failure()?.errorText || '')) problems.push(`failed to load ${request.url()}: ${request.failure()?.errorText}`);
     });
     await use(page);
-    expect(problems, 'page errors, console errors and failed loads').toEqual([]);
-    expect(backend.faults, 'requests the real project would refuse, or the mock does not model').toEqual([]);
-    expect(backend.external, 'requests to other sites').toEqual([]);
+    // One check, so a refusal shows with its reason next to the console line it caused.
+    expect({
+      faults: backend.faults.filter((fault) => !expectedFaults.some((pattern) => pattern.test(fault))),
+      problems,
+      external: backend.external,
+    }, 'refused or unmodelled requests, page problems, and requests to other sites').toEqual({ faults: [], problems: [], external: [] });
   },
 });
 

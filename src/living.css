@@ -223,3 +223,6 @@ textarea.living-input { resize: vertical; }
   .summary-table tr, .summary-entry { break-inside: avoid; }
   .summary-document h2, .summary-document h3 { break-after: avoid; }
 }
+/* The image shared from Today, previewed exactly as it is saved. */
+.share-card { padding: 20px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); }
+.share-card-mark { margin-top: 16px; font-family: var(--font-display); font-size: 1rem; color: var(--gh-ink-muted); text-align: right; }

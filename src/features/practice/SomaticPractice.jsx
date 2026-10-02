@@ -58,15 +58,23 @@ export default function SomaticPractice() {
   useEffect(() => {
     if (living.isSuccess && !promiseSaved) keepPromise().catch(() => {});
   }, [living.isSuccess, promiseSaved]);
-  const suggestions = state ? recommendPractices(state.id, sessions, hidden) : [];
-  const active = living.isSuccess && activeId && !blocked.has(activeId) ? practiceById(activeId) : null;
+  // Help never waits for the history: until it loads, suggestions are the
+  // defaults for the state and any practice opens straight to its steps.
+  const suggestions = state ? recommendPractices(state.id, living.isSuccess ? sessions : [], living.isSuccess ? hidden : []) : [];
+  const active = activeId && !(living.isSuccess && blocked.has(activeId)) ? practiceById(activeId) : null;
   useBeforeUnload(Boolean(active) && Boolean(before.trim() || after.trim()));
 
   useEffect(() => {
     setBefore(''); setAfter(''); setOutcome(''); setAlignment('');
     setIntention(living.data?.preferences?.intention || '');
     setError('');
-  }, [activeId, living.data?.preferences?.intention]);
+  }, [activeId]);
+  // A practice can open before the history arrives: the saved intention fills
+  // in then, without touching anything already typed.
+  useEffect(() => {
+    const saved = living.data?.preferences?.intention;
+    if (saved) setIntention((current) => current || saved);
+  }, [living.data?.preferences?.intention]);
 
   function chooseState(id) {
     setNotice(''); setAskStop(null);
@@ -132,8 +140,7 @@ export default function SomaticPractice() {
     {askStop && <div ref={askStopRef} tabIndex={-1} className="living-inset space-y-3 outline-none" role="group" aria-labelledby="ask-stop-text"><p id="ask-stop-text">Your response is kept. Stop suggesting {practiceById(askStop)?.title.toLowerCase()}? It felt more uncomfortable this time. You can keep it available if it might fit another day.</p><div className="flex flex-wrap gap-3"><button type="button" className="living-secondary" disabled={busy} onClick={() => stopSuggesting(askStop)}>Stop suggesting it</button><button type="button" className="underline text-sm" disabled={busy} onClick={() => { setAskStop(null); announce('It stays available.'); }}>Keep it available</button></div></div>}
     {error && <p role="alert" className="living-error">{error}</p>}
     <section aria-labelledby="current-feeling-heading"><h2 id="current-feeling-heading" className="mb-4">What feels present?</h2><div className="state-grid">{STRESS_STATES.map((item, index) => <button key={item.id} type="button" className="state-card" aria-pressed={state?.id === item.id} onClick={() => chooseState(item.id)}><span className="state-number" aria-hidden="true">0{index + 1}</span><strong>{item.label}</strong><span>{item.description}</span></button>)}</div><p className="living-muted text-xs mt-3">Choose your own description. These words do not diagnose a condition.</p><p className="mt-4"><Link className="living-text-link" to="/support-now">I might not be safe right now <ArrowRight size={15} /></Link></p></section>
-    {state && !living.isSuccess && (living.isError ? <p className="living-muted" role="status">Retry your history to use your practice preferences.</p> : <LoadingState label="Checking your practice preferences…" />)}
-    {state && living.isSuccess && !active && <section className="living-card space-y-5" aria-labelledby="practice-options-heading">
+    {state && !active && <section className="living-card space-y-5" aria-labelledby="practice-options-heading">
       <div><p className="sanctuary-eyebrow">FOR {state.label}</p><h2 id="practice-options-heading">One small invitation</h2><p className="living-muted mt-2">You chose {state.label.toLowerCase()}. Pick an option that fits your surroundings and what you need.</p></div>
       {params.get('pattern') && <p className="living-muted">Suggested from a recurring pattern in your report. <Link className="underline" to="/Analytics?tab=reports">Return to reports</Link></p>}
       {suggestions.length ? <div className="grid sm:grid-cols-2 gap-4">{suggestions.map((practice) => <div key={practice.id} className="practice-option"><span className="living-duration"><Clock3 size={14} /> About {practice.minutes} {practice.minutes === 1 ? 'minute' : 'minutes'}</span><h3>{practice.title}</h3><p className="living-muted">{practice.purpose}</p><p className="text-xs mt-2">{practice.reason}</p><button type="button" className="ink-button text-sm mt-4" onClick={() => choosePractice(practice.id)}>Try {practice.title.toLowerCase()} <ArrowRight size={15} /></button></div>)}</div> : <p className="living-muted">The suggestions for this feeling are hidden. You can unhide them below, choose another feeling, or pick any practice.</p>}
@@ -141,11 +148,12 @@ export default function SomaticPractice() {
     </section>}
     {active && state && <section className="living-card practice-active space-y-6" aria-labelledby="active-practice-heading">
       <div className="flex justify-between gap-4"><div><span className="living-duration"><Clock3 size={15} /> About {active.minutes} {active.minutes === 1 ? 'minute' : 'minutes'}</span><h2 id="active-practice-heading" className="mt-2">{active.title}</h2><p className="living-muted mt-2">{active.purpose}</p></div><button type="button" className="living-icon-button self-start" aria-label="Close practice without saving" onClick={closePractice}><X size={20} /></button></div>
-      <label className="living-label">What would you like more room for?<input className="living-input mt-2" value={intention} maxLength={1000} onChange={(e) => setIntention(e.target.value)} placeholder="My needs, a boundary, time to decide… (optional)" /></label>
-      <label className="living-label">Before you begin<textarea className="living-input mt-2" rows={2} value={before} maxLength={5000} onChange={(e) => setBefore(e.target.value)} placeholder="How does this moment feel? (optional)" /></label>
       <ol className="practice-steps">{active.steps.map((step, index) => <li key={step}><span aria-hidden="true">{index + 1}</span><p>{step}</p></li>)}</ol>
       <div className="living-inset"><strong className="text-sm">Make it fit you</strong><p className="living-muted mt-1">{active.alternative} You can stop at any time.</p></div>
+      {/* The steps come first; anything to note is asked afterward. */}
       <div className="hairline pt-6 space-y-4"><h3>What changed, if anything?</h3><div className="living-chips">{OUTCOMES.map((item) => <button className="living-chip" type="button" key={item} aria-pressed={outcome === item} onClick={() => setOutcome(outcome === item ? '' : item)}>{item}</button>)}</div>
+        <label className="living-label">Before you began, how did the moment feel?<textarea className="living-input mt-2" rows={2} value={before} maxLength={5000} onChange={(e) => setBefore(e.target.value)} placeholder="Optional" /></label>
+        <label className="living-label">What would you like more room for?<input className="living-input mt-2" value={intention} maxLength={1000} onChange={(e) => setIntention(e.target.value)} placeholder="My needs, a boundary, time to decide… (optional)" /></label>
         <label className="living-label">{active.reflection}<textarea className="living-input mt-2" rows={3} value={after} maxLength={5000} onChange={(e) => setAfter(e.target.value)} placeholder="Your own words, if you want to keep them." /></label>
         <label className="living-label">Did your response feel like you?<select className="living-input mt-2" value={alignment} onChange={(e) => setAlignment(e.target.value)}><option value="">Not recorded</option>{ALIGNMENTS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>{data?.preferences?.personal_values?.length > 0 && <span className="living-muted block mt-1">Your values: {data.preferences.personal_values.join(' · ')}</span>}</label>
         <div className="flex flex-wrap gap-3"><button className="ink-button" type="button" disabled={busy || living.isLoading} onClick={() => save('completed')}><Check size={16} />{busy ? 'Saving…' : 'Keep this practice experience'}</button><button type="button" className="living-secondary" disabled={busy} onClick={() => save('stopped')}>I stopped · keep my response</button></div>

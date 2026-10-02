@@ -51,10 +51,10 @@ describe('what a retry shows and reads again', () => {
     expect(retryView([read({ isError: true, data: undefined, error: again }), reloading], 'load', false, pending).error).toBe(again);
   });
 
-  it('gives the button back when the reads are paused waiting for a connection', () => {
+  it('keeps the failure on screen with the button free when the read is paused waiting for a connection', () => {
     const pending = { shown: true, error: offline };
     const paused = read({ data: undefined, fetchStatus: 'paused' });
-    expect(retryView([paused], false, false, pending)).toEqual({ retrying: false, showing: false, error: null });
+    expect(retryView([paused], false, false, pending)).toEqual({ retrying: false, showing: true, error: offline });
   });
 
   // TanStack puts a read with nothing loaded back to pending and clears its
@@ -80,7 +80,7 @@ describe('what a retry shows and reads again', () => {
       observer.refetch(); await settle();
       expect(observer.getCurrentResult().fetchStatus).toBe('paused');
       expect(calls).toHaveLength(2);
-      expect(retryView([observer.getCurrentResult()], null, false, pending).retrying).toBe(false);
+      expect(retryView([observer.getCurrentResult()], null, false, pending)).toEqual({ retrying: false, showing: 'load', error: offline });
     } finally {
       onlineManager.setOnline(true);
     }

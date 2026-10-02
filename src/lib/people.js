@@ -1,4 +1,4 @@
-// Person model helpers: matching, migration, and historical text linking.
+// Person model helpers: matching and historical text linking.
 // Replaces the old load-bearing substring match ("Mom" matched "Tom's mommy")
 // with whole-word matching against names and legacy aliases.
 
@@ -47,63 +47,6 @@ export function mentionsPerson(text, person) {
     const re = new RegExp(`(^|\\W)${escapeRegex(alias.toLowerCase())}($|\\W)`, 'i');
     return re.test(text.toLowerCase());
   });
-}
-
-/** Union-merge person drafts that share a lowercase name (migration helper). */
-export function dedupePeopleDrafts(drafts) {
-  const byName = new Map();
-  for (const draft of drafts) {
-    const key = draft.name.trim().toLowerCase();
-    const prior = byName.get(key);
-    if (!prior) {
-      byName.set(key, { ...draft, legacy_names: [...(draft.legacy_names || [])] });
-      continue;
-    }
-    byName.set(key, {
-      ...prior,
-      ...Object.fromEntries(Object.entries(draft).filter(([, v]) => v !== undefined && v !== null && v !== '')),
-      name: prior.name, // first spelling wins for display
-      qualities: [...new Set([...(prior.qualities || []), ...(draft.qualities || [])])],
-      concerns: [...new Set([...(prior.concerns || []), ...(draft.concerns || [])])],
-      legacy_names: [...new Set([...(prior.legacy_names || []), ...(draft.legacy_names || [])])],
-    });
-  }
-  return [...byName.values()];
-}
-
-/**
- * One-time, idempotent migration: Relationship -> Person.
- * Safe to call on every mount; bails fast once people exist or marker is set.
- * Base44 connections are not brought over: they held other accounts' email
- * addresses and charts.
- */
-export async function migratePeople({ Person, Relationship, auth }) {
-  const me = await auth.me();
-  if (me?.people_migrated_at) return { migrated: false };
-
-  const existing = await Person.list();
-  if (existing.length > 0) {
-    await auth.updateMe({ people_migrated_at: new Date().toISOString() });
-    return { migrated: false };
-  }
-
-  const relationships = await Relationship.list().catch(() => []);
-
-  const drafts = relationships.map((r) => ({
-    name: r.name,
-    person_type: r.relationship_type || 'other',
-    qualities: r.qualities || [],
-    concerns: r.concerns || [],
-    boundary_notes: r.boundary_notes || '',
-    legacy_names: [],
-  })).filter((d) => d.name);
-
-  const merged = dedupePeopleDrafts(drafts);
-  for (const draft of merged) {
-    await Person.create(draft);
-  }
-  await auth.updateMe({ people_migrated_at: new Date().toISOString() });
-  return { migrated: true, count: merged.length };
 }
 
 /**

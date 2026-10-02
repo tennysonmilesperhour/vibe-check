@@ -143,7 +143,7 @@ export default function Journal({ data, entries, onChanged, savePreferences }) {
       await (deleting.kind === 'day' ? DailyCheckIn : JournalEntry).delete(deleting.id);
       // A deleted entry leaves the highlights too.
       if (stored.has(deleting.key)) savePreferences?.((values) => ({ highlighted_entries: (values.highlighted_entries || []).filter((key) => key !== deleting.key) })).catch(() => {});
-      await onChanged(); setDeleting(null);
+      await onChanged([deleting.kind === 'day' ? 'checkIns' : 'journal']); setDeleting(null);
     }
     catch (err) { setError(err.message); }
     setBusy(false);
@@ -184,7 +184,7 @@ export default function Journal({ data, entries, onChanged, savePreferences }) {
     {listed.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} highlighted={highlighted.has(entry.key)} highlightBusy={entry.key in pending} onHighlight={savePreferences ? toggleHighlight : undefined} onEdit={edit} onDelete={setDeleting} />)}
     {!listed.length && <p className="living-muted py-6">{onlyHighlights ? 'No highlights yet. Star an entry to come back to it here.' : 'No entries match this view. Adjust the filters or keep a new moment.'}</p>}
     {listed.length > limit && <button className="living-secondary" onClick={() => setLimit((count) => count + 20)}>Show more history</button>}
-    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} kind={params.get('kind') || 'reflection'} onClose={close} onSaved={async (saved) => { await onChanged(); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} />
+    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} kind={params.get('kind') || 'reflection'} onClose={close} onSaved={async (saved) => { await onChanged(['journal']); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} />
     <Dialog open={Boolean(deleting)} onOpenChange={(isOpen) => { if (!isOpen && !busy) setDeleting(null); }}><DialogContent><DialogHeader><DialogTitle>Delete this entry?</DialogTitle><DialogDescription>This removes the entry from your journal, charts, and reports. This cannot be undone.</DialogDescription></DialogHeader><div className="flex gap-3"><button className="living-secondary" onClick={() => setDeleting(null)}>Keep it</button><button className="danger-button" disabled={busy} onClick={remove}>{busy ? 'Deleting…' : 'Delete entry'}</button></div></DialogContent></Dialog>
   </section>;
 }

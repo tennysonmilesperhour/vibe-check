@@ -181,17 +181,6 @@ export const ReportReflection = makeEntity('vibe_report_reflections');
 export const VibePreference = makeEntity('vibe_preferences');
 export const CheckInDraft = makeEntity('vibe_checkin_drafts');
 
-// Legacy entities, retired after the people migration. Empty reads keep the
-// one-time migratePeople() call harmless; writes are refused.
-const retired = (name) => ({
-  list: async () => [],
-  filter: async () => [],
-  create: async () => { throw new Error(`${name} is retired; use Person`); },
-  update: async () => { throw new Error(`${name} is retired; use Person`); },
-  delete: async () => true,
-});
-export const Relationship = retired('Relationship');
-
 // Cross-user lookup (synergy snapshot refresh) is not possible client-side
 // under RLS; returns empty so callers degrade gracefully. A share model can
 // bring this back properly later.
@@ -203,5 +192,5 @@ export const User = {
 export default {
   DailyCheckIn, Person, Reading, BoundaryAlert, HealingProgress, CosmicWisdom,
   JournalEntry, PracticeSession, ReportReflection, VibePreference, CheckInDraft,
-  Relationship, User,
+  User,
 };

@@ -103,7 +103,7 @@ export default function SomaticPractice() {
       // before saving a new one, which then asks instead.
       const promiseKept = promiseSaved || await keepPromise().then(() => true, () => false);
       await PracticeSession.createFor(ownerId, { date: todayKey(), practice_id: active.id, state_id: state.id, status, intention, before_notes: before, after_notes: after, outcome: outcome || null, alignment: alignment || null, source_pattern: params.get('pattern') || null, source_entry_keys: (params.get('sources') || '').split(',').filter(Boolean) });
-      const stored = await living.refresh({ withPreferences: true }); closePractice();
+      const stored = await living.refresh({ parts: ['sessions'], withPreferences: true }); closePractice();
       // Say what now holds: an earlier promise that timed out may still have
       // been stored, and under it this response doesn't hide the practice.
       const hiddenNow = stored ? hiddenPractices(stored.preferences, stored.sessions).includes(active.id) : !promiseKept;
@@ -128,13 +128,13 @@ export default function SomaticPractice() {
   }
   async function removeSession(id) {
     setBusy(true); setError('');
-    try { await PracticeSession.delete(id); await living.refresh(); setDeleting(null); setNotice('Practice entry removed from history and reports.'); }
+    try { await PracticeSession.delete(id); await living.refresh({ parts: ['sessions'] }); setDeleting(null); setNotice('Practice entry removed from history and reports.'); }
     catch (err) { setError(err.message); }
     setBusy(false);
   }
   async function updateSession() {
     setBusy(true); setError('');
-    try { await PracticeSession.update(editSession.id, { outcome: editSession.outcome || null, after_notes: editSession.after_notes, alignment: editSession.alignment || null }); await living.refresh(); setEditSession(null); setNotice('Practice response updated in your history and reports.'); }
+    try { await PracticeSession.update(editSession.id, { outcome: editSession.outcome || null, after_notes: editSession.after_notes, alignment: editSession.alignment || null }); await living.refresh({ parts: ['sessions'] }); setEditSession(null); setNotice('Practice response updated in your history and reports.'); }
     catch (err) { setError(err.message); }
     setBusy(false);
   }

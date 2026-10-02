@@ -1,16 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Leaf, Sprout, Orbit, ArrowRight } from "lucide-react";
 import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { DailyCheckIn, BoundaryAlert, JournalEntry, PracticeSession } from "@/entities/all";
+import { DailyCheckIn, BoundaryAlert, JournalEntry, PracticeSession, Person } from "@/entities/all";
 import { formatDay, todayKey } from "@/lib/dates";
 import { LOW_MOOD } from "@/lib/symbolic-guard";
 import { moonPhase } from "@/lib/resonance/moon";
 import MoonGlyph from "@/features/loom/MoonGlyph";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
-import { migratePeople } from "@/lib/people";
-import { Person, Relationship } from "@/entities/all";
 import SkyField from "@/features/shell/SkyField";
 import PageTransition from "@/features/shell/PageTransition";
 import CheckInCeremony from "@/features/today/CheckInCeremony";
@@ -20,6 +19,8 @@ import DailySupport from '@/features/today/DailySupport';
 import { validDateKey } from '@/lib/living-patterns';
 import { createPageUrl } from "@/utils";
 import { useSearchParamState } from "@/lib/deeplink";
+import { useAuth } from "@/lib/AuthContext";
+import { fetchRecordPart, recordKey } from "@/features/patterns/useLivingData";
 import LoadingState from "@/features/shell/LoadingState";
 
 /**
@@ -56,17 +57,25 @@ export default function Today() {
 
   useEffect(() => { if (dateParam === todayKey()) setMode("ceremony"); }, [dateParam]);
 
-  const load = useCallback(async () => {
+  const client = useQueryClient();
+  const { user } = useAuth();
+  // Opening Today reads the check-ins afresh, since a check-in begun here
+  // must start from what is stored; they are kept for the other pages. After
+  // a save the cached copy already holds the kept day.
+  const load = useCallback(async ({ fresh = true } = {}) => {
     setLoading(true);
     try {
       const [checkIns, openAlerts, me, keptOther] = await Promise.all([
-        DailyCheckIn.all("-date"),
+        fetchRecordPart(client, user?.id, 'checkIns', { fresh }),
         BoundaryAlert.filter({ is_acknowledged: false }).catch(() => []),
         base44.auth.me().catch(() => null),
         // Moments, people and practices count as history too, so only a truly
-        // first visit gets the one-action welcome. Unknown counts as history.
-        Promise.all([JournalEntry, Person, PracticeSession].map((entity) => entity.list("-created_date", 1)))
-          .then((lists) => lists.some((list) => list.length > 0), () => true),
+        // first visit gets the one-action welcome. A part another page has
+        // loaded answers without asking. Unknown counts as history.
+        Promise.all([['journal', JournalEntry], ['people', Person], ['sessions', PracticeSession]].map(([part, entity]) => {
+          const rows = client.getQueryData(recordKey(user?.id, part));
+          return rows ? rows.length > 0 : entity.list("-created_date", 1).then((list) => list.length > 0);
+        })).then((found) => found.some(Boolean), () => true),
       ]);
       const today = checkIns.find((c) => c.date === todayKey()) || null;
       setEntry(today);
@@ -79,13 +88,9 @@ export default function Today() {
       setLoadError(err.message || 'Could not load your check-ins.');
     }
     setLoading(false);
-  }, []);
+  }, [client, user?.id]);
 
-  useEffect(() => {
-    load();
-    // one-time data migration, safe to call every mount
-    migratePeople({ Person, Relationship, auth: base44.auth }).catch(() => {});
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const moon = moonPhase(todayKey());
   const dateLine = formatDay(todayKey(), { style: 'long' });
@@ -99,7 +104,7 @@ export default function Today() {
         key={`${targetDate}:${(isBackfill ? backfillEntry : entry)?.id || 'new'}`}
         dateKey={targetDate}
         existing={isBackfill ? backfillEntry : entry}
-        onDone={() => { setMode("landing"); setDateParam(""); load(); }}
+        onDone={() => { setMode("landing"); setDateParam(""); load({ fresh: false }); }}
         onCancel={() => { setMode("landing"); setDateParam(""); }}
       />
     );

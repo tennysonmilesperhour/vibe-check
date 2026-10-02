@@ -50,7 +50,7 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
     setBusy(true); setError('');
     try {
       await ReportReflection.upsert({ period_type: type, period_key: period.start, notes: reflection }, 'user_id,period_type,period_key');
-      await onChanged(); setNotice('Your reflection is saved with this report.');
+      await onChanged(['reflections']); setNotice('Your reflection is saved with this report.');
     } catch (err) { setError(err.message); }
     setBusy(false);
   }
@@ -108,7 +108,7 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
         {error && <p className="living-error" role="alert">{error}</p>}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy}>Keep it</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" aria-disabled={busy} onClick={async (e) => { e.preventDefault(); if (busy || !removing) return; setBusy(true); setError(''); try { await ReportReflection.delete(removing.id); await onChanged(); setReflection(''); setRemoving(null); setNotice('Reflection removed. The report remains available.'); } catch (err) { setError(err.message || "The reflection couldn't be removed. Please try again."); } setBusy(false); }}>{busy ? 'Removing…' : 'Remove reflection'}</AlertDialogAction>
+          <AlertDialogAction variant="destructive" aria-disabled={busy} onClick={async (e) => { e.preventDefault(); if (busy || !removing) return; setBusy(true); setError(''); try { await ReportReflection.delete(removing.id); await onChanged(['reflections']); setReflection(''); setRemoving(null); setNotice('Reflection removed. The report remains available.'); } catch (err) { setError(err.message || "The reflection couldn't be removed. Please try again."); } setBusy(false); }}>{busy ? 'Removing…' : 'Remove reflection'}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

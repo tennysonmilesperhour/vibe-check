@@ -3,8 +3,9 @@
 // (database.js) as the signed-in person, with their JWT claims, so types,
 // constraints and the migrations' row-level security apply as they do live.
 // A request Postgres refuses, or one this mock doesn't model, goes into
-// `faults`, which fails the test unless the test expects it.
-// Each test starts from the persona's rows alone.
+// the fault log, which fails the test unless the test expects it.
+// Each test starts from the persona's rows alone, and times the database
+// stamps (now()) read the test clock.
 
 export const SUPABASE_ORIGIN = 'https://mockproj.supabase.co';
 // supabase-js keeps the session under sb-<project ref>-auth-token.
@@ -13,25 +14,27 @@ export const STORAGE_KEY = 'sb-mockproj-auth-token';
 const base64url = (text) => Buffer.from(text).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const NEVER = 4102444800; // 2100-01-01, so sessions never expire under the fixed test clock
 
-function fakeJwt(user) {
-  const header = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const claims = base64url(JSON.stringify({
+/** The claims in the person's access token, which PostgREST hands the database. */
+function claimsFor(user) {
+  return {
     aud: 'authenticated', exp: NEVER, iat: 1790000000, iss: `${SUPABASE_ORIGIN}/auth/v1`, sub: user.id,
     email: user.email, role: 'authenticated', aal: 'aal1', session_id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', is_anonymous: false,
-  }));
-  return `${header}.${claims}.bW9jaw`;
+  };
 }
 
 /** A stored session for the user, as supabase-js writes it to localStorage. */
 export function makeSession(user) {
-  return { access_token: fakeJwt(user), token_type: 'bearer', expires_in: 3600, expires_at: NEVER, refresh_token: 'e2e-refresh-token', user };
+  const token = `${base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))}.${base64url(JSON.stringify(claimsFor(user)))}.bW9jaw`;
+  return { access_token: token, token_type: 'bearer', expires_in: 3600, expires_at: NEVER, refresh_token: 'e2e-refresh-token', user };
 }
 
 // Query parameters that aren't filters.
 const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
 // The functions the app calls (supabase.functions.invoke).
 const FUNCTIONS = { 'delete-account': () => ({ deleted: true }) };
-const COMPARISONS = { eq: '=', neq: '<>', gt: '>', gte: '>=', lt: '<', lte: '<=' };
+const COMPARISONS = new Map([['eq', '='], ['neq', '<>'], ['gt', '>'], ['gte', '>='], ['lt', '<'], ['lte', '<=']]);
+// Rows this transaction wrote (their xmin is its id).
+const WRITTEN_HERE = 't.xmin::text::bigint = txid_current() % 4294967296';
 
 const quoted = (name) => `"${name}"`;
 // The status PostgREST answers a Postgres error with.
@@ -42,29 +45,12 @@ function statusFor(code, signedIn) {
   return 500;
 }
 
-// Empties every table, then puts the persona in as its own rows, through the database's rules.
-async function loadPersona({ db, columns }, fixture) {
-  await db.exec(`truncate ${[...columns.keys()].map((table) => `public.${quoted(table)}`).join(', ')}, auth.users cascade`);
-  if (!fixture) return;
-  const { user, tables } = fixture;
-  await db.transaction(async (tx) => {
-    // The sign-up trigger makes the profile row; the persona's profile updates it.
-    await tx.query('insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3::text::jsonb)', [user.id, user.email, JSON.stringify(user.user_metadata ?? {})]);
-    for (const [table, rows] of Object.entries(tables)) {
-      if (!rows.length) continue;
-      if (!columns.has(table)) throw new Error(`The persona fills ${table}, which no migration creates.`);
-      const keys = [...new Set(rows.flatMap((row) => Object.keys(row)))];
-      const unknown = keys.filter((key) => !columns.get(table).has(key));
-      if (unknown.length) throw new Error(`The persona's ${table} rows have columns no migration defines: ${unknown.join(', ')}.`);
-      const list = keys.map(quoted).join(', ');
-      const merge = table === 'profiles' ? ` on conflict ("id") do update set ${keys.map((key) => `${quoted(key)} = excluded.${quoted(key)}`).join(', ')}` : '';
-      try {
-        await tx.query(`insert into public.${quoted(table)} (${list}) select ${list} from json_populate_recordset(null::public.${quoted(table)}, $1::text::json)${merge}`, [JSON.stringify(rows)]);
-      } catch (error) {
-        throw new Error(`The persona's ${table} rows don't fit the database: ${error.message}`);
-      }
-    }
-  });
+// An INSERT of JSON rows the way PostgREST builds it: only the keys given,
+// converted by json_populate_recordset, merging on a conflict when asked.
+function insertStatement(table, keys, payload, { conflict = null, returning }) {
+  const list = keys.map(quoted).join(', ');
+  const merge = conflict ? ` on conflict (${conflict.map(quoted).join(', ')}) do update set ${keys.map((key) => `${quoted(key)} = excluded.${quoted(key)}`).join(', ')}` : '';
+  return `insert into public.${quoted(table)} as t (${list}) select ${list} from json_populate_recordset(null::public.${quoted(table)}, ${payload}::text::json)${merge} returning ${returning}`;
 }
 
 /**
@@ -73,9 +59,8 @@ async function loadPersona({ db, columns }, fixture) {
  */
 export async function createMockSupabase({ database, fixture, nowIso }) {
   const { db, columns } = database;
-  await loadPersona(database, fixture);
   const user = fixture?.user ?? null;
-  const token = user ? makeSession(user).access_token : null;
+  const session = user ? makeSession(user) : null;
   /** Every write the app made: { method, table, rows } with the rows as stored. */
   const writes = [];
   /** Auth calls, as "METHOD /path". */
@@ -85,6 +70,41 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
   // Levers for loading and error states: tables that answer slowly or fail.
   const control = { delayMs: 0, delayTables: new Set(), failTables: new Set() };
   const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+  // Once the test ends, requests still arriving are dropped: the next test shares the database.
+  let closed = false;
+  let tick = 0;
+
+  // Runs statements as the person making the request: their role, and their token's claims for auth.uid().
+  const asRequester = (signedIn, run) => db.transaction(async (tx) => {
+    await tx.exec(signedIn ? 'set local role authenticated' : 'set local role anon');
+    await tx.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(signedIn ? claimsFor(user) : { role: 'anon' })]);
+    return run(tx);
+  });
+
+  // Empties every table, then puts the persona in as its own rows, through the
+  // same inserts and rules as the app's (the sign-up trigger stays out of it,
+  // so the persona's own profile and stamps go in as written).
+  await db.exec(`truncate ${[...columns.keys()].map((table) => `public.${quoted(table)}`).join(', ')}, auth.users cascade`);
+  if (fixture) {
+    await db.transaction(async (tx) => {
+      await tx.exec('set local session_replication_role = replica');
+      await tx.query('insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3::text::jsonb)', [user.id, user.email, JSON.stringify(user.user_metadata ?? {})]);
+    });
+    await asRequester(true, async (tx) => {
+      for (const [table, rows] of Object.entries(fixture.tables)) {
+        if (!rows.length) continue;
+        if (!columns.has(table)) throw new Error(`The persona fills ${table}, which no migration creates.`);
+        const keys = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+        const unknown = keys.filter((key) => !columns.get(table).has(key));
+        if (unknown.length) throw new Error(`The persona's ${table} rows have columns no migration defines: ${unknown.join(', ')}.`);
+        try {
+          await tx.query(insertStatement(table, keys, '$1', { returning: '1' }), [JSON.stringify(rows)]);
+        } catch (error) {
+          throw new Error(`The persona's ${table} rows don't go in: ${error.message}`);
+        }
+      }
+    });
+  }
 
   const cors = (request) => ({
     'access-control-allow-origin': '*',
@@ -107,13 +127,13 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
     const method = request.method();
     authCalls.push(`${method} ${path}`);
     if (path === '/user' && method === 'GET') {
-      if (!user || request.headers().authorization !== `Bearer ${token}`) return json(route, request, 401, { code: 401, error_code: 'no_authorization', msg: 'This endpoint requires a Bearer token' });
+      if (!user || request.headers().authorization !== `Bearer ${session.access_token}`) return json(route, request, 401, { code: 401, error_code: 'no_authorization', msg: 'This endpoint requires a Bearer token' });
       return json(route, request, 200, user);
     }
     if (path === '/user' && method === 'PUT') return json(route, request, 200, user);
     if (path === '/token') {
       const grant = url.searchParams.get('grant_type');
-      if (grant === 'refresh_token' && user) return json(route, request, 200, makeSession(user));
+      if (grant === 'refresh_token' && user) return json(route, request, 200, session);
       return json(route, request, 400, { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
     }
     if (path === '/signup') {
@@ -126,22 +146,16 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
     return refuse(route, request, 404, 'not_found', "auth endpoint the mock doesn't model");
   }
 
-  // Runs the statements as the person making the request: their role, and their JWT claims for auth.uid().
-  const asRequester = (signedIn, run) => db.transaction(async (tx) => {
-    await tx.exec(signedIn ? 'set local role authenticated' : 'set local role anon');
-    await tx.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(signedIn ? { sub: user.id, email: user.email, role: 'authenticated' } : { role: 'anon' })]);
-    return run(tx);
-  });
-
   async function rest(route, request, url) {
     const table = url.pathname.replace('/rest/v1/', '');
     if (control.delayMs && (!control.delayTables.size || control.delayTables.has(table))) await wait(control.delayMs);
+    if (closed) return route.abort().catch(() => {});
     if (control.failTables.has(table)) return json(route, request, 503, { code: 'PGRST000', message: 'Could not connect to the database. Please try again shortly.', details: null, hint: null });
     const method = request.method();
     const headers = request.headers();
     const tableColumns = columns.get(table);
     if (!tableColumns) return refuse(route, request, 404, 'PGRST205', `Could not find the table 'public.${table}' in the schema cache`);
-    const signedIn = Boolean(user) && headers.authorization === `Bearer ${token}`;
+    const signedIn = Boolean(user) && headers.authorization === `Bearer ${session.access_token}`;
     const params = [];
     // A value from the URL, cast to the column's type as PostgREST casts it.
     const value = (column, text) => { params.push(text); return `($${params.length}::text)::${tableColumns.get(column)}`; };
@@ -155,7 +169,7 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
       const op = expr.slice(0, expr.indexOf('.'));
       const operand = expr.slice(expr.indexOf('.') + 1);
       let condition = null;
-      if (COMPARISONS[op]) condition = `t.${quoted(column)} ${COMPARISONS[op]} ${value(column, operand)}`;
+      if (COMPARISONS.has(op)) condition = `t.${quoted(column)} ${COMPARISONS.get(op)} ${value(column, operand)}`;
       else if (op === 'is' && ['null', 'true', 'false'].includes(operand)) condition = `t.${quoted(column)} is ${operand}`;
       else if (op === 'in') condition = `t.${quoted(column)} in (${operand.replace(/^\(|\)$/g, '').split(',').map((item) => value(column, item.replace(/^"|"$/g, ''))).join(', ')})`;
       if (!condition) return refuse(route, request, 400, 'PGRST100', `filter ${column}=${raw} isn't one the mock models`);
@@ -165,9 +179,11 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
     const selectParam = url.searchParams.get('select') || '*';
     const selected = selectParam === '*' ? null : selectParam.split(',').map((column) => column.trim());
     if (selected?.some((column) => !tableColumns.has(column))) return refuse(route, request, 400, '42703', `select=${selectParam} asks for a column ${table} doesn't have, or an embedded resource the mock doesn't model`);
-    const returned = selected ? selected.map((column) => `t.${quoted(column)}`).join(', ') : 't.*';
+    const projection = selected ? selected.map((column) => `t.${quoted(column)}`).join(', ') : 't.*';
     const single = (headers.accept || '').includes('vnd.pgrst.object');
     const prefer = headers.prefer || '';
+    // Like PostgREST, a write returns columns only when asked to, so it needs no read access otherwise.
+    const representation = prefer.includes('return=representation');
     const target = `public.${quoted(table)} as t`;
     const asJson = (statement) => `with changed as (${statement}) select coalesce(json_agg(changed), '[]'::json) as body from changed`;
 
@@ -183,9 +199,10 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
       if (order.includes(null)) return refuse(route, request, 400, 'PGRST100', `order=${orderParam} isn't one the mock models`);
       const integer = (name) => (url.searchParams.has(name) ? Number.parseInt(url.searchParams.get(name), 10) : null);
       const [limit, offset] = [integer('limit'), integer('offset')];
-      sql = `select coalesce(json_agg(rows), '[]'::json) as body from (select ${returned} from ${target}${where}${order.length ? ` order by ${order.join(', ')}` : ''}${limit != null ? ` limit ${limit}` : ''}${offset ? ` offset ${offset}` : ''}) rows`;
+      sql = `select coalesce(json_agg(rows), '[]'::json) as body from (select ${projection} from ${target}${where}${order.length ? ` order by ${order.join(', ')}` : ''}${limit != null ? ` limit ${limit}` : ''}${offset ? ` offset ${offset}` : ''}) rows`;
       if (prefer.includes('count=exact')) countSql = `select count(*)::int as total from ${target}${where}`;
     } else {
+      const returning = representation ? projection : '1';
       let body = null;
       try { body = request.postDataJSON(); } catch { body = null; }
       if (method === 'POST') {
@@ -195,35 +212,48 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
         if (unknown) return refuse(route, request, 400, 'PGRST204', `Could not find the '${unknown}' column of '${table}' in the schema cache`);
         if (!keys.length) return refuse(route, request, 400, 'PGRST100', "an insert of an empty row, which the mock doesn't model");
         params.push(JSON.stringify(items));
-        const list = keys.map(quoted).join(', ');
-        let merge = '';
+        let conflict = null;
         if (prefer.includes('resolution=merge-duplicates')) {
-          const conflict = (url.searchParams.get('on_conflict') || 'id').split(',');
+          conflict = (url.searchParams.get('on_conflict') || 'id').split(',');
           if (conflict.some((column) => !tableColumns.has(column))) return refuse(route, request, 400, '42703', `on_conflict=${conflict.join(',')} names a column ${table} doesn't have`);
-          merge = ` on conflict (${conflict.map(quoted).join(', ')}) do update set ${keys.map((key) => `${quoted(key)} = excluded.${quoted(key)}`).join(', ')}`;
         }
-        sql = asJson(`insert into ${target} (${list}) select ${list} from json_populate_recordset(null::public.${quoted(table)}, $${params.length}::text::json)${merge} returning ${returned}`);
+        sql = asJson(insertStatement(table, keys, `$${params.length}`, { conflict, returning }));
       } else if (method === 'PATCH') {
         const keys = Object.keys(body || {});
         const unknown = keys.find((key) => !tableColumns.has(key));
         if (unknown) return refuse(route, request, 400, 'PGRST204', `Could not find the '${unknown}' column of '${table}' in the schema cache`);
         if (!keys.length) return refuse(route, request, 400, 'PGRST100', "an update with nothing to change, which the mock doesn't model");
         params.push(JSON.stringify(body));
-        sql = asJson(`update ${target} set ${keys.map((key) => `${quoted(key)} = source.${quoted(key)}`).join(', ')} from json_populate_record(null::public.${quoted(table)}, $${params.length}::text::json) as source${where} returning ${returned}`);
+        sql = asJson(`update ${target} set ${keys.map((key) => `${quoted(key)} = source.${quoted(key)}`).join(', ')} from json_populate_record(null::public.${quoted(table)}, $${params.length}::text::json) as source${where} returning ${returning}`);
       } else if (method === 'DELETE') {
-        sql = asJson(`delete from ${target}${where} returning ${returned}`);
+        sql = asJson(`delete from ${target}${where} returning ${returning}`);
       } else {
         return refuse(route, request, 405, 'PGRST000', `${method} isn't a method the mock models`);
       }
     }
 
+    // Times the database stamps with now() during a write read the test clock instead.
+    tick += 1;
+    const stamp = new Date(new Date(nowIso).getTime() + tick * 1000).toISOString();
+    const stamped = [...tableColumns].filter(([, type]) => type === 'timestamp with time zone').map(([column]) => column);
     let rows;
     let total = null;
     try {
-      ({ rows, total } = await asRequester(signedIn, async (tx) => ({
-        rows: (await tx.query(sql, params)).rows[0].body,
-        total: countSql ? (await tx.query(countSql, params)).rows[0].total : null,
-      })));
+      ({ rows, total } = await asRequester(signedIn, async (tx) => {
+        let result = (await tx.query(sql, params)).rows[0].body;
+        const count = countSql ? (await tx.query(countSql, params)).rows[0].total : null;
+        if (method === 'POST' || method === 'PATCH') {
+          const { now, testNow } = (await tx.query(`select to_json(now())#>>'{}' as now, to_json($1::timestamptz)#>>'{}' as "testNow"`, [stamp])).rows[0];
+          await tx.exec('reset role');
+          await tx.exec('set local session_replication_role = replica');
+          if (stamped.length) await tx.query(`update ${target} set ${stamped.map((column) => `${quoted(column)} = case when ${quoted(column)} = now() then $1::timestamptz else ${quoted(column)} end`).join(', ')} where ${WRITTEN_HERE}`, [stamp]);
+          // The rows as stored, for the test's record of writes and, when asked for, the response.
+          result = representation
+            ? result.map((row) => Object.fromEntries(Object.entries(row).map(([key, cell]) => [key, cell === now ? testNow : cell])))
+            : (await tx.query(`select coalesce(json_agg(t), '[]'::json) as body from ${target} where ${WRITTEN_HERE}`)).rows[0].body;
+        }
+        return { rows: result, total: count };
+      }));
     } catch (error) {
       if (!error.code) throw error;
       return refuse(route, request, statusFor(error.code, signedIn), error.code, error.message);
@@ -238,14 +268,16 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
       const range = rows.length ? `${offset}-${offset + rows.length - 1}` : '*';
       return json(route, request, 200, rows, { 'content-range': `${range}/${total ?? (rows.length ? '*' : '0')}` });
     }
-    writes.push({ method, table, rows });
-    if (!prefer.includes('return=representation')) return empty(route, request, method === 'POST' ? 201 : 204);
+    // A delete that didn't ask for its rows leaves only a count behind.
+    writes.push({ method, table, rows: method === 'DELETE' && !representation ? [] : rows });
+    if (!representation) return empty(route, request, method === 'POST' ? 201 : 204);
     if (single && rows.length !== 1) return json(route, request, 406, { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' });
     return json(route, request, method === 'POST' ? 201 : 200, single ? rows[0] : rows);
   }
 
   /** Playwright route handler for every request to the Supabase origin. */
   async function handle(route) {
+    if (closed) return route.abort().catch(() => {});
     const request = route.request();
     const url = new URL(request.url());
     if (request.method() === 'OPTIONS') return empty(route, request);
@@ -260,5 +292,14 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
     return refuse(route, request, 404, 'PGRST000', `the app called ${request.method()} ${url.pathname}, which the mock doesn't model`);
   }
 
-  return { handle, writes, authCalls, faultLog, get faults() { return faultLog.map((fault) => fault.text); }, control };
+  return {
+    handle,
+    writes,
+    authCalls,
+    faultLog,
+    get faults() { return faultLog.map((fault) => fault.text); },
+    control,
+    /** Stops answering, at the end of a test. */
+    close() { closed = true; },
+  };
 }

@@ -27,13 +27,14 @@ export const test = base.extend({
    */
   expectedFaults: [null, { option: true }],
 
-  // One migrated database per worker; each test empties it and loads its persona.
+  // One migrated database per worker; each test empties it and loads its
+  // persona. Its own timeout, so building it doesn't eat the first test's.
   // eslint-disable-next-line no-empty-pattern
   database: [async ({}, use) => {
     const database = await createDatabase();
     await use(database);
     await database.db.close();
-  }, { scope: 'worker' }],
+  }, { scope: 'worker', timeout: 60_000 }],
 
   backend: async ({ context, persona, baseURL, database }, use) => {
     const fixture = persona ? PERSONAS[persona]() : null;
@@ -54,6 +55,9 @@ export const test = base.extend({
       }, [STORAGE_KEY, makeSession(fixture.user), SIGNED_OUT_FLAG]);
     }
     await use(backend);
+    // Requests still on their way would write into the next test's data.
+    backend.close();
+    await context.unrouteAll({ behavior: 'wait' });
   },
 
   page: async ({ page, backend, baseURL, allowFailedRequests, expectedFaults }, use) => {

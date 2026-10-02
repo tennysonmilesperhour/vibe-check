@@ -9,11 +9,12 @@ import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 
 const MIGRATIONS = path.resolve(import.meta.dirname, '../../supabase/migrations');
 
-// What the Supabase platform provides around the migrations: the API roles
-// and the grants new tables get, an auth schema whose uid() reads the
-// request's JWT claims like Supabase's, and the storage table a policy names.
+// What the shared Supabase project provides around these migrations: the API
+// roles and the grants new tables get, an auth schema whose uid() reads the
+// request's JWT claims like Supabase's, storage, and the other apps' tables
+// that the account-deletion functions read (stand-ins, never served).
+const SHARED_PROJECT_TABLES = ['camp_agents', 'camp_skills', 'camp_trades', 'camp_reports', 'digest_profiles'];
 const PLATFORM = `
-  set check_function_bodies = off;
   set time zone 'UTC';
   create role anon nologin;
   create role authenticated nologin;
@@ -33,10 +34,17 @@ const PLATFORM = `
   create table storage.buckets (id text primary key, name text, public boolean default false);
   create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets (id), name text, owner uuid);
   create function storage.foldername(name text) returns text[] language sql immutable as $$ select string_to_array(name, '/') $$;
+  create table public.camp_agents (id uuid primary key default gen_random_uuid(), user_id uuid);
+  create table public.camp_skills (id uuid primary key default gen_random_uuid(), user_id uuid);
+  create table public.camp_trades (id uuid primary key default gen_random_uuid(), offerer_user_id uuid, receiver_user_id uuid);
+  create table public.camp_reports (id uuid primary key default gen_random_uuid(), user_id uuid);
+  create table public.digest_profiles (id uuid primary key);
 `;
 
 /**
- * The migrated database, and the public tables with each column's type.
+ * The migrated database, and this app's public tables with each column's
+ * type. PGlite runs PostgreSQL 18; a migration using something newer than
+ * the live project's Postgres would pass here and fail there.
  * @returns {Promise<{ db: PGlite, columns: Map<string, Map<string, string>> }>}
  */
 export async function createDatabase() {
@@ -55,7 +63,7 @@ export async function createDatabase() {
     where n.nspname = 'public' and c.relkind = 'r' and a.attnum > 0 and not a.attisdropped
     order by c.relname, a.attnum`);
   const columns = new Map();
-  for (const row of rows) {
+  for (const row of rows.filter((item) => !SHARED_PROJECT_TABLES.includes(item.table_name))) {
     if (!columns.has(row.table_name)) columns.set(row.table_name, new Map());
     columns.get(row.table_name).set(row.column_name, row.type);
   }

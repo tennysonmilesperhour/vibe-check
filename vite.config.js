@@ -60,6 +60,9 @@ export default defineConfig(({ mode }) => ({
     // this and load only on the pages that need them; first-load size is
     // enforced separately by `npm run check:bundle`.
     chunkSizeWarningLimit: 400,
+    // Fonts stay files: the Content-Security-Policy (font-src 'self') refuses
+    // a font inlined as a data: URL, which small subsets would otherwise be.
+    assetsInlineLimit: (file) => (/\.(woff2?|ttf|otf)$/.test(file) ? false : undefined),
     rollupOptions: {
       output: {
         // Stable vendor chunks: app-code pushes don't invalidate the big,

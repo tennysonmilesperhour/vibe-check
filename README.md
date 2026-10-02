@@ -1,6 +1,8 @@
 # Vibe Check
 
-A private record of your days, with the whole pattern in view.
+See how the people and habits in your life affect you. A free, private
+journal with patterns, weekly and monthly reports, and practices for hard
+moments. No AI reads your journal.
 
 Vibe Check's [product foundation](docs/design/product-foundation.md) makes
 daily reflection, the orbit, relationship and habit charts, full history,
@@ -107,11 +109,15 @@ See the [current visual guidance](docs/design/nature-sanctuary.md) for palette
 roles, art direction, motion, and application by screen. This supersedes the
 older Golden Hour and twilight visual guidance. The implementation uses
 shared sanctuary colors with compatible `--gh-*` aliases in `src/index.css`.
+Fonts (Instrument Serif and Manrope, SIL Open Font License) are bundled from
+Fontsource packages, so pages request nothing from other sites.
 See [asset provenance and playback behavior](docs/design/sanctuary-assets.md).
 
 ## Account deletion and shared infrastructure
 
-Public privacy, terms, and support routes remain available without signing in.
+Without signing in, visitors get the front page with the free pledge (`/`),
+help-now practices (`/help-now`), Support now, and the privacy, terms, and
+support pages. `/signin` and `/signup` open the sign-in form in either mode.
 Deletion covers the full Vibe Check history, including journal entries, drafts,
 practice sessions, report reflections, and preferences. Campground and Daily
 Digest records and their shared sign-in remain protected.

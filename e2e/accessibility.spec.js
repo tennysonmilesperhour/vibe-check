@@ -3,7 +3,7 @@
 // trying the app with a keyboard and a screen reader.
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect } from './support/app.js';
-import { PAGES, openSettings } from './support/pages.js';
+import { LANDING_HEADING, PAGES, openSettings } from './support/pages.js';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
@@ -67,6 +67,24 @@ test.describe('signed out', () => {
   test('the sign-in screen meets WCAG A and AA checks', async ({ page }) => {
     await page.goto('/Today');
     await expect(page.getByLabel('Email address')).toBeVisible();
+    await expectNoViolations(page);
+  });
+
+  test('the sign-up form meets WCAG A and AA checks', async ({ page }) => {
+    await page.goto('/signup');
+    await expect(page.getByLabel('Your name')).toBeVisible();
+    await expectNoViolations(page);
+  });
+
+  test('the front page meets WCAG A and AA checks', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1, name: LANDING_HEADING })).toBeVisible();
+    await expectNoViolations(page);
+  });
+
+  test('a help-now practice meets WCAG A and AA checks', async ({ page }) => {
+    await page.goto('/help-now/on-edge/orient');
+    await expect(page.getByRole('heading', { name: 'Find your surroundings' })).toBeVisible();
     await expectNoViolations(page);
   });
 });

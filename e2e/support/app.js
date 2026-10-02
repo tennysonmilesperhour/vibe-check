@@ -42,10 +42,7 @@ export const test = base.extend({
     backend.external = [];
     const appOrigin = new URL(baseURL).origin;
     await context.route((url) => url.origin !== appOrigin && url.origin !== SUPABASE_ORIGIN, (route) => {
-      const url = new URL(route.request().url());
-      // Google Fonts until the fonts are self-hosted; fallback fonts do for these checks.
-      if (/^fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) return route.fulfill({ status: 200, contentType: 'text/css', body: '' });
-      backend.external.push(url.href);
+      backend.external.push(route.request().url());
       return route.abort();
     });
     await context.route(`${SUPABASE_ORIGIN}/**`, backend.handle);

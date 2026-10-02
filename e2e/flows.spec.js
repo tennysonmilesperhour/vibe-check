@@ -57,6 +57,23 @@ test('signing out ends the session on this device', async ({ page, backend }, te
   expect(await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY)).toBeNull();
 });
 
+test.describe('without an account', () => {
+  test.use({ persona: null });
+
+  test('help now opens a practice and saves nothing', async ({ page, backend }) => {
+    await page.goto('/help-now');
+    await page.getByRole('link', { name: /Fight or flight/ }).click();
+    await expect(page).toHaveURL('/help-now/on-edge');
+    await expect(page.getByRole('heading', { name: 'One small invitation' })).toBeFocused();
+    await page.getByRole('link', { name: 'Try find your surroundings' }).click();
+    await expect(page.getByRole('heading', { name: 'Find your surroundings' })).toBeFocused();
+    await expect(page.getByText('Notice three neutral things around you.', { exact: false })).toBeVisible();
+    await page.getByRole('link', { name: 'Back to the options for fight or flight' }).click();
+    await expect(page.getByRole('heading', { name: 'One small invitation' })).toBeFocused();
+    expect(backend.writes).toEqual([]);
+  });
+});
+
 test.describe('signed out', () => {
   test.use({ persona: null, allowFailedRequests: true });
 

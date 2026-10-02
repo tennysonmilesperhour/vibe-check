@@ -13,6 +13,7 @@ textarea.living-input { resize: vertical; }
 .living-chip { min-height: 44px; padding: 9px 13px; border: 1px solid color-mix(in srgb, var(--gh-ink) 23%, transparent); border-radius: 999px; font-size: .82rem; line-height: 1.3; color: var(--gh-ink); background: color-mix(in srgb, var(--gh-cream) 92%, transparent); text-align: left; transition: background .18s; }
 .living-chip:hover { background: color-mix(in srgb, var(--gh-sage, var(--sanctuary-sage)) 25%, var(--gh-cream)); }
 .living-chip[aria-pressed="true"] { background: var(--gh-ink); color: var(--gh-cream); border-color: var(--gh-ink); }
+a.living-chip { display: inline-flex; align-items: center; }
 .living-tag { display: inline-block; padding: 5px 9px; background: color-mix(in srgb, var(--gh-ink) 7%, var(--gh-cream)); color: var(--gh-ink-soft); border: 1px solid color-mix(in srgb, var(--gh-ink) 12%, transparent); border-radius: 7px; font-size: .75rem; line-height: 1.5; }
 .living-tag-alert { color: #673522; background: #e3c5ac; border-color: #a8795e; }
 .living-secondary, .living-icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 15px; border: 1px solid color-mix(in srgb, var(--gh-ink) 22%, transparent); border-radius: 9px; color: var(--gh-ink); background: var(--gh-cream); font-size: .85rem; font-weight: 500; }
@@ -40,8 +41,8 @@ textarea.living-input { resize: vertical; }
 .state-card strong { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 400; margin: 6px 0; }
 .state-card > span:last-child { font-size: .78rem; opacity: .8; line-height: 1.5; display: block; }
 .state-number { color: var(--gh-ink-muted); font-size: .75rem; letter-spacing: .12em; }
-.state-card[aria-pressed="true"] { background: var(--gh-ink); color: var(--gh-cream); border-color: var(--gh-gold); }
-.state-card[aria-pressed="true"] .state-number { color: var(--gh-gold); }
+.state-card[aria-pressed="true"], .state-card[aria-current="page"] { background: var(--gh-ink); color: var(--gh-cream); border-color: var(--gh-gold); }
+.state-card[aria-pressed="true"] .state-number, .state-card[aria-current="page"] .state-number { color: var(--gh-gold); }
 .state-card:last-child { grid-column: 1 / -1; min-height: auto; }
 .state-card:last-child strong { display: inline; margin: 0 12px; }
 .state-card:last-child > span:last-child { display: inline; }

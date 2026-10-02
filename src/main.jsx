@@ -1,6 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
+// Served with the app (SIL Open Font License), so no page asks another site for fonts.
+import '@fontsource/instrument-serif/400.css'
+import '@fontsource-variable/manrope/wght.css'
 import '@/index.css'
 
 // After a deploy, an open tab can ask for a script chunk that no longer

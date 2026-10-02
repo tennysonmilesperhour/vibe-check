@@ -6,10 +6,9 @@ import { isTransientAuthError, userFromSession, sessionChange } from '@/lib/auth
 import { clearLegacyDrafts } from '@/lib/legacy-drafts';
 import { clearAllBuffers } from '@/lib/writing-buffer';
 
-// Supabase-backed auth, preserving the context contract the app already
-// consumes (App.jsx, ProtectedRoute): user / isAuthenticated / isLoadingAuth /
-// isLoadingPublicSettings / authError / logout / navigateToLogin / checkAppState
-// plus authChecked / checkUserAuth.
+// Supabase-backed auth: the user, whether the first answer is still loading,
+// any auth error (signed out or offline), sign-out, a re-check, and the
+// password-recovery session.
 const AuthContext = createContext();
 
 const SIGNED_OUT = { type: 'auth_required', message: 'Sign in to continue' };
@@ -19,7 +18,6 @@ const STARTUP_PATIENCE_MS = 6000;
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [authChecked, setAuthChecked] = useState(false);
   const [authError, setAuthError] = useState(null);
   // True while the session came from a password-reset email link; the app
   // shows the new-password screen until it's cleared.
@@ -54,7 +52,6 @@ export const AuthProvider = ({ children }) => {
       setUser(next);
       setAuthError(null);
     }
-    setAuthChecked(true);
     setIsLoadingAuth(false);
   }, []);
 
@@ -63,7 +60,6 @@ export const AuthProvider = ({ children }) => {
   // state and keep everything on the device.
   const showOffline = useCallback(() => {
     setAuthError(OFFLINE);
-    setAuthChecked(true);
     setIsLoadingAuth(false);
   }, []);
 
@@ -131,22 +127,13 @@ export const AuthProvider = ({ children }) => {
     applySession(null);
   };
 
-  // With in-app sign-in there is nowhere to redirect; the gate renders inline.
-  const navigateToLogin = () => {};
-
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: Boolean(user),
         isLoadingAuth,
-        isLoadingPublicSettings: false,
-        authChecked,
         authError,
-        appPublicSettings: null,
         logout,
-        navigateToLogin,
-        checkAppState: checkUserAuth,
         checkUserAuth,
         isPasswordRecovery,
         clearPasswordRecovery: () => setIsPasswordRecovery(false),

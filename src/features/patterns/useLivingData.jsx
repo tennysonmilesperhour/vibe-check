@@ -154,7 +154,11 @@ export function useDaysKeptThisMonth() {
   return rows ? daysKeptThisMonth(rows, today) : null;
 }
 
-/** Just the preferences: one small request, for controls that must show at once. */
+/**
+ * Just the preferences: one small request, for controls that must show at
+ * once. Like the record, read again when a page opens and the copy is over a
+ * minute old; saves here reload it at once.
+ */
 export function usePreferences() {
   const { user } = useAuth();
   const client = useQueryClient();
@@ -162,6 +166,7 @@ export function usePreferences() {
     queryKey: preferencesKey(user?.id),
     queryFn: async () => (await VibePreference.list())[0]?.values || {},
     enabled: Boolean(user?.id),
+    staleTime: STALE_MS,
   });
   const savePreferences = (patch) => storePreferences(client, user?.id, patch);
   return { ...query, savePreferences };

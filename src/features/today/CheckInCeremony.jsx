@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
-import { DailyCheckIn, BoundaryAlert, CheckInDraft } from "@/entities/all";
+import { DailyCheckIn, BoundaryAlert, CheckInDraft } from "@/api/entities";
 import { useQueryClient } from '@tanstack/react-query';
 import StressFields from './StressFields';
 import PersonPicker from '@/features/people/PersonPicker';

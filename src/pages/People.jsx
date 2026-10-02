@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useSearchParamState } from "@/lib/deeplink";
 import { base44 } from "@/api/base44Client";
-import { Person } from "@/entities/all";
+import { Person } from "@/api/entities";
 import { useAuth } from "@/lib/AuthContext";
 import { dropRecordRow, putRecordRow, useRecordPart } from "@/features/patterns/useLivingData";
 import PeopleOrbit from '@/features/people/PeopleOrbit';

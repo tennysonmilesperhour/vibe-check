@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseLocalDate, dateKey, todayKey, isTodayKey, getPeriodKey, addDaysKey, diffDaysKeys, formatDay, formatRange, validDateKey } from '../dates.js';
+import { parseLocalDate, dateKey, getPeriodKey, addDaysKey, diffDaysKeys, formatDay, formatRange, validDateKey } from '../dates.js';
 
 describe('parseLocalDate', () => {
   it('returns local midnight for the named day, never UTC-shifted', () => {
@@ -21,11 +21,6 @@ describe('dateKey round trips', () => {
     for (const k of ['2026-01-01', '2026-12-31', '2024-02-29']) {
       expect(dateKey(parseLocalDate(k))).toBe(k);
     }
-  });
-
-  it('isTodayKey matches todayKey only', () => {
-    expect(isTodayKey(todayKey())).toBe(true);
-    expect(isTodayKey('1999-01-01')).toBe(false);
   });
 });
 

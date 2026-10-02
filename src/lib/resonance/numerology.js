@@ -1,6 +1,6 @@
-// Numerology, fully computed — the app previously asked users to type these
-// (or spent an LLM call). Component method with master numbers preserved
-// for core numbers; personal cycles reduce to single digits.
+// Numerology, computed from the birth date and name. Component method with
+// master numbers preserved for core numbers; personal cycles reduce to
+// single digits.
 
 export const digitSum = (n) => String(n).split('').reduce((a, d) => a + Number(d), 0);
 

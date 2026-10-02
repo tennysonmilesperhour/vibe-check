@@ -23,8 +23,6 @@ const versionFilePlugin = () => ({
   },
 })
 
-// Supabase build: the @base44/vite-plugin virtual modules are replaced by
-// real adapter modules; the aliases keep every existing import path working.
 export default defineConfig(({ mode }) => ({
   define: {
     __BUILD_ID__: JSON.stringify(BUILD_ID),
@@ -64,7 +62,6 @@ export default defineConfig(({ mode }) => ({
   },
   resolve: {
     alias: [
-      { find: '@/entities/all', replacement: path.resolve(__dirname, 'src/api/entities.js') },
       { find: '@', replacement: path.resolve(__dirname, 'src') },
     ],
   },

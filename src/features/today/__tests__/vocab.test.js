@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { EMOTIONS, FEELING_FAMILIES, findFeelings, feelingIcon, isListedFeeling } from '../vocab';
-import { canonicalFeeling } from '@/lib/feelings';
+import { EMOTIONS, findFeelings, feelingIcon, isListedFeeling } from '../vocab';
+import { FEELING_FAMILIES, canonicalFeeling } from '@/lib/feelings';
 import VocabularyIcon from '../VocabularyIcon';
 
 const EARLIER = ['Joyful', 'Grateful', 'Calm', 'Excited', 'Loved', 'Hopeful', 'Proud', 'Creative', 'Content', 'Relieved', 'Anxious', 'Sad',

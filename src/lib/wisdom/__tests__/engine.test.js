@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { personalYear } from "../../resonance/numerology";
 import { todayKey } from "../../dates";
 import { systemReading } from "../engine";
-import { tarotReading, integratedReading, synergyReading, patternReading, periodWisdom } from "../readings";
+import { tarotReading, integratedReading, synergyReading, periodWisdom } from "../readings";
 
 // A fully-populated sample so derived values (life path, birth card, etc.) fill in.
 const PROFILE = {
@@ -154,24 +154,6 @@ describe("synergyReading", () => {
   it("handles an unknown partner", () => {
     const t = synergyReading(PROFILE, null, "Someone");
     expect(t).toContain("Someone");
-  });
-});
-
-describe("patternReading", () => {
-  it("reads real check-in data", () => {
-    const checkIns = Array.from({ length: 10 }, (_, i) => ({
-      date: `2026-06-${10 + i}`,
-      mood_score: 5 + (i % 4),
-      energy_level: 4 + (i % 5),
-      sleep_quality: i % 2 === 0 ? 8 : 4,
-      emotions: i % 2 === 0 ? ["calm", "hopeful"] : ["tired", "anxious"],
-    }));
-    const t = patternReading(checkIns);
-    expect(t.length).toBeGreaterThan(200);
-    expect(t.toLowerCase()).toContain("check-in");
-  });
-  it("asks for more data when there is too little", () => {
-    expect(patternReading([{ mood_score: 6 }]).length).toBeGreaterThan(20);
   });
 });
 

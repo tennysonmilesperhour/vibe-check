@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  ARCANA_ASTRO, CENTER_CHAKRA, GATE_WHEEL,
+  ARCANA_ASTRO, GATE_WHEEL,
   gateWheelDegree, signStartDegree, arcanaName,
 } from '../tables.js';
 
@@ -26,18 +26,6 @@ describe('ARCANA_ASTRO (Golden Dawn attributions)', () => {
   });
   it('covers all 22 majors', () => {
     expect(Object.keys(ARCANA_ASTRO)).toHaveLength(22);
-  });
-});
-
-describe('CENTER_CHAKRA (matches the app doctrine in correspondences.jsx)', () => {
-  it('direct mappings', () => {
-    expect(CENTER_CHAKRA.head).toBe('Crown');
-    expect(CENTER_CHAKRA.ajna).toBe('Third Eye');
-    expect(CENTER_CHAKRA.sacral).toBe('Sacral');
-    expect(CENTER_CHAKRA.root).toBe('Root');
-  });
-  it('G center integrates heart and throat', () => {
-    expect(CENTER_CHAKRA.g).toEqual(['Heart', 'Throat']);
   });
 });
 

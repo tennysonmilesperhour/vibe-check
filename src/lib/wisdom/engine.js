@@ -1,6 +1,5 @@
-// The local wisdom engine. Composes detailed, personalized readings from the
-// content tables and the user's profile data — with zero API calls. Every
-// surface that used to hit InvokeLLM now draws from here.
+// The local wisdom engine. Composes readings from the content tables and the
+// user's profile data, on the device with no API calls.
 import { todayKey } from "@/lib/dates";
 import { deriveAll } from "@/lib/resonance/derive";
 import { astrologyReading } from "./astrology";

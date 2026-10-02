@@ -85,10 +85,13 @@ export default function TarotTable() {
     : cardCount > 1 ? (isDesktop ? "lg" : "md")
     : (isDesktop ? "xxl" : "lg");
   const tableHeight = cardCount > 5 ? 560
-    : cardCount > 3 ? 420
+    : cardCount > 3 ? 460
     : cardCount > 1 ? (isDesktop ? 460 : 420)
     : (isDesktop ? 640 : 380);
   const tableMaxWidth = cardCount > 1 ? 720 : (isDesktop ? 420 : 320);
+  // Cards too close together for their names are numbered, and the positions,
+  // with each card's name once it is turned, are listed under the table.
+  const numbered = cardCount > 3 || (cardCount > 1 && !isDesktop);
 
   const deal = async () => {
     const cards = drawSpread(deckId, spread, seed.trim() || null);
@@ -242,11 +245,27 @@ export default function TarotTable() {
                       flipped={!!flipped[i]}
                       onClick={() => setFlipped((f) => ({ ...f, [i]: true }))}
                       label={pos.label}
+                      number={numbered ? i + 1 : undefined}
+                      showCaption={!pos.rotate}
                     />
                   </div>
                 );
               })}
             </div>
+
+            {numbered && (
+              <ol className="max-w-xl mx-auto mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm" aria-label="Positions in this spread" style={{ color: duskInkSoft }}>
+                {spread.positions.map((pos, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="font-bold" style={{ color: "var(--gh-gold)" }}>{i + 1}</span>
+                    <span>
+                      {pos.label}{pos.rotate ? `, across ${i}` : ""}
+                      {flipped[i] && <span style={{ color: duskInk }}> · {drawn[i].card.name}{drawn[i].reversed ? ", reversed" : ""}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
 
             <div className="flex justify-center gap-3 mt-6">
               {!allFlipped && (
@@ -272,7 +291,7 @@ export default function TarotTable() {
               <div className="max-w-2xl mx-auto mt-8 space-y-3">
                 {drawn.map((item, i) => (
                   <div key={i} className="p-4" style={{ background: "rgba(245,229,216,0.07)", border: "1px solid rgba(245,229,216,0.15)", borderRadius: "var(--radius)" }}>
-                    <div className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-gold)" }}>{item.position.toUpperCase()}</div>
+                    <div className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-gold)" }}>{numbered ? `${i + 1} · ` : ""}{item.position.toUpperCase()}</div>
                     <div className="font-display text-xl mt-0.5" style={{ color: duskInk }}>
                       {item.card.name}{item.reversed ? " · reversed" : ""}
                     </div>

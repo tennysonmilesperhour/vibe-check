@@ -155,10 +155,9 @@ export function createMockSupabase({ fixture, nowIso }) {
       if (missing) return [400, '23502', `null value in column "${missing.name}" of relation "${table}" violates not-null constraint`];
     }
     for (const [name, value] of Object.entries(row)) {
-      const column = schema.columns.get(name);
       if (value == null) continue;
-      if (column.allowed && !column.allowed.includes(String(value))) return [400, '23514', `new row for relation "${table}" violates check constraint on "${name}"`];
-      if (column.range && (Number(value) < column.range[0] || Number(value) > column.range[1])) return [400, '23514', `new row for relation "${table}" violates check constraint on "${name}"`];
+      const broken = schema.columns.get(name).checks.some(({ allowed, range }) => (allowed && !allowed.includes(String(value))) || (range && (Number(value) < range[0] || Number(value) > range[1])));
+      if (broken) return [400, '23514', `new row for relation "${table}" violates check constraint on "${name}"`];
     }
     if (ownerOf(table, row) !== undefined && ownerOf(table, row) !== user?.id) return [403, '42501', `new row violates row-level security policy for table "${table}"`];
     return null;

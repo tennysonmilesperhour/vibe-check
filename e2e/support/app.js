@@ -18,8 +18,13 @@ export const test = base.extend({
   persona: ['established', { option: true }],
   /** For a test that makes a request fail on purpose: the browser logs each failed load. */
   allowFailedRequests: [false, { option: true }],
-  /** Refusals a test expects, such as the duplicate key a second tab's save meets (patterns matched against faults). */
-  expectedFaults: [[], { option: true }],
+  /**
+   * A refusal a test expects, such as the duplicate key a second tab's save
+   * meets: a pattern for the faults it may produce, at least one of which
+   * must happen. One RegExp (join alternatives with |): Playwright would read
+   * an array of them as a fixture tuple.
+   */
+  expectedFaults: [null, { option: true }],
 
   backend: async ({ context, persona, baseURL }, use) => {
     const fixture = persona ? PERSONAS[persona]() : null;
@@ -48,7 +53,8 @@ export const test = base.extend({
     page.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
     page.on('console', (message) => {
       if (message.type() !== 'error') return;
-      if (allowFailedRequests && /Failed to load resource/.test(message.text())) return;
+      // A refused request makes the browser log a failed load as well.
+      if ((allowFailedRequests || expectedFaults) && /Failed to load resource/.test(message.text())) return;
       problems.push(`console error: ${message.text()}`);
     });
     page.on('response', (response) => {
@@ -59,12 +65,14 @@ export const test = base.extend({
       if (request.url().startsWith(appOrigin) && !/ERR_ABORTED/.test(request.failure()?.errorText || '')) problems.push(`failed to load ${request.url()}: ${request.failure()?.errorText}`);
     });
     await use(page);
+    const expected = expectedFaults ? backend.faults.filter((fault) => expectedFaults.test(fault)) : [];
     // One check, so a refusal shows with its reason next to the console line it caused.
     expect({
-      faults: backend.faults.filter((fault) => !expectedFaults.some((pattern) => pattern.test(fault))),
+      faults: backend.faults.filter((fault) => !expected.includes(fault)),
       problems,
       external: backend.external,
-    }, 'refused or unmodelled requests, page problems, and requests to other sites').toEqual({ faults: [], problems: [], external: [] });
+      expectedFaultMissing: Boolean(expectedFaults) && expected.length === 0,
+    }, 'refused or unmodelled requests, page problems, and requests to other sites').toEqual({ faults: [], problems: [], external: [], expectedFaultMissing: false });
   },
 });
 

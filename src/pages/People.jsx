@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useSearchParamState } from "@/lib/deeplink";
 import { base44 } from "@/api/base44Client";
 import { Person, Relationship, DailyCheckIn, JournalEntry } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
@@ -86,13 +87,12 @@ export default function People() {
   };
 
   // The Add menu opens the form here with ?add=1, once the people have loaded.
-  const [params, setParams] = useSearchParams();
-  const addRequested = params.get("add") === "1";
+  const [addParam, setAddParam] = useSearchParamState("add", "");
   useEffect(() => {
-    if (loading || !addRequested) return;
+    if (loading || addParam !== "1") return;
     openEdit(null);
-    setParams((previous) => { const next = new URLSearchParams(previous); next.delete("add"); return next; }, { replace: true });
-  }, [loading, addRequested]);
+    setAddParam("");
+  }, [loading, addParam]);
 
   const save = async (e) => {
     e.preventDefault();

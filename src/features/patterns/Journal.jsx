@@ -41,8 +41,9 @@ export function JournalComposer({ open, existing = null, prompt = '', kind = 're
   // New entries name the account the composer opened in (see CheckInCeremony).
   const ownerId = useRef(user?.id).current;
   // New entries started from a prompt get their own key, so a prompt is never
-  // replaced by older free-form words (and vice versa).
-  const bufferKey = user?.id ? `composer:${user.id}:${existing?.id || (prompt ? `prompt-${promptKey(prompt)}` : 'new')}` : null;
+  // replaced by older free-form words (and vice versa). A new interaction has
+  // its own key too, so unsaved words from a moment never turn it back into one.
+  const bufferKey = user?.id ? `composer:${user.id}:${existing?.id || (prompt ? `prompt-${promptKey(prompt)}` : kind === 'interaction' ? 'new-interaction' : 'new')}` : null;
   useEffect(() => {
     if (open) {
       const initial = existing ? { ...existing, kind: existing.entry_kind || (['reflection', 'interaction'].includes(existing.kind) ? existing.kind : 'reflection'), emotions_text: (existing.emotions || []).join(', '), time: existing.occurred_at ? new Date(existing.occurred_at).toTimeString().slice(0, 5) : '', activities_text: (existing.activities || []).join(', ') } : { date: todayKey(), kind: kind === 'interaction' ? 'interaction' : 'reflection', time: '', emotions_text: '', notes: prompt, mood_score: null, person_ids: [], activities_text: '', stress_context: {}, interaction_feeling: '', boundary_respected: '' };

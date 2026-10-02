@@ -21,7 +21,7 @@ const DEFAULTS = NOTICE_DEFAULTS;
 const loadCompleteExport = () => import('@/features/export/CompleteExport');
 const loadOpenExport = () => import('@/features/export/OpenExport');
 
-export default function SettingsSheet({ open, onOpenChange }) {
+export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) {
   const { toast } = useToast();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
@@ -139,7 +139,7 @@ export default function SettingsSheet({ open, onOpenChange }) {
     }
     setDeleting(false);
   }
-  return <><Sheet open={open} onOpenChange={onOpenChange}><SheetContent>
+  return <><Sheet open={open} onOpenChange={onOpenChange}><SheetContent onCloseAutoFocus={onCloseAutoFocus}>
     <SheetHeader><SheetTitle className="font-display text-2xl">Settings & privacy</SheetTitle><SheetDescription>Your record, your preferences, and who can see this device.</SheetDescription></SheetHeader>
     <div className="space-y-7 mt-6">
       {error && <p className="living-error" role="alert">{error}{!settingsLoaded && <> Your low-mood lines are paused until they load; other settings still save. <button type="button" className="underline" onClick={() => setLoadAttempt((count) => count + 1)}>Try again</button></>}</p>}

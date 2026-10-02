@@ -141,6 +141,15 @@ export default function Layout({ children }) {
     const menuButtonRef = useRef(null);
     const drawerCloseRef = useRef(null);
     const restoreFocusRef = useRef(false);
+    // Settings and Invite opened from the drawer hand focus back to the menu
+    // button when they close, since the drawer's own button is gone by then.
+    const returnToMenuRef = useRef(false);
+    const returnFocusToMenu = (e) => {
+        if (!returnToMenuRef.current) return;
+        returnToMenuRef.current = false;
+        e.preventDefault();
+        menuButtonRef.current?.focus();
+    };
     // Quick exit is opt-in (Settings), so it never surprises anyone.
     const quickExitOn = Boolean(usePreferences().data?.quick_exit);
 
@@ -154,8 +163,8 @@ export default function Layout({ children }) {
         return () => { cancelled = true; };
     }, [location.pathname]);
 
-    // Close on route change
-    useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+    // Close on route change, including Back with the Add menu open.
+    useEffect(() => { setMobileOpen(false); setAddOpen(false); }, [location.pathname]);
 
     // Lock body scroll when drawer open
     useEffect(() => {
@@ -242,7 +251,7 @@ export default function Layout({ children }) {
             {/* ── Mobile overlay backdrop ── */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 z-30 md:hidden"
+                    className="fixed inset-0 z-[35] md:hidden"
                     style={{ background: 'color-mix(in srgb, var(--gh-ink) 30%, transparent)', backdropFilter: 'blur(2px)' }}
                     onClick={closeDrawer}
                 />
@@ -290,11 +299,11 @@ export default function Layout({ children }) {
                         <X className="w-4 h-4" />
                     </button>
                 </div>
-                <NavLinks location={location} onNavigate={() => setMobileOpen(false)} />
+                <NavLinks location={location} onNavigate={closeDrawer} />
                 <div className="px-3 pb-2 space-y-1">
-                    <Link to="/support-now" onClick={() => setMobileOpen(false)} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><LifeBuoy size={16} aria-hidden="true" />Support now</Link>
-                    <button onClick={() => { setMobileOpen(false); setSettingsOpen(true); }} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><Settings2 size={16} aria-hidden="true" />Settings</button>
-                    <button onClick={() => { setMobileOpen(false); setInviteOpen(true); }}
+                    <Link to="/support-now" onClick={closeDrawer} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><LifeBuoy size={16} aria-hidden="true" />Support now</Link>
+                    <button onClick={() => { returnToMenuRef.current = true; setMobileOpen(false); setSettingsOpen(true); }} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><Settings2 size={16} aria-hidden="true" />Settings</button>
+                    <button onClick={() => { returnToMenuRef.current = true; setMobileOpen(false); setInviteOpen(true); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
                         style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
                         <UserPlus className="w-4 h-4" />
@@ -336,8 +345,8 @@ export default function Layout({ children }) {
                 <div className="layout-content flex-1 overflow-auto">
                     {children}
                 </div>
-            <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
-            <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+            <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} onCloseAutoFocus={returnFocusToMenu} />
+            <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} onCloseAutoFocus={returnFocusToMenu} />
             </main>
 
             <TabBar items={navigationItems.slice(0, 4)} isActive={(item) => isCurrent(location, item)} onAdd={() => setAddOpen(true)} inert={mobileOpen} />

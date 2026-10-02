@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Download, ArrowRight, FileText } from 'lucide-react';
 import { ReportReflection } from '@/api/entities';
 import { reportPeriod, previousPeriod, buildReport, entryText } from '@/lib/living-patterns';
 import { addDaysKey, formatDay, formatRange, todayKey } from '@/lib/dates';
 import { practiceById, ALIGNMENTS } from '@/lib/practices';
-import ReportLetter from './ReportLetter';
+import ReportObservations from './ReportObservations';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import StressPatternCards from './StressPatternCards';
 import EntryLink from './EntryLink';
@@ -24,10 +24,14 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
-  const [confirmRemove, setConfirmRemove] = useState(false);
+  // The reflection a removal is for, held so changing the period can't change it.
+  const [removing, setRemoving] = useState(null);
+  const removeButtonRef = useRef(null);
+  const reflectionRef = useRef(null);
   const [momentsShown, setMomentsShown] = useState(6);
   const [themeEdit, setThemeEdit] = useState(null);
   useEffect(() => { setReflection(saved?.notes || ''); setError(''); setMomentsShown(6); }, [period.start, type, saved?.notes]);
+  useEffect(() => { if (!busy) setRemoving(null); }, [period.start, type]);
   useBeforeUnload(reflection !== (saved?.notes || ''));
 
   const archive = useMemo(() => {
@@ -65,7 +69,7 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
       <p className="living-muted">{formatRange(period.start, period.end)} · {report.partial ? 'In progress; includes entries through today' : 'Completed period'} · Your local calendar{type === 'weekly' ? `, ${weekStart === 0 ? 'Sunday' : 'Monday'} week start` : ''}.</p>
     </section>
 
-    <ReportLetter report={report} type={type} />
+    <ReportObservations report={report} type={type} themeLabels={data.preferences.theme_labels} />
 
     <section className="living-card space-y-5" aria-label="This period in numbers">
       <div className="living-stats"><div><span>RECORDED DAYS</span><strong>{report.days}<small> / {report.calendarDays}</small></strong></div><div><span>DAYS NOT RECORDED</span><strong>{report.missing}</strong></div><div><span>DAILY MOOD RANGE</span><strong>{report.moods ? `${report.moods.min}–${report.moods.max}` : '—'}<small>{report.moods ? ' / 10' : ''}</small></strong></div></div>
@@ -94,9 +98,9 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
       <Link className="living-text-link" to="/Practice?tab=somatic">Choose a practice or revisit your responses <ArrowRight size={15} /></Link>
     </section>
 
-    <section className="living-card space-y-4" aria-labelledby="report-reflection-heading"><h2 id="report-reflection-heading">What do you want to carry forward?</h2><p className="living-muted">{type === 'monthly' ? 'What keeps returning? Where did you have more choice? What would you like to try or protect next month?' : 'What repeated? When did you feel like yourself? What would you like to practice next week?'}</p><label className="living-label">Your optional reflection<textarea className="living-input mt-2" rows={5} maxLength={30000} value={reflection} onChange={(e) => setReflection(e.target.value)} placeholder="Your understanding may change. Keep what matters to you now." /></label>{saved?.is_demo && <p className="living-muted text-xs">This saved reflection is demo data.</p>}{notice && <p role="status" className="living-success">{notice}</p>}{error && <p role="alert" className="living-error">{error}</p>}<div className="flex flex-wrap gap-3"><button className="ink-button" disabled={busy} onClick={saveReflection}>{busy ? 'Saving…' : 'Save reflection'}</button>{saved && <button className="danger-outline" disabled={busy} onClick={() => { setError(''); setConfirmRemove(true); }}>Remove saved reflection</button>}</div></section>
-    <AlertDialog open={confirmRemove} onOpenChange={(open) => { if (!open && !busy) setConfirmRemove(false); }}>
-      <AlertDialogContent>
+    <section className="living-card space-y-4" aria-labelledby="report-reflection-heading"><h2 id="report-reflection-heading">What do you want to carry forward?</h2><p className="living-muted">{type === 'monthly' ? 'What keeps returning? Where did you have more choice? What would you like to try or protect next month?' : 'What repeated? When did you feel like yourself? What would you like to practice next week?'}</p><label className="living-label">Your optional reflection<textarea ref={reflectionRef} className="living-input mt-2" rows={5} maxLength={30000} value={reflection} onChange={(e) => setReflection(e.target.value)} placeholder="Your understanding may change. Keep what matters to you now." /></label>{saved?.is_demo && <p className="living-muted text-xs">This saved reflection is demo data.</p>}{notice && <p role="status" className="living-success">{notice}</p>}{error && <p role="alert" className="living-error">{error}</p>}<div className="flex flex-wrap gap-3"><button className="ink-button" disabled={busy} onClick={saveReflection}>{busy ? 'Saving…' : 'Save reflection'}</button>{saved && <button ref={removeButtonRef} className="danger-outline" disabled={busy} onClick={() => { setError(''); setRemoving(saved); }}>Remove saved reflection</button>}</div></section>
+    <AlertDialog open={Boolean(removing)} onOpenChange={(open) => { if (!open && !busy) setRemoving(null); }}>
+      <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); (removeButtonRef.current || reflectionRef.current)?.focus(); }}>
         <AlertDialogHeader>
           <AlertDialogTitle>Remove your saved reflection?</AlertDialogTitle>
           <AlertDialogDescription>Your reflection for this {type === 'monthly' ? 'month' : 'week'} is deleted. The report itself stays.</AlertDialogDescription>
@@ -104,7 +108,7 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
         {error && <p className="living-error" role="alert">{error}</p>}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy}>Keep it</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" aria-disabled={busy} onClick={async (e) => { e.preventDefault(); if (busy || !saved) return; setBusy(true); setError(''); try { await ReportReflection.delete(saved.id); await onChanged(); setReflection(''); setConfirmRemove(false); setNotice('Reflection removed. The report remains available.'); } catch (err) { setError(err.message || "The reflection couldn't be removed. Please try again."); } setBusy(false); }}>{busy ? 'Removing…' : 'Remove reflection'}</AlertDialogAction>
+          <AlertDialogAction variant="destructive" aria-disabled={busy} onClick={async (e) => { e.preventDefault(); if (busy || !removing) return; setBusy(true); setError(''); try { await ReportReflection.delete(removing.id); await onChanged(); setReflection(''); setRemoving(null); setNotice('Reflection removed. The report remains available.'); } catch (err) { setError(err.message || "The reflection couldn't be removed. Please try again."); } setBusy(false); }}>{busy ? 'Removing…' : 'Remove reflection'}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

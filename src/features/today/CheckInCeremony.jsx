@@ -74,6 +74,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const [draftMessage, setDraftMessage] = useState('');
   const [restored, setRestored] = useState(false); // a saved draft or tab copy was brought back
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const discardButtonRef = useRef(null);
   // Unsaved words from this tab that can't be proven newer than the server copy.
   const [heldBuffer, setHeldBuffer] = useState(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -509,16 +510,16 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
           </span>
         </div>
         <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{formatDay(dateKey, { style: 'long' })} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <> Some questions are left out to match what you chose to notice. <button type="button" className="underline underline-offset-4" onClick={showAllSteps}>Show all questions</button></>}</p>
-        {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="danger-link ml-3" disabled={saving} onClick={() => setConfirmDiscard(true)}>Discard draft</button>}</p>}
+        {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button ref={discardButtonRef} type="button" className="danger-link ml-3" disabled={saving} onClick={() => setConfirmDiscard(true)}>Discard draft</button>}</p>}
         <AlertDialog open={confirmDiscard} onOpenChange={(open) => { if (!open && !saving) setConfirmDiscard(false); }}>
-          <AlertDialogContent>
+          <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); (discardButtonRef.current || stepRegionRef.current)?.focus(); }}>
             <AlertDialogHeader>
               <AlertDialogTitle>Discard this draft?</AlertDialogTitle>
               <AlertDialogDescription>What the draft for {formatDay(dateKey, { style: "long" })} holds is deleted, and the check-in goes back to what was last kept. Check-ins you have kept are not affected.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={saving}>Keep the draft</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" aria-disabled={saving} onClick={async (e) => { e.preventDefault(); if (saving) return; if (await discardRestored()) setConfirmDiscard(false); }}>Discard draft</AlertDialogAction>
+              <AlertDialogAction variant="destructive" aria-disabled={saving} onClick={async (e) => { e.preventDefault(); if (saving) return; if (await discardRestored()) setConfirmDiscard(false); }}>{saving ? "Discarding…" : "Discard draft"}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

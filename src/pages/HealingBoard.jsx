@@ -9,8 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Slider } from "@/components/ui/slider";
 import { Plus, Edit, Heart, Shield, Gift, Star, TrendingUp, Trash2, X } from "lucide-react";
-import { todayKey, parseLocalDate } from "@/lib/dates";
-import { format } from "date-fns";
+import { todayKey, formatDay } from "@/lib/dates";
 import LoadingState from "@/features/shell/LoadingState";
 
 // Categories share the ink/accent voice; each keeps its own quiet wash drawn
@@ -277,7 +276,7 @@ export default function HealingBoard() {
                                             <TrendingUp className="w-3 h-3 mt-0.5 shrink-0" style={{ color: 'var(--gh-accent)' }} />
                                             <div>
                                                 <div style={{ color: 'var(--gh-ink-soft)' }}>{milestone.milestone}</div>
-                                                <div style={{ color: 'var(--gh-ink-muted)' }}>{format(parseLocalDate(milestone.date), "MMM d, yyyy")}</div>
+                                                <div style={{ color: 'var(--gh-ink-muted)' }}>{formatDay(milestone.date, { style: 'short', withYear: true })}</div>
                                             </div>
                                         </div>
                                     ))}
@@ -354,7 +353,7 @@ export default function HealingBoard() {
                                             style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 6px)' }}>
                                             <div>
                                                 <div style={{ color: 'var(--gh-ink)' }}>{milestone.milestone}</div>
-                                                <div className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{milestone.date}</div>
+                                                <div className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{formatDay(milestone.date, { style: 'short', withYear: true })}</div>
                                             </div>
                                             <button type="button" aria-label={`Remove milestone: ${milestone.milestone}`} onClick={() => removeMilestone(i)}>
                                                 <X className="w-3.5 h-3.5" style={{ color: 'var(--gh-ink-muted)' }} />

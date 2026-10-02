@@ -5,7 +5,7 @@ import { useLivingData, usePreferences } from '@/features/patterns/useLivingData
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import QuickExit from '@/features/safety/QuickExit';
 import { buildShareSummary, kindOf } from '@/lib/share-summary';
-import { addDaysKey, todayKey } from '@/lib/dates';
+import { addDaysKey, formatDay, todayKey } from '@/lib/dates';
 import { entryText, filterEntries, validDateKey } from '@/lib/living-patterns';
 import SummaryDocument from './SummaryDocument';
 import LoadingState from '@/features/shell/LoadingState';
@@ -55,7 +55,8 @@ export default function ShareSummaryPage() {
   const toggleEntry = (key) => setChosen((keys) => (keys.includes(key) ? keys.filter((item) => item !== key) : [...keys, key]));
   const chosenInRange = candidates.filter((entry) => chosen.includes(entry.key)).length;
   const back = () => (location.key !== 'default' ? navigate(-1) : navigate('/Analytics'));
-  // A saved PDF takes the page title as its file name.
+  // A saved PDF takes the page title as its file name, so the title keeps
+  // yyyy-MM-dd dates, which sort.
   useEffect(() => {
     const before = document.title;
     if (valid) document.title = `Summary to share, ${start} to ${end}`;
@@ -99,7 +100,7 @@ export default function ShareSummaryPage() {
           <details className="space-y-2">
             <summary className="living-label cursor-pointer">Add your words from chosen entries · {chosenInRange} chosen</summary>
             <p className="living-muted text-xs mt-2">Only the entries you tick are included, with their full text.</p>
-            {candidates.length ? <div className="max-h-72 overflow-y-auto space-y-2 mt-2">{candidates.map((entry) => <label key={entry.key} className="flex gap-2 items-start text-sm"><input type="checkbox" className="mt-0.5 shrink-0" checked={chosen.includes(entry.key)} onChange={() => toggleEntry(entry.key)} /><span>{entry.date} · {kindOf(entry)} · {(entryText(entry) || 'No written words').slice(0, 80)}</span></label>)}</div> : <p className="living-muted text-sm mt-2">No entries in these dates.</p>}
+            {candidates.length ? <div className="max-h-72 overflow-y-auto space-y-2 mt-2">{candidates.map((entry) => <label key={entry.key} className="flex gap-2 items-start text-sm"><input type="checkbox" className="mt-0.5 shrink-0" checked={chosen.includes(entry.key)} onChange={() => toggleEntry(entry.key)} /><span>{formatDay(entry.date)} · {kindOf(entry)} · {(entryText(entry) || 'No written words').slice(0, 80)}</span></label>)}</div> : <p className="living-muted text-sm mt-2">No entries in these dates.</p>}
           </details>
           <label className="living-label">Something you would like to talk about (optional)<textarea className="living-input mt-2" rows={3} maxLength={4000} value={note} onChange={(e) => setNote(e.target.value)} /><span className="living-muted text-xs">Shown at the top of the summary. It is not saved.</span></label>
         </>}

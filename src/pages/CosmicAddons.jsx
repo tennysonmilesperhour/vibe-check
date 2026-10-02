@@ -242,7 +242,7 @@ export default function CosmicAddons() {
                     <TabsContent value="systems" className="space-y-6">
                     <fieldset disabled={profileLoad !== 'ready'} className="space-y-6 min-w-0 border-0 p-0 m-0" aria-busy={profileLoad === 'loading'}>
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'var(--font-body)', color: 'var(--gh-ink)' }}>Choose your systems</h3>
+                            <h3 className="font-body text-base font-bold mb-1" style={{ color: 'var(--gh-ink)' }}>Choose your systems</h3>
                             <p className="text-sm mb-2" style={{ color: 'var(--gh-ink-muted)' }}>
                                 Turn on the wisdom frameworks you resonate with. Enabled systems weave into your loom, readings, and daily weather.
                             </p>
@@ -251,7 +251,7 @@ export default function CosmicAddons() {
 
                         {/* Name and birth date */}
                         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-                            <h3 className="text-base font-bold mb-1" style={{ fontFamily: 'var(--font-body)', color: 'var(--gh-ink)' }}>Name & birth date</h3>
+                            <h3 className="font-body text-base font-bold mb-1" style={{ color: 'var(--gh-ink)' }}>Name & birth date</h3>
                             <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>
                                 Your name feeds the numerology (expression, soul urge, life path). Your birth date supports numerology calculations, tarot birth cards, and an approximate Sun sign in the tropical zodiac. Vibe Check doesn't ask for your birth time or place, since nothing here uses them.
                             </p>
@@ -290,7 +290,7 @@ export default function CosmicAddons() {
                     <fieldset disabled={profileLoad !== 'ready'} className="space-y-6 min-w-0 border-0 p-0 m-0" aria-busy={profileLoad === 'loading'}>
                         {/* Sacred Geometry Blueprint */}
                         <div className="p-6 flex flex-col items-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-                            <h3 className="text-base font-bold mb-1 w-full" style={{ fontFamily: 'var(--font-body)', color: 'var(--gh-ink)' }}>Your cosmic blueprint</h3>
+                            <h3 className="font-body text-base font-bold mb-1 w-full" style={{ color: 'var(--gh-ink)' }}>Your cosmic blueprint</h3>
                             <p className="text-sm mb-3 w-full" style={{ color: 'var(--gh-ink-muted)' }}>Systems light up as you fill in your profile data</p>
                             <div className="w-full mb-4 p-4" style={{ background: 'color-mix(in srgb, var(--gh-gold) 10%, transparent)', borderLeft: '2px solid var(--gh-gold)' }}>
                                 <p className="text-sm font-medium mb-1" style={{ color: 'var(--gh-ink)' }}>Begin with what you know</p>
@@ -304,7 +304,7 @@ export default function CosmicAddons() {
 
                         {enabledSystems.length === 0 ? (
                             <div className="p-12 text-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-                                <p className="font-medium mb-1" style={{ color: 'var(--gh-ink)', fontFamily: 'var(--font-body)' }}>No systems woven yet</p>
+                                <p className="font-medium mb-1" style={{ color: 'var(--gh-ink)' }}>No systems woven yet</p>
                                 <p className="text-sm" style={{ color: 'var(--gh-ink-muted)' }}>
                                     Go to the Systems tab and toggle on at least one system to enter your profile.
                                 </p>
@@ -319,7 +319,7 @@ export default function CosmicAddons() {
                                         <div className="flex items-center gap-3 mb-5">
                                             <system.Icon className="w-6 h-6 shrink-0" style={{ color: 'var(--gh-accent)' }} aria-hidden="true" />
                                             <div>
-                                                <h3 className="font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gh-ink)' }}>{system.label}</h3>
+                                                <h3 className="font-body font-bold" style={{ color: 'var(--gh-ink)' }}>{system.label}</h3>
                                                 <p className="text-xs mt-0.5" style={{ color: 'var(--gh-ink-muted)' }}>{system.description}</p>
                                             </div>
                                         </div>

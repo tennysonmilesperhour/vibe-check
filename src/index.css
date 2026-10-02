@@ -92,6 +92,7 @@
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground; font-family: var(--font-body); min-height: 100vh; -webkit-font-smoothing: antialiased; }
   h1,h2,h3,.font-display { font-family: var(--font-display); font-weight: 400; font-style: normal; letter-spacing: -.025em; font-synthesis: style; }
+  .font-body { font-family: var(--font-body); letter-spacing: normal; }
   h1,h2,h3 { text-wrap: balance; }
   input,textarea,select { color: var(--gh-ink); caret-color: var(--gh-accent); }
   input::placeholder,textarea::placeholder { color: var(--gh-ink-muted); }

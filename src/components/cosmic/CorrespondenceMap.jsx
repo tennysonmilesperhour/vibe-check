@@ -103,7 +103,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
           <div className="flex items-center gap-2 mb-1">
             <BookOpen className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} />
-            <h3 className="text-base font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gh-ink)' }}>Active connections</h3>
+            <h3 className="font-body text-base font-bold" style={{ color: 'var(--gh-ink)' }}>Active connections</h3>
           </div>
           <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>Live cross-system resonances from your enabled blueprint</p>
           <div>
@@ -125,7 +125,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
       {/* Inactive pairs */}
       {inactivePairs.length > 0 && (
         <div className="p-6" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-          <h3 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: 'var(--gh-ink-muted)', fontFamily: 'var(--font-body)' }}>Weave both systems to unlock</h3>
+          <h3 className="font-body text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: 'var(--gh-ink-muted)' }}>Weave both systems to unlock</h3>
           <div className="opacity-60">
             {inactivePairs.map((pair, i) => (
               <div key={pair.key} className="py-3"
@@ -147,7 +147,7 @@ export default function CorrespondenceMap({ enabledSystems = [], profile = {} })
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Combine className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} />
-            <h3 className="text-base font-bold" style={{ fontFamily: 'var(--font-body)', color: 'var(--gh-ink)' }}>Integrated blueprint reading</h3>
+            <h3 className="font-body text-base font-bold" style={{ color: 'var(--gh-ink)' }}>Integrated blueprint reading</h3>
           </div>
           {deepReport && (
             <Button size="sm" variant="outline" onClick={() => exportMapPDF(profile, deepReport)}

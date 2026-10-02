@@ -250,7 +250,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
         <div className="flex items-center gap-3">
           <Icon className="w-5 h-5" style={{ color: 'var(--gh-accent)' }} aria-hidden="true" />
           <div>
-            <h3 className="font-bold text-base" style={{ fontFamily: 'var(--font-body)', color: 'var(--gh-ink)' }}>{label}</h3>
+            <h3 className="font-body font-bold text-base" style={{ color: 'var(--gh-ink)' }}>{label}</h3>
             <p className="text-xs mt-0.5" style={{ color: 'var(--gh-ink-muted)' }}>Full system report</p>
           </div>
         </div>
@@ -270,7 +270,7 @@ function SystemCard({ systemId, profile, cosmicProfile, autoOpen, openNonce }) {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4" style={{ color: 'var(--gh-accent)' }} />
-                <span className="text-sm font-semibold" style={{ color: 'var(--gh-ink)', fontFamily: 'var(--font-body)' }}>Deep reading</span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--gh-ink)' }}>Deep reading</span>
               </div>
               {report && (
                 <Button size="sm" variant="outline" onClick={() => exportToPDF(label, report, systemId === "astrology" ? null : data, meta.origin)}
@@ -311,7 +311,7 @@ export default function SystemReports({ enabledSystems, profile, cosmicProfile, 
   if (enabledSystems.length === 0) {
     return (
       <div className="p-12 text-center" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
-        <p className="font-medium mb-1" style={{ color: 'var(--gh-ink)', fontFamily: 'var(--font-body)' }}>No systems woven yet</p>
+        <p className="font-medium mb-1" style={{ color: 'var(--gh-ink)' }}>No systems woven yet</p>
         <p className="text-sm" style={{ color: 'var(--gh-ink-muted)' }}>Turn on at least one system on the Systems tab.</p>
       </div>
     );

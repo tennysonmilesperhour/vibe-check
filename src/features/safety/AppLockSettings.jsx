@@ -53,7 +53,7 @@ export default function AppLockSettings() {
 
   return (
     <section className="space-y-3 hairline pt-6" aria-labelledby="app-lock-heading">
-      <h3 id="app-lock-heading" className="font-semibold">App lock on this device</h3>
+      <h3 id="app-lock-heading" className="text-xl">App lock on this device</h3>
       <p className="living-muted text-sm">A PIN before your journal shows, and again after the app has been in the background for 5 minutes. It keeps your journal from someone who picks up this device. It can't protect a device someone else controls or monitors, and a forgotten PIN means signing out.</p>
       {!mode && (
         <div className="flex flex-wrap gap-3">

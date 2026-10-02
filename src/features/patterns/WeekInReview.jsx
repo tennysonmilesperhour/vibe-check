@@ -74,7 +74,7 @@ export default function WeekInReview({ checkIns, people = [], forceShow = false 
                   minHeight: 4,
                 }}
               />
-              <span className="text-[10px]" style={{ color: "rgba(255,253,246,0.85)" }}>
+              <span className="text-xs" style={{ color: "rgba(255,253,246,0.85)" }}>
                 {format(parseLocalDate(d), "EEEEE")}
               </span>
             </div>

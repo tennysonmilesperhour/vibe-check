@@ -5,6 +5,9 @@
   :root {
     /* Woodland palette from the user’s September 8 reference.
        Legacy --gh names remain aliases for existing feature surfaces. */
+    /* Instrument Serif has one weight, so serif text is never set bold. */
+    --font-display: 'Instrument Serif', Georgia, serif;
+    --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     --woodland-moss: #555e41;
     --woodland-bark: #77604b;
     --woodland-paper: #e4ddc5;
@@ -87,8 +90,8 @@
     --z-tooltip: 70;
   }
   * { @apply border-border outline-ring/50; }
-  body { @apply bg-background text-foreground; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; }
-  h1,h2,h3,.font-display { font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-style: normal; letter-spacing: -.025em; }
+  body { @apply bg-background text-foreground; font-family: var(--font-body); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,.font-display { font-family: var(--font-display); font-weight: 400; font-style: normal; letter-spacing: -.025em; font-synthesis: style; }
   h1,h2,h3 { text-wrap: balance; }
   input,textarea,select { color: var(--gh-ink); caret-color: var(--gh-accent); }
   input::placeholder,textarea::placeholder { color: var(--gh-ink-muted); }
@@ -113,7 +116,7 @@
   .sanctuary-surface[data-depth="4"] .sanctuary-shade { background-color: rgba(8,28,20,.36); }
   .sanctuary-shade { transition: background-color .6s ease; }
   .sanctuary-content { z-index: 1; }
-  .sanctuary-film-control { position: absolute; bottom: 20px; right: 24px; z-index: 2; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid #b8c3ac70; border-radius: 30px; background: #18231bdb; color: #e9e2cd; font-size: 10px; letter-spacing: .035em; }
+  .sanctuary-film-control { position: absolute; bottom: 20px; right: 24px; z-index: 2; display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid #b8c3ac70; border-radius: 30px; background: #18231bdb; color: #e9e2cd; font-size: 12px; letter-spacing: .035em; }
   .sanctuary-film-control:hover { background: #254b36; }
   .field-wash { background: radial-gradient(ellipse at 96% 0%,#555e4140,transparent 50%),radial-gradient(ellipse at 0% 100%,#77604b20,transparent 55%),var(--gh-field); }
   .dusk-surface { background: radial-gradient(ellipse at 50% 0%,#555e4177,transparent 65%),linear-gradient(160deg,#101a14,#2e3e2d); color: var(--gh-dusk-ink); }
@@ -127,13 +130,13 @@
   .cream-button:hover:not(:disabled) { background: #c9c2a8; transform: translateY(-1px); }
   .ghost-cream-button:hover:not(:disabled) { background: #e9e2cd1a; }
   .ink-button:active:not(:disabled),.cream-button:active:not(:disabled) { transform: translateY(0); }
-  .sanctuary-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .19em; line-height: 1.6; }
+  .sanctuary-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .16em; line-height: 1.6; }
 
   /* Arrival: a generous landscape and an intimate cream reading surface. */
   .welcome-page { min-height: 100svh; display: grid; grid-template-columns: minmax(0,1.18fr) minmax(410px,1fr); background: var(--gh-cream); padding: 14px; gap: 14px; }
   .welcome-landscape { border-radius: 16px; min-height: calc(100svh - 28px); }
   .welcome-landscape .sanctuary-content { min-height: inherit; display: flex; flex-direction: column; padding: 38px 52px 42px; }
-  .welcome-brand { display: flex; align-items: center; gap: 13px; font-family: 'Instrument Serif',Georgia,serif; font-size: 32px; letter-spacing: -.015em; }
+  .welcome-brand { display: flex; align-items: center; gap: 13px; font-family: var(--font-display); font-size: 32px; letter-spacing: -.015em; }
   .welcome-brand svg { color: #c7b48a; }
   .welcome-story { margin: auto 0; padding: 90px 0 72px; }
   .welcome-story .sanctuary-eyebrow { color: #e3d4b4; display: flex; align-items: center; gap: 14px; }
@@ -143,35 +146,35 @@
   .welcome-invitation { display: inline-flex; align-items: center; gap: 30px; min-height: 44px; font-size: 12px; margin-top: 25px; border-bottom: 1px solid #c3ad76a8; }
   .welcome-invitation svg { transition: transform .2s; }
   .welcome-invitation:hover svg { transform: translate(2px,-2px); }
-  .welcome-caption { display: flex; align-items: center; gap: 12px; font-size: 10px; color: #e0decfde; padding-bottom: 42px; letter-spacing: .03em; }
+  .welcome-caption { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #e0decfde; padding-bottom: 42px; letter-spacing: .03em; }
   .caption-rule { width: 24px; height: 1px; background: #a58e66; }
   .welcome-panel { display: flex; flex-direction: column; padding: 22px 40px 18px; }
-  .welcome-topline { display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--gh-ink-muted); }
+  .welcome-topline { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--gh-ink-muted); }
   .welcome-topline a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
   .welcome-form-wrap { width: 100%; max-width: 360px; margin: auto; padding: 38px 0; scroll-margin-top: 28px; }
   .welcome-form-mark { color: #695437; margin-bottom: 23px; }
-  .welcome-form-wrap>.sanctuary-eyebrow { color: var(--gh-ink-muted); font-size: 9px; }
+  .welcome-form-wrap>.sanctuary-eyebrow { color: var(--gh-ink-muted); }
   .welcome-form-wrap h2 { font-size: clamp(38px,3.7vw,56px); line-height: 1.12; margin-top: 9px; }
   .welcome-form-intro { font-size: 12px; line-height: 1.8; margin-top: 12px; color: var(--gh-ink-muted); }
   .auth-mode-switch { display: flex; gap: 26px; margin-top: 30px; border-bottom: 1px solid #a8ad90; }
   .auth-mode-switch button { padding: 12px 0; min-height: 44px; font-size: 12px; border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--gh-ink-muted); }
   .auth-mode-switch button[aria-pressed="true"] { color: #26392c; border-bottom-color: #695437; font-weight: 700; }
   .sanctuary-auth-form { display: flex; flex-direction: column; gap: 18px; margin-top: 23px; }
-  .sanctuary-auth-form label { font-size: 11px; font-weight: 600; }
+  .sanctuary-auth-form label { font-size: 12px; font-weight: 600; }
   .sanctuary-auth-form input { margin-top: 8px; min-height: 48px; height: 48px; border-radius: 7px; background: var(--woodland-paper); border-color: #7b8667; box-shadow: none; font-size: 12px; padding: 0 14px; }
   .sanctuary-auth-form input:focus-visible { border-color: #34492f; outline: none; box-shadow: 0 0 0 3px #34492f18; }
   .auth-label-row { display: flex; align-items: center; justify-content: space-between; }
-  .auth-label-row button { font-size: 10px; text-decoration: underline; text-underline-offset: 4px; min-height: 28px; }
+  .auth-label-row button { font-size: 12px; text-decoration: underline; text-underline-offset: 4px; min-height: 28px; }
   .auth-submit { width: 100%; justify-content: space-between; margin-top: 6px; font-size: 12px; min-height: 51px; }
   .auth-notice { font-size: 12px; padding: 12px 14px; background: #c5cbb0; border-left: 2px solid #697b51; border-radius: 4px; color: #2f3c28; line-height: 1.6; margin-top: 16px; }
   .auth-error { background: #dfc7ad; border-left-color: #814b35; color: #663923; }
-  .auth-alternative { display: flex; gap: 14px; align-items: center; font-size: 10px; color: var(--gh-ink-muted); margin: 18px 0 12px; }
+  .auth-alternative { display: flex; gap: 14px; align-items: center; font-size: 12px; color: var(--gh-ink-muted); margin: 18px 0 12px; }
   .auth-alternative span { height: 1px; background: #a8ad90; flex: 1; }
-  .auth-magic { min-height: 44px; width: 100%; border: 1px solid #7b8667; border-radius: 7px; font-size: 11px; transition: background .2s; }
+  .auth-magic { min-height: 44px; width: 100%; border: 1px solid #7b8667; border-radius: 7px; font-size: 12px; transition: background .2s; }
   .auth-magic:hover { background: #c5cbb0; }
-  .auth-footnote { margin-top: 19px; font-size: 9px; text-align: center; color: var(--gh-ink-muted); }
+  .auth-footnote { margin-top: 19px; font-size: 12px; text-align: center; color: var(--gh-ink-muted); }
   .welcome-pillars { display: flex; justify-content: space-around; border-top: 1px solid #a8ad90; padding: 23px 0 8px; gap: 12px; }
-  .welcome-pillars span { display: flex; align-items: center; gap: 8px; font-size: 9px; color: var(--gh-ink-muted); }
+  .welcome-pillars span { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--gh-ink-muted); }
   .welcome-pillars svg { color: #695437; stroke-width: 1.2; }
 
   /* Forest navigation with parchment labels. */
@@ -184,15 +187,15 @@
   .today-invitation { min-height: 100svh; }
   .today-invitation .sanctuary-content { min-height: inherit; }
   .today-content { min-height: inherit; max-width: 1060px; padding: 48px 64px 80px; display: flex; flex-direction: column; }
-  .today-date { display: flex; justify-content: space-between; gap: 20px; align-items: center; font-size: 11px; color: #e9e9db; }
+  .today-date { display: flex; justify-content: space-between; gap: 20px; align-items: center; font-size: 12px; color: #e9e9db; }
   .today-heading { margin-top: auto; padding-top: 100px; }
   .today-heading h1 { font-size: clamp(60px,6.5vw,94px); line-height: 1.01; max-width: 9ch; margin: 20px 0 24px; }
   .today-heading>p:not(.sanctuary-eyebrow) { max-width: 360px; color: #e3e7da; font-size: 14px; line-height: 1.9; }
   .today-paths { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; margin-top: 75px; border-top: 1px solid #e9e2cd3d; padding-top: 28px; }
   .today-paths a { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 6px 0; }
   .today-paths svg { color: #c7b48a; stroke-width: 1.3; }
-  .today-paths strong { font-family: 'Instrument Serif',Georgia,serif; font-weight: 400; font-size: 25px; }
-  .today-paths span { font-size: 11px; color: #e3e7da; line-height: 1.7; }
+  .today-paths strong { font-family: var(--font-display); font-weight: 400; font-size: 25px; }
+  .today-paths span { font-size: 12px; color: #e3e7da; line-height: 1.7; }
   .today-paths a:hover strong { color: #e4ce9d; }
   .tarot-preview { display: flex; justify-content: center; gap: 16px; padding: 28px 0 0; }
   .reflection-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
@@ -221,23 +224,21 @@
   .welcome-story { padding: 46px 0 24px; }
   .welcome-story h1 { font-size: clamp(54px,12vw,78px); }
   .welcome-description { font-size: 12px; max-width: 310px; }
-  .welcome-story .sanctuary-eyebrow { font-size: 8px; }
-  .welcome-caption { padding-bottom: 50px; font-size: 9px; }
+  .welcome-caption { padding-bottom: 50px; }
   .welcome-panel { padding: 22px 18px 16px; }
   .welcome-form-wrap { max-width: 420px; padding: 36px 0; }
   .welcome-form-wrap h2 { font-size: 46px; }
   .welcome-form-mark { margin-bottom: 20px; }
   .sanctuary-auth-form input { font-size: 16px; }
   .auth-label-row button { min-height: 44px; }
-  .welcome-pillars span { flex-direction: row; font-size: 8px; }
+  .welcome-pillars span { flex-direction: row; }
   .today-invitation { min-height: calc(100svh - 65px); }
   .today-content { padding: 28px 26px 90px; }
-  .today-date { font-size: 10px; align-items: flex-start; flex-direction: column; gap: 8px; }
+  .today-date { align-items: flex-start; flex-direction: column; gap: 8px; }
   .today-heading { padding-top: 65px; }
   .today-heading h1 { font-size: 66px; }
   .today-paths { margin-top: 55px; gap: 14px; }
   .today-paths strong { font-size: 22px; }
-  .today-paths span { font-size: 10px; }
   .sanctuary-film-control { right: 18px; bottom: 18px; }
   .reflection-header h1 { font-size: 42px; }
   .reflection-header>div { min-width: 0; }

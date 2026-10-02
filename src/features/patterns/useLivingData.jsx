@@ -40,12 +40,15 @@ export function useRecordPart(/** @type {keyof typeof PARTS} */ part) {
 
 /**
  * One part of the record: the cached copy while it is recent, read now
- * otherwise. fresh reads it now in any case and keeps it for other pages.
+ * otherwise. fresh reads it now in any case and keeps it for other pages;
+ * cached takes whatever copy is cached, however old, and reads only when
+ * there is none.
  * @param {import('@tanstack/react-query').QueryClient} client
  * @param {string} userId @param {keyof typeof PARTS} part
  */
-export function fetchRecordPart(client, userId, part, { fresh = false } = {}) {
-  return client.fetchQuery({ ...partQuery(userId, part), ...(fresh ? { staleTime: 0 } : {}) });
+export function fetchRecordPart(client, userId, part, { fresh = false, cached = false } = {}) {
+  const rows = cached ? client.getQueryData(recordKey(userId, part)) : undefined;
+  return rows !== undefined ? Promise.resolve(rows) : client.fetchQuery({ ...partQuery(userId, part), ...(fresh ? { staleTime: 0 } : {}) });
 }
 
 const preferencesKey = (userId) => ['living', userId, 'preferences'];

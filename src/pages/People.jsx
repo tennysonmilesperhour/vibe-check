@@ -15,15 +15,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PageTransition from "@/features/shell/PageTransition";
-import { entryInvolvesPerson, migratePeople, peopleRecordedTogether, personCheckInStats } from "@/lib/people";
-import { timelineEntries } from "@/lib/living-patterns";
+import { describeInteractionMix, interactionMix, migratePeople, peopleRecordedTogether, personCheckInStats, personTimeline } from "@/lib/people";
+import { entryText, timelineEntries } from "@/lib/living-patterns";
 import { formatDay } from "@/lib/dates";
 import { createPageUrl } from "@/utils";
-import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
+import { UserPlus, Users, RefreshCw, Trash2, Pencil, ArrowRight, ArrowUpRight } from "lucide-react";
 import LoadingState from "@/features/shell/LoadingState";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
 const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
+const TIMELINE_PAGE = 8;
+
+/** What an entry was, for a line in someone's timeline. */
+const entryKind = (entry) => (entry.kind === "day" ? "Daily check-in" : entry.interaction_feeling ? `Interaction · ${entry.interaction_feeling}` : "Journal moment");
 
 /** Everyone you're in orbit with: merged Relationships + Constellation. */
 export default function People() {
@@ -36,6 +40,9 @@ export default function People() {
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null); // null | 'new' | person
   const [deleting, setDeleting] = useState(null);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState("");
+  const [timelineShown, setTimelineShown] = useState(TIMELINE_PAGE);
   const [form, setForm] = useState(EMPTY_FORM);
   const [synergyBusy, setSynergyBusy] = useState(false);
   // Synergy is part of Cosmos: it shows only once the person has chosen a system there.
@@ -116,15 +123,30 @@ export default function People() {
     }
   };
 
-  const remove = async () => {
-    if (!deleting) return;
+  // Each person's timeline starts from its most recent entries.
+  useEffect(() => { setTimelineShown(TIMELINE_PAGE); }, [detail?.id]);
+
+  const askToRemove = (person) => {
+    setRemoveError("");
+    setDeleting(person);
+  };
+
+  // The dialog stays open until the removal is done, so a failure can say so.
+  const remove = async (e) => {
+    e.preventDefault();
+    const person = deleting;
+    if (!person || removing) return;
+    setRemoving(true);
+    setRemoveError("");
     try {
-      await Person.delete(deleting.id);
+      await Person.delete(person.id);
+      setPeople((list) => list.filter((other) => other.id !== person.id));
       setDeleting(null);
       setDetail(null);
-      load();
     } catch {
-      setDeleting(null);
+      setRemoveError("This person couldn't be removed. Check your connection and try again.");
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -198,6 +220,14 @@ export default function People() {
                       ? `${stats.mentions} tagged check-ins · daily mood ${stats.avgMood} · last ${formatDay(stats.lastMention, { style: 'short' })}`
                       : "Not yet part of a check-in"}
                   </p>
+                  {(() => {
+                    const mix = interactionMix(person, entries);
+                    return mix.total > 0 ? (
+                      <p className="text-xs mt-1" style={{ color: "var(--gh-ink-muted)" }}>
+                        Interactions: {describeInteractionMix(mix)}{mix.unsafe > 0 && <span aria-hidden="true" style={{ color: "var(--feel-unsafe)" }}> ◆</span>}
+                      </p>
+                    ) : null;
+                  })()}
                 </button>
               );
             })}
@@ -216,7 +246,7 @@ export default function People() {
                       <button type="button" className="living-icon-button" aria-label={`Edit ${detail.name}`} onClick={() => openEdit(detail)}>
                         <Pencil className="w-4 h-4" aria-hidden="true" />
                       </button>
-                      <button type="button" className="living-icon-button danger-icon" aria-label={`Delete ${detail.name}`} onClick={() => setDeleting(detail)}>
+                      <button type="button" className="living-icon-button danger-icon" aria-label={`Delete ${detail.name}`} onClick={() => askToRemove(detail)}>
                         <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </span>
@@ -234,7 +264,33 @@ export default function People() {
                     </p>
                   ) : null;
                 })()}
-                <div className="living-inset"><p className="living-muted">{journal.filter((entry) => entryInvolvesPerson(entry, detail)).length} journal moments linked to this person.</p><Link className="living-text-link mt-2" to={`/Analytics?tab=journal&person=${detail.id}&range=all`}>Read the full relationship history</Link></div>
+                {(() => {
+                  const timeline = personTimeline(detail, entries);
+                  const mix = interactionMix(detail, entries);
+                  return (
+                    <section className="space-y-3" aria-labelledby="person-timeline-heading">
+                      <h3 id="person-timeline-heading" className="text-xl">Your timeline with {detail.name}</h3>
+                      {mix.total > 0 && <p className="text-sm">Interactions you recorded: {describeInteractionMix(mix)}.</p>}
+                      {mix.unsafe > 0 && <Link className="living-text-link text-sm" to="/support-now?focus=relationship">Support for unsafe relationships <ArrowRight size={14} aria-hidden="true" /></Link>}
+                      {timeline.length ? (
+                        <ol className="person-timeline">
+                          {timeline.slice(0, timelineShown).map((entry) => (
+                            <li key={entry.key}>
+                              <p className="living-label">{formatDay(entry.date)} · {entryKind(entry)}{entry.interaction_feeling === "unsafe" ? " ◆" : ""}{entry.mood_score != null ? ` · mood ${entry.mood_score}/10` : ""}</p>
+                              {entryText(entry) && <p className="person-timeline-text">{entryText(entry).replace(/\s+/g, " ")}</p>}
+                              <Link className="living-text-link text-sm" to={`/Analytics?tab=journal&entry=${encodeURIComponent(entry.key)}`}>Read the entry <ArrowUpRight size={13} aria-hidden="true" /></Link>
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p className="living-muted text-sm">Nothing recorded with {detail.name} yet. Tag them in a check-in or a moment, and those entries gather here.</p>
+                      )}
+                      {timeline.length > timelineShown && (
+                        <button type="button" className="living-secondary" onClick={() => setTimelineShown((count) => count + TIMELINE_PAGE)}>Show earlier entries ({timeline.length - timelineShown})</button>
+                      )}
+                    </section>
+                  );
+                })()}
                 {(() => {
                   const companions = peopleRecordedTogether(detail, people, entries);
                   if (!companions.length) return null;
@@ -372,9 +428,10 @@ export default function People() {
                 Their card and synergy reading are deleted. Past check-ins that mention them stay untouched.
               </AlertDialogDescription>
             </AlertDialogHeader>
+            {removeError && <p className="living-error" role="alert">{removeError}</p>}
             <AlertDialogFooter>
               <AlertDialogCancel>Keep them</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={remove}>Remove person</AlertDialogAction>
+              <AlertDialogAction variant="destructive" aria-disabled={removing} onClick={remove}>{removing ? "Removing…" : "Remove person"}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

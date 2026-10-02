@@ -132,6 +132,31 @@ export function personCheckInStats(person, checkIns) {
   return { mentions: involved.length, avgMood: avgMood == null ? null : Math.round(avgMood * 10) / 10, lastMention };
 }
 
+/** The entries a person is part of, in the order given (newest first from timelineEntries): their timeline in People. */
+export function personTimeline(person, entries) {
+  return entries.filter((entry) => entryInvolvesPerson(entry, person));
+}
+
+/**
+ * How the interactions recorded with a person felt, in the journal's own
+ * words: a count for each feeling, and the total. Only entries with a
+ * feeling count; nothing is inferred from mood or text.
+ * @param {any} person @param {any[]} entries
+ * @returns {Record<string, number>}
+ */
+export function interactionMix(person, entries) {
+  const mix = Object.fromEntries(INTERACTION_FEELINGS.map((feeling) => [feeling, 0]));
+  for (const entry of entries) {
+    if (INTERACTION_FEELINGS.includes(entry.interaction_feeling) && entryInvolvesPerson(entry, person)) mix[entry.interaction_feeling] += 1;
+  }
+  return { ...mix, total: INTERACTION_FEELINGS.reduce((sum, feeling) => sum + mix[feeling], 0) };
+}
+
+/** "5 supportive, 2 strained, 1 unsafe": the feelings with a count, in the journal's order. */
+export function describeInteractionMix(mix) {
+  return INTERACTION_FEELINGS.filter((feeling) => mix[feeling]).map((feeling) => `${mix[feeling]} ${feeling}`).join(', ');
+}
+
 export function personMentionCount(person, entries) {
   return entries.filter((entry) => entryInvolvesPerson(entry, person)).length;
 }

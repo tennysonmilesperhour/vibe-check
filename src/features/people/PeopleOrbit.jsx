@@ -1,8 +1,40 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { arrangeOrbitRing, orderPeopleForOrbit } from '@/lib/people';
+import { arrangeOrbitRing, orderPeopleForOrbit, interactionMix, describeInteractionMix } from '@/lib/people';
 
 const PAGE = 12;
+
+// The ring's segments, in a fixed order so the same feeling always sits in
+// the same place. Mixed and unsure share the neutral color.
+const SEGMENTS = [
+  ['supportive', 'var(--feel-supportive)'],
+  ['strained', 'var(--feel-strained)'],
+  ['unsafe', 'var(--feel-unsafe)'],
+  ['mixed', 'var(--feel-mixed)'],
+  ['unsure', 'var(--feel-mixed)'],
+];
+const RADIUS = 20.5;
+// The first name, or a title with the name after it ("Mr. Kent", "Dr. Lee").
+const shortName = (name) => { const words = name.split(' '); return words[0].endsWith('.') && words[1] ? `${words[0]} ${words[1]}` : words[0]; };
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+/** A ring split by how the recorded interactions felt. */
+function MixRing({ mix }) {
+  const parts = SEGMENTS.filter(([feeling]) => mix[feeling] > 0);
+  const gap = parts.length > 1 ? 2 : 0;
+  let offset = 0;
+  return (
+    <svg className="orbit-mix" viewBox="0 0 46 46" aria-hidden="true">
+      {parts.map(([feeling, color]) => {
+        const length = (mix[feeling] / mix.total) * CIRCUMFERENCE;
+        const dash = Math.max(length - gap, 1);
+        const segment = <circle key={feeling} cx="23" cy="23" r={RADIUS} fill="none" stroke={color} strokeWidth="3" strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`} strokeDashoffset={-offset} />;
+        offset += length;
+        return segment;
+      })}
+    </svg>
+  );
+}
 
 export default function PeopleOrbit({ people, entries = [], onChoose }) {
   const [page, setPage] = useState(0);
@@ -18,17 +50,22 @@ export default function PeopleOrbit({ people, entries = [], onChoose }) {
     const angle = (index / count) * Math.PI * 2 - Math.PI / 2 + (inner ? 0 : Math.PI / 6);
     const radius = inner ? 25 : 45;
     const name = person.name.replace(/^Demo\s+/i, '');
+    const mix = interactionMix(person, entries);
     return (
       <button
         type="button"
         className="orbit-person"
         key={person.id}
-        aria-label={`Open ${person.name}`}
+        aria-label={`Open ${person.name}${mix.total ? `. Interactions: ${describeInteractionMix(mix)}` : ''}`}
         style={{ left: `${50 + Math.cos(angle) * radius}%`, top: `${50 + Math.sin(angle) * radius}%` }}
         onClick={() => onChoose(person)}
       >
-        <span aria-hidden="true">{name.charAt(0)}</span>
-        {name.split(' ')[0]}
+        <span className="orbit-avatar" aria-hidden="true">
+          {name.charAt(0)}
+          {mix.total > 0 && <MixRing mix={mix} />}
+          {mix.unsafe > 0 && <b className="orbit-unsafe">◆</b>}
+        </span>
+        <span className="orbit-name">{shortName(name)}</span>
       </button>
     );
   });
@@ -51,7 +88,13 @@ export default function PeopleOrbit({ people, entries = [], onChoose }) {
         {place(innerPeople, true)}
         {place(outerPeople, false)}
       </div>
-      <p className="living-muted text-xs text-center">Inner names are people you recorded more often with the people picker. Names next to each other were often tagged in the same entries. Every person is also in the list below.</p>
+      <ul className="orbit-legend" aria-hidden="true">
+        <li><i style={{ background: 'var(--feel-supportive)' }} />Supportive</li>
+        <li><i style={{ background: 'var(--feel-strained)' }} />Strained</li>
+        <li><i style={{ background: 'var(--feel-unsafe)' }} />Unsafe <span style={{ color: 'var(--feel-unsafe)' }}>◆</span></li>
+        <li><i style={{ background: 'var(--feel-mixed)' }} />Mixed or unsure</li>
+      </ul>
+      <p className="living-muted text-xs text-center mt-3">The ring around a name shows how the interactions you recorded with them felt, as you labeled them. Names nearer the center are people you recorded more often, and names side by side were often tagged in the same entries. Open a name for your timeline together. Everyone is also in the list below.</p>
     </section>
   );
 }

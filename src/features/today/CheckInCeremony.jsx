@@ -500,7 +500,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
           </span>
         </div>
         <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <> Some questions are left out to match what you chose to notice. <button type="button" className="underline underline-offset-4" onClick={showAllSteps}>Show all questions</button></>}</p>
-        {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="underline underline-offset-4 ml-3" disabled={saving} onClick={discardRestored}>Discard draft</button>}</p>}
+        {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="danger-link ml-3" disabled={saving} onClick={discardRestored}>Discard draft</button>}</p>}
         {heldBuffer && (
           <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>
             This tab also kept unsaved words that may be newer than what is shown.
@@ -533,7 +533,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
             <p className="mb-3">Keep your changes to this day as a draft?</p>
             <div className="flex flex-wrap items-center gap-3">
               <button type="button" className="cream-button text-sm" disabled={saving} onClick={saveDraft}>Keep as draft</button>
-              <button type="button" className="ghost-cream-button text-sm" disabled={saving} onClick={async () => { if (await discardVisit()) onCancel?.(); }}>Discard changes</button>
+              <button type="button" className="danger-outline text-sm" disabled={saving} onClick={async () => { if (await discardVisit()) onCancel?.(); }}>Discard changes</button>
               <button type="button" className="underline underline-offset-4" onClick={() => setConfirmLeave(false)}>Keep editing</button>
             </div>
           </div>

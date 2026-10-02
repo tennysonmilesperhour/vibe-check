@@ -3,7 +3,7 @@ import { Leaf, Sprout, Orbit, ArrowRight } from "lucide-react";
 import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
+import { DailyCheckIn, BoundaryAlert, JournalEntry, PracticeSession } from "@/entities/all";
 import { formatDay, todayKey } from "@/lib/dates";
 import { LOW_MOOD } from "@/lib/symbolic-guard";
 import { moonPhase } from "@/lib/resonance/moon";
@@ -33,6 +33,8 @@ export default function Today() {
   const [alerts, setAlerts] = useState([]);
   const [keptDays, setKeptDays] = useState(0);
   const [hasHistory, setHasHistory] = useState(false);
+  // The day of someone's first check-in: the plants introduce themselves then.
+  const [firstDay, setFirstDay] = useState(false);
   const [mode, setMode] = useState("landing"); // landing | ceremony | peek
   // ?date=yyyy-MM-dd lets you write a past day (never a future one).
   const [dateParam, setDateParam] = useSearchParamState("date", "");
@@ -57,17 +59,22 @@ export default function Today() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [checkIns, openAlerts, me] = await Promise.all([
+      const [checkIns, openAlerts, me, keptOther] = await Promise.all([
         DailyCheckIn.all("-date"),
         BoundaryAlert.filter({ is_acknowledged: false }).catch(() => []),
         base44.auth.me().catch(() => null),
+        // Moments, people and practices count as history too, so only a truly
+        // first visit gets the one-action welcome. Unknown counts as history.
+        Promise.all([JournalEntry, Person, PracticeSession].map((entity) => entity.list("-created_date", 1)))
+          .then((lists) => lists.some((list) => list.length > 0), () => true),
       ]);
       const today = checkIns.find((c) => c.date === todayKey()) || null;
       setEntry(today);
       // Notices are opt-in. Turning them on marks older ones as seen (Settings).
       setAlerts(me?.boundary_settings?.notices_enabled ? openAlerts : []);
       setKeptDays(daysKeptThisMonth(checkIns, todayKey()));
-      setHasHistory(checkIns.length > 0);
+      setHasHistory(checkIns.length > 0 || keptOther);
+      setFirstDay(checkIns.length === 1 && checkIns[0].date === todayKey());
     } catch (err) {
       setLoadError(err.message || 'Could not load your check-ins.');
     }
@@ -102,7 +109,9 @@ export default function Today() {
     return <div className="min-h-[60vh] field-wash" aria-busy="true" />;
   }
 
-  // ── pre-check-in: the invitation (first-run gets the welcome) ──
+  // ── pre-check-in: the invitation. A first visit gets one thing to do:
+  // the first check-in. Paths, reports and preferences wait until there is
+  // something to show. ──
   if (!entry && mode !== "peek") {
     const isFirstRun = !hasHistory;
     return (
@@ -115,17 +124,17 @@ export default function Today() {
             <p>{isFirstRun ? "Keep a private record of your days. See your patterns over time, with the plants guiding you toward practices that fit what you need." : "What happened, how did it feel, and what do you want to remember? A short check-in is enough."}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button type="button" className="cream-button gap-5" onClick={() => setMode("ceremony")}>{isFirstRun ? "Begin your first check-in" : "Begin check-in"}<ArrowRight size={16} aria-hidden="true" /></button>
-              <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>Explore your reflections</button>
+              {!isFirstRun && <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>Explore your reflections</button>}
             </div>
             {keptDays > 0 && <p className="mt-6 text-xs">{daysKeptLabel(keptDays, todayKey())}. Any time today works.</p>}
           </div>
-          <nav className="today-paths" aria-label="Explore your sanctuary">
+          {!isFirstRun && <nav className="today-paths" aria-label="Explore your sanctuary">
             <Link to={createPageUrl("Analytics")}><Sprout size={24} aria-hidden="true" /><strong>Your patterns</strong><span>See what helps you grow.</span></Link>
             <Link to={createPageUrl("Practice")}><Leaf size={24} aria-hidden="true" /><strong>Help for this moment</strong><span>A practice for how you feel.</span></Link>
             <Link to="/Analytics?tab=reports"><Orbit size={24} aria-hidden="true" /><strong>Weekly & monthly reports</strong><span>The whole story stays in view.</span></Link>
-          </nav>
+          </nav>}
         </PageTransition>
-      </SkyField><div className="living-page"><DailySupport welcome={isFirstRun} /></div></>
+      </SkyField>{!isFirstRun && <div className="living-page"><DailySupport /></div>}</>
     );
   }
 
@@ -151,7 +160,7 @@ export default function Today() {
         <AlertInline alerts={alerts} onAcknowledged={(id) => setAlerts((a) => a.filter((x) => x.id !== id))} />
 
         {entry && <TodaySummary entry={entry} onEdit={() => setMode("ceremony")} />}
-        <DailySupport />
+        <DailySupport welcome={firstDay} />
 
         <nav aria-label="Continue" className="flex flex-wrap gap-4 hairline pt-6 text-sm font-medium">
           <Link to={createPageUrl("Analytics")} style={{ color: "var(--gh-accent)" }}>See your patterns</Link>

@@ -5,7 +5,7 @@ import { JournalEntry, DailyCheckIn } from '@/api/entities';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import PersonPicker from '@/features/people/PersonPicker';
 import StressFields from '@/features/today/StressFields';
-import { todayKey } from '@/lib/dates';
+import { formatDay, todayKey } from '@/lib/dates';
 import { validDateKey } from '@/lib/living-patterns';
 import { BOUNDARY_ANSWERS, INTERACTION_FEELINGS } from '@/lib/people';
 import { useAuth } from '@/lib/AuthContext';
@@ -16,7 +16,7 @@ import EntryCard from './EntryCard';
 import useBeforeUnload from '@/hooks/use-before-unload';
 
 export function EntryLink({ entry, children }) {
-  return <Link className="living-text-link" to={`/Analytics?tab=journal&entry=${encodeURIComponent(entry.key)}`}>{children || entry.date}<ArrowUpRight size={13} aria-hidden="true" /></Link>;
+  return <Link className="living-text-link" to={`/Analytics?tab=journal&entry=${encodeURIComponent(entry.key)}`}>{children || formatDay(entry.date)}<ArrowUpRight size={13} aria-hidden="true" /></Link>;
 }
 
 /** Short, stable key for a prompt's text (djb2). */
@@ -148,7 +148,7 @@ export default function Journal({ data, entries, onChanged }) {
     <div className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR WORDS, KEPT TOGETHER</p><h2 id="journal-heading">Journal & history</h2><p className="living-muted mt-2">{entries.length} entries in this view. A good day belongs beside everything that came before.</p></div><button className="ink-button" onClick={compose}><Plus size={16} />Keep a moment</button></div>
     {error && <p className="living-error" role="alert">{error}</p>}
     {supportFor && <SupportCard focus="relationship" title={supportFor === 'unsafe' ? 'You marked that interaction as unsafe.' : 'You noted that a boundary was not respected.'} onDismiss={() => setSupportFor(null)}>Your record is kept exactly as you wrote it. If it would help to talk it through or plan for your safety, these services are free and confidential.</SupportCard>}
-    {drafts.length > 0 && <div className="living-inset"><p className="living-label mb-2">Saved drafts</p><div className="living-chips">{drafts.map((draft) => <button key={draft.id} className="living-chip" onClick={() => setEditing(draft)}>Resume {draft.date} draft</button>)}</div></div>}
+    {drafts.length > 0 && <div className="living-inset"><p className="living-label mb-2">Saved drafts</p><div className="living-chips">{drafts.map((draft) => <button key={draft.id} className="living-chip" onClick={() => setEditing(draft)}>Resume draft from {formatDay(draft.date)}</button>)}</div></div>}
     {selectedKey && !selected && <p className="living-muted">This entry is no longer in your saved history.</p>}
     {selected && <div><p className="living-label mb-2">Entry opened from your report or chart</p><EntryCard entry={selected} people={data.people} selected onEdit={edit} onDelete={setDeleting} /></div>}
     {entries.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} onEdit={edit} onDelete={setDeleting} />)}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseLocalDate, dateKey, todayKey, isTodayKey, getPeriodKey, addDaysKey, diffDaysKeys } from '../dates.js';
+import { parseLocalDate, dateKey, todayKey, isTodayKey, getPeriodKey, addDaysKey, diffDaysKeys, formatDay, formatRange } from '../dates.js';
 
 describe('parseLocalDate', () => {
   it('returns local midnight for the named day, never UTC-shifted', () => {
@@ -52,5 +52,54 @@ describe('day arithmetic on keys', () => {
   it('diffDaysKeys', () => {
     expect(diffDaysKeys('2026-07-02', '2026-06-30')).toBe(2);
     expect(diffDaysKeys('2026-06-30', '2026-07-02')).toBe(-2);
+  });
+});
+
+describe('formatDay', () => {
+  const now = parseLocalDate('2026-10-02');
+
+  it('reads a day key at three lengths', () => {
+    expect(formatDay('2026-09-28', { now })).toBe('Mon, Sep 28');
+    expect(formatDay('2026-09-28', { style: 'long', now })).toBe('Monday, September 28');
+    expect(formatDay('2026-09-28', { style: 'short', now })).toBe('Sep 28');
+  });
+
+  it('adds the year for another year, or when asked', () => {
+    expect(formatDay('2025-12-31', { now })).toBe('Wed, Dec 31, 2025');
+    expect(formatDay('2025-12-31', { style: 'long', now })).toBe('Wednesday, December 31, 2025');
+    expect(formatDay('2026-09-28', { style: 'short', withYear: true, now })).toBe('Sep 28, 2026');
+  });
+
+  it('keeps the calendar day on a daylight saving change', () => {
+    expect(formatDay('2026-03-08', { style: 'short', now })).toBe('Mar 8');
+  });
+
+  it('returns anything that is not a day key as it was', () => {
+    expect(formatDay(undefined)).toBe('');
+    expect(formatDay(null)).toBe('');
+    expect(formatDay('soon')).toBe('soon');
+  });
+});
+
+describe('formatRange', () => {
+  it('shares the month and year where it can', () => {
+    expect(formatRange('2026-09-21', '2026-09-27')).toBe('Sep 21 to 27, 2026');
+    expect(formatRange('2026-09-28', '2026-10-04')).toBe('Sep 28 to Oct 4, 2026');
+    expect(formatRange('2025-12-29', '2026-01-04')).toBe('Dec 29, 2025 to Jan 4, 2026');
+  });
+
+  it('names a whole month', () => {
+    expect(formatRange('2026-09-01', '2026-09-30')).toBe('September 2026');
+    expect(formatRange('2024-02-01', '2024-02-29')).toBe('February 2024');
+    expect(formatRange('2026-09-01', '2026-09-29')).toBe('Sep 1 to 29, 2026');
+  });
+
+  it('reads one day as that day, and a backwards span in full', () => {
+    expect(formatRange('2026-09-21', '2026-09-21')).toBe('Sep 21, 2026');
+    expect(formatRange('2026-09-27', '2026-09-21')).toBe('Sep 27, 2026 to Sep 21, 2026');
+  });
+
+  it('joins values that are not day keys as they are', () => {
+    expect(formatRange('2026-09-21', '')).toBe('2026-09-21');
   });
 });

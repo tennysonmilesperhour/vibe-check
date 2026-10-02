@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { parseLocalDate, todayKey } from '@/lib/dates';
+import { formatRange, parseLocalDate, todayKey } from '@/lib/dates';
 import { entryText } from '@/lib/living-patterns';
 import { CALENDAR_METRICS, calendarDays, calendarMonths, calendarSummary, scoreBand } from '@/lib/pattern-calendar';
 
@@ -38,7 +38,7 @@ export default function PatternCalendar({ entries, start, end, weekStart = 1 }) 
   return <section className="pattern-calendar living-card space-y-6" aria-labelledby="pattern-calendar-heading">
     <header className="calendar-heading"><div><p className="sanctuary-eyebrow">SEE WHAT REPEATS</p><h2 id="pattern-calendar-heading">{spec.title} calendar</h2><p className="living-muted mt-2">{spec.description}</p></div><div className="living-chips" aria-label="Calendar measure">{Object.entries(CALENDAR_METRICS).map(([key, item]) => <button type="button" key={key} className="living-chip" aria-pressed={metric === key} onClick={() => choose({ calendarMetric: key })}>{item.label}</button>)}</div></header>
     <div className="calendar-legend" aria-label={`${spec.label} color scale, out of ten`}><div className="calendar-scale"><span>{spec.ends[0]}</span><div className="calendar-scale-bands">{BANDS.map((band, index) => <span key={band}><i aria-hidden="true" style={{ backgroundColor: spec.colors[index] }} /><span>{band}</span></span>)}</div><span>{spec.ends[1]}</span></div><div className="calendar-marker-key"><span><i className="calendar-no-score" aria-hidden="true" />No score</span><span><b aria-hidden="true">◆</b>Interaction marked unsafe</span></div></div>
-    <p className="living-muted text-sm">{format(parseLocalDate(start), 'MMM d, yyyy')} – {format(parseLocalDate(end), 'MMM d, yyyy')} · {summary.recorded} scored days · {summary.missing} without a matching score. Colors use the same scale in every month.</p>
+    <p className="living-muted text-sm">{formatRange(start, end)} · {summary.recorded} scored days · {summary.missing} without a matching score. Colors use the same scale in every month.</p>
 
     {months.length > 1 && <div><p className="living-label mb-3">Scan the months. Choose one to look closer.</p><div className="calendar-months" aria-label="Monthly pattern overview">{months.map((item) => {
       const scored = item.dates.map((date) => byDate.get(date)).filter((day) => day?.value != null);
@@ -54,7 +54,7 @@ export default function PatternCalendar({ entries, start, end, weekStart = 1 }) 
         })}
       </div><p className="living-muted text-xs mt-3">Large number = {spec.label.toLowerCase()} / 10. Select a day to read its record. Faded dates fall outside this view.</p></div>
       <aside className="calendar-rhythm" aria-labelledby="weekday-rhythm-heading"><h3 id="weekday-rhythm-heading">Does the weekday matter?</h3><p className="living-muted text-sm mt-2">Average {spec.label.toLowerCase()} across this date range. Each weekday needs at least 3 scored days.</p><div className="calendar-weekday-bars">{weekdayOrder.map((weekday) => { const row = summary.weekdays[weekday]; return <div className="calendar-weekday-row" key={weekday}><span>{WEEKDAYS[weekday]}</span><div className="calendar-bar-track" aria-hidden="true">{row.mean != null && <span style={{ width: `${row.mean * 10}%`, backgroundColor: metric === 'stress' ? 'var(--plot-stress)' : 'var(--plot-mood)' }} />}</div><strong>{row.mean == null ? '—' : row.mean.toFixed(1)}</strong><small>{row.count} {row.count === 1 ? 'day' : 'days'}</small></div>; })}</div>
-        {summary.longest && <p className="calendar-run"><strong>{summary.longest.count} consecutive days</strong><span>{metric === 'stress' ? 'Stress at 7 or above' : `${spec.label} at 4 or below`} · {format(parseLocalDate(summary.longest.start), 'MMM d')}–{format(parseLocalDate(summary.longest.end), 'MMM d, yyyy')}</span></p>}
+        {summary.longest && <p className="calendar-run"><strong>{summary.longest.count} consecutive days</strong><span>{metric === 'stress' ? 'Stress at 7 or above' : `${spec.label} at 4 or below`} · {formatRange(summary.longest.start, summary.longest.end)}</span></p>}
         {unsafeDays > 0 && <p className="calendar-run"><strong>◆ {unsafeDays} {unsafeDays === 1 ? 'day includes' : 'days include'} an unsafe interaction</strong><span>This marker stays visible alongside any daily score. <a className="underline" href="/support-now?focus=relationship">Support options</a></span></p>}
       </aside>
     </div>

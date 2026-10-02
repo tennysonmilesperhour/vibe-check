@@ -46,3 +46,44 @@ export function diffDaysKeys(a, b) {
   return differenceInCalendarDays(parseLocalDate(a), parseLocalDate(b));
 }
 
+
+/** @param {unknown} value @returns {value is string} */
+const isDayKey = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+const DAY_STYLES = { long: 'EEEE, MMMM d', medium: 'EEE, MMM d', short: 'MMM d' };
+
+/**
+ * A day key as people read it: "Monday, September 28" (long), "Mon, Sep 28"
+ * (medium) or "Sep 28" (short). The year follows when the day falls in
+ * another year than `now`, or always with `withYear`. Anything that isn't a
+ * day key comes back as it was, so a stray value never breaks a page.
+ * @param {string | null | undefined} key 'yyyy-MM-dd'
+ * @param {{ style?: 'long' | 'medium' | 'short', withYear?: boolean, now?: Date }} [options]
+ * @returns {string}
+ */
+export function formatDay(key, { style = 'medium', withYear = false, now = new Date() } = {}) {
+  if (!isDayKey(key)) return key ?? '';
+  const date = parseLocalDate(key);
+  const pattern = DAY_STYLES[style] || DAY_STYLES.medium;
+  return format(date, withYear || date.getFullYear() !== now.getFullYear() ? `${pattern}, yyyy` : pattern);
+}
+
+/**
+ * Two day keys as one span, joined with "to" as in the summary to share:
+ * "Sep 21 to 27, 2026", "Sep 28 to Oct 4, 2026", "Dec 29, 2025 to Jan 4,
+ * 2026", or "September 2026" for a whole month. One day reads as that day.
+ * @param {string} startKey @param {string} endKey
+ * @returns {string}
+ */
+export function formatRange(startKey, endKey) {
+  if (!isDayKey(startKey) || !isDayKey(endKey)) return [startKey, endKey].filter(Boolean).join(' to ');
+  const start = parseLocalDate(startKey);
+  const end = parseLocalDate(endKey);
+  const full = (/** @type {Date} */ date) => format(date, 'MMM d, yyyy');
+  if (startKey === endKey) return full(start);
+  // A span that runs backwards keeps both dates whole, so neither reads as shared.
+  if (startKey > endKey || start.getFullYear() !== end.getFullYear()) return `${full(start)} to ${full(end)}`;
+  if (start.getMonth() !== end.getMonth()) return `${format(start, 'MMM d')} to ${full(end)}`;
+  if (start.getDate() === 1 && addDays(end, 1).getDate() === 1) return format(start, 'MMMM yyyy');
+  return `${format(start, 'MMM d')} to ${format(end, 'd, yyyy')}`;
+}

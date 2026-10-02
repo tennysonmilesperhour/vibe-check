@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { stateById, recommendPractices, hiddenPractices } from '@/lib/practices';
 import { EntryLink } from './Journal';
+import { formatDay } from '@/lib/dates';
 
 export default function StressPatternCards({ patterns, data, onFeedback, max = 6 }) {
   const [busy, setBusy] = useState('');
@@ -31,7 +32,7 @@ export default function StressPatternCards({ patterns, data, onFeedback, max = 6
         {connection && <p className="text-sm">{pattern.significant
           ? "In this view, that gap is larger than chance would easily explain. It doesn't show a cause, and the days behind it can hold other things too."
           : pattern.without.total ? "In this view the gap could be chance. It's here because you said it fits your experience." : "It's here because you said it fits your experience."}</p>}
-        <details><summary className="living-text-link cursor-pointer">Read the entries behind this</summary><ul className="mt-3 space-y-3">{pattern.entries.map((entry) => <li key={entry.key}><EntryLink entry={entry}>{entry.date} · {entry.kind === 'day' ? 'Check-in' : 'Journal'}</EntryLink>{entry.stress_context?.body_cues?.length > 0 && <p className="living-muted text-xs">Body cues: {entry.stress_context.body_cues.join(', ')}</p>}{entry.stress_context?.need && <p className="text-sm whitespace-pre-wrap mt-1">“{entry.stress_context.need}”</p>}</li>)}</ul></details>
+        <details><summary className="living-text-link cursor-pointer">Read the entries behind this</summary><ul className="mt-3 space-y-3">{pattern.entries.map((entry) => <li key={entry.key}><EntryLink entry={entry}>{formatDay(entry.date)} · {entry.kind === 'day' ? 'Check-in' : 'Journal'}</EntryLink>{entry.stress_context?.body_cues?.length > 0 && <p className="living-muted text-xs">Body cues: {entry.stress_context.body_cues.join(', ')}</p>}{entry.stress_context?.need && <p className="text-sm whitespace-pre-wrap mt-1">“{entry.stress_context.need}”</p>}</li>)}</ul></details>
         <div className="living-inset"><p className="living-label">A possible next step</p><p className="text-sm mt-1">{practice ? practice.purpose : 'Choose an option that fits your needs and past experience.'}</p><Link className="living-text-link mt-3" to={`/Practice?${target}`}>{practice ? `Try ${practice.title.toLowerCase()}` : 'Choose a practice'} <ArrowRight size={15} /></Link></div>
         <div className="flex flex-wrap gap-4 text-sm">{connection
           ? <><button className="underline" disabled={busy === pattern.key} onClick={() => feedback(pattern.key, 'confirmed')}>{pattern.status === 'confirmed' ? 'Connection confirmed' : 'This fits my experience'}</button><button className="underline" disabled={busy === pattern.key} onClick={() => feedback(pattern.key, 'dismissed')}>This does not fit</button></>

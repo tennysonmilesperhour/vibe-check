@@ -13,7 +13,7 @@ import { ALL_STEPS, chooseSteps } from "./check-in-steps";
 import { usePreferences } from "@/features/patterns/useLivingData";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
-import { todayKey } from "@/lib/dates";
+import { formatDay, todayKey } from "@/lib/dates";
 import { useAuth } from "@/lib/AuthContext";
 import { readBuffer, clearBuffer, bufferRestorable, latestVersion, isNewerVersion } from "@/lib/writing-buffer";
 import useWritingBuffer from "@/hooks/use-writing-buffer";
@@ -500,7 +500,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
             <button type="button" onClick={saveDraft} disabled={saving} className="underline underline-offset-4">{saving ? 'Saving…' : 'Save draft and close'}</button>
           </span>
         </div>
-        <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{dateKey} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <> Some questions are left out to match what you chose to notice. <button type="button" className="underline underline-offset-4" onClick={showAllSteps}>Show all questions</button></>}</p>
+        <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{formatDay(dateKey, { style: 'long' })} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <> Some questions are left out to match what you chose to notice. <button type="button" className="underline underline-offset-4" onClick={showAllSteps}>Show all questions</button></>}</p>
         {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="danger-link ml-3" disabled={saving} onClick={discardRestored}>Discard draft</button>}</p>}
         {heldBuffer && (
           <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>

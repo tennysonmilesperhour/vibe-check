@@ -49,8 +49,8 @@ function ShareDialog({ entry, open, onOpenChange }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => { if (open) { setInclude({}); setError(""); } }, [open]);
-  // Feelings from the check-in's own list go in; ones typed in your own words
-  // are words, so they wait to be chosen like the rest.
+  // Feelings from the check-in's own list go in unless left out; ones typed
+  // in your own words are words, so they wait to be chosen like the rest.
   const listed = (entry.emotions || []).filter((label) => EMOTIONS.some((e) => e.label === label));
   const own = (entry.emotions || []).filter((label) => !EMOTIONS.some((e) => e.label === label));
   const words = [
@@ -79,12 +79,18 @@ function ShareDialog({ entry, open, onOpenChange }) {
           <p className="sanctuary-eyebrow">{formatDay(entry.date, { style: "long", withYear: true })}</p>
           <h3 className="text-2xl mt-1" style={{ color: "var(--gh-ink)" }}>Today, kept</h3>
           <Scores entry={entry} />
-          <Feelings emotions={include.own ? [...listed, ...own] : listed} />
+          <Feelings emotions={[...(include.listed === false ? [] : listed), ...(include.own ? own : [])]} />
           {words.filter(([key]) => key !== "own" && include[key]).map(([key, label, text]) => (
             <p key={key} className="mt-3 text-sm whitespace-pre-wrap" style={{ color: "var(--gh-ink-soft)" }}><strong>{label}: </strong>{text}</p>
           ))}
           <p className="share-card-mark">vibe check</p>
         </div>
+        {listed.length > 0 && (
+          <label className="flex items-center gap-3 text-sm mt-4">
+            <input type="checkbox" checked={include.listed !== false} onChange={(e) => setInclude((current) => ({ ...current, listed: e.target.checked }))} />
+            Feelings you chose from the list
+          </label>
+        )}
         {words.length > 0 && (
           <fieldset className="space-y-2 mt-4">
             <legend className="living-label mb-2">Add your words, if you want them in the image</legend>

@@ -7,7 +7,7 @@ import StressFields from './StressFields';
 import PersonPicker from '@/features/people/PersonPicker';
 import { useToast } from "@/components/ui/use-toast";
 import SkyField from "@/features/shell/SkyField";
-import { ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
+import { ScaleStep, ChipsStep, FeelingsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
 import { EMOTIONS, ACTIVITIES } from "./vocab";
 import { ALL_STEPS, chooseSteps } from "./check-in-steps";
 import { usePreferences } from "@/features/patterns/useLivingData";
@@ -477,7 +477,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     mood: <ScaleStep field="mood_score" question="How did today feel?" value={form.mood_score} onChange={set("mood_score")} />,
     energy: <ScaleStep field="energy_level" question="How was your energy?" value={form.energy_level} onChange={set("energy_level")} />,
     sleep: <ScaleStep field="sleep_quality" question="How did you sleep?" value={form.sleep_quality} onChange={set("sleep_quality")} />,
-    emotions: <><ChipsStep question="Which feelings moved through?" hint="Choose any that visited, even briefly." options={EMOTIONS} selected={form.emotions} onToggle={toggleIn("emotions")} /><div className="ceremony-stress"><label className="living-label">In your own words<input className="living-input mt-2" value={customFeelings} maxLength={1000} placeholder="Any feeling, in the words that fit, separated by commas" onChange={(e) => { const text = e.target.value; setCustomFeelings(text); edit((previous) => ({ ...previous, emotions: withCustom(previous.emotions, EMOTIONS, text) })); }} /></label></div></>,
+    emotions: <><FeelingsStep selected={form.emotions} onToggle={toggleIn("emotions")} /><div className="ceremony-stress"><label className="living-label">In your own words<input className="living-input mt-2" value={customFeelings} maxLength={1000} placeholder="Any feeling, in the words that fit, separated by commas" onChange={(e) => { const text = e.target.value; setCustomFeelings(text); edit((previous) => ({ ...previous, emotions: withCustom(previous.emotions, EMOTIONS, text) })); }} /></label></div></>,
     activities: <><ChipsStep question="What did you give time to?" options={ACTIVITIES} selected={form.activities} onToggle={toggleIn("activities")} /><div className="ceremony-stress space-y-4"><label className="living-label">Your own habits or activities<input className="living-input mt-2" value={customHabits} maxLength={1000} placeholder="Coffee, late work, a walk… separated by commas" onChange={(e) => { const text = e.target.value; setCustomHabits(text); edit((previous) => ({ ...previous, activities: withCustom(previous.activities, ACTIVITIES, text) })); }} /></label><div><p className="living-label mb-2">People in your day · optional</p><PersonPicker value={form.person_ids} onChange={set('person_ids')} /></div></div></>,
     stress: <><h1 className="text-4xl md:text-5xl" style={{ color: 'var(--gh-cream)' }}>Where did you feel stress?</h1><p className="mt-3" style={{ color: 'var(--gh-cream)' }}>Optional. Keep the cues, your response, and what you needed.</p><div className="ceremony-stress"><StressFields value={form.stress_context} onChange={set('stress_context')} when="day" /></div></>,
     high: <MomentStep kind="high" question="What was the high point?" value={form.high_moment} onChange={set("high_moment")} />,

@@ -189,7 +189,8 @@ export default function People() {
         <div className="mt-6"><Note>Keep people here by a name or nickname that works for you. Each person gathers the entries you tag or name them in. Adding someone sends no invitation or notification.</Note></div>
         <PeopleOrbit people={people} entries={entries} mixes={mixes} onChoose={setDetail} />
 
-        {people.length === 0 ? (
+        {/* Until the whole record is in, there is nothing to say about who is here. */}
+        {!ready ? null : people.length === 0 ? (
           <div className="text-center py-20">
             <Users className="w-10 h-10 mx-auto" style={{ color: "var(--gh-ink-muted)" }} aria-hidden="true" />
             <h2 className="text-2xl mt-4" style={{ color: "var(--gh-ink)" }}>No one in orbit yet</h2>

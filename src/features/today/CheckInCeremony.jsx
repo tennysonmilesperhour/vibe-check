@@ -11,7 +11,7 @@ import { ScaleStep, ChipsStep, FeelingsStep, MomentStep, ReflectionStep } from "
 import { EMOTIONS, ACTIVITIES } from "./vocab";
 import { picksFrom, typedFrom, combineWords, keepOrder } from "./check-in-words";
 import { ALL_STEPS, chooseSteps } from "./check-in-steps";
-import { usePreferences } from "@/features/patterns/useLivingData";
+import { usePreferences, putRecordRow, recordKey } from "@/features/patterns/useLivingData";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { formatDay, todayKey } from "@/lib/dates";
@@ -449,7 +449,14 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     baselineRef.current = JSON.stringify(form);
     clearBuffer(bufferKey);
     if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current).catch(() => {});
-    await queryClient.invalidateQueries({ queryKey: ['living'] }).catch(() => {});
+    // The kept day goes into the cached check-ins, so no page reads the whole
+    // history again for it. It can change whether readings wait.
+    putRecordRow(queryClient, ownerId, 'checkIns', saved);
+    queryClient.invalidateQueries({ queryKey: ['living', ownerId, 'hard-moment'], exact: true }).catch(() => {});
+    // The check-ins as Today loaded them, with this day in place; read from
+    // the server only when no page has loaded them.
+    const cachedCheckIns = queryClient.getQueryData(recordKey(ownerId, 'checkIns'));
+    const recentCheckIns = (count) => (cachedCheckIns ? Promise.resolve(cachedCheckIns.slice(0, count)) : DailyCheckIn.list("-date", count));
 
     // Automatic boundary pass. Skipped when the profile could not load:
     // without the person's own thresholds, a default line must not be
@@ -457,7 +464,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     let newAlerts = [];
     if (me) {
       try {
-        const recent = await DailyCheckIn.list("-date", 30);
+        const recent = await recentCheckIns(30);
         const candidates = evaluateBoundaries(recent, me.boundary_settings || {});
         const existingAlerts = await BoundaryAlert.list("-created_date", 50);
         newAlerts = dedupeAlerts(candidates, existingAlerts);
@@ -473,7 +480,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     // day recorded honestly counts the same as any other.
     const title = existing ? "This day is updated" : "The day is kept";
     try {
-      const label = daysKeptLabel(daysKeptThisMonth(await DailyCheckIn.list("-date", 31), todayKey()), todayKey());
+      const label = daysKeptLabel(daysKeptThisMonth(await recentCheckIns(31), todayKey()), todayKey());
       toast(label ? { title, description: `${label}.` } : { title });
     } catch {
       toast({ title });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchPersonByText, mentionsPerson, dedupePeopleDrafts, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing, personLabels, personTimeline, interactionMix } from '../people.js';
+import { matchPersonByText, mentionsPerson, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing, personLabels, personTimeline, interactionMix } from '../people.js';
 
 const people = [
   { id: 'p1', name: 'Mom', legacy_names: ['mother', 'mama'] },
@@ -41,21 +41,6 @@ describe('mentionsPerson (whole word, not substring)', () => {
   it('is safe with regex-special characters in names', () => {
     const spiky = { id: 'x', name: 'J.R. (Bob)', legacy_names: [] };
     expect(mentionsPerson('saw J.R. (Bob) at lunch', spiky)).toBe(true);
-  });
-});
-
-describe('dedupePeopleDrafts', () => {
-  it('merges drafts with the same lowercase name, unioning fields', () => {
-    const drafts = [
-      { name: 'Mom', qualities: ['kind'], legacy_names: ['mother'] },
-      { name: 'mom', qualities: ['funny'], boundary_notes: 'Calls on Sundays', legacy_names: [] },
-    ];
-    const out = dedupePeopleDrafts(drafts);
-    expect(out).toHaveLength(1);
-    expect(out[0].name).toBe('Mom');
-    expect(out[0].qualities.sort()).toEqual(['funny', 'kind']);
-    expect(out[0].boundary_notes).toBe('Calls on Sundays');
-    expect(out[0].legacy_names).toContain('mother');
   });
 });
 

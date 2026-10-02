@@ -18,11 +18,10 @@ import InviteModal from "@/components/InviteModal";
 import SettingsSheet from "@/features/shell/SettingsSheet";
 import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import MoonGlyph from "@/features/loom/MoonGlyph";
-import { DailyCheckIn } from "@/entities/all";
 import { todayKey } from "@/lib/dates";
 import { moonPhase } from "@/lib/resonance/moon";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
-import { usePreferences } from "@/features/patterns/useLivingData";
+import { usePreferences, useRecordPart } from "@/features/patterns/useLivingData";
 import QuickExit from "@/features/safety/QuickExit";
 import TabBar from "@/features/shell/TabBar";
 import AddMenu from "@/features/shell/AddMenu";
@@ -137,7 +136,6 @@ export default function Layout({ children }) {
     const [inviteOpen, setInviteOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [addOpen, setAddOpen] = useState(false);
-    const [keptDays, setKeptDays] = useState(null);
     const menuButtonRef = useRef(null);
     const drawerCloseRef = useRef(null);
     const restoreFocusRef = useRef(false);
@@ -153,15 +151,10 @@ export default function Layout({ children }) {
     // Quick exit is opt-in (Settings), so it never surprises anyone.
     const quickExitOn = Boolean(usePreferences().data?.quick_exit);
 
-    // The footer shows the days kept this month. Re-check when the route
-    // changes so a just-saved check-in is reflected without a reload.
-    useEffect(() => {
-        let cancelled = false;
-        DailyCheckIn.list("-date", 31)
-            .then((checkIns) => { if (!cancelled) setKeptDays(daysKeptThisMonth(checkIns, todayKey())); })
-            .catch(() => { if (!cancelled) setKeptDays(null); });
-        return () => { cancelled = true; };
-    }, [location.pathname]);
+    // The footer shows the days kept this month, from the check-ins every
+    // page shares, so a day kept anywhere shows at once.
+    const checkIns = useRecordPart('checkIns').data;
+    const keptDays = checkIns ? daysKeptThisMonth(checkIns, todayKey()) : null;
 
     // Close on route change, including Back with the Add menu open.
     useEffect(() => { setMobileOpen(false); setAddOpen(false); }, [location.pathname]);

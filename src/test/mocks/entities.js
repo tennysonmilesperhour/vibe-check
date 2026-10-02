@@ -19,7 +19,6 @@ export default new Proxy(registry, {
 export const DailyCheckIn = makeEntity();
 export const Person = makeEntity();
 export const Reading = makeEntity();
-export const Relationship = makeEntity();
 export const BoundaryAlert = makeEntity();
 export const HealingProgress = makeEntity();
 export const CosmicWisdom = makeEntity();

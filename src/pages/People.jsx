@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useSearchParamState } from "@/lib/deeplink";
 import { base44 } from "@/api/base44Client";
-import { Person, Relationship, DailyCheckIn, JournalEntry } from "@/entities/all";
+import { Person } from "@/entities/all";
+import { useAuth } from "@/lib/AuthContext";
+import { dropRecordRow, fetchRecordPart, putRecordRow } from "@/features/patterns/useLivingData";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import Note from '@/features/shell/Note';
 import { synergyReading } from "@/lib/wisdom/readings";
@@ -15,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PageTransition from "@/features/shell/PageTransition";
-import { describeInteractionMix, interactionMix, migratePeople, peopleRecordedTogether, personCheckInStats } from "@/lib/people";
+import { describeInteractionMix, interactionMix, peopleRecordedTogether, personCheckInStats } from "@/lib/people";
 import { timelineEntries } from "@/lib/living-patterns";
 import PersonTimeline from "@/features/people/PersonTimeline";
 import { formatDay } from "@/lib/dates";
@@ -61,10 +64,16 @@ export default function People() {
     [usesCosmos, askedForSynergy, harm, myChart, detail],
   );
 
+  const client = useQueryClient();
+  const { user } = useAuth();
+  // People, check-ins and moments come from the record other pages share;
+  // changes here go into it too, so this page reads them back without asking.
   const load = useCallback(async () => {
     try {
-      await migratePeople({ Person, Relationship, auth: base44.auth }).catch(() => {});
-      const [ppl, ci, entries, me] = await Promise.all([Person.all(), DailyCheckIn.all("-date"), JournalEntry.all('-date'), base44.auth.me().catch(() => null)]);
+      const [ppl, ci, entries, me] = await Promise.all([
+        fetchRecordPart(client, user?.id, 'people'), fetchRecordPart(client, user?.id, 'checkIns'), fetchRecordPart(client, user?.id, 'journal'),
+        base44.auth.me().catch(() => null),
+      ]);
       // A failed account read keeps what was known, so readings don't vanish.
       if (me) {
         setUsesCosmos((me.cosmic_profile?.enabled_systems || []).length > 0);
@@ -78,7 +87,7 @@ export default function People() {
       setLoadError(err.message);
     }
     setLoading(false);
-  }, []);
+  }, [client, user?.id]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -112,8 +121,7 @@ export default function People() {
     };
     if (!payload.name) return;
     try {
-      if (editing === "new") await Person.create(payload);
-      else await Person.update(editing.id, payload);
+      putRecordRow(client, user?.id, 'people', editing === "new" ? await Person.create(payload) : await Person.update(editing.id, payload));
       setEditing(null);
       setDetail(null);
       load();
@@ -137,6 +145,7 @@ export default function People() {
     setRemoveError("");
     try {
       await Person.delete(person.id);
+      dropRecordRow(client, user?.id, 'people', person.id);
       setPeople((list) => list.filter((other) => other.id !== person.id));
       setDeleting(null);
       setDetail(null);
@@ -158,6 +167,7 @@ export default function People() {
     try {
       // Only the request is stored; text saved by earlier versions is never shown.
       const updated = await Person.update(person.id, { synergy_generated_at: new Date().toISOString() });
+      putRecordRow(client, user?.id, 'people', updated);
       setDetail({ ...person, ...updated });
       load();
     } catch (err) {

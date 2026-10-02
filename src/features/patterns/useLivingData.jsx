@@ -4,19 +4,45 @@ import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry, PracticeSession, ReportReflection, VibePreference, Person } from '@/api/entities';
 import { timelineEntries } from '@/lib/living-patterns';
 import { inOrder, mergePreferences, preferenceStore } from '@/lib/preference-store';
+import { recordKey } from './record-cache';
 
-// The whole history, without preferences: those have their own small query
-// (usePreferences), so saving one never reloads or cancels the history.
-export async function fetchLivingData() {
-  const [checkIns, journal, sessions, reflections, people] = await Promise.all([
-    DailyCheckIn.all('-date'), JournalEntry.all('-date'), PracticeSession.all('-date'),
-    ReportReflection.all('-period_key'), Person.all(),
-  ]);
-  return { checkIns, journal, sessions, reflections, people, entries: timelineEntries(checkIns, journal) };
+export { recordKey, putRecordRow, dropRecordRow } from './record-cache';
+
+// The record in parts, each its own cached query shared by every page:
+// moving between pages shows what already loaded, and a change reloads only
+// the part it touched. Preferences have their own small query too
+// (usePreferences), so saving one never reloads or cancels the record.
+const PARTS = {
+  checkIns: () => DailyCheckIn.all('-date'),
+  journal: () => JournalEntry.all('-date'),
+  sessions: () => PracticeSession.all('-date'),
+  reflections: () => ReportReflection.all('-period_key'),
+  people: () => Person.all(),
+};
+export const RECORD_PARTS = /** @type {Array<keyof typeof PARTS>} */ (Object.keys(PARTS));
+// A part is read again when a page that uses it opens and its copy is over a
+// minute old. Changes made here update it or reload it at once.
+const STALE_MS = 60_000;
+/** @param {string | undefined} userId @param {keyof typeof PARTS} part */
+const partQuery = (userId, part) => ({ queryKey: recordKey(userId, part), queryFn: PARTS[part], enabled: Boolean(userId), staleTime: STALE_MS });
+
+/** One part of the record, for a page that needs only that part. */
+export function useRecordPart(/** @type {keyof typeof PARTS} */ part) {
+  const { user } = useAuth();
+  return useQuery(partQuery(user?.id, part));
+}
+
+/**
+ * One part of the record: the cached copy while it is recent, read now
+ * otherwise. fresh reads it now in any case and keeps it for other pages.
+ * @param {import('@tanstack/react-query').QueryClient} client
+ * @param {string} userId @param {keyof typeof PARTS} part
+ */
+export function fetchRecordPart(client, userId, part, { fresh = false } = {}) {
+  return client.fetchQuery({ ...partQuery(userId, part), ...(fresh ? { staleTime: 0 } : {}) });
 }
 
 const preferencesKey = (userId) => ['living', userId, 'preferences'];
-const combine = (history, preferences) => (history && preferences !== undefined ? { ...history, preferences } : undefined);
 
 // Merges with the latest stored values, in this tab's order (see
 // preference-store). Then, whether it worked or not: any read begun before
@@ -40,20 +66,36 @@ function storePreferences(client, userId, patch) {
   });
 }
 
-/** The whole history plus preferences; data is ready once both are. */
+/** The whole record plus preferences; data is ready once every part is. */
 export function useLivingData() {
   const { user } = useAuth();
   const client = useQueryClient();
-  const queryKey = ['living', user?.id];
-  const history = useQuery({ queryKey, queryFn: fetchLivingData, enabled: Boolean(user?.id), staleTime: 0 });
+  // One query per part, in RECORD_PARTS order.
+  const results = [
+    useQuery(partQuery(user?.id, 'checkIns')), useQuery(partQuery(user?.id, 'journal')), useQuery(partQuery(user?.id, 'sessions')),
+    useQuery(partQuery(user?.id, 'reflections')), useQuery(partQuery(user?.id, 'people')),
+  ];
+  const [checkIns, journal, sessions, reflections, people] = results.map((result) => result.data);
   const preferences = usePreferences();
-  const data = useMemo(() => combine(history.data, preferences.data), [history.data, preferences.data]);
-  // Reloads the history (and the preferences, when asked) and returns what is
-  // stored now, or nothing when a reload failed or waits for the network, so
-  // a decision never rests on an older copy.
-  const refresh = async ({ withPreferences = false } = {}) => {
+  const entries = useMemo(() => (checkIns && journal ? timelineEntries(checkIns, journal) : undefined), [checkIns, journal]);
+  const data = useMemo(() => (
+    entries && sessions && reflections && people && preferences.data !== undefined
+      ? { checkIns, journal, sessions, reflections, people, entries, preferences: preferences.data }
+      : undefined
+  ), [checkIns, journal, sessions, reflections, people, entries, preferences.data]);
+  // What the cache holds now for every part, or nothing while a part is missing.
+  const cached = () => {
+    const rows = Object.fromEntries(RECORD_PARTS.map((part) => [part, client.getQueryData(recordKey(user?.id, part))]));
+    const stored = client.getQueryData(preferencesKey(user?.id));
+    if (RECORD_PARTS.some((part) => rows[part] === undefined) || stored === undefined) return undefined;
+    return { ...rows, entries: timelineEntries(rows.checkIns, rows.journal), preferences: stored };
+  };
+  // Reloads the parts asked for (all of them unless told; the preferences
+  // too, when asked) and returns what is stored now, or nothing when a reload
+  // failed or waits for the network, so a decision never rests on an older copy.
+  const refresh = async ({ parts = RECORD_PARTS, withPreferences = false } = {}) => {
     const started = Date.now();
-    const keys = withPreferences ? [queryKey, preferencesKey(user?.id)] : [queryKey];
+    const keys = [...parts.map((part) => recordKey(user?.id, part)), ...(withPreferences ? [preferencesKey(user?.id)] : [])];
     // A saved or removed entry can change whether readings wait (useHardMoment).
     client.invalidateQueries({ queryKey: ['living', user?.id, 'hard-moment'], exact: true }).catch(() => {});
     await Promise.all(keys.map((key) => client.invalidateQueries({ queryKey: key, exact: true })));
@@ -61,19 +103,20 @@ export function useLivingData() {
       const state = client.getQueryState(key);
       return state?.status === 'success' && state.dataUpdatedAt >= started;
     });
-    return fresh ? combine(client.getQueryData(queryKey), client.getQueryData(preferencesKey(user?.id))) : undefined;
+    return fresh ? cached() : undefined;
   };
+  const failed = results.some((result) => result.isError) || preferences.isError;
   return {
     data,
-    isLoading: history.isLoading || preferences.isLoading,
+    isLoading: results.some((result) => result.isLoading) || preferences.isLoading,
     // A reload that fails keeps what loaded on screen; only a record that
     // never loaded is an error. reloadFailed says a reload failed since.
-    isError: !data && (history.isError || preferences.isError),
-    reloadFailed: Boolean(data) && (history.isError || preferences.isError),
-    isFetching: history.isFetching || preferences.isFetching,
+    isError: !data && failed,
+    reloadFailed: Boolean(data) && failed,
+    isFetching: results.some((result) => result.isFetching) || preferences.isFetching,
     isSuccess: Boolean(data),
-    error: history.error || preferences.error,
-    refetch: () => Promise.all([history.refetch(), preferences.refetch()]),
+    error: results.find((result) => result.error)?.error || preferences.error,
+    refetch: () => Promise.all([...results.map((result) => result.refetch()), preferences.refetch()]),
     refresh,
     savePreferences: preferences.savePreferences,
   };

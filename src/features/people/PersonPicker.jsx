@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { X, Plus, Users } from "lucide-react";
 import { matchPersonByText, samePersonId, searchPeople } from "@/lib/people";
-import { announcePerson, watchPeople } from "./peopleEvents";
+import { useAuth } from "@/lib/AuthContext";
+import { putRecordRow, useRecordPart } from "@/features/patterns/useLivingData";
 
 /**
  * Multi-select person picker. Replaces free-text who_involved.
@@ -13,17 +15,11 @@ import { announcePerson, watchPeople } from "./peopleEvents";
  */
 export default function PersonPicker({ value = [], onChange, placeholder = "Who was involved?" }) {
   const [open, setOpen] = useState(false);
-  const [people, setPeople] = useState([]);
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    base44.entities.Person.all().then((rows) => { if (active) setPeople(rows); }).catch(() => { if (active) setPeople([]); });
-    const stop = watchPeople((person) => {
-      setPeople((prev) => (prev.some((row) => samePersonId(row.id, person.id)) ? prev.map((row) => (samePersonId(row.id, person.id) ? person : row)) : [...prev, person]));
-    });
-    return () => { active = false; stop(); };
-  }, []);
+  // The people every page shares: someone added in one picker shows in all.
+  const people = useRecordPart("people").data || [];
+  const client = useQueryClient();
+  const { user } = useAuth();
 
   const selected = people.filter((p) => value.some((id) => samePersonId(id, p.id)));
   const queryTrimmed = query.trim();
@@ -48,7 +44,7 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
     }
     try {
       const created = await base44.entities.Person.create({ name: queryTrimmed, person_type: "other" });
-      announcePerson(created);
+      putRecordRow(client, user?.id, "people", created);
       onChange([...value, created.id]);
       setQuery("");
     } catch {

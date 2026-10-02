@@ -96,7 +96,7 @@ function SidebarHeader() {
                 <h2 className="font-display text-lg leading-tight" style={{ color: 'var(--gh-ink)' }}>
                     vibe check
                 </h2>
-                <p className="text-[9px] tracking-[.1em] uppercase" style={{ color: 'var(--gh-ink-muted)' }}>
+                <p className="text-xs tracking-[.08em] uppercase" style={{ color: 'var(--gh-ink-muted)' }}>
                     Your daily sanctuary
                 </p>
             </div>
@@ -226,7 +226,7 @@ export default function Layout({ children }) {
                             <h2 className="font-display text-base leading-tight" style={{ color: 'var(--gh-ink)' }}>
                                 vibe check
                             </h2>
-                            <p className="text-[9px] tracking-[.1em] uppercase" style={{ color: 'var(--gh-ink-muted)' }}>Your daily sanctuary</p>
+                            <p className="text-xs tracking-[.08em] uppercase" style={{ color: 'var(--gh-ink-muted)' }}>Your daily sanctuary</p>
                         </div>
                     </div>
                     <button

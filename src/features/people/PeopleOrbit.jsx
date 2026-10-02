@@ -42,7 +42,7 @@ export default function PeopleOrbit({ people, entries = [], onChoose }) {
         </div>
         <div className="flex items-center gap-2">
           <button className="living-icon-button" disabled={current === 0} aria-label="Previous people in orbit" onClick={() => setPage(current - 1)}><ChevronLeft size={18} /></button>
-          <span className="text-xs">{current + 1} / {Math.max(1, Math.ceil(ordered.length / PAGE))}</span>
+          <span className="text-xs whitespace-nowrap">{current + 1} / {Math.max(1, Math.ceil(ordered.length / PAGE))}</span>
           <button className="living-icon-button" disabled={(current + 1) * PAGE >= ordered.length} aria-label="Next people in orbit" onClick={() => setPage(current + 1)}><ChevronRight size={18} /></button>
         </div>
       </div>

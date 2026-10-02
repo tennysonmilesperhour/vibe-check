@@ -196,7 +196,7 @@ export default function HealingBoard() {
                                 style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">
-                                        <h3 className="font-bold mb-1" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>
+                                        <h3 className="font-body font-bold mb-1" style={{ color: 'var(--gh-ink)' }}>
                                             {item.title}
                                         </h3>
                                         <p className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>{item.description}</p>
@@ -243,7 +243,7 @@ export default function HealingBoard() {
                         {getItemsByCategory(selectedCategory).length === 0 && (
                             <div className="p-12 text-center col-span-full" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-soft)' }}>
                                 {React.createElement(cat.icon, { className: "w-12 h-12 mx-auto mb-4", style: { color: 'var(--gh-ink-muted)' } })}
-                                <h3 className="text-lg font-bold mb-2" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>
+                                <h3 className="font-body text-lg font-bold mb-2" style={{ color: 'var(--gh-ink)' }}>
                                     No {cat.title.toLowerCase()} yet
                                 </h3>
                                 <p className="text-sm mb-5" style={{ color: 'var(--gh-ink-muted)' }}>{cat.description}</p>
@@ -260,7 +260,7 @@ export default function HealingBoard() {
                     <DialogContent className="max-w-lg"
                         style={{ background: 'var(--gh-field)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
                         <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2" style={{ fontFamily: 'Space Grotesk, sans-serif', color: 'var(--gh-ink)' }}>
+                            <DialogTitle className="flex items-center gap-2" style={{ color: 'var(--gh-ink)' }}>
                                 {React.createElement(categoryInfo[formData.category].icon, { className: "w-5 h-5", style: { color: 'var(--gh-accent)' } })}
                                 {editingItem ? 'Edit' : 'Add'} {categoryInfo[formData.category].title.slice(0, -1)}
                             </DialogTitle>

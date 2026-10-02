@@ -49,7 +49,7 @@ function DerivedChip({ label, value }) {
     if (!value) return null;
     return (
         <div className="flex flex-col gap-0.5 px-3 py-2" style={{ background: 'color-mix(in srgb, var(--gh-gold) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--gh-gold) 35%, transparent)' }}>
-            <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--gh-ink-muted)' }}>{label}</span>
+            <span className="text-xs uppercase tracking-widest" style={{ color: 'var(--gh-ink-muted)' }}>{label}</span>
             <span className="text-sm font-medium" style={{ color: 'var(--gh-ink)' }}>{value}</span>
         </div>
     );

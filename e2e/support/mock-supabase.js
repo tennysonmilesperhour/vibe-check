@@ -1,11 +1,10 @@
-// An in-memory stand-in for the Supabase project. It answers the requests
-// the app makes and refuses what the real project would: tables and columns
-// the migrations don't define (schema.js), a missing required column, a
-// second row for a unique key, a value outside a CHECK list, and a row that
-// isn't the signed-in person's (row-level security). Each refusal, and any
-// request the mock doesn't model, goes into `faults`, which fails the test.
-// Each test gets its own copy of the persona's rows.
-import { SCHEMA } from './schema.js';
+// A stand-in for the Supabase project: auth and functions answered here, and
+// every table request translated to SQL and run in the migrated Postgres
+// (database.js) as the signed-in person, with their JWT claims, so types,
+// constraints and the migrations' row-level security apply as they do live.
+// A request Postgres refuses, or one this mock doesn't model, goes into
+// `faults`, which fails the test unless the test expects it.
+// Each test starts from the persona's rows alone.
 
 export const SUPABASE_ORIGIN = 'https://mockproj.supabase.co';
 // supabase-js keeps the session under sb-<project ref>-auth-token.
@@ -32,75 +31,57 @@ export function makeSession(user) {
 const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
 // The functions the app calls (supabase.functions.invoke).
 const FUNCTIONS = { 'delete-account': () => ({ deleted: true }) };
+const COMPARISONS = { eq: '=', neq: '<>', gt: '>', gte: '>=', lt: '<', lte: '<=' };
 
-const coerce = (value) => (value === 'true' ? true : value === 'false' ? false : value === 'null' ? null : value);
-
-// Compares a cell with a filter value as PostgREST would: numbers as numbers.
-function compare(cell, value) {
-  if (typeof cell === 'number' && value !== '' && !Number.isNaN(Number(value))) return cell - Number(value);
-  return String(cell).localeCompare(String(value));
+const quoted = (name) => `"${name}"`;
+// The status PostgREST answers a Postgres error with.
+function statusFor(code, signedIn) {
+  if (code === '42501') return signedIn ? 403 : 401;
+  if (code === '23505' || code === '23503') return 409;
+  if (/^(22|23|42)/.test(code)) return 400;
+  return 500;
 }
 
-// One PostgREST filter (eq.x, gte.x, in.(a,b), is.null, not.eq.x), or null when the app uses an operator this mock doesn't model.
-function parseFilter(column, raw) {
-  const negate = raw.startsWith('not.');
-  const expr = negate ? raw.slice(4) : raw;
-  const dot = expr.indexOf('.');
-  const op = expr.slice(0, dot);
-  const value = expr.slice(dot + 1);
-  const tests = {
-    eq: (cell) => { const wanted = coerce(value); return typeof wanted === 'boolean' ? cell === wanted : cell != null && compare(cell, wanted) === 0; },
-    neq: (cell) => cell != null && compare(cell, coerce(value)) !== 0,
-    gt: (cell) => cell != null && compare(cell, value) > 0,
-    gte: (cell) => cell != null && compare(cell, value) >= 0,
-    lt: (cell) => cell != null && compare(cell, value) < 0,
-    lte: (cell) => cell != null && compare(cell, value) <= 0,
-    is: (cell) => (value === 'null' ? cell == null : cell === coerce(value)),
-    in: (cell) => value.replace(/^\(|\)$/g, '').split(',').map((item) => item.replace(/^"|"$/g, '')).includes(String(cell)),
-  };
-  const test = tests[op];
-  if (!test) return null;
-  return negate ? (row) => !test(row[column]) : (row) => test(row[column]);
-}
-
-function applyOrder(rows, order) {
-  if (!order) return rows;
-  const keys = order.split(',').map((part) => { const [column, direction = 'asc'] = part.split('.'); return { column, desc: direction === 'desc' }; });
-  return [...rows].sort((a, b) => {
-    for (const { column, desc } of keys) {
-      const x = a[column];
-      const y = b[column];
-      if (x === y) continue;
-      if (x == null) return 1;
-      if (y == null) return -1;
-      const cmp = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y));
-      if (cmp !== 0) return desc ? -cmp : cmp;
+// Empties every table, then puts the persona in as its own rows, through the database's rules.
+async function loadPersona({ db, columns }, fixture) {
+  await db.exec(`truncate ${[...columns.keys()].map((table) => `public.${quoted(table)}`).join(', ')}, auth.users cascade`);
+  if (!fixture) return;
+  const { user, tables } = fixture;
+  await db.transaction(async (tx) => {
+    // The sign-up trigger makes the profile row; the persona's profile updates it.
+    await tx.query('insert into auth.users (id, email, raw_user_meta_data) values ($1, $2, $3::text::jsonb)', [user.id, user.email, JSON.stringify(user.user_metadata ?? {})]);
+    for (const [table, rows] of Object.entries(tables)) {
+      if (!rows.length) continue;
+      if (!columns.has(table)) throw new Error(`The persona fills ${table}, which no migration creates.`);
+      const keys = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+      const unknown = keys.filter((key) => !columns.get(table).has(key));
+      if (unknown.length) throw new Error(`The persona's ${table} rows have columns no migration defines: ${unknown.join(', ')}.`);
+      const list = keys.map(quoted).join(', ');
+      const merge = table === 'profiles' ? ` on conflict ("id") do update set ${keys.map((key) => `${quoted(key)} = excluded.${quoted(key)}`).join(', ')}` : '';
+      try {
+        await tx.query(`insert into public.${quoted(table)} (${list}) select ${list} from json_populate_recordset(null::public.${quoted(table)}, $1::text::json)${merge}`, [JSON.stringify(rows)]);
+      } catch (error) {
+        throw new Error(`The persona's ${table} rows don't fit the database: ${error.message}`);
+      }
     }
-    return 0;
   });
 }
 
-// Whose row this is, for row-level security: profiles are keyed by the person's id.
-const ownerOf = (table, row) => (table === 'profiles' ? row.id : row.user_id);
-
 /**
- * @param {{ fixture: { user: object, tables: Record<string, object[]> } | null, nowIso: string }} options
+ * @param {{ database: { db: import('@electric-sql/pglite').PGlite, columns: Map<string, Map<string, string>> }, fixture: { user: object, tables: Record<string, object[]> } | null, nowIso: string }} options
  * fixture null means signed out.
  */
-export function createMockSupabase({ fixture, nowIso }) {
+export async function createMockSupabase({ database, fixture, nowIso }) {
+  const { db, columns } = database;
+  await loadPersona(database, fixture);
   const user = fixture?.user ?? null;
   const token = user ? makeSession(user).access_token : null;
-  const store = {};
-  let tick = 0;
-  let ids = 0;
-  const stamp = () => { tick += 1; return new Date(new Date(nowIso).getTime() + tick * 1000).toISOString(); };
-  const newId = () => { ids += 1; return `e2e00000-0000-4000-8000-${String(ids).padStart(12, '0')}`; };
-  /** Every write the app made: { method, table, rows }. */
+  /** Every write the app made: { method, table, rows } with the rows as stored. */
   const writes = [];
   /** Auth calls, as "METHOD /path". */
   const authCalls = [];
-  /** What the real project would refuse, or what the mock doesn't model. */
-  const faults = [];
+  /** What the database refused, or the mock doesn't model: { text, url }. */
+  const faultLog = [];
   // Levers for loading and error states: tables that answer slowly or fail.
   const control = { delayMs: 0, delayTables: new Set(), failTables: new Set() };
   const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
@@ -115,9 +96,9 @@ export function createMockSupabase({ fixture, nowIso }) {
     status, headers: { ...cors(request), 'content-type': 'application/json; charset=utf-8', ...extra }, body: JSON.stringify(body),
   });
   const empty = (route, request, status = 204) => route.fulfill({ status, headers: cors(request), body: '' });
-  // A refusal the real project would give, recorded as a fault.
+  // A refusal, as the real project would give it, recorded as a fault.
   const refuse = (route, request, status, code, message) => {
-    faults.push(`${request.method()} ${new URL(request.url()).pathname}: ${message}`);
+    faultLog.push({ text: `${request.method()} ${new URL(request.url()).pathname}: ${code} ${message}`, url: request.url() });
     return json(route, request, status, { code, message, details: null, hint: null });
   };
 
@@ -142,43 +123,15 @@ export function createMockSupabase({ fixture, nowIso }) {
     if (['/otp', '/recover', '/resend'].includes(path)) return json(route, request, 200, {});
     if (path === '/logout') return empty(route, request);
     if (path === '/settings') return json(route, request, 200, { external: { email: true }, disable_signup: false, mailer_autoconfirm: false });
-    faults.push(`${method} ${url.pathname}: auth endpoint the mock doesn't model`);
-    return json(route, request, 404, { msg: 'e2e mock: not found' });
+    return refuse(route, request, 404, 'not_found', "auth endpoint the mock doesn't model");
   }
 
-  // Checks a row the app wants to write against the schema and row-level security.
-  function invalid(table, schema, row, { insert }) {
-    const unknown = Object.keys(row).filter((column) => !schema.columns.has(column));
-    if (unknown.length) return [400, 'PGRST204', `Could not find the '${unknown[0]}' column of '${table}' in the schema cache`];
-    if (insert) {
-      const missing = [...schema.columns.values()].find((column) => column.required && row[column.name] == null);
-      if (missing) return [400, '23502', `null value in column "${missing.name}" of relation "${table}" violates not-null constraint`];
-    }
-    for (const [name, value] of Object.entries(row)) {
-      if (value == null) continue;
-      const broken = schema.columns.get(name).checks.some(({ allowed, range }) => (allowed && !allowed.includes(String(value))) || (range && (Number(value) < range[0] || Number(value) > range[1])));
-      if (broken) return [400, '23514', `new row for relation "${table}" violates check constraint on "${name}"`];
-    }
-    if (ownerOf(table, row) !== undefined && ownerOf(table, row) !== user?.id) return [403, '42501', `new row violates row-level security policy for table "${table}"`];
-    return null;
-  }
-
-  // The persona's rows go in by the same rules as the app's writes, so the
-  // tests never run on data the real database couldn't hold.
-  const fixtureProblems = [];
-  for (const [table, rows] of Object.entries(fixture?.tables ?? {})) {
-    const schema = SCHEMA.get(table);
-    if (!schema) { fixtureProblems.push(`${table}: no migration creates it`); continue; }
-    store[table] = [];
-    for (const row of structuredClone(rows)) {
-      const problem = invalid(table, schema, row, { insert: true });
-      const clash = schema.unique.find((key) => store[table].some((other) => key.every((column) => row[column] != null && String(other[column]) === String(row[column]))));
-      if (problem) fixtureProblems.push(`${table} ${row.id}: ${problem[2]}`);
-      else if (clash) fixtureProblems.push(`${table} ${row.id}: repeats the unique key (${clash.join(', ')})`);
-      else store[table].push(row);
-    }
-  }
-  if (fixtureProblems.length) throw new Error(`The persona doesn't fit the schema:\n${fixtureProblems.join('\n')}`);
+  // Runs the statements as the person making the request: their role, and their JWT claims for auth.uid().
+  const asRequester = (signedIn, run) => db.transaction(async (tx) => {
+    await tx.exec(signedIn ? 'set local role authenticated' : 'set local role anon');
+    await tx.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(signedIn ? { sub: user.id, email: user.email, role: 'authenticated' } : { role: 'anon' })]);
+    return run(tx);
+  });
 
   async function rest(route, request, url) {
     const table = url.pathname.replace('/rest/v1/', '');
@@ -186,87 +139,109 @@ export function createMockSupabase({ fixture, nowIso }) {
     if (control.failTables.has(table)) return json(route, request, 503, { code: 'PGRST000', message: 'Could not connect to the database. Please try again shortly.', details: null, hint: null });
     const method = request.method();
     const headers = request.headers();
-    const schema = SCHEMA.get(table);
-    if (!schema) return refuse(route, request, 404, 'PGRST205', `Could not find the table 'public.${table}' in the schema cache`);
-    // Signed in means the persona's own token; anything else reads as anonymous, which row-level security shows nothing.
+    const tableColumns = columns.get(table);
+    if (!tableColumns) return refuse(route, request, 404, 'PGRST205', `Could not find the table 'public.${table}' in the schema cache`);
     const signedIn = Boolean(user) && headers.authorization === `Bearer ${token}`;
-    const rows = (store[table] ||= []);
-    const filters = [];
-    for (const [key, value] of url.searchParams) {
-      if (RESERVED.has(key)) continue;
-      if (!schema.columns.has(key)) return refuse(route, request, 400, '42703', `column ${table}.${key} does not exist`);
-      const filter = parseFilter(key, value);
-      if (!filter) return refuse(route, request, 400, 'PGRST100', `filter ${key}=${value} isn't one the mock models`);
-      filters.push(filter);
+    const params = [];
+    // A value from the URL, cast to the column's type as PostgREST casts it.
+    const value = (column, text) => { params.push(text); return `($${params.length}::text)::${tableColumns.get(column)}`; };
+
+    const conditions = [];
+    for (const [column, raw] of url.searchParams) {
+      if (RESERVED.has(column)) continue;
+      if (!tableColumns.has(column)) return refuse(route, request, 400, '42703', `column ${table}.${column} does not exist`);
+      const negate = raw.startsWith('not.');
+      const expr = negate ? raw.slice(4) : raw;
+      const op = expr.slice(0, expr.indexOf('.'));
+      const operand = expr.slice(expr.indexOf('.') + 1);
+      let condition = null;
+      if (COMPARISONS[op]) condition = `t.${quoted(column)} ${COMPARISONS[op]} ${value(column, operand)}`;
+      else if (op === 'is' && ['null', 'true', 'false'].includes(operand)) condition = `t.${quoted(column)} is ${operand}`;
+      else if (op === 'in') condition = `t.${quoted(column)} in (${operand.replace(/^\(|\)$/g, '').split(',').map((item) => value(column, item.replace(/^"|"$/g, ''))).join(', ')})`;
+      if (!condition) return refuse(route, request, 400, 'PGRST100', `filter ${column}=${raw} isn't one the mock models`);
+      conditions.push(negate ? `not (${condition})` : condition);
     }
-    const visible = (row) => signedIn && ownerOf(table, row) === user.id;
-    const matches = (row) => visible(row) && filters.every((test) => test(row));
+    const where = conditions.length ? ` where ${conditions.join(' and ')}` : '';
     const selectParam = url.searchParams.get('select') || '*';
     const selected = selectParam === '*' ? null : selectParam.split(',').map((column) => column.trim());
-    if (selected?.some((column) => !schema.columns.has(column))) return refuse(route, request, 400, '42703', `select=${selectParam} asks for a column ${table} doesn't have, or an embedded resource the mock doesn't model`);
-    const project = (row) => (selected ? Object.fromEntries(selected.map((column) => [column, row[column]])) : row);
+    if (selected?.some((column) => !tableColumns.has(column))) return refuse(route, request, 400, '42703', `select=${selectParam} asks for a column ${table} doesn't have, or an embedded resource the mock doesn't model`);
+    const returned = selected ? selected.map((column) => `t.${quoted(column)}`).join(', ') : 't.*';
     const single = (headers.accept || '').includes('vnd.pgrst.object');
     const prefer = headers.prefer || '';
-    const representation = prefer.includes('return=representation');
+    const target = `public.${quoted(table)} as t`;
+    const asJson = (statement) => `with changed as (${statement}) select coalesce(json_agg(changed), '[]'::json) as body from changed`;
+
+    let sql;
+    let countSql = null;
+    if (method === 'GET' || method === 'HEAD') {
+      const orderParam = url.searchParams.get('order');
+      const order = orderParam ? orderParam.split(',').map((part) => {
+        const [column, direction = 'asc', nulls] = part.split('.');
+        if (!tableColumns.has(column) || !['asc', 'desc'].includes(direction) || (nulls && !['nullsfirst', 'nullslast'].includes(nulls))) return null;
+        return `t.${quoted(column)} ${direction}${nulls ? ` nulls ${nulls.slice(5)}` : ''}`;
+      }) : [];
+      if (order.includes(null)) return refuse(route, request, 400, 'PGRST100', `order=${orderParam} isn't one the mock models`);
+      const integer = (name) => (url.searchParams.has(name) ? Number.parseInt(url.searchParams.get(name), 10) : null);
+      const [limit, offset] = [integer('limit'), integer('offset')];
+      sql = `select coalesce(json_agg(rows), '[]'::json) as body from (select ${returned} from ${target}${where}${order.length ? ` order by ${order.join(', ')}` : ''}${limit != null ? ` limit ${limit}` : ''}${offset ? ` offset ${offset}` : ''}) rows`;
+      if (prefer.includes('count=exact')) countSql = `select count(*)::int as total from ${target}${where}`;
+    } else {
+      let body = null;
+      try { body = request.postDataJSON(); } catch { body = null; }
+      if (method === 'POST') {
+        const items = Array.isArray(body) ? body : [body || {}];
+        const keys = [...new Set(items.flatMap((item) => Object.keys(item)))];
+        const unknown = keys.find((key) => !tableColumns.has(key));
+        if (unknown) return refuse(route, request, 400, 'PGRST204', `Could not find the '${unknown}' column of '${table}' in the schema cache`);
+        if (!keys.length) return refuse(route, request, 400, 'PGRST100', "an insert of an empty row, which the mock doesn't model");
+        params.push(JSON.stringify(items));
+        const list = keys.map(quoted).join(', ');
+        let merge = '';
+        if (prefer.includes('resolution=merge-duplicates')) {
+          const conflict = (url.searchParams.get('on_conflict') || 'id').split(',');
+          if (conflict.some((column) => !tableColumns.has(column))) return refuse(route, request, 400, '42703', `on_conflict=${conflict.join(',')} names a column ${table} doesn't have`);
+          merge = ` on conflict (${conflict.map(quoted).join(', ')}) do update set ${keys.map((key) => `${quoted(key)} = excluded.${quoted(key)}`).join(', ')}`;
+        }
+        sql = asJson(`insert into ${target} (${list}) select ${list} from json_populate_recordset(null::public.${quoted(table)}, $${params.length}::text::json)${merge} returning ${returned}`);
+      } else if (method === 'PATCH') {
+        const keys = Object.keys(body || {});
+        const unknown = keys.find((key) => !tableColumns.has(key));
+        if (unknown) return refuse(route, request, 400, 'PGRST204', `Could not find the '${unknown}' column of '${table}' in the schema cache`);
+        if (!keys.length) return refuse(route, request, 400, 'PGRST100', "an update with nothing to change, which the mock doesn't model");
+        params.push(JSON.stringify(body));
+        sql = asJson(`update ${target} set ${keys.map((key) => `${quoted(key)} = source.${quoted(key)}`).join(', ')} from json_populate_record(null::public.${quoted(table)}, $${params.length}::text::json) as source${where} returning ${returned}`);
+      } else if (method === 'DELETE') {
+        sql = asJson(`delete from ${target}${where} returning ${returned}`);
+      } else {
+        return refuse(route, request, 405, 'PGRST000', `${method} isn't a method the mock models`);
+      }
+    }
+
+    let rows;
+    let total = null;
+    try {
+      ({ rows, total } = await asRequester(signedIn, async (tx) => ({
+        rows: (await tx.query(sql, params)).rows[0].body,
+        total: countSql ? (await tx.query(countSql, params)).rows[0].total : null,
+      })));
+    } catch (error) {
+      if (!error.code) throw error;
+      return refuse(route, request, statusFor(error.code, signedIn), error.code, error.message);
+    }
 
     if (method === 'GET' || method === 'HEAD') {
-      const all = applyOrder(rows.filter(matches), url.searchParams.get('order'));
-      const offset = Number(url.searchParams.get('offset') || 0);
-      const limit = url.searchParams.has('limit') ? Number(url.searchParams.get('limit')) : Infinity;
-      const result = all.slice(offset, offset + limit).map(project);
       if (single) {
-        if (result.length !== 1) return json(route, request, 406, { code: 'PGRST116', details: `The result contains ${result.length} rows`, hint: null, message: 'JSON object requested, multiple (or no) rows returned' });
-        return json(route, request, 200, result[0]);
+        if (rows.length !== 1) return json(route, request, 406, { code: 'PGRST116', details: `The result contains ${rows.length} rows`, hint: null, message: 'JSON object requested, multiple (or no) rows returned' });
+        return json(route, request, 200, rows[0]);
       }
-      const total = prefer.includes('count=exact') ? String(all.length) : result.length ? '*' : '0';
-      return json(route, request, 200, result, { 'content-range': `${result.length ? `${offset}-${offset + result.length - 1}` : '*'}/${total}` });
+      const offset = Number(url.searchParams.get('offset') || 0);
+      const range = rows.length ? `${offset}-${offset + rows.length - 1}` : '*';
+      return json(route, request, 200, rows, { 'content-range': `${range}/${total ?? (rows.length ? '*' : '0')}` });
     }
-    if (!signedIn) return refuse(route, request, 401, '42501', `permission denied for table ${table}`);
-    let body = null;
-    try { body = request.postDataJSON(); } catch { body = null; }
-    if (method === 'POST') {
-      const items = Array.isArray(body) ? body : [body || {}];
-      const upsert = prefer.includes('resolution=merge-duplicates');
-      const conflict = upsert ? (url.searchParams.get('on_conflict') || 'id').split(',') : null;
-      if (conflict && !schema.unique.some((key) => key.length === conflict.length && key.every((column) => conflict.includes(column)))) {
-        return refuse(route, request, 400, '42P10', `there is no unique or exclusion constraint matching the ON CONFLICT specification (${conflict.join(',')})`);
-      }
-      const out = [];
-      for (const item of items) {
-        const existing = conflict ? rows.find((row) => conflict.every((column) => item[column] !== undefined && String(row[column]) === String(item[column]))) : null;
-        const problem = invalid(table, schema, item, { insert: !existing });
-        if (problem) return refuse(route, request, ...problem);
-        const at = stamp();
-        if (existing) { Object.assign(existing, item, { updated_at: at }); out.push(existing); continue; }
-        const row = { id: newId(), created_at: at, updated_at: at, ...item };
-        const clash = schema.unique.find((key) => rows.some((other) => key.every((column) => row[column] != null && String(other[column]) === String(row[column]))));
-        if (clash) return refuse(route, request, 409, '23505', `duplicate key value violates unique constraint (${clash.join(', ')}) on ${table}`);
-        rows.push(row);
-        out.push(row);
-      }
-      writes.push({ method, table, rows: out });
-      if (!representation) return empty(route, request, 201);
-      return json(route, request, 201, single ? project(out[0]) : out.map(project));
-    }
-    if (method === 'PATCH') {
-      const problem = invalid(table, schema, body || {}, { insert: false });
-      if (problem) return refuse(route, request, ...problem);
-      const changed = rows.filter(matches);
-      const at = stamp();
-      changed.forEach((row) => Object.assign(row, body || {}, { updated_at: at }));
-      writes.push({ method, table, rows: changed });
-      if (!representation) return empty(route, request);
-      if (single) return changed.length === 1 ? json(route, request, 200, project(changed[0])) : json(route, request, 406, { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' });
-      return json(route, request, 200, changed.map(project));
-    }
-    if (method === 'DELETE') {
-      const removed = rows.filter(matches);
-      store[table] = rows.filter((row) => !matches(row));
-      writes.push({ method, table, rows: removed });
-      if (!representation) return empty(route, request);
-      return json(route, request, 200, single ? project(removed[0]) : removed.map(project));
-    }
-    return refuse(route, request, 405, 'PGRST000', `${method} isn't a method the mock models`);
+    writes.push({ method, table, rows });
+    if (!prefer.includes('return=representation')) return empty(route, request, method === 'POST' ? 201 : 204);
+    if (single && rows.length !== 1) return json(route, request, 406, { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' });
+    return json(route, request, method === 'POST' ? 201 : 200, single ? rows[0] : rows);
   }
 
   /** Playwright route handler for every request to the Supabase origin. */
@@ -285,5 +260,5 @@ export function createMockSupabase({ fixture, nowIso }) {
     return refuse(route, request, 404, 'PGRST000', `the app called ${request.method()} ${url.pathname}, which the mock doesn't model`);
   }
 
-  return { handle, store, writes, authCalls, faults, control };
+  return { handle, writes, authCalls, faultLog, get faults() { return faultLog.map((fault) => fault.text); }, control };
 }

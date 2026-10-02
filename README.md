@@ -62,12 +62,15 @@ screen.
 
 `npm run test:e2e` builds the app into `dist-e2e/` and runs Playwright against
 it, under the production headers from `vercel.json` (`vite preview` sends
-them, Content-Security-Policy included). The app talks to an in-memory
-Supabase (`e2e/support/mock-supabase.js`) filled with an invented person
-(`e2e/support/persona.js`), at a fixed clock, so no network or account is
-needed. The mock reads the tables from `supabase/migrations/` and refuses what
-the real project would: unknown tables or columns, a missing required column,
-a duplicate key, a value outside a CHECK list, and anyone else's rows.
+them, Content-Security-Policy included). The app talks to a stand-in Supabase
+(`e2e/support/mock-supabase.js`): auth is answered in JavaScript, and table
+requests run as SQL in an in-process Postgres (PGlite) built from
+`supabase/migrations/` (`e2e/support/database.js`), as the signed-in person
+with their JWT claims. Types, NOT NULL, CHECK, unique keys and the migrations'
+row-level security policies apply as they do live. Each test starts from an
+invented person (`e2e/support/persona.js`) at a fixed clock, so no network or
+account is needed. A migration that needs something more from the Supabase
+platform fails the tests with a pointer to `PLATFORM` in `database.js`.
 
 A test fails when a page throws or logs an error, when one of the app's files
 fails to load, when the app makes a request the mock refuses or doesn't

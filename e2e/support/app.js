@@ -1,10 +1,11 @@
-// The browser test fixture: every page runs against the in-memory Supabase
-// (mock-supabase.js) at a fixed clock, with requests to any other site
+// The browser test fixture: every page runs against a stand-in Supabase
+// (mock-supabase.js) whose tables live in a real Postgres built from the
+// migrations (database.js), at a fixed clock, with requests to any other site
 // blocked. A test fails if the page throws or logs an error, if one of the
-// app's own files fails to load, if the mock records a fault (a request the
-// real project would refuse, or one it doesn't model), or if the page
-// contacts another site.
+// app's own files fails to load, if the database refuses a request (or the
+// mock doesn't model it), or if the page contacts another site.
 import { test as base, expect } from '@playwright/test';
+import { createDatabase } from './database.js';
 import { createMockSupabase, makeSession, STORAGE_KEY, SUPABASE_ORIGIN } from './mock-supabase.js';
 import { established, newcomer, NOW, NOW_ISO } from './persona.js';
 
@@ -26,9 +27,18 @@ export const test = base.extend({
    */
   expectedFaults: [null, { option: true }],
 
-  backend: async ({ context, persona, baseURL }, use) => {
+  // One migrated database per worker; each test empties it and loads its persona.
+  // eslint-disable-next-line no-empty-pattern
+  database: [async ({}, use) => {
+    const database = await createDatabase();
+    await use(database);
+    await database.db.close();
+  }, { scope: 'worker' }],
+
+  backend: async ({ context, persona, baseURL, database }, use) => {
     const fixture = persona ? PERSONAS[persona]() : null;
-    const backend = { ...createMockSupabase({ fixture, nowIso: NOW_ISO }), external: [] };
+    const backend = await createMockSupabase({ database, fixture, nowIso: NOW_ISO });
+    backend.external = [];
     const appOrigin = new URL(baseURL).origin;
     await context.route((url) => url.origin !== appOrigin && url.origin !== SUPABASE_ORIGIN, (route) => {
       const url = new URL(route.request().url());
@@ -49,12 +59,18 @@ export const test = base.extend({
   page: async ({ page, backend, baseURL, allowFailedRequests, expectedFaults }, use) => {
     await page.clock.setFixedTime(new Date(NOW));
     const appOrigin = new URL(baseURL).origin;
+    // A copy without g or y, whose lastIndex would carry from one fault to the next.
+    const expectation = expectedFaults ? new RegExp(expectedFaults.source, expectedFaults.flags.replace(/[gy]/g, '')) : null;
+    const isExpected = (fault) => Boolean(expectation?.test(fault.text));
     const problems = [];
     page.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
     page.on('console', (message) => {
       if (message.type() !== 'error') return;
-      // A refused request makes the browser log a failed load as well.
-      if ((allowFailedRequests || expectedFaults) && /Failed to load resource/.test(message.text())) return;
+      if (/Failed to load resource/.test(message.text())) {
+        if (allowFailedRequests) return;
+        // The failed load an expected refusal causes, and only that one.
+        if (backend.faultLog.some((fault) => isExpected(fault) && fault.url === message.location().url)) return;
+      }
       problems.push(`console error: ${message.text()}`);
     });
     page.on('response', (response) => {
@@ -65,13 +81,13 @@ export const test = base.extend({
       if (request.url().startsWith(appOrigin) && !/ERR_ABORTED/.test(request.failure()?.errorText || '')) problems.push(`failed to load ${request.url()}: ${request.failure()?.errorText}`);
     });
     await use(page);
-    const expected = expectedFaults ? backend.faults.filter((fault) => expectedFaults.test(fault)) : [];
+    const expected = backend.faultLog.filter(isExpected);
     // One check, so a refusal shows with its reason next to the console line it caused.
     expect({
-      faults: backend.faults.filter((fault) => !expected.includes(fault)),
+      faults: backend.faultLog.filter((fault) => !isExpected(fault)).map((fault) => fault.text),
       problems,
       external: backend.external,
-      expectedFaultMissing: Boolean(expectedFaults) && expected.length === 0,
+      expectedFaultMissing: Boolean(expectation) && expected.length === 0,
     }, 'refused or unmodelled requests, page problems, and requests to other sites').toEqual({ faults: [], problems: [], external: [], expectedFaultMissing: false });
   },
 });

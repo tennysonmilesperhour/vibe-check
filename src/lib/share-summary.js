@@ -9,6 +9,7 @@ import { entryStates, filterEntries, validDateKey } from './living-patterns.js';
 import { BOUNDARY_ANSWERS, INTERACTION_FEELINGS, entryPeople, personLabels } from './people.js';
 import { peopleNameReplacer } from './name-replacer.js';
 import { ALIGNMENTS, OUTCOMES, STRESS_STATES, practiceById } from './practices.js';
+import { commonForm } from './words.js';
 
 // Weeks read well up to about four months; past that, months.
 const WEEKLY_UP_TO_DAYS = 16 * 7;
@@ -103,8 +104,7 @@ function daysWith(rows, valuesOf) {
     group.dates.add(row.date);
     group.forms.set(value, (group.forms.get(value) || 0) + 1);
   }
-  const capitalized = (/** @type {string} */ form) => (form.charAt(0) !== form.charAt(0).toLowerCase() ? 1 : 0);
-  return [...groups.values()].map(({ dates, forms }) => ({ value: [...forms].sort((a, b) => b[1] - a[1] || capitalized(b[0]) - capitalized(a[0]) || a[0].localeCompare(b[0]))[0][0], days: dates.size }))
+  return [...groups.values()].map(({ dates, forms }) => ({ value: commonForm(forms), days: dates.size }))
     .sort((a, b) => b.days - a.days || a.value.localeCompare(b.value));
 }
 

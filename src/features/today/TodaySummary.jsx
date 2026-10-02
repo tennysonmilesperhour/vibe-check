@@ -1,12 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { EMOTIONS } from "./vocab";
+import { feelingIcon, isListedFeeling } from "./vocab";
 import VocabularyIcon from "./VocabularyIcon";
 import { Pencil, ImageDown } from "lucide-react";
 import { shareNodeAsImage } from "@/lib/share";
 import { formatDay, todayKey } from "@/lib/dates";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-const iconFor = (label) => EMOTIONS.find((e) => e.label === label)?.icon;
 
 function Scores({ entry }) {
   const scores = [
@@ -32,7 +30,7 @@ function Feelings({ emotions }) {
     <div className="mt-4 flex flex-wrap gap-1.5">
       {emotions.map((label) => (
         <span key={label} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "calc(var(--radius) - 6px)", color: "var(--gh-ink-soft)" }}>
-          <VocabularyIcon name={iconFor(label)} size={14} /> {label}
+          <VocabularyIcon name={feelingIcon(label)} size={14} /> {label}
         </span>
       ))}
     </div>
@@ -45,14 +43,14 @@ function Feelings({ emotions }) {
  */
 function ShareDialog({ entry, open, onOpenChange }) {
   const cardRef = useRef(null);
-  const [include, setInclude] = useState({});
+  const [include, setInclude] = useState({ listed: true });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  useEffect(() => { if (open) { setInclude({}); setError(""); } }, [open]);
+  useEffect(() => { if (open) { setInclude({ listed: true }); setError(""); } }, [open]);
   // Feelings from the check-in's own list go in unless left out; ones typed
   // in your own words are words, so they wait to be chosen like the rest.
-  const listed = (entry.emotions || []).filter((label) => EMOTIONS.some((e) => e.label === label));
-  const own = (entry.emotions || []).filter((label) => !EMOTIONS.some((e) => e.label === label));
+  const listed = (entry.emotions || []).filter(isListedFeeling);
+  const own = (entry.emotions || []).filter((label) => !isListedFeeling(label));
   const words = [
     ["own", "Feelings in your own words", own.join(", ")],
     ["gratitude", "Gratitude", entry.gratitude],
@@ -79,7 +77,7 @@ function ShareDialog({ entry, open, onOpenChange }) {
           <p className="sanctuary-eyebrow">{formatDay(entry.date, { style: "long", withYear: true })}</p>
           <h3 className="text-2xl mt-1" style={{ color: "var(--gh-ink)" }}>Today, kept</h3>
           <Scores entry={entry} />
-          <Feelings emotions={[...(include.listed === false ? [] : listed), ...(include.own ? own : [])]} />
+          <Feelings emotions={[...(include.listed ? listed : []), ...(include.own ? own : [])]} />
           {words.filter(([key]) => key !== "own" && include[key]).map(([key, label, text]) => (
             <p key={key} className="mt-3 text-sm whitespace-pre-wrap" style={{ color: "var(--gh-ink-soft)" }}><strong>{label}: </strong>{text}</p>
           ))}
@@ -87,8 +85,8 @@ function ShareDialog({ entry, open, onOpenChange }) {
         </div>
         {listed.length > 0 && (
           <label className="flex items-center gap-3 text-sm mt-4">
-            <input type="checkbox" checked={include.listed !== false} onChange={(e) => setInclude((current) => ({ ...current, listed: e.target.checked }))} />
-            Feelings you chose from the list
+            <input type="checkbox" checked={Boolean(include.listed)} onChange={(e) => setInclude((current) => ({ ...current, listed: e.target.checked }))} />
+            Feeling words from the list
           </label>
         )}
         {words.length > 0 && (

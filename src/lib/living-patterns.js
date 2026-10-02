@@ -3,6 +3,7 @@ import { dateKey, todayKey, parseLocalDate, diffDaysKeys, addDaysKey, validDateK
 import { STRESS_STATES, HELPFUL_OUTCOMES, stateById } from './practices';
 import { entryPeople, samePersonId, mentionsPerson } from './people';
 import { fisherGreater, cmhGreater } from './pattern-stats';
+import { groupWords } from './words';
 
 export { entryPeople, validDateKey };
 
@@ -243,14 +244,9 @@ export function buildReport(entries, period, sessions = [], people = [], feedbac
   const days = new Set(rows.map((entry) => entry.date)).size;
   const calendarDays = Math.max(0, diffDaysKeys(end, period.start) + 1);
   const dailyMoods = rows.filter((entry) => entry.kind === 'day' && entry.mood_score != null).map((entry) => Number(entry.mood_score));
-  const countTags = (field) => {
-    const groups = new Map();
-    for (const entry of rows) for (const tag of [...new Set(entry[field] || [])]) {
-      if (!groups.has(tag)) groups.set(tag, []);
-      groups.get(tag).push(entry);
-    }
-    return [...groups].map(([label, sources]) => ({ label, sources })).sort((a, b) => b.sources.length - a.sources.length || a.label.localeCompare(b.label));
-  };
+  // "worried" typed in your own words and "Worried" picked from the list
+  // are one theme.
+  const countTags = (field) => groupWords(rows, (entry) => entry[field]).map(({ label, rows: sources }) => ({ label, sources }));
   const practiceSessions = sessions.filter((session) => session.date >= period.start && session.date <= end && session.status !== 'hidden');
   const practiceIds = [...new Set(practiceSessions.map((session) => session.practice_id))];
   return {

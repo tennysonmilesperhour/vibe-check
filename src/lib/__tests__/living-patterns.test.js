@@ -72,6 +72,15 @@ describe('reports follow local calendar periods', () => {
     expect(buildReport(timelineEntries([{ ...entry, notes: 'Corrected words' }]), period).moments[0].notes).toBe('Corrected words');
     expect(buildReport([], period).moments).toEqual([]);
   });
+  it('counts a feeling once whatever its letter case, under the form used most', () => {
+    const period = reportPeriod('monthly', '2026-08-02');
+    const entries = timelineEntries([
+      day('a', '2026-08-02', 5, { emotions: ['worried'] }),
+      day('b', '2026-08-03', 5, { emotions: ['Worried', 'worried'] }),
+      day('c', '2026-08-04', 5, { emotions: ['Worried', 'Calm'] }),
+    ]);
+    expect(buildReport(entries, period).emotions.map((theme) => [theme.label, theme.sources.length])).toEqual([['Worried', 3], ['Calm', 1]]);
+  });
 });
 
 describe('stress patterns and practice relevance', () => {

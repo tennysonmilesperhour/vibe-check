@@ -16,7 +16,7 @@ export const FEELING_FAMILIES = [
 ];
 
 // Shown first in the check-in. The 22 words of the earlier, shorter list are
-// all here, so check-ins kept with it look the same.
+// all here, so they stay one tap away.
 const COMMON_FEELINGS = new Set([
   'Joyful', 'Grateful', 'Excited', 'Proud', 'Hopeful', 'Calm', 'Content', 'Relieved', 'Loved', 'Creative',
   'Sad', 'Lonely', 'Hurt', 'Anxious', 'Afraid', 'Overwhelmed', 'Stressed', 'Angry', 'Frustrated',
@@ -24,14 +24,30 @@ const COMMON_FEELINGS = new Set([
 ]);
 
 export const EMOTIONS = FEELING_FAMILIES.flatMap((family) => family.words.map((label) => ({
-  label, icon: family.icon, family: family.name, common: COMMON_FEELINGS.has(label),
+  label, icon: family.icon, common: COMMON_FEELINGS.has(label),
 })));
 
-/** Families with only the words that contain the search text, ignoring case. */
+const LISTED = new Set(EMOTIONS.map((feeling) => feeling.label));
+const ICON_BY_WORD = new Map(EMOTIONS.map((feeling) => [feeling.label.toLowerCase(), feeling.icon]));
+
+/** Whether a saved feeling is a word from the list, exactly as listed. */
+export const isListedFeeling = (label) => LISTED.has(label);
+
+/** The family symbol for a feeling, in any letter case; none for own words. */
+export const feelingIcon = (label) => ICON_BY_WORD.get(String(label).toLowerCase());
+
+// Letters only, so "self conscious" finds "Self-conscious".
+const fold = (text) => text.toLowerCase().replace(/[^a-z]/g, '');
+
+/**
+ * Families with only the words that contain the search text, ignoring case
+ * and punctuation. A search for a family's name ("anger") shows the family.
+ */
 export function findFeelings(query) {
-  const text = query.trim().toLowerCase();
+  const text = fold(query);
   if (!text) return FEELING_FAMILIES;
-  return FEELING_FAMILIES.map((family) => ({ ...family, words: family.words.filter((word) => word.toLowerCase().includes(text)) }))
+  const named = (family) => family.name.toLowerCase().split(' ').some((part) => !['and', 'or'].includes(part) && part.startsWith(text));
+  return FEELING_FAMILIES.map((family) => (named(family) ? family : { ...family, words: family.words.filter((word) => fold(word).includes(text)) }))
     .filter((family) => family.words.length);
 }
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { EMOTIONS, FEELING_FAMILIES, findFeelings } from '../vocab';
+import { EMOTIONS, FEELING_FAMILIES, findFeelings, feelingIcon, isListedFeeling } from '../vocab';
 import VocabularyIcon from '../VocabularyIcon';
 
 const EARLIER = ['Joyful', 'Grateful', 'Calm', 'Excited', 'Loved', 'Hopeful', 'Proud', 'Creative', 'Content', 'Relieved', 'Anxious', 'Sad',
@@ -25,11 +25,29 @@ describe('the feeling vocabulary', () => {
     }
   });
 
-  it('finds words by any part, ignoring case, within their families', () => {
+  it('finds words by any part, ignoring case and punctuation, within their families', () => {
     expect(findFeelings('')).toBe(FEELING_FAMILIES);
     expect(findFeelings('  ')).toBe(FEELING_FAMILIES);
     expect(findFeelings('IRRIT')).toEqual([expect.objectContaining({ name: 'Anger', words: ['Irritated'] })]);
     expect(findFeelings('out').flatMap((family) => family.words)).toEqual(['Left out', 'Burnt out']);
+    expect(findFeelings('self conscious').flatMap((family) => family.words)).toEqual(['Self-conscious']);
     expect(findFeelings('zzz')).toEqual([]);
+  });
+
+  it('shows a whole family when the search names it', () => {
+    const anger = FEELING_FAMILIES.find((family) => family.name === 'Anger');
+    expect(findFeelings('anger')).toEqual([anger]);
+    expect(findFeelings('Guilt').map((family) => family.name)).toEqual(['Shame and guilt']);
+    expect(findFeelings('stress').map((family) => family.name)).toEqual(['Fear and stress']);
+    // "and" and "or" in a family name match nothing on their own.
+    expect(findFeelings('or').find((family) => family.name === 'Tired or distant').words).toEqual(['Bored']);
+  });
+
+  it('tells listed words from your own, and draws a listed word in any case', () => {
+    expect(isListedFeeling('Worried')).toBe(true);
+    expect(isListedFeeling('worried')).toBe(false);
+    expect(feelingIcon('worried')).toBe('wind');
+    expect(feelingIcon('In awe')).toBe('sprout');
+    expect(feelingIcon('wistful')).toBeUndefined();
   });
 });

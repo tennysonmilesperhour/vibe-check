@@ -1,4 +1,4 @@
-import React, { useId, useState } from "react";
+import React, { useId, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import PersonPicker from "@/features/people/PersonPicker";
 import { Textarea } from "@/components/ui/textarea";
@@ -75,13 +75,12 @@ function Chip({ label, icon, on, onToggle }) {
 }
 
 /** Multi-select chip grid (activities). */
-export function ChipsStep({ question, hint, options, selected, onToggle }) {
+export function ChipsStep({ question, options, selected, onToggle }) {
   return (
     <div>
       <h1 className="text-4xl md:text-6xl" style={{ color: cream, maxWidth: "14ch", lineHeight: 0.98 }}>
         {question}
       </h1>
-      {hint && <p className="mt-3 text-sm" style={{ color: creamSoft }}>{hint}</p>}
       <div className="mt-8 flex flex-wrap gap-2 max-w-2xl">
         {options.map((opt) => <Chip key={opt.label} label={opt.label} icon={opt.icon} on={selected.includes(opt.label)} onToggle={onToggle} />)}
       </div>
@@ -101,21 +100,36 @@ const readFeelingsView = () => {
 export function FeelingsStep({ selected, onToggle }) {
   const [showAll, setShowAll] = useState(readFeelingsView);
   const [query, setQuery] = useState("");
+  // Words picked from the full list stay in the shorter one until the view
+  // changes, even once unpicked, so the chip in focus never disappears.
+  const [kept, setKept] = useState(selected);
   const id = useId();
+  const viewRefs = useRef([]);
   const choose = (all) => {
     setShowAll(all);
-    if (!all) setQuery("");
+    if (!all) { setQuery(""); setKept(selected); }
     try { window.localStorage.setItem(FEELINGS_VIEW_KEY, all ? "all" : "common"); } catch { /* private mode */ }
   };
-  // A word chosen from the full list stays in view in the shorter one.
-  const common = EMOTIONS.filter((feeling) => feeling.common || selected.includes(feeling.label));
+  const common = EMOTIONS.filter((feeling) => feeling.common || kept.includes(feeling.label) || selected.includes(feeling.label));
   const families = findFeelings(query);
   const matches = families.reduce((count, family) => count + family.words.length, 0);
+  // Two choices in one radio group: arrow keys move between them.
+  const onViewKey = (e) => {
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+    e.preventDefault();
+    const all = !showAll;
+    choose(all);
+    viewRefs.current[all ? 1 : 0]?.focus();
+  };
   const viewButton = (all, label) => (
     <button
+      ref={(node) => { viewRefs.current[all ? 1 : 0] = node; }}
       type="button"
-      aria-pressed={showAll === all}
+      role="radio"
+      aria-checked={showAll === all}
+      tabIndex={showAll === all ? 0 : -1}
       onClick={() => choose(all)}
+      onKeyDown={onViewKey}
       className="min-h-11 px-4 text-sm font-medium rounded-lg"
       style={{ background: showAll === all ? cream : "transparent", color: showAll === all ? "var(--gh-ink)" : cream }}
     >
@@ -128,7 +142,7 @@ export function FeelingsStep({ selected, onToggle }) {
         Which feelings moved through?
       </h1>
       <p className="mt-3 text-sm" style={{ color: creamSoft }}>Choose any that visited, even briefly.</p>
-      <div className="mt-6 inline-flex rounded-xl p-1" role="group" aria-label="Feelings to show" style={{ border: "1px solid rgba(255,253,246,0.35)" }}>
+      <div className="mt-6 inline-flex rounded-xl p-1" role="radiogroup" aria-label="Feelings to show" style={{ border: "1px solid rgba(255,253,246,0.35)" }}>
         {viewButton(false, "Common")}
         {viewButton(true, `All ${EMOTIONS.length}`)}
       </div>

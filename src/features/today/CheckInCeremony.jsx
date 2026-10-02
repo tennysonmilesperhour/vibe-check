@@ -7,8 +7,9 @@ import StressFields from './StressFields';
 import PersonPicker from '@/features/people/PersonPicker';
 import { useToast } from "@/components/ui/use-toast";
 import SkyField from "@/features/shell/SkyField";
-import { ScaleStep, ChipsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
+import { ScaleStep, ChipsStep, FeelingsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
 import { EMOTIONS, ACTIVITIES } from "./vocab";
+import { picksFrom, typedFrom, combineWords, keepOrder } from "./check-in-words";
 import { ALL_STEPS, chooseSteps } from "./check-in-steps";
 import { usePreferences } from "@/features/patterns/useLivingData";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
@@ -55,9 +56,8 @@ const formFrom = (existing) => answersOnly({
   person_ids: existing?.person_ids ?? [],
   stress_context: existing?.stress_context ?? {},
 });
-// Words the person typed themselves, beside the preset chips.
-const customFrom = (items = [], presets) => items.filter((item) => !presets.some((preset) => preset.label === item)).join(', ');
-const withCustom = (items, presets, text) => [...new Set([...items.filter((item) => presets.some((preset) => preset.label === item)), ...text.split(',').map((item) => item.trim()).filter(Boolean)])];
+const picksOf = (payload) => ({ emotions: picksFrom(payload?.emotions, EMOTIONS), activities: picksFrom(payload?.activities, ACTIVITIES) });
+const typedOf = (payload) => ({ emotions: typedFrom(payload?.emotions, EMOTIONS), activities: typedFrom(payload?.activities, ACTIVITIES) });
 
 export default function CheckInCeremony({ dateKey = todayKey(), existing = null, onDone, onCancel }) {
   const { toast } = useToast();
@@ -84,8 +84,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   // record it, so a restore compares server times and never the device clock.
   const [serverVersion, setServerVersion] = useState(existing?.updated_at || null);
   const [form, setForm] = useState(() => formFrom(existing));
-  const [customHabits, setCustomHabits] = useState(() => customFrom(existing?.activities, ACTIVITIES));
-  const [customFeelings, setCustomFeelings] = useState(() => customFrom(existing?.emotions, EMOTIONS));
+  // Chips picked and words typed for feelings and activities, kept apart.
+  // form.emotions and form.activities are always the two together, so every
+  // reset of the form sets these as well.
+  const [picks, setPicks] = useState(() => picksOf(existing));
+  const [typed, setTyped] = useState(() => typedOf(existing));
   // Which questions to ask, settled once the draft and preferences have loaded.
   const prefs = usePreferences();
   const [stepIds, setStepIds] = useState(null);
@@ -117,8 +120,9 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const restoreForm = (payload) => {
     const answers = answersOnly(payload);
     setForm((previous) => ({ ...previous, ...answers }));
-    setCustomHabits(customFrom(answers.activities, ACTIVITIES));
-    setCustomFeelings(customFrom(answers.emotions, EMOTIONS));
+    const words = { ...formRef.current, ...answers };
+    setPicks(picksOf(words));
+    setTyped(typedOf(words));
   };
 
   useEffect(() => {
@@ -323,8 +327,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     baselineRef.current = JSON.stringify(initial);
     visitStartDraftRef.current = null;
     setForm(initial);
-    setCustomHabits(customFrom(initial.activities, ACTIVITIES));
-    setCustomFeelings(customFrom(initial.emotions, EMOTIONS));
+    setPicks(picksOf(initial));
+    setTyped(typedOf(initial));
     setServerVersion(existing?.updated_at || null);
     setRestored(false);
     setAutosave('idle');
@@ -365,11 +369,17 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   };
 
   const set = (key) => (val) => edit((f) => ({ ...f, [key]: val }));
-  const toggleIn = (key) => (label) =>
-    edit((f) => ({
-      ...f,
-      [key]: f[key].includes(label) ? f[key].filter((x) => x !== label) : [...f[key], label],
-    }));
+  // What is saved is always the chips picked plus the words typed.
+  const togglePick = (key) => (label) => {
+    const next = picks[key].includes(label) ? picks[key].filter((x) => x !== label) : [...picks[key], label];
+    setPicks((current) => ({ ...current, [key]: next }));
+    edit((f) => ({ ...f, [key]: keepOrder(f[key], combineWords(next, typed[key])) }));
+  };
+  const typeWords = (key) => (e) => {
+    const text = e.target.value;
+    setTyped((current) => ({ ...current, [key]: text }));
+    edit((f) => ({ ...f, [key]: keepOrder(f[key], combineWords(picks[key], text)) }));
+  };
 
   // Choices saved before the check-in followed them didn't ask for that, so
   // only choices saved since shape it.
@@ -477,13 +487,13 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     mood: <ScaleStep field="mood_score" question="How did today feel?" value={form.mood_score} onChange={set("mood_score")} />,
     energy: <ScaleStep field="energy_level" question="How was your energy?" value={form.energy_level} onChange={set("energy_level")} />,
     sleep: <ScaleStep field="sleep_quality" question="How did you sleep?" value={form.sleep_quality} onChange={set("sleep_quality")} />,
-    emotions: <><ChipsStep question="Which feelings moved through?" hint="Choose any that visited, even briefly." options={EMOTIONS} selected={form.emotions} onToggle={toggleIn("emotions")} /><div className="ceremony-stress"><label className="living-label">In your own words<input className="living-input mt-2" value={customFeelings} maxLength={1000} placeholder="Any feeling, in the words that fit, separated by commas" onChange={(e) => { const text = e.target.value; setCustomFeelings(text); edit((previous) => ({ ...previous, emotions: withCustom(previous.emotions, EMOTIONS, text) })); }} /></label></div></>,
-    activities: <><ChipsStep question="What did you give time to?" options={ACTIVITIES} selected={form.activities} onToggle={toggleIn("activities")} /><div className="ceremony-stress space-y-4"><label className="living-label">Your own habits or activities<input className="living-input mt-2" value={customHabits} maxLength={1000} placeholder="Coffee, late work, a walk… separated by commas" onChange={(e) => { const text = e.target.value; setCustomHabits(text); edit((previous) => ({ ...previous, activities: withCustom(previous.activities, ACTIVITIES, text) })); }} /></label><div><p className="living-label mb-2">People in your day · optional</p><PersonPicker value={form.person_ids} onChange={set('person_ids')} /></div></div></>,
+    emotions: <><FeelingsStep selected={picks.emotions} onToggle={togglePick("emotions")} /><div className="ceremony-stress"><label className="living-label">In your own words<input className="living-input mt-2" value={typed.emotions} maxLength={1000} placeholder="Any feeling, in the words that fit, separated by commas" onChange={typeWords("emotions")} /></label></div></>,
+    activities: <><ChipsStep question="What did you give time to?" options={ACTIVITIES} selected={picks.activities} onToggle={togglePick("activities")} /><div className="ceremony-stress space-y-4"><label className="living-label">Your own habits or activities<input className="living-input mt-2" value={typed.activities} maxLength={1000} placeholder="Coffee, late work, a walk… separated by commas" onChange={typeWords("activities")} /></label><div><p className="living-label mb-2">People in your day · optional</p><PersonPicker value={form.person_ids} onChange={set('person_ids')} /></div></div></>,
     stress: <><h1 className="text-4xl md:text-5xl" style={{ color: 'var(--gh-cream)' }}>Where did you feel stress?</h1><p className="mt-3" style={{ color: 'var(--gh-cream)' }}>Optional. Keep the cues, your response, and what you needed.</p><div className="ceremony-stress"><StressFields value={form.stress_context} onChange={set('stress_context')} when="day" /></div></>,
     high: <MomentStep kind="high" question="What was the high point?" value={form.high_moment} onChange={set("high_moment")} />,
     low: <MomentStep kind="low" question="What was the hardest moment?" value={form.low_moment} onChange={set("low_moment")} />,
     reflection: <ReflectionStep value={{ gratitude: form.gratitude, notes: form.notes }} onChange={(v) => edit((f) => ({ ...f, ...v }))} />,
-  }), [form, customHabits, customFeelings]);
+  }), [form, picks, typed]);
 
   const isLast = stepIndex === stepOrder.length - 1;
 

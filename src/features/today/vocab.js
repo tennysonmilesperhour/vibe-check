@@ -1,28 +1,6 @@
 // Check-in vocabulary shared by the ceremony and summaries.
-export const EMOTIONS = [
-  { label: 'Joyful', icon: 'sun' },
-  { label: 'Grateful', icon: 'hand-heart' },
-  { label: 'Calm', icon: 'waves' },
-  { label: 'Excited', icon: 'flame' },
-  { label: 'Loved', icon: 'heart' },
-  { label: 'Hopeful', icon: 'sprout' },
-  { label: 'Proud', icon: 'award' },
-  { label: 'Creative', icon: 'palette' },
-  { label: 'Content', icon: 'smile' },
-  { label: 'Relieved', icon: 'cloud-sun' },
-  { label: 'Anxious', icon: 'wind' },
-  { label: 'Sad', icon: 'droplet' },
-  { label: 'Frustrated', icon: 'cloud-lightning' },
-  { label: 'Tired', icon: 'moon' },
-  { label: 'Lonely', icon: 'circle-dashed' },
-  { label: 'Overwhelmed', icon: 'orbit' },
-  { label: 'Numb', icon: 'mountain' },
-  { label: 'Angry', icon: 'zap' },
-  { label: 'Afraid', icon: 'shield' },
-  { label: 'Hurt', icon: 'heart-crack' },
-  { label: 'Ashamed', icon: 'eye-off' },
-  { label: 'Guilty', icon: 'scale' },
-];
+
+export { FEELING_FAMILIES, EMOTIONS, isListedFeeling, feelingIcon, findFeelings } from '@/lib/feelings';
 
 export const ACTIVITIES = [
   { label: 'Exercise', icon: 'footprints' },

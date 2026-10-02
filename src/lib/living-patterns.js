@@ -3,6 +3,7 @@ import { dateKey, todayKey, parseLocalDate, diffDaysKeys, addDaysKey, validDateK
 import { STRESS_STATES, HELPFUL_OUTCOMES, stateById } from './practices';
 import { entryPeople, samePersonId, mentionsPerson } from './people';
 import { fisherGreater, cmhGreater } from './pattern-stats';
+import { canonicalFeeling } from './feelings';
 
 export { entryPeople, validDateKey };
 
@@ -243,9 +244,9 @@ export function buildReport(entries, period, sessions = [], people = [], feedbac
   const days = new Set(rows.map((entry) => entry.date)).size;
   const calendarDays = Math.max(0, diffDaysKeys(end, period.start) + 1);
   const dailyMoods = rows.filter((entry) => entry.kind === 'day' && entry.mood_score != null).map((entry) => Number(entry.mood_score));
-  const countTags = (field) => {
+  const countTags = (field, spell = (tag) => tag) => {
     const groups = new Map();
-    for (const entry of rows) for (const tag of [...new Set(entry[field] || [])]) {
+    for (const entry of rows) for (const tag of [...new Set((entry[field] || []).map(spell))]) {
       if (!groups.has(tag)) groups.set(tag, []);
       groups.get(tag).push(entry);
     }
@@ -256,7 +257,10 @@ export function buildReport(entries, period, sessions = [], people = [], feedbac
   return {
     ...period, partial: period.end >= todayKey(), rows, days, calendarDays, missing: Math.max(0, calendarDays - days),
     moods: dailyMoods.length ? { count: dailyMoods.length, mean: dailyMoods.reduce((a, b) => a + b, 0) / dailyMoods.length, min: Math.min(...dailyMoods), max: Math.max(...dailyMoods) } : null,
-    patterns: stressPatterns(rows, people, feedback), emotions: countTags('emotions'), habits: countTags('activities'),
+    patterns: stressPatterns(rows, people, feedback),
+    // "worried" typed in your own words and "Worried" picked from the list are
+    // one theme, named as the list spells it.
+    emotions: countTags('emotions', canonicalFeeling), habits: countTags('activities'),
     moments: rows.filter((entry) => entryText(entry)),
     interactions: rows.filter((entry) => entry.interaction_feeling),
     alignments: rows.filter((entry) => entry.stress_context?.alignment),

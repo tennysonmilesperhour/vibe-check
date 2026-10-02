@@ -2,10 +2,8 @@ import React, { useMemo } from "react";
 import { parseLocalDate, addDaysKey, todayKey } from "@/lib/dates";
 import { entryPeople, samePersonId } from "@/lib/people";
 import { format } from "date-fns";
-import { EMOTIONS } from "@/features/today/vocab";
+import { canonicalFeeling, feelingIcon } from "@/lib/feelings";
 import VocabularyIcon from "@/features/today/VocabularyIcon";
-
-const iconFor = (label) => EMOTIONS.find((e) => e.label === label)?.icon;
 
 /**
  * The Sunday ritual: a composed look back at the week just lived.
@@ -26,8 +24,9 @@ export default function WeekInReview({ checkIns, people = [], forceShow = false 
     const moods = entries.map((e) => e.mood_score).filter((m) => m != null);
     const avg = moods.reduce((a, b) => a + b, 0) / Math.max(moods.length, 1);
     const best = entries.reduce((a, b) => ((b.mood_score ?? 0) > (a.mood_score ?? 0) ? b : a));
+    // A listed feeling typed in lowercase counts with the same word picked.
     const emotionCounts = {};
-    for (const e of entries) for (const emo of e.emotions || []) emotionCounts[emo] = (emotionCounts[emo] || 0) + 1;
+    for (const e of entries) for (const emo of new Set((e.emotions || []).map(canonicalFeeling))) emotionCounts[emo] = (emotionCounts[emo] || 0) + 1;
     const topEmotions = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
 
     const personCounts = {};
@@ -89,7 +88,7 @@ export default function WeekInReview({ checkIns, people = [], forceShow = false 
             <React.Fragment key={emotion}>
               {index > 0 && ", "}
               <span className="inline-flex items-center gap-1 align-middle">
-                <VocabularyIcon name={iconFor(emotion)} size={14} /> {emotion.toLowerCase()}
+                <VocabularyIcon name={feelingIcon(emotion)} size={14} /> {emotion.toLowerCase()}
               </span>
             </React.Fragment>
           ))}.</p>

@@ -1,19 +1,17 @@
 import React from "react";
 import {
-  Sun, HandHeart, Waves, Flame, Heart, Sprout, Award, Palette,
-  Wind, Droplet, CloudLightning, Moon, CircleDashed, Orbit, Mountain, Zap,
+  Sun, Waves, Heart, Sprout, Droplet, Wind, Zap, EyeOff, Moon, CircleDashed,
   Footprints, Flower2, Feather, Leaf, Users, PenTool, BookOpen, Armchair,
-  Wheat, Music2, SunMoon, MessagesSquare, Smile, CloudSun, Shield, HeartCrack, EyeOff, Scale,
+  Wheat, Music2, SunMoon, MessagesSquare,
 } from "lucide-react";
 
+// Feelings take their family's symbol; each activity has its own.
 const SYMBOLS = {
-  sun: Sun, "hand-heart": HandHeart, waves: Waves, flame: Flame, heart: Heart,
-  sprout: Sprout, award: Award, palette: Palette, wind: Wind, droplet: Droplet,
-  "cloud-lightning": CloudLightning, moon: Moon, "circle-dashed": CircleDashed,
-  orbit: Orbit, mountain: Mountain, zap: Zap, footprints: Footprints, flower: Flower2,
-  feather: Feather, leaf: Leaf, users: Users, "pen-tool": PenTool, "book-open": BookOpen,
-  armchair: Armchair, wheat: Wheat, music: Music2, "sun-moon": SunMoon, messages: MessagesSquare,
-  smile: Smile, "cloud-sun": CloudSun, shield: Shield, "heart-crack": HeartCrack, "eye-off": EyeOff, scale: Scale,
+  sun: Sun, waves: Waves, heart: Heart, sprout: Sprout, droplet: Droplet, wind: Wind,
+  zap: Zap, "eye-off": EyeOff, moon: Moon, "circle-dashed": CircleDashed,
+  footprints: Footprints, flower: Flower2, feather: Feather, leaf: Leaf, users: Users,
+  "pen-tool": PenTool, "book-open": BookOpen, armchair: Armchair, wheat: Wheat,
+  music: Music2, "sun-moon": SunMoon, messages: MessagesSquare,
 };
 
 /** A consistent fine-line symbol; the adjacent vocabulary label carries meaning. */

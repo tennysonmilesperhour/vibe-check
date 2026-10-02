@@ -3,40 +3,35 @@
 // trying the app with a keyboard and a screen reader.
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect } from './support/app.js';
+import { PAGES, openSettings } from './support/pages.js';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 async function expectNoViolations(page) {
   await page.waitForLoadState('networkidle');
-  const { violations } = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+  // preload: false keeps axe from fetching stylesheets itself, which the
+  // production Content-Security-Policy (connect-src) refuses. options() goes
+  // first: it replaces the options withTags() sets.
+  const { violations } = await new AxeBuilder({ page }).options({ preload: false }).withTags(TAGS).analyze();
   const found = violations.map((violation) => `${violation.impact} ${violation.id}: ${violation.help} at ${violation.nodes.map((node) => node.target.join(' ')).join(', ')}`);
   expect(found).toEqual([]);
 }
 
-const PAGES = [
-  ['/Today', 'Come back to yourself.'],
-  ['/Analytics', 'The whole pattern.'],
-  ['/Analytics?tab=journal', 'The whole pattern.'],
-  ['/Analytics?tab=reports', 'The whole pattern.'],
-  ['/People', 'People'],
-  ['/Practice', 'Come back to yourself.'],
-  ['/Practice?tab=healing', 'Practice board'],
-  ['/CosmicAddons', 'Your Loom'],
-  ['/CosmicAddons?tab=tarot', 'Your Loom'],
-  ['/Summary', 'A summary to share'],
-  ['/support-now', "You don't have to hold this alone."],
-  ['/privacy', 'Privacy policy'],
-  ['/terms', 'Terms of use'],
-  ['/support', 'Support'],
-];
-
-for (const [path, heading] of PAGES) {
+for (const { path, heading, marker } of PAGES) {
   test(`${path} meets WCAG A and AA checks`, async ({ page }) => {
     await page.goto(path);
     await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+    await expect(marker(page).first()).toBeVisible();
     await expectNoViolations(page);
   });
 }
+
+test('the practice board reads out how far each item has come', async ({ page }) => {
+  await page.goto('/Practice?tab=healing');
+  const progress = page.getByRole('progressbar', { name: 'Your sense of Morning pages' });
+  await expect(progress).toHaveAttribute('aria-valuenow', '60');
+  await expect(progress).toHaveAttribute('aria-valuetext', '60 of 100');
+});
 
 test('the check-in meets WCAG A and AA checks', async ({ page }) => {
   await page.goto('/Today');
@@ -60,9 +55,8 @@ test('the add-person dialog meets WCAG A and AA checks', async ({ page }) => {
 
 test('settings meet WCAG A and AA checks', async ({ page }, testInfo) => {
   await page.goto('/Today');
-  await expect(page.getByRole('heading', { level: 1, name: 'Come back to yourself.' })).toBeVisible();
-  if (testInfo.project.name === 'mobile') await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('button', { name: /Settings/ }).first().click();
+  await expect(page.getByRole('button', { name: /Begin check-in/ })).toBeVisible();
+  await openSettings(page, testInfo);
   await expect(page.getByRole('dialog', { name: 'Settings & privacy' })).toBeVisible();
   await expectNoViolations(page);
 });

@@ -27,7 +27,8 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'], contextOptions: { reducedMotion: 'reduce' } } },
   ],
   webServer: {
-    // Its own output folder, so a test build never replaces the real one in dist.
+    // Its own output folder, so a test build never replaces the real one in
+    // dist. vite preview sends the production headers, CSP included.
     command: `vite build --outDir dist-e2e --emptyOutDir && vite preview --outDir dist-e2e --port ${PORT} --strictPort --host 127.0.0.1`,
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: !CI,

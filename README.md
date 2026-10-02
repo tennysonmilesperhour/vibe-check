@@ -61,11 +61,17 @@ screen.
 ### Browser tests
 
 `npm run test:e2e` builds the app into `dist-e2e/` and runs Playwright against
-it. The app talks to an in-memory Supabase (`e2e/support/mock-supabase.js`)
-filled with an invented person (`e2e/support/persona.js`), at a fixed clock,
-so no network or account is needed. A test fails when a page throws or logs
-an error, when it asks for something the mock doesn't model, or when it
-contacts any other site. The first run needs a browser:
+it, under the production headers from `vercel.json` (`vite preview` sends
+them, Content-Security-Policy included). The app talks to an in-memory
+Supabase (`e2e/support/mock-supabase.js`) filled with an invented person
+(`e2e/support/persona.js`), at a fixed clock, so no network or account is
+needed. The mock reads the tables from `supabase/migrations/` and refuses what
+the real project would: unknown tables or columns, a missing required column,
+a duplicate key, a value outside a CHECK list, and anyone else's rows.
+
+A test fails when a page throws or logs an error, when one of the app's files
+fails to load, when the app makes a request the mock refuses or doesn't
+model, or when it contacts any other site. The first run needs a browser:
 `npx playwright install chromium`.
 
 ## Project layout

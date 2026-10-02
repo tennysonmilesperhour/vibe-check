@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseLocalDate, dateKey, todayKey, isTodayKey, getPeriodKey, addDaysKey, diffDaysKeys, formatDay, formatRange } from '../dates.js';
+import { parseLocalDate, dateKey, todayKey, isTodayKey, getPeriodKey, addDaysKey, diffDaysKeys, formatDay, formatRange, validDateKey } from '../dates.js';
 
 describe('parseLocalDate', () => {
   it('returns local midnight for the named day, never UTC-shifted', () => {
@@ -74,10 +74,12 @@ describe('formatDay', () => {
     expect(formatDay('2026-03-08', { style: 'short', now })).toBe('Mar 8');
   });
 
-  it('returns anything that is not a day key as it was', () => {
+  it('returns anything that is not a real day as it was', () => {
     expect(formatDay(undefined)).toBe('');
     expect(formatDay(null)).toBe('');
     expect(formatDay('soon')).toBe('soon');
+    expect(formatDay('2026-02-30')).toBe('2026-02-30');
+    expect(formatDay('0026-09-28')).toBe('0026-09-28');
   });
 });
 
@@ -99,7 +101,26 @@ describe('formatRange', () => {
     expect(formatRange('2026-09-27', '2026-09-21')).toBe('Sep 27, 2026 to Sep 21, 2026');
   });
 
-  it('joins values that are not day keys as they are', () => {
+  it('joins values that are not real days as they are', () => {
     expect(formatRange('2026-09-21', '')).toBe('2026-09-21');
+    expect(formatRange('2026-09-01', '2026-09-31')).toBe('2026-09-01 to 2026-09-31');
+  });
+
+  it('spells out months, or leaves off the year within one year, when asked', () => {
+    expect(formatRange('2026-09-21', '2026-09-27', { long: true })).toBe('September 21 to 27, 2026');
+    expect(formatRange('2026-09-28', '2026-10-04', { long: true })).toBe('September 28 to October 4, 2026');
+    expect(formatRange('2026-09-21', '2026-09-27', { withYear: false })).toBe('Sep 21 to 27');
+    expect(formatRange('2026-09-21', '2026-09-21', { withYear: false })).toBe('Sep 21');
+    expect(formatRange('2026-09-01', '2026-09-30', { withYear: false })).toBe('September 2026');
+    expect(formatRange('2025-12-29', '2026-01-04', { withYear: false })).toBe('Dec 29, 2025 to Jan 4, 2026');
+  });
+});
+
+describe('validDateKey', () => {
+  it('accepts real days only', () => {
+    expect(validDateKey('2024-02-29')).toBe(true);
+    expect(validDateKey('2026-02-29')).toBe(false);
+    expect(validDateKey('2026-9-1')).toBe(false);
+    expect(validDateKey(20260901)).toBe(false);
   });
 });

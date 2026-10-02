@@ -4,8 +4,7 @@ import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
-import { format } from "date-fns";
-import { todayKey, parseLocalDate } from "@/lib/dates";
+import { formatDay, todayKey } from "@/lib/dates";
 import { LOW_MOOD } from "@/lib/symbolic-guard";
 import { moonPhase } from "@/lib/resonance/moon";
 import MoonGlyph from "@/features/loom/MoonGlyph";
@@ -82,7 +81,7 @@ export default function Today() {
   }, [load]);
 
   const moon = moonPhase(todayKey());
-  const dateLine = format(parseLocalDate(todayKey()), "EEEE, MMMM d");
+  const dateLine = formatDay(todayKey(), { style: 'long' });
 
   if (loadError) return <div className="living-page"><p className="living-error" role="alert">{loadError}</p><button className="ink-button mt-4" onClick={() => window.location.reload()}>Reload your history</button></div>;
   if (loading || (isBackfill && loadedBackfillDate !== targetDate) || backfillLoading) return <div className="living-page"><LoadingState variant="page" label="Opening this day's record…" /></div>;

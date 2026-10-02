@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatRange, parseLocalDate, todayKey } from '@/lib/dates';
+import { formatDay, formatRange, parseLocalDate, todayKey } from '@/lib/dates';
 import { entryText } from '@/lib/living-patterns';
 import { CALENDAR_METRICS, calendarDays, calendarMonths, calendarSummary, scoreBand } from '@/lib/pattern-calendar';
 
@@ -31,7 +31,7 @@ export default function PatternCalendar({ entries, start, end, weekStart = 1 }) 
   const selected = byDate.get(selectedDate);
   const weekdayOrder = Array.from({ length: 7 }, (_, index) => (index + weekStart) % 7);
   const styleFor = (day) => day?.value != null ? { backgroundColor: spec.colors[scoreBand(day.value)], color: spec.ink[scoreBand(day.value)] } : undefined;
-  const dateLabel = (date) => format(parseLocalDate(date), 'EEEE, MMMM d, yyyy');
+  const dateLabel = (date) => formatDay(date, { style: 'long', withYear: true });
   const unsafeDays = days.filter((day) => day.unsafe).length;
   function selectMonth(key) { choose({ calendarMonth: key, calendarDay: '' }); }
 
@@ -58,6 +58,6 @@ export default function PatternCalendar({ entries, start, end, weekStart = 1 }) 
         {unsafeDays > 0 && <p className="calendar-run"><strong>◆ {unsafeDays} {unsafeDays === 1 ? 'day includes' : 'days include'} an unsafe interaction</strong><span>This marker stays visible alongside any daily score. <a className="underline" href="/support-now?focus=relationship">Support options</a></span></p>}
       </aside>
     </div>
-    {selected && <section className="calendar-selected" aria-labelledby="calendar-selected-heading" aria-live="polite"><div className="calendar-selected-heading"><h3 id="calendar-selected-heading">{format(parseLocalDate(selectedDate), 'EEEE, MMMM d')}</h3><span>{selected.value == null ? `No ${spec.label.toLowerCase()} score` : `${spec.label}: ${displayScore(selected.value)} / 10`} · {selected.rows.length} {selected.rows.length === 1 ? 'entry' : 'entries'}</span></div>{selected.rows.length ? <div className="calendar-entry-list">{selected.rows.slice(0,4).map((entry) => <article key={entry.key}><p className="living-label">{entry.kind === 'day' ? 'Daily check-in' : entry.interaction_feeling ? `${entry.interaction_feeling === 'unsafe' ? '◆ ' : ''}Interaction · ${entry.interaction_feeling}` : 'Journal moment'}</p>{entryText(entry) ? <p className="calendar-entry-excerpt">{entryText(entry)}</p> : <p className="living-muted text-sm">Scores or tags recorded without a written reflection.</p>}<Link className="living-text-link" to={journalLink({ entry: entry.key })}>Read full entry <ArrowRight size={14} /></Link></article>)}{selected.rows.length > 4 && <Link className="living-text-link" to={journalLink({ range: 'custom', start: selectedDate, end: selectedDate, entry: '' })}>See all {selected.rows.length} entries for this day <ArrowRight size={14} /></Link>}</div> : <p className="living-muted">No entries match this day in the current filters. A gap does not tell us how the day felt.</p>}</section>}
+    {selected && <section className="calendar-selected" aria-labelledby="calendar-selected-heading" aria-live="polite"><div className="calendar-selected-heading"><h3 id="calendar-selected-heading">{formatDay(selectedDate, { style: 'long' })}</h3><span>{selected.value == null ? `No ${spec.label.toLowerCase()} score` : `${spec.label}: ${displayScore(selected.value)} / 10`} · {selected.rows.length} {selected.rows.length === 1 ? 'entry' : 'entries'}</span></div>{selected.rows.length ? <div className="calendar-entry-list">{selected.rows.slice(0,4).map((entry) => <article key={entry.key}><p className="living-label">{entry.kind === 'day' ? 'Daily check-in' : entry.interaction_feeling ? `${entry.interaction_feeling === 'unsafe' ? '◆ ' : ''}Interaction · ${entry.interaction_feeling}` : 'Journal moment'}</p>{entryText(entry) ? <p className="calendar-entry-excerpt">{entryText(entry)}</p> : <p className="living-muted text-sm">Scores or tags recorded without a written reflection.</p>}<Link className="living-text-link" to={journalLink({ entry: entry.key })}>Read full entry <ArrowRight size={14} /></Link></article>)}{selected.rows.length > 4 && <Link className="living-text-link" to={journalLink({ range: 'custom', start: selectedDate, end: selectedDate, entry: '' })}>See all {selected.rows.length} entries for this day <ArrowRight size={14} /></Link>}</div> : <p className="living-muted">No entries match this day in the current filters. A gap does not tell us how the day felt.</p>}</section>}
   </section>;
 }

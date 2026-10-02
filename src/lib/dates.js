@@ -15,6 +15,11 @@ export function dateKey(date = new Date()) {
   return format(date, 'yyyy-MM-dd');
 }
 
+/** Whether a value is a real 'yyyy-MM-dd' day, not only shaped like one. */
+export function validDateKey(value) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parseLocalDate(value).getTime()) && dateKey(parseLocalDate(value)) === value;
+}
+
 export function todayKey() {
   return dateKey();
 }
@@ -46,10 +51,6 @@ export function diffDaysKeys(a, b) {
   return differenceInCalendarDays(parseLocalDate(a), parseLocalDate(b));
 }
 
-
-/** @param {unknown} value @returns {value is string} */
-const isDayKey = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
-
 const DAY_STYLES = { long: 'EEEE, MMMM d', medium: 'EEE, MMM d', short: 'MMM d' };
 
 /**
@@ -62,28 +63,32 @@ const DAY_STYLES = { long: 'EEEE, MMMM d', medium: 'EEE, MMM d', short: 'MMM d' 
  * @returns {string}
  */
 export function formatDay(key, { style = 'medium', withYear = false, now = new Date() } = {}) {
-  if (!isDayKey(key)) return key ?? '';
+  if (!validDateKey(key)) return key ?? '';
   const date = parseLocalDate(key);
   const pattern = DAY_STYLES[style] || DAY_STYLES.medium;
   return format(date, withYear || date.getFullYear() !== now.getFullYear() ? `${pattern}, yyyy` : pattern);
 }
 
 /**
- * Two day keys as one span, joined with "to" as in the summary to share:
- * "Sep 21 to 27, 2026", "Sep 28 to Oct 4, 2026", "Dec 29, 2025 to Jan 4,
- * 2026", or "September 2026" for a whole month. One day reads as that day.
+ * Two day keys as one span, joined with "to": "Sep 21 to 27, 2026", "Sep 28
+ * to Oct 4, 2026", "Dec 29, 2025 to Jan 4, 2026", or "September 2026" for a
+ * whole month. One day reads as that day. `long` spells out the months.
+ * `withYear: false` leaves the year off a span within one year, for rows
+ * under a heading that already gives it.
  * @param {string} startKey @param {string} endKey
+ * @param {{ long?: boolean, withYear?: boolean }} [options]
  * @returns {string}
  */
-export function formatRange(startKey, endKey) {
-  if (!isDayKey(startKey) || !isDayKey(endKey)) return [startKey, endKey].filter(Boolean).join(' to ');
+export function formatRange(startKey, endKey, { long = false, withYear = true } = {}) {
+  if (!validDateKey(startKey) || !validDateKey(endKey)) return [startKey, endKey].filter(Boolean).join(' to ');
   const start = parseLocalDate(startKey);
   const end = parseLocalDate(endKey);
-  const full = (/** @type {Date} */ date) => format(date, 'MMM d, yyyy');
-  if (startKey === endKey) return full(start);
-  // A span that runs backwards keeps both dates whole, so neither reads as shared.
-  if (startKey > endKey || start.getFullYear() !== end.getFullYear()) return `${full(start)} to ${full(end)}`;
-  if (start.getMonth() !== end.getMonth()) return `${format(start, 'MMM d')} to ${full(end)}`;
+  const day = long ? 'MMMM d' : 'MMM d';
+  const year = withYear ? ', yyyy' : '';
+  if (startKey === endKey) return format(start, `${day}${year}`);
+  // A span that runs backwards or across years keeps both dates whole.
+  if (startKey > endKey || start.getFullYear() !== end.getFullYear()) return `${format(start, `${day}, yyyy`)} to ${format(end, `${day}, yyyy`)}`;
+  if (start.getMonth() !== end.getMonth()) return `${format(start, day)} to ${format(end, `${day}${year}`)}`;
   if (start.getDate() === 1 && addDays(end, 1).getDate() === 1) return format(start, 'MMMM yyyy');
-  return `${format(start, 'MMM d')} to ${format(end, 'd, yyyy')}`;
+  return `${format(start, day)} to ${format(end, `d${year}`)}`;
 }

@@ -5,7 +5,7 @@ import { useLivingData, usePreferences } from '@/features/patterns/useLivingData
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import QuickExit from '@/features/safety/QuickExit';
 import { buildShareSummary, kindOf } from '@/lib/share-summary';
-import { addDaysKey, formatDay, formatRange, todayKey } from '@/lib/dates';
+import { addDaysKey, formatDay, todayKey } from '@/lib/dates';
 import { entryText, filterEntries, validDateKey } from '@/lib/living-patterns';
 import SummaryDocument from './SummaryDocument';
 import LoadingState from '@/features/shell/LoadingState';
@@ -55,10 +55,11 @@ export default function ShareSummaryPage() {
   const toggleEntry = (key) => setChosen((keys) => (keys.includes(key) ? keys.filter((item) => item !== key) : [...keys, key]));
   const chosenInRange = candidates.filter((entry) => chosen.includes(entry.key)).length;
   const back = () => (location.key !== 'default' ? navigate(-1) : navigate('/Analytics'));
-  // A saved PDF takes the page title as its file name.
+  // A saved PDF takes the page title as its file name, so the title keeps
+  // yyyy-MM-dd dates, which sort.
   useEffect(() => {
     const before = document.title;
-    if (valid) document.title = `Summary to share, ${formatRange(start, end)}`;
+    if (valid) document.title = `Summary to share, ${start} to ${end}`;
     return () => { document.title = before; };
   }, [valid, start, end]);
 

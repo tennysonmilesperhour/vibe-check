@@ -1,14 +1,10 @@
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from 'date-fns';
-import { dateKey, todayKey, parseLocalDate, diffDaysKeys, addDaysKey } from './dates';
+import { dateKey, todayKey, parseLocalDate, diffDaysKeys, addDaysKey, validDateKey } from './dates';
 import { STRESS_STATES, HELPFUL_OUTCOMES } from './practices';
 import { entryPeople, samePersonId } from './people';
 import { fisherGreater, cmhGreater } from './pattern-stats';
 
-export { entryPeople };
-
-export function validDateKey(value) {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(parseLocalDate(value).getTime()) && dateKey(parseLocalDate(value)) === value;
-}
+export { entryPeople, validDateKey };
 
 /** @param {any} entry */
 const stampOf = (entry) => (typeof entry.occurred_at === 'string' && entry.occurred_at) || (typeof entry.created_at === 'string' && entry.created_at) || '';

@@ -16,8 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import PageTransition from "@/features/shell/PageTransition";
 import { entryInvolvesPerson, migratePeople, peopleRecordedTogether, personCheckInStats } from "@/lib/people";
 import { timelineEntries } from "@/lib/living-patterns";
-import { parseLocalDate } from "@/lib/dates";
-import { format } from "date-fns";
+import { formatDay } from "@/lib/dates";
 import { createPageUrl } from "@/utils";
 import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
 import LoadingState from "@/features/shell/LoadingState";
@@ -187,7 +186,7 @@ export default function People() {
                   </div>
                   <p className="text-xs mt-2" style={{ color: "var(--gh-ink-muted)" }}>
                     {stats.mentions > 0
-                      ? `${stats.mentions} tagged check-ins · daily mood ${stats.avgMood} · last ${format(parseLocalDate(stats.lastMention), "MMM d")}`
+                      ? `${stats.mentions} tagged check-ins · daily mood ${stats.avgMood} · last ${formatDay(stats.lastMention, { style: 'short' })}`
                       : "Not yet part of a check-in"}
                   </p>
                 </button>

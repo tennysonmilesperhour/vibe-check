@@ -1,15 +1,7 @@
-import { endOfMonth, format } from 'date-fns';
-import { dateKey, parseLocalDate } from '@/lib/dates';
+import { formatDay, formatRange } from '@/lib/dates';
 
-const longDay = (key) => format(parseLocalDate(key), 'MMMM d, yyyy');
-const shortDay = (key) => format(parseLocalDate(key), 'MMM d');
+const longDay = (key) => formatDay(key, { style: 'long', withYear: true });
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
-
-function stretchLabel(row, unit) {
-  const wholeMonth = unit === 'month' && row.start.endsWith('-01') && row.end === dateKey(endOfMonth(parseLocalDate(row.start)));
-  if (wholeMonth) return format(parseLocalDate(row.start), 'MMMM yyyy');
-  return row.start === row.end ? shortDay(row.start) : `${shortDay(row.start)} to ${shortDay(row.end)}`;
-}
 
 function Score({ value }) {
   if (!value) return <span className="summary-muted">Not recorded</span>;
@@ -29,7 +21,7 @@ export default function SummaryDocument({ summary, include, prepared }) {
   return <article className="summary-document" aria-label="Summary to share">
     <header className="summary-header">
       <p className="summary-eyebrow">Self-recorded summary</p>
-      <h1 className="font-display">What I recorded, {longDay(summary.start)} to {longDay(summary.end)}</h1>
+      <h1 className="font-display">What I recorded, {formatRange(summary.start, summary.end, { long: true })}</h1>
       <p>Kept by me in Vibe Check, a personal journal. These are my own entries and ratings, not a clinical assessment. Prepared {longDay(prepared)}.</p>
     </header>
 
@@ -52,7 +44,7 @@ export default function SummaryDocument({ summary, include, prepared }) {
         <table className="summary-table">
           <thead><tr><th>{scores.unit === 'month' ? 'Month' : 'Week'}</th><th>Check-ins</th><th>Mood</th><th>Energy</th><th>Sleep</th><th>Stress</th></tr></thead>
           <tbody>
-            {scores.rows.map((row) => <tr key={row.start}><th>{stretchLabel(row, scores.unit)}</th><td>{row.days}</td><td><Score value={row.mood} /></td><td><Score value={row.energy} /></td><td><Score value={row.sleep} /></td><td><Score value={row.stress} /></td></tr>)}
+            {scores.rows.map((row) => <tr key={row.start}><th>{formatRange(row.start, row.end, { withYear: false })}</th><td>{row.days}</td><td><Score value={row.mood} /></td><td><Score value={row.energy} /></td><td><Score value={row.sleep} /></td><td><Score value={row.stress} /></td></tr>)}
             <tr className="summary-total"><th>Whole period</th><td>{scores.overall.days}</td><td><Score value={scores.overall.mood} /></td><td><Score value={scores.overall.energy} /></td><td><Score value={scores.overall.sleep} /></td><td><Score value={scores.overall.stress} /></td></tr>
           </tbody>
         </table>

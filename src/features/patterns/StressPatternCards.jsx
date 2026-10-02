@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { stateById, recommendPractices, hiddenPractices } from '@/lib/practices';
-import { EntryLink } from './Journal';
+import EntryLink from './EntryLink';
 import { formatDay } from '@/lib/dates';
 
 export default function StressPatternCards({ patterns, data, onFeedback, max = 6 }) {

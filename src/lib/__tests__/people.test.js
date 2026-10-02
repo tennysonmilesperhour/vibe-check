@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { matchPersonByText, mentionsPerson, dedupePeopleDrafts, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing, personLabels } from '../people.js';
+import { matchPersonByText, mentionsPerson, dedupePeopleDrafts, searchPeople, entryInvolvesPerson, personCheckInStats, peopleRecordedTogether, orderPeopleForOrbit, arrangeOrbitRing, personLabels, personTimeline, interactionMix } from '../people.js';
 
 const people = [
   { id: 'p1', name: 'Mom', legacy_names: ['mother', 'mama'] },
@@ -123,3 +123,25 @@ describe('labels for people', () => {
     expect([...labels]).toEqual([['a', 'Person 1'], ['b', 'Person 2'], ['gone-1', 'Removed person 1'], ['gone-2', 'Removed person 2']]);
   });
 });
+
+describe('a person\'s timeline and interactions', () => {
+  const entries = [
+    { key: 'journal:3', date: '2026-09-28', person_ids: ['p1'], interaction_feeling: 'unsafe' },
+    { key: 'day:2', date: '2026-09-27', high_moment: { person_ids: ['p1'] } },
+    { key: 'journal:2', date: '2026-09-26', person_ids: ['p1', 'p2'], interaction_feeling: 'supportive' },
+    { key: 'journal:1', date: '2026-09-25', person_ids: ['p2'], interaction_feeling: 'strained' },
+    { key: 'journal:0', date: '2026-09-24', person_ids: ['P1'], interaction_feeling: 'supportive' },
+  ];
+
+  it('keeps the entries a person is part of, in the order given', () => {
+    expect(personTimeline(people[0], entries).map((entry) => entry.key)).toEqual(['journal:3', 'day:2', 'journal:2', 'journal:0']);
+    expect(personTimeline(people[2], entries)).toEqual([]);
+  });
+
+  it('counts only recorded interaction feelings', () => {
+    expect(interactionMix(people[0], entries)).toEqual({ supportive: 2, strained: 0, unsafe: 1, mixed: 0, unsure: 0, total: 3 });
+    expect(interactionMix(people[1], entries)).toMatchObject({ supportive: 1, strained: 1, total: 2 });
+    expect(interactionMix(people[2], entries).total).toBe(0);
+  });
+});
+

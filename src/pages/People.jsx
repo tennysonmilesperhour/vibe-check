@@ -15,8 +15,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PageTransition from "@/features/shell/PageTransition";
-import { entryInvolvesPerson, migratePeople, peopleRecordedTogether, personCheckInStats } from "@/lib/people";
+import { describeInteractionMix, interactionMix, migratePeople, peopleRecordedTogether, personCheckInStats } from "@/lib/people";
 import { timelineEntries } from "@/lib/living-patterns";
+import PersonTimeline from "@/features/people/PersonTimeline";
 import { formatDay } from "@/lib/dates";
 import { createPageUrl } from "@/utils";
 import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
@@ -24,6 +25,7 @@ import LoadingState from "@/features/shell/LoadingState";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
 const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
+
 
 /** Everyone you're in orbit with: merged Relationships + Constellation. */
 export default function People() {
@@ -36,6 +38,8 @@ export default function People() {
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null); // null | 'new' | person
   const [deleting, setDeleting] = useState(null);
+  const [removing, setRemoving] = useState(false);
+  const [removeError, setRemoveError] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
   const [synergyBusy, setSynergyBusy] = useState(false);
   // Synergy is part of Cosmos: it shows only once the person has chosen a system there.
@@ -46,6 +50,9 @@ export default function People() {
   const guard = useMemo(() => ({ moment: recentHardMoment({ checkIns, journal }), checking: false }), [checkIns, journal]);
   const [readAnyway, setReadAnyway] = useState(false);
   const harm = useMemo(() => (detail ? harmRecordedWith(detail, journal) : false), [detail, journal]);
+  // Worked out once per change in the record, not on every keystroke in a form.
+  const entries = useMemo(() => timelineEntries(checkIns, journal), [checkIns, journal]);
+  const mixes = useMemo(() => new Map(people.map((person) => [person.id, interactionMix(person, entries)])), [people, entries]);
   // Asking for a reading is remembered; the reading itself is composed from
   // both charts each time, so it always uses today's wording.
   const askedForSynergy = Boolean(detail?.synergy_generated_at || detail?.synergy_reading);
@@ -116,15 +123,27 @@ export default function People() {
     }
   };
 
-  const remove = async () => {
-    if (!deleting) return;
+  const askToRemove = (person) => {
+    setRemoveError("");
+    setDeleting(person);
+  };
+
+  // The dialog stays open until the removal is done, so a failure can say so.
+  const remove = async (e) => {
+    e.preventDefault();
+    const person = deleting;
+    if (!person || removing) return;
+    setRemoving(true);
+    setRemoveError("");
     try {
-      await Person.delete(deleting.id);
+      await Person.delete(person.id);
+      setPeople((list) => list.filter((other) => other.id !== person.id));
       setDeleting(null);
       setDetail(null);
-      load();
     } catch {
-      setDeleting(null);
+      setRemoveError("This person couldn't be removed. Check your connection and try again.");
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -148,7 +167,6 @@ export default function People() {
   };
 
   if (loading) return <div className="field-wash min-h-screen" aria-busy="true"><div className="living-page"><LoadingState variant="page" label="Gathering your people…" /></div></div>;
-  const entries = timelineEntries(checkIns, journal);
 
   return (
     <div className="field-wash min-h-screen">
@@ -165,7 +183,7 @@ export default function People() {
 
         {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={load}>Retry</button></p>}
         <div className="mt-6"><PlantVoice compact>Keep people here by a name or nickname that works for you. We can return to the experiences you recorded together. Adding someone sends no invitation or notification.</PlantVoice></div>
-        <PeopleOrbit people={people} entries={entries} onChoose={setDetail} />
+        <PeopleOrbit people={people} entries={entries} mixes={mixes} onChoose={setDetail} />
 
         {people.length === 0 ? (
           <div className="text-center py-20">
@@ -198,6 +216,14 @@ export default function People() {
                       ? `${stats.mentions} tagged check-ins · daily mood ${stats.avgMood} · last ${formatDay(stats.lastMention, { style: 'short' })}`
                       : "Not yet part of a check-in"}
                   </p>
+                  {(() => {
+                    const mix = mixes.get(person.id);
+                    return mix?.total > 0 ? (
+                      <p className="text-xs mt-1" style={{ color: "var(--gh-ink-muted)" }}>
+                        Interactions: {describeInteractionMix(mix)}{mix.unsafe > 0 && <span aria-hidden="true" style={{ color: "var(--feel-unsafe)" }}> ◆</span>}
+                      </p>
+                    ) : null;
+                  })()}
                 </button>
               );
             })}
@@ -216,7 +242,7 @@ export default function People() {
                       <button type="button" className="living-icon-button" aria-label={`Edit ${detail.name}`} onClick={() => openEdit(detail)}>
                         <Pencil className="w-4 h-4" aria-hidden="true" />
                       </button>
-                      <button type="button" className="living-icon-button danger-icon" aria-label={`Delete ${detail.name}`} onClick={() => setDeleting(detail)}>
+                      <button type="button" className="living-icon-button danger-icon" aria-label={`Delete ${detail.name}`} onClick={() => askToRemove(detail)}>
                         <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </span>
@@ -234,7 +260,7 @@ export default function People() {
                     </p>
                   ) : null;
                 })()}
-                <div className="living-inset"><p className="living-muted">{journal.filter((entry) => entryInvolvesPerson(entry, detail)).length} journal moments linked to this person.</p><Link className="living-text-link mt-2" to={`/Analytics?tab=journal&person=${detail.id}&range=all`}>Read the full relationship history</Link></div>
+                <PersonTimeline key={detail.id} person={detail} entries={entries} mix={mixes.get(detail.id) || interactionMix(detail, entries)} harm={harm} />
                 {(() => {
                   const companions = peopleRecordedTogether(detail, people, entries);
                   if (!companions.length) return null;
@@ -281,8 +307,7 @@ export default function People() {
                   <div className="hairline pt-4">
                     <p className="text-xs font-bold tracking-wide" style={{ color: "var(--gh-ink-muted)" }}>NO SYNERGY READING</p>
                     <p className="text-sm mt-2" style={{ color: "var(--gh-ink)" }}>
-                      A moment you recorded with {detail.name} in it is marked unsafe, or as one where a boundary wasn't respected. A chart can't weigh that, so no reading is offered. Your entries with {detail.name} stay in your history.{" "}
-                      <Link to="/support-now?focus=relationship" className="underline underline-offset-4" style={{ color: "var(--gh-accent)" }}>Support for relationships</Link>
+                      A moment you recorded with {detail.name} in it is marked unsafe, or as one where a boundary wasn't respected. A chart can't weigh that, so no reading is offered. Your entries with {detail.name} stay in your history.
                     </p>
                   </div>
                 )}
@@ -364,7 +389,7 @@ export default function People() {
           </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialog open={!!deleting} onOpenChange={(open) => { if (!open && !removing) setDeleting(null); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Remove {deleting?.name}?</AlertDialogTitle>
@@ -372,9 +397,10 @@ export default function People() {
                 Their card and synergy reading are deleted. Past check-ins that mention them stay untouched.
               </AlertDialogDescription>
             </AlertDialogHeader>
+            {removeError && <p className="living-error" role="alert">{removeError}</p>}
             <AlertDialogFooter>
-              <AlertDialogCancel>Keep them</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" onClick={remove}>Remove person</AlertDialogAction>
+              <AlertDialogCancel disabled={removing}>Keep them</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" aria-disabled={removing} onClick={remove}>{removing ? "Removing…" : "Remove person"}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

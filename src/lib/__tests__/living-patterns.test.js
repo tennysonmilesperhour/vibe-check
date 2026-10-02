@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { timelineEntries, entryStates, filterEntries, stateCards, stressPatterns, reportPeriod, previousPeriod, buildReport, historyChart, validDateKey } from '../living-patterns';
+import { timelineEntries, entryStates, filterEntries, stateCards, stressPatterns, reportPeriod, previousPeriod, buildReport, historyChart, validDateKey, entryKindLabel, personExcerpt } from '../living-patterns';
 import { recommendPractices, PRACTICES, STRESS_STATES, hiddenPractices, hiddenPracticesPatch } from '../practices';
 import { fetchAllPages } from '../crypto';
 import { fisherGreater, cmhGreater } from '../pattern-stats';
@@ -335,3 +335,27 @@ describe('connections are compared with comparable days without them', () => {
     expect(shown([...base, ...moments])).toMatchObject({ days: 15, total: 20, without: { days: 4, total: 40 } });
   });
 });
+
+describe('entries as People shows them', () => {
+  const mom = { id: 'p1', name: 'Mom', legacy_names: [] };
+
+  it('names an entry as the journal does', () => {
+    expect(entryKindLabel({ kind: 'day' })).toBe('Daily check-in');
+    expect(entryKindLabel({ kind: 'journal', entry_kind: 'interaction' })).toBe('Interaction');
+    expect(entryKindLabel({ kind: 'journal', interaction_feeling: 'supportive' })).toBe('Interaction');
+    expect(entryKindLabel({ kind: 'journal', entry_kind: 'reflection' })).toBe('Journal moment');
+  });
+
+  it('shows the words that concern the person', () => {
+    const day = { kind: 'day', notes: 'A rough morning.', high_moment: { description: 'Lunch with Sam.', person_ids: ['p2'] }, low_moment: { description: 'Call with Mom.\n\nShe hung up.', person_ids: ['p1'] } };
+    expect(personExcerpt(day, mom)).toBe('Call with Mom.\nShe hung up.');
+    expect(personExcerpt({ ...day, person_ids: ['p1'] }, mom)).toBe('Call with Mom.\nShe hung up.\nA rough morning.');
+    expect(personExcerpt({ kind: 'journal', notes: 'Coffee together.', person_ids: ['p1'] }, mom)).toBe('Coffee together.');
+  });
+
+  it('reads who was involved when nothing was tagged, and falls back to the whole entry', () => {
+    expect(personExcerpt({ kind: 'day', notes: 'Long day.', low_moment: { description: 'Argued.', who_involved: 'Mom' } }, mom)).toBe('Argued.');
+    expect(personExcerpt({ kind: 'journal', notes: '', person_ids: ['p1'], stress_context: { situation: 'At dinner.' } }, mom)).toBe('At dinner.');
+  });
+});
+

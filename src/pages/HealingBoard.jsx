@@ -302,7 +302,7 @@ export default function HealingBoard() {
             </>}
 
             {/* Add/Edit Dialog */}
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <Dialog open={showAddDialog} onOpenChange={(open) => { if (open || !saving) setShowAddDialog(open); }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2" style={{ color: 'var(--gh-ink)' }}>
@@ -365,7 +365,7 @@ export default function HealingBoard() {
                         </div>
                         {saveError && <p className="living-error" role="alert">{saveError}</p>}
                         <div className="flex justify-end gap-3 pt-2">
-                            <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}
+                            <Button type="button" variant="outline" disabled={saving} onClick={() => setShowAddDialog(false)}
                                 style={{ borderColor: 'hsl(var(--border))', color: 'var(--gh-ink-soft)', background: 'transparent' }}>
                                 Cancel
                             </Button>
@@ -377,7 +377,7 @@ export default function HealingBoard() {
                 </DialogContent>
             </Dialog>
 
-            <AlertDialog open={!!deletingItem} onOpenChange={(open) => !open && setDeletingItem(null)}>
+            <AlertDialog open={!!deletingItem} onOpenChange={(open) => { if (!open && !deleting) setDeletingItem(null); }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Release "{deletingItem?.title}"?</AlertDialogTitle>
@@ -387,7 +387,7 @@ export default function HealingBoard() {
                     </AlertDialogHeader>
                     {deleteError && <p className="living-error" role="alert">{deleteError}</p>}
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Keep it</AlertDialogCancel>
+                        <AlertDialogCancel disabled={deleting}>Keep it</AlertDialogCancel>
                         <AlertDialogAction variant="destructive" aria-disabled={deleting} onClick={deleteItem}>{deleting ? 'Deleting…' : 'Delete item'}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

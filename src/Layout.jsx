@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -11,7 +11,8 @@ import {
     X,
     UserPlus,
     Settings2,
-    LifeBuoy
+    LifeBuoy,
+    Plus
 } from "lucide-react";
 import InviteModal from "@/components/InviteModal";
 import SettingsSheet from "@/features/shell/SettingsSheet";
@@ -23,6 +24,8 @@ import { moonPhase } from "@/lib/resonance/moon";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { usePreferences } from "@/features/patterns/useLivingData";
 import QuickExit from "@/features/safety/QuickExit";
+import TabBar from "@/features/shell/TabBar";
+import AddMenu from "@/features/shell/AddMenu";
 
 // Five surfaces, five jobs, five distinct icons.
 const navigationItems = [
@@ -33,11 +36,13 @@ const navigationItems = [
     { title: "Cosmos", url: createPageUrl("CosmicAddons"), icon: Sparkle, description: "Optional deeper explorations" },
 ];
 
+const isCurrent = (location, item) => location.pathname === item.url || (item.title === "Today" && location.pathname === "/");
+
 function NavLinks({ location, onNavigate }) {
     return (
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navigationItems.map((item) => {
-                const isActive = location.pathname === item.url || (item.title === "Today" && location.pathname === "/");
+                const isActive = isCurrent(location, item);
                 return (
                     <Link
                         key={item.title}
@@ -131,7 +136,20 @@ export default function Layout({ children }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [addOpen, setAddOpen] = useState(false);
     const [keptDays, setKeptDays] = useState(null);
+    const menuButtonRef = useRef(null);
+    const drawerCloseRef = useRef(null);
+    const restoreFocusRef = useRef(false);
+    // Settings and Invite opened from the drawer hand focus back to the menu
+    // button when they close, since the drawer's own button is gone by then.
+    const returnToMenuRef = useRef(false);
+    const returnFocusToMenu = (e) => {
+        if (!returnToMenuRef.current) return;
+        returnToMenuRef.current = false;
+        e.preventDefault();
+        menuButtonRef.current?.focus();
+    };
     // Quick exit is opt-in (Settings), so it never surprises anyone.
     const quickExitOn = Boolean(usePreferences().data?.quick_exit);
 
@@ -145,14 +163,49 @@ export default function Layout({ children }) {
         return () => { cancelled = true; };
     }, [location.pathname]);
 
-    // Close on route change
-    useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+    // Close on route change, including Back with the Add menu open.
+    useEffect(() => { setMobileOpen(false); setAddOpen(false); }, [location.pathname]);
 
     // Lock body scroll when drawer open
     useEffect(() => {
         document.body.style.overflow = mobileOpen ? 'hidden' : '';
         return () => { document.body.style.overflow = ''; };
     }, [mobileOpen]);
+
+    // The open drawer is a modal: focus moves into it, Escape closes it, and
+    // the page behind is inert until it closes.
+    const closeDrawer = () => {
+        restoreFocusRef.current = true;
+        setMobileOpen(false);
+    };
+    useEffect(() => {
+        if (!mobileOpen) {
+            // Back to the menu button once the page is no longer inert, unless
+            // a link in the drawer moved on to another page.
+            if (restoreFocusRef.current) menuButtonRef.current?.focus();
+            restoreFocusRef.current = false;
+            return undefined;
+        }
+        drawerCloseRef.current?.focus();
+        const onKeyDown = (e) => { if (e.key === "Escape") closeDrawer(); };
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [mobileOpen]);
+
+    // At desktop width the drawer is hidden, so an open one closes rather
+    // than leaving the page inert (a phone turned to landscape, say).
+    useEffect(() => {
+        const wide = window.matchMedia("(min-width: 768px)");
+        const onChange = () => { if (wide.matches) setMobileOpen(false); };
+        wide.addEventListener("change", onChange);
+        return () => wide.removeEventListener("change", onChange);
+    }, []);
+
+    // Toasts and notices clear the phone's tab bar.
+    useEffect(() => {
+        document.body.classList.add("has-tab-bar");
+        return () => document.body.classList.remove("has-tab-bar");
+    }, []);
 
     return (
         <div className="min-h-screen flex w-full relative" style={{ background: 'transparent' }}>
@@ -166,6 +219,12 @@ export default function Layout({ children }) {
                     boxShadow: '1px 0 26px color-mix(in srgb, var(--gh-ink) 5%, transparent)',
                 }}>
                 <SidebarHeader />
+                <div className="px-3 pt-3">
+                    <button type="button" className="rail-add" aria-haspopup="dialog" onClick={() => setAddOpen(true)}>
+                        <Plus className="w-4 h-4" aria-hidden="true" />
+                        Add to your record
+                    </button>
+                </div>
                 <NavLinks location={location} onNavigate={() => {}} />
                 <div className="px-3 pb-2 space-y-1">
                     <Link to="/support-now" className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)', borderRadius: 'calc(var(--radius) - 3px)' }}>
@@ -192,17 +251,20 @@ export default function Layout({ children }) {
             {/* ── Mobile overlay backdrop ── */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 z-30 md:hidden"
+                    className="fixed inset-0 z-[35] md:hidden"
                     style={{ background: 'color-mix(in srgb, var(--gh-ink) 30%, transparent)', backdropFilter: 'blur(2px)' }}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={closeDrawer}
                 />
             )}
 
             {/* ── Mobile slide-in drawer ── */}
             <aside
-                className="sanctuary-rail fixed top-0 left-0 h-full z-40 flex flex-col md:hidden transition-transform duration-300 ease-in-out"
+                className="sanctuary-rail mobile-drawer fixed top-0 left-0 h-full z-40 flex flex-col md:hidden transition-transform duration-300 ease-in-out"
                 inert={mobileOpen ? undefined : ""}
                 aria-hidden={!mobileOpen}
+                role={mobileOpen ? "dialog" : undefined}
+                aria-modal={mobileOpen ? "true" : undefined}
+                aria-label={mobileOpen ? "Menu" : undefined}
                 style={{
                     width: '72vw',
                     maxWidth: '280px',
@@ -230,17 +292,18 @@ export default function Layout({ children }) {
                         </div>
                     </div>
                     <button
-                        onClick={() => setMobileOpen(false)}
+                        ref={drawerCloseRef}
+                        onClick={closeDrawer}
                         className="p-3 transition-colors" aria-label="Close menu"
                         style={{ color: 'var(--gh-ink)', background: 'color-mix(in srgb, var(--gh-ink) 8%, transparent)', borderRadius: 'calc(var(--radius) - 5px)' }}>
                         <X className="w-4 h-4" />
                     </button>
                 </div>
-                <NavLinks location={location} onNavigate={() => setMobileOpen(false)} />
+                <NavLinks location={location} onNavigate={closeDrawer} />
                 <div className="px-3 pb-2 space-y-1">
-                    <Link to="/support-now" onClick={() => setMobileOpen(false)} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><LifeBuoy size={16} aria-hidden="true" />Support now</Link>
-                    <button onClick={() => { setMobileOpen(false); setSettingsOpen(true); }} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><Settings2 size={16} aria-hidden="true" />Settings</button>
-                    <button onClick={() => { setMobileOpen(false); setInviteOpen(true); }}
+                    <Link to="/support-now" onClick={closeDrawer} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><LifeBuoy size={16} aria-hidden="true" />Support now</Link>
+                    <button onClick={() => { returnToMenuRef.current = true; setMobileOpen(false); setSettingsOpen(true); }} className="w-full flex items-center gap-2.5 px-3 py-3 text-sm font-medium" style={{ color: 'var(--gh-ink-muted)' }}><Settings2 size={16} aria-hidden="true" />Settings</button>
+                    <button onClick={() => { returnToMenuRef.current = true; setMobileOpen(false); setInviteOpen(true); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium transition-colors"
                         style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
                         <UserPlus className="w-4 h-4" />
@@ -251,7 +314,7 @@ export default function Layout({ children }) {
             </aside>
 
             {/* ── Main content ── */}
-            <main className="flex-1 flex flex-col min-w-0 relative z-10">
+            <main className="flex-1 flex flex-col min-w-0 relative z-10" inert={mobileOpen ? "" : undefined}>
                 {/* Mobile top bar */}
                 <header className="woodland-mobile-header md:hidden flex items-center gap-3 px-4 py-3 sticky top-0 z-20"
                     style={{
@@ -260,24 +323,34 @@ export default function Layout({ children }) {
                         borderBottom: '1px solid hsl(var(--border))'
                     }}>
                     <button
+                        ref={menuButtonRef}
                         onClick={() => setMobileOpen(true)}
                         className="p-3 transition-colors" aria-label="Open menu"
                         style={{ border: '1px solid hsl(var(--border))', color: 'var(--gh-accent)', borderRadius: 'calc(var(--radius) - 3px)', boxShadow: 'var(--shadow-soft)' }}>
                         <Menu className="w-4 h-4" />
                     </button>
                     <SanctuaryMark size={30} />
-                    <span className="font-display text-lg" style={{ color: 'var(--gh-ink)' }}>
+                    <span className="mobile-brand-name font-display text-lg" style={{ color: 'var(--gh-ink)' }}>
                         vibe check
                     </span>
-                    {quickExitOn && <QuickExit className="ml-auto inline-flex items-center gap-2 px-3 py-2 text-sm" label="Exit" />}
+                    <span className="ml-auto flex items-center gap-2">
+                        <Link to="/support-now" className="mobile-support-link" aria-label="Support now">
+                            <LifeBuoy className="w-5 h-5" aria-hidden="true" />
+                            <span className="mobile-support-label" aria-hidden="true">Support</span>
+                        </Link>
+                        {quickExitOn && <QuickExit className="inline-flex items-center gap-2 px-3 py-2 text-sm" label="Exit" />}
+                    </span>
                 </header>
 
-                <div className="flex-1 overflow-auto">
+                <div className="layout-content flex-1 overflow-auto">
                     {children}
                 </div>
-            <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
-            <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+            <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} onCloseAutoFocus={returnFocusToMenu} />
+            <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} onCloseAutoFocus={returnFocusToMenu} />
             </main>
+
+            <TabBar items={navigationItems.slice(0, 4)} isActive={(item) => isCurrent(location, item)} onAdd={() => setAddOpen(true)} inert={mobileOpen} />
+            <AddMenu open={addOpen} onOpenChange={setAddOpen} />
         </div>
     );
 }

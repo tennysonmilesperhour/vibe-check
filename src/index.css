@@ -249,7 +249,6 @@
   .sanctuary-auth-form input { font-size: 16px; }
   .auth-label-row button { min-height: 44px; }
   .welcome-pillars span { flex-direction: row; }
-  .today-invitation { min-height: calc(100svh - 65px); }
   .today-content { padding: 28px 26px 90px; }
   .today-date { align-items: flex-start; flex-direction: column; gap: 8px; }
   .today-heading { padding-top: 65px; }
@@ -293,3 +292,53 @@
 @keyframes loading-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes loading-breathe { 0%, 100% { opacity: .55; transform: scale(.94); } 50% { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .loading-state, .loading-mark { animation: none; } }
+
+/* Phone navigation. The tab bar sits inside the bottom safe area, the header
+   inside the top one, and full-height surfaces leave room for both. */
+:root { --tab-bar-h: 0px; --mobile-header-h: 0px; --mobile-chrome: 0px; }
+/* With viewport-fit=cover, a phone in landscape puts its notch at one side:
+   the page and side sheets keep their content clear of it. On #root rather
+   than body, which the dialogs' scroll lock resets. */
+#root { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+.sheet-shell { padding-right: env(safe-area-inset-right); }
+.sheet-shell .dialog-close { right: calc(12px + env(safe-area-inset-right)); }
+.tab-bar { position: fixed; inset: auto 0 0; z-index: 30; display: none; box-sizing: border-box; height: calc(var(--tab-bar-h) + env(safe-area-inset-bottom)); grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 4px max(4px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(4px, env(safe-area-inset-left)); background: #1b281ef2; backdrop-filter: blur(16px); border-top: 1px solid #4d5c47; color: #e9e2cd; }
+.tab-bar-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; border-radius: 12px; font-size: 12px; color: #c0c8a9; }
+.tab-bar-item[aria-current="page"] { color: #f3ead2; font-weight: 600; }
+.tab-bar-icon, .tab-bar-add { display: grid; place-items: center; width: 44px; height: 28px; border-radius: 999px; }
+.tab-bar-icon svg, .tab-bar-add svg { width: 20px; height: 20px; }
+.tab-bar-item[aria-current="page"] .tab-bar-icon { background: #ffffff1a; color: #c7b48a; }
+.tab-bar-add { background: #c7b48a; color: #18231b; }
+.tab-bar :focus-visible { outline: 2px solid #e9e2cd; outline-offset: -2px; }
+.rail-add { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px 14px; border-radius: calc(var(--radius) - 3px); background: #c7b48a; color: #18231b; font-size: .875rem; font-weight: 600; }
+.rail-add:hover { background: #d3c29b; }
+.mobile-support-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; height: 44px; padding: 0 12px; border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) - 3px); color: var(--gh-accent); font-size: .85rem; font-weight: 500; }
+.add-menu { display: grid; gap: 10px; }
+.add-menu a { display: grid; grid-template-columns: 24px 1fr 16px; align-items: center; gap: 14px; min-height: 64px; padding: 12px 16px; border: 1px solid hsl(var(--border)); border-radius: calc(var(--radius) - 4px); color: var(--gh-ink); }
+.add-menu a:hover { background: color-mix(in srgb, var(--gh-ink) 5%, transparent); }
+.add-menu a > svg:first-child { color: var(--gh-accent); }
+.add-menu strong { display: block; font-weight: 600; }
+.add-menu strong + span { display: block; font-size: .85rem; color: var(--gh-ink-muted); }
+@media (max-width: 767px) {
+  /* The header: 44px controls, 12px below, a 1px rule, and the top padding.
+     The tab bar: 56px items, 4px above, a 1px rule, then the bottom inset. */
+  :root { --tab-bar-h: 61px; --mobile-header-h: calc(57px + max(12px, env(safe-area-inset-top))); --mobile-chrome: calc(var(--mobile-header-h) + var(--tab-bar-h) + env(safe-area-inset-bottom)); }
+  .tab-bar { display: grid; }
+  /* The check-in is a focused flow with its own way out, so the tab bar
+     steps aside and its buttons get the room. */
+  body.ceremony-open .tab-bar { display: none; }
+  body.ceremony-open { --tab-bar-h: 0px; --mobile-chrome: calc(var(--mobile-header-h) + env(safe-area-inset-bottom)); }
+  .layout-content { padding-bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom)); }
+  .woodland-mobile-header { box-sizing: border-box; height: var(--mobile-header-h); padding-top: max(12px, env(safe-area-inset-top)); padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  .mobile-drawer { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); }
+  .today-invitation { min-height: calc(100svh - var(--mobile-chrome)); }
+  .app-toast-viewport { padding-top: max(1rem, env(safe-area-inset-top)); }
+  body.has-tab-bar .app-update-toast { bottom: calc(1rem + var(--tab-bar-h) + env(safe-area-inset-bottom)); }
+}
+@media (min-width: 640px) and (max-width: 767px) {
+  body.has-tab-bar .app-toast-viewport { bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 379px) { .mobile-support-label { display: none; } .mobile-support-link { padding: 0; } }
+@media (max-width: 359px) { .mobile-brand-name { display: none; } }
+.ceremony-surface, .ceremony-column { min-height: calc(100svh - var(--mobile-chrome)); }
+

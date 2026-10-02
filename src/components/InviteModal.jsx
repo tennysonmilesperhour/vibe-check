@@ -8,7 +8,7 @@ import { Copy, Check, Share2 } from "lucide-react";
  * exist yet, so this offers only what actually works: copy, or the native
  * share sheet where the browser has one.
  */
-export default function InviteModal({ open, onClose }) {
+export default function InviteModal({ open, onClose, onCloseAutoFocus }) {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -40,7 +40,7 @@ export default function InviteModal({ open, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[420px]">
+      <DialogContent className="max-w-[420px]" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader>
           <DialogTitle className="font-display text-xl" style={{ color: "var(--gh-ink)" }}>
             Invite a friend

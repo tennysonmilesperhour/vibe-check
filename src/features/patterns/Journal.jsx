@@ -26,7 +26,7 @@ function promptKey(text) {
   return hash.toString(36);
 }
 
-export function JournalComposer({ open, existing = null, prompt = '', onClose, onSaved }) {
+export function JournalComposer({ open, existing = null, prompt = '', kind = 'reflection', onClose, onSaved }) {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -41,11 +41,12 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
   // New entries name the account the composer opened in (see CheckInCeremony).
   const ownerId = useRef(user?.id).current;
   // New entries started from a prompt get their own key, so a prompt is never
-  // replaced by older free-form words (and vice versa).
-  const bufferKey = user?.id ? `composer:${user.id}:${existing?.id || (prompt ? `prompt-${promptKey(prompt)}` : 'new')}` : null;
+  // replaced by older free-form words (and vice versa). A new interaction has
+  // its own key too, so unsaved words from a moment never turn it back into one.
+  const bufferKey = user?.id ? `composer:${user.id}:${existing?.id || (prompt ? `prompt-${promptKey(prompt)}` : kind === 'interaction' ? 'new-interaction' : 'new')}` : null;
   useEffect(() => {
     if (open) {
-      const initial = existing ? { ...existing, kind: existing.entry_kind || (['reflection', 'interaction'].includes(existing.kind) ? existing.kind : 'reflection'), emotions_text: (existing.emotions || []).join(', '), time: existing.occurred_at ? new Date(existing.occurred_at).toTimeString().slice(0, 5) : '', activities_text: (existing.activities || []).join(', ') } : { date: todayKey(), kind: 'reflection', time: '', emotions_text: '', notes: prompt, mood_score: null, person_ids: [], activities_text: '', stress_context: {}, interaction_feeling: '', boundary_respected: '' };
+      const initial = existing ? { ...existing, kind: existing.entry_kind || (['reflection', 'interaction'].includes(existing.kind) ? existing.kind : 'reflection'), emotions_text: (existing.emotions || []).join(', '), time: existing.occurred_at ? new Date(existing.occurred_at).toTimeString().slice(0, 5) : '', activities_text: (existing.activities || []).join(', ') } : { date: todayKey(), kind: kind === 'interaction' ? 'interaction' : 'reflection', time: '', emotions_text: '', notes: prompt, mood_score: null, person_ids: [], activities_text: '', stress_context: {}, interaction_feeling: '', boundary_respected: '' };
       baselineRef.current = JSON.stringify(initial);
       touchedRef.current = false;
       const buffer = readBuffer(bufferKey);
@@ -57,7 +58,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
       setError('');
     }
     // Restore once per opening; later edits must not re-run this.
-  }, [open, existing, prompt, bufferKey]);
+  }, [open, existing, prompt, kind, bufferKey]);
   const serializedForm = form ? JSON.stringify(form) : null;
   const dirty = Boolean(open && form && baselineRef.current !== null && serializedForm !== baselineRef.current);
   // Buffer only what the person actually typed; clear it on save or discard,
@@ -134,7 +135,7 @@ export default function Journal({ data, entries, onChanged }) {
   const selectedKey = params.get('entry');
   const selected = data.entries.find((entry) => entry.key === selectedKey);
   const open = params.get('compose') === '1' || Boolean(editing);
-  const close = () => { setEditing(null); setParams((previous) => { const next = new URLSearchParams(previous); next.delete('compose'); next.delete('prompt'); return next; }); };
+  const close = () => { setEditing(null); setParams((previous) => { const next = new URLSearchParams(previous); next.delete('compose'); next.delete('prompt'); next.delete('kind'); return next; }); };
   const compose = () => setParams((previous) => { const next = new URLSearchParams(previous); next.set('compose', '1'); return next; });
   async function remove() {
     setBusy(true); setError('');
@@ -154,7 +155,7 @@ export default function Journal({ data, entries, onChanged }) {
     {entries.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} onEdit={edit} onDelete={setDeleting} />)}
     {!entries.length && <p className="living-muted py-6">No entries match this view. Adjust the filters or keep a new moment.</p>}
     {entries.length > limit && <button className="living-secondary" onClick={() => setLimit((count) => count + 20)}>Show more history</button>}
-    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} onClose={close} onSaved={async (saved) => { await onChanged(); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} />
+    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} kind={params.get('kind') || 'reflection'} onClose={close} onSaved={async (saved) => { await onChanged(); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} />
     <Dialog open={Boolean(deleting)} onOpenChange={(isOpen) => { if (!isOpen && !busy) setDeleting(null); }}><DialogContent><DialogHeader><DialogTitle>Delete this entry?</DialogTitle><DialogDescription>This removes the entry from your journal, charts, and reports. This cannot be undone.</DialogDescription></DialogHeader><div className="flex gap-3"><button className="living-secondary" onClick={() => setDeleting(null)}>Keep it</button><button className="danger-button" disabled={busy} onClick={remove}>{busy ? 'Deleting…' : 'Delete entry'}</button></div></DialogContent></Dialog>
   </section>;
 }

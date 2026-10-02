@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Plus, Edit, Heart, Shield, Gift, Star, TrendingUp, Trash2, X } from "lucide-react";
 import { todayKey, parseLocalDate } from "@/lib/dates";
 import { format } from "date-fns";
+import LoadingState from "@/features/shell/LoadingState";
 
 // Categories share the ink/accent voice; each keeps its own quiet wash drawn
 // from the palette so the four areas still read apart at a glance.
@@ -44,6 +45,9 @@ const categoryInfo = {
 
 export default function HealingBoard() {
     const [healingItems, setHealingItems] = useState([]);
+    // Counts and the empty state wait for the first load, so an unloaded
+    // board never reads as an empty one.
+    const [loadState, setLoadState] = useState('loading'); // loading | ready | error
     const [selectedCategory, setSelectedCategory] = useState("devotions");
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
@@ -61,8 +65,14 @@ export default function HealingBoard() {
     useEffect(() => { loadHealingProgress(); }, []);
 
     const loadHealingProgress = async () => {
-        const items = await HealingProgress.list('-created_date');
-        setHealingItems(items);
+        try {
+            const items = await HealingProgress.list('-created_date');
+            setHealingItems(items);
+            setLoadState('ready');
+        } catch {
+            // A failed refresh keeps what is already showing.
+            setLoadState((current) => (current === 'ready' ? current : 'error'));
+        }
     };
 
     const getItemsByCategory = (category) => healingItems.filter(item => item.category === category);
@@ -135,6 +145,11 @@ export default function HealingBoard() {
                     </p>
                 </div>
 
+                {loadState === 'loading' && <LoadingState variant="page" label="Gathering your practice board…" />}
+                {loadState === 'error' && (
+                    <p className="living-error" role="alert">Your practice board could not load. <button type="button" className="underline" onClick={() => { setLoadState('loading'); loadHealingProgress(); }}>Try again</button></p>
+                )}
+                {loadState === 'ready' && <>
                 {/* Overall Progress */}
                 <div className="p-8 text-center mb-8" style={{ background: 'var(--gh-cream)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 6px)' }}>
                     <h3 className="text-2xl mb-1" style={{ color: 'var(--gh-ink)' }}>
@@ -253,6 +268,7 @@ export default function HealingBoard() {
                         )}
                     </div>
                 </div>
+                </>}
 
                 {/* Add/Edit Dialog */}
                 <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

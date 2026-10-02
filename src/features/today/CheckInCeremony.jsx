@@ -19,6 +19,7 @@ import { readBuffer, clearBuffer, bufferRestorable, latestVersion, isNewerVersio
 import useWritingBuffer from "@/hooks/use-writing-buffer";
 import useBeforeUnload from "@/hooks/use-before-unload";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import LoadingState from "@/features/shell/LoadingState";
 
 // Autosave waits for a pause in typing before writing the server draft.
 const AUTOSAVE_DELAY_MS = 1500;
@@ -477,7 +478,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
 
   const isLast = stepIndex === stepOrder.length - 1;
 
-  if (draftLoading || !stepIds) return <div className="living-page" role="status">Opening your check-in…</div>;
+  if (draftLoading || !stepIds) return <div className="living-page"><LoadingState variant="page" label="Opening your check-in…" /></div>;
 
   return (
     <SkyField depth={depth} className="min-h-screen ceremony-surface">
@@ -538,7 +539,9 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
             </div>
           </div>
         )}
-        <div className="flex flex-wrap gap-3 items-center justify-between pb-6">
+        {/* On a phone, Back and the short save share a row and the next step
+            takes the full width below, in reading order. */}
+        <div className="grid grid-cols-[auto_1fr] items-center gap-3 pb-6 sm:flex sm:flex-wrap sm:justify-between">
           <button
             type="button"
             onClick={() => (stepIndex === 0 ? requestLeave() : setStepIndex((i) => i - 1))}
@@ -547,15 +550,15 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
             <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back
           </button>
           {isLast ? (
-            <button type="button" onClick={save} disabled={saving} className="cream-button inline-flex items-center gap-2">
+            <button type="button" onClick={save} disabled={saving} className="cream-button inline-flex items-center gap-2 col-span-2 sm:col-span-1">
               <Check className="w-4 h-4" aria-hidden="true" /> {saving ? "Keeping the day…" : "Keep this day"}
             </button>
           ) : (
-            <div className="flex flex-wrap gap-3"><button type="button" disabled={saving || form.mood_score == null} className="ghost-cream-button text-sm" onClick={save}>{saving ? 'Saving…' : 'Keep short check-in'}</button><button
+            <div className="contents sm:flex sm:flex-wrap sm:gap-3"><button type="button" disabled={saving || form.mood_score == null} className="ghost-cream-button text-sm justify-self-end" onClick={save}>{saving ? 'Saving…' : 'Keep short check-in'}</button><button
               type="button"
               onClick={() => setStepIndex((i) => i + 1)}
               disabled={!canAdvance || saving}
-              className="cream-button inline-flex items-center gap-2"
+              className="cream-button inline-flex items-center gap-2 col-span-2 sm:col-span-1"
               style={{ opacity: canAdvance ? 1 : 0.45 }}
             >
               {stepId === 'mood' ? 'Add details' : 'Continue'} <ArrowRight className="w-4 h-4" aria-hidden="true" />

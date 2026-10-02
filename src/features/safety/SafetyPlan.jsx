@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { usePreferences } from '@/features/patterns/useLivingData';
 import useBeforeUnload from '@/hooks/use-before-unload';
 import { saveProblem } from '@/lib/preference-store';
+import LoadingState from '@/features/shell/LoadingState';
 
 // Structure follows the widely used Stanley-Brown safety plan, in plain words.
 const FIELDS = [
@@ -56,7 +57,7 @@ export default function SafetyPlan() {
       </div>
       {/* Without the saved plan, a save could replace it, so nothing is editable until it loads.
           A later refresh that fails keeps the loaded plan on screen. */}
-      {prefs.isLoading ? <p className="living-muted" role="status">Loading your plan…</p> : !prefs.data ? (
+      {prefs.isLoading ? <LoadingState label="Loading your plan…" /> : !prefs.data ? (
         <div className="space-y-3" role="alert">
           <p className="living-error">Your safety plan couldn't load. Check your connection.</p>
           <button type="button" className="living-secondary" disabled={prefs.isFetching} onClick={() => prefs.refetch()}>{prefs.isFetching ? 'Trying…' : 'Try again'}</button>

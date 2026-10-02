@@ -20,6 +20,7 @@ import { parseLocalDate } from "@/lib/dates";
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
+import LoadingState from "@/features/shell/LoadingState";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
 const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
@@ -138,7 +139,7 @@ export default function People() {
     setSynergyBusy(false);
   };
 
-  if (loading) return <div className="min-h-[60vh] field-wash" aria-busy="true" />;
+  if (loading) return <div className="field-wash min-h-screen" aria-busy="true"><div className="living-page"><LoadingState variant="page" label="Gathering your people…" /></div></div>;
   const entries = timelineEntries(checkIns, journal);
 
   return (

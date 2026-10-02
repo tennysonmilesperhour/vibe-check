@@ -12,22 +12,16 @@ export default function Practice() {
 
   return (
     <div className="field-wash min-h-screen">
-      <nav aria-label="Practice areas" className="flex justify-center gap-1 pt-6">
-        {[["somatic", "For this moment"], ["healing", "Practice board"]].map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setTab(id)}
-            aria-current={tab === id ? "page" : undefined}
-            className="px-4 py-2 text-sm font-bold transition-all duration-200"
-            style={tab === id
-              ? { background: "var(--gh-ink)", color: "var(--gh-field)", borderRadius: "calc(var(--radius) - 3px)", boxShadow: "var(--shadow-soft)" }
-              : { border: "1px solid", borderColor: "hsl(var(--border))", color: "var(--gh-ink-soft)", borderRadius: "calc(var(--radius) - 3px)" }}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
+      {/* The same tabs as Patterns, inside the page's own margins. */}
+      <div className="practice-tabs">
+        <nav aria-label="Practice areas" className="living-tabs">
+          {[["somatic", "For this moment"], ["healing", "Practice board"]].map(([id, label]) => (
+            <button key={id} type="button" onClick={() => setTab(id)} aria-current={tab === id ? "page" : undefined}>
+              {label}
+            </button>
+          ))}
+        </nav>
+      </div>
       {tab === "healing" ? <HealingBoard /> : <SomaticPractice />}
     </div>
   );

@@ -58,6 +58,7 @@ textarea.living-input { resize: vertical; }
 .living-tabs { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 12px; }
 .living-tabs button { padding: 11px 16px; min-height: 44px; border-radius: 9px; color: var(--gh-ink-soft); font-size: .85rem; }
 .living-tabs button[aria-current="page"] { background: var(--gh-ink); color: var(--gh-cream); }
+.practice-tabs { width: min(100%, 1080px); margin: 0 auto; padding: 28px 32px 0; }
 .living-stats { padding: 22px; border-radius: 14px; background: #35442f; color: #eee7d2; --gh-ink-muted: #d0d7bb; --border: 85 18% 46%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .living-stats > div { display: flex; flex-direction: column; justify-content: space-between; border-top: 1px solid hsl(var(--border)); padding-top: 15px; }
 .living-stats span { display: block; font-size: .75rem; letter-spacing: .06em; color: var(--gh-ink-muted); overflow-wrap: normal; }
@@ -84,6 +85,7 @@ textarea.living-input { resize: vertical; }
 .orbit-person > span { display: grid; place-items: center; width: 34px; height: 34px; margin: 0 auto 4px; border-radius: 50%; border: 1px solid var(--gh-gold); background: var(--gh-cream); font-size: .8rem; }
 @media (max-width: 640px) {
   .living-page { padding: 28px 18px 56px; }
+  .practice-tabs { padding: 20px 18px 0; }
   .living-card { padding: 20px 17px; }
   .plant-voice { padding: 19px 16px; gap: 12px; }
   .plant-voice-seal { width: 33px; height: 44px; }

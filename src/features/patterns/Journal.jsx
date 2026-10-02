@@ -36,6 +36,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
   const [heldBuffer, setHeldBuffer] = useState(null);
   const baselineRef = useRef(null);
   const touchedRef = useRef(false);
+  const confirmRef = useRef(null);
   const { user } = useAuth();
   // New entries name the account the composer opened in (see CheckInCeremony).
   const ownerId = useRef(user?.id).current;
@@ -66,6 +67,13 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
     if (open && form && touchedRef.current && !dirty && !heldBuffer) clearBuffer(bufferKey);
   }, [open, form, dirty, heldBuffer, bufferKey]);
   useBeforeUnload(dirty);
+  // The prompt sits at the end of a long form, so bring it to the person who
+  // asked to close.
+  useEffect(() => {
+    if (!confirmClose) return;
+    confirmRef.current?.scrollIntoView({ block: 'nearest' });
+    confirmRef.current?.querySelector('button')?.focus({ preventScroll: true });
+  }, [confirmClose]);
   const update = (patch) => { touchedRef.current = true; setForm((previous) => ({ ...previous, ...patch })); };
   const canKeepAsDraft = !existing || existing.is_draft;
   function requestClose() {
@@ -107,7 +115,7 @@ export function JournalComposer({ open, existing = null, prompt = '', onClose, o
       <label className="living-label">Habits or activities<input className="living-input mt-2" value={form.activities_text} onChange={(e) => update({ activities_text: e.target.value })} maxLength={1000} placeholder="A walk, late work, coffee… separated by commas" /></label>
       <details open={Boolean(existing?.stress_context?.state_ids?.length)}><summary className="living-label cursor-pointer mb-4">Stress, body cues, and feeling like yourself · optional</summary><StressFields value={form.stress_context} onChange={(value) => update({ stress_context: value })} /></details>
       {error && <p className="living-error" role="alert">{error}</p>}
-      {confirmClose && <div className="living-inset" role="alert"><p className="text-sm mb-3">{canKeepAsDraft ? 'These words are not saved yet.' : 'Your changes to this entry are not saved yet.'}</p><div className="flex flex-wrap items-center gap-3"><button type="button" className="living-secondary" onClick={() => setConfirmClose(false)}>Keep writing</button>{canKeepAsDraft ? <button type="button" className="living-secondary" disabled={busy} onClick={() => save(true)}>Save as a draft</button> : <button type="button" className="living-secondary" disabled={busy} onClick={() => save(false)}>Save changes</button>}<button type="button" className="danger-link text-sm" onClick={discard}>{canKeepAsDraft ? 'Discard these words' : 'Discard changes'}</button></div></div>}
+      {confirmClose && <div ref={confirmRef} className="living-inset" role="alert"><p className="text-sm mb-3">{canKeepAsDraft ? 'These words are not saved yet.' : 'Your changes to this entry are not saved yet.'}</p><div className="flex flex-wrap items-center gap-3"><button type="button" className="living-secondary" onClick={() => setConfirmClose(false)}>Keep writing</button>{canKeepAsDraft ? <button type="button" className="living-secondary" disabled={busy} onClick={() => save(true)}>Save as a draft</button> : <button type="button" className="living-secondary" disabled={busy} onClick={() => save(false)}>Save changes</button>}<button type="button" className="danger-link text-sm" onClick={discard}>{canKeepAsDraft ? 'Discard these words' : 'Discard changes'}</button></div></div>}
       <div className="flex flex-wrap gap-3"><button type="submit" className="ink-button" disabled={busy}>{busy ? 'Keeping your words…' : 'Save journal entry'}</button><button type="button" className="living-secondary" disabled={busy} onClick={() => save(true)}>Save as a draft</button></div>
     </form>}
   </DialogContent></Dialog>;

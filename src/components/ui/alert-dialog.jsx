@@ -73,7 +73,10 @@ AlertDialogDescription.displayName =
   AlertDialogPrimitive.Description.displayName
 
 const AlertDialogAction = React.forwardRef(({ className, variant, ...props }, ref) => (
-  <AlertDialogPrimitive.Action ref={ref} className={cn(buttonVariants({ variant }), "min-h-11", className)} {...props} />
+  <AlertDialogPrimitive.Action
+    ref={ref}
+    className={cn(variant === "destructive" ? "danger-button" : cn(buttonVariants({ variant }), "min-h-11"), className)}
+    {...props} />
 ))
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName
 

@@ -48,14 +48,23 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
+// The title row stays pinned while the body scrolls. A description scrolls
+// with the body, so a long one never takes over a small screen.
 const DialogHeader = ({
   className,
+  children,
   ...props
-}) => (
-  <div
-    className={cn("dialog-header flex flex-col space-y-1.5", className)}
-    {...props} />
-)
+}) => {
+  const parts = React.Children.toArray(children);
+  return (
+    <>
+      <div className={cn("dialog-header flex flex-col space-y-1.5", className)} {...props}>
+        {parts.filter((part) => part.type !== DialogDescription)}
+      </div>
+      {parts.filter((part) => part.type === DialogDescription)}
+    </>
+  );
+}
 DialogHeader.displayName = "DialogHeader"
 
 const DialogFooter = ({
@@ -79,7 +88,7 @@ DialogTitle.displayName = DialogPrimitive.Title.displayName
 const DialogDescription = React.forwardRef(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("dialog-description text-sm text-muted-foreground", className)}
     {...props} />
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName

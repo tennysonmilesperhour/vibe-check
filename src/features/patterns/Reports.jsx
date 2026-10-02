@@ -7,7 +7,7 @@ import { addDaysKey, formatDay, formatRange, todayKey } from '@/lib/dates';
 import { practiceById, ALIGNMENTS } from '@/lib/practices';
 import PlantVoice from '@/features/shell/PlantVoice';
 import StressPatternCards from './StressPatternCards';
-import { EntryLink } from './Journal';
+import EntryLink from './EntryLink';
 import useBeforeUnload from '@/hooks/use-before-unload';
 
 export default function Reports({ data, onChanged, savePreferences, onExport }) {

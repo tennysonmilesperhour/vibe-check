@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, ArrowUpRight } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { JournalEntry, DailyCheckIn } from '@/api/entities';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import PersonPicker from '@/features/people/PersonPicker';
@@ -14,10 +14,6 @@ import useWritingBuffer from '@/hooks/use-writing-buffer';
 import SupportCard from '@/features/safety/SupportCard';
 import EntryCard from './EntryCard';
 import useBeforeUnload from '@/hooks/use-before-unload';
-
-export function EntryLink({ entry, children }) {
-  return <Link className="living-text-link" to={`/Analytics?tab=journal&entry=${encodeURIComponent(entry.key)}`}>{children || formatDay(entry.date)}<ArrowUpRight size={13} aria-hidden="true" /></Link>;
-}
 
 /** Short, stable key for a prompt's text (djb2). */
 function promptKey(text) {
@@ -151,7 +147,7 @@ export default function Journal({ data, entries, onChanged }) {
     {supportFor && <SupportCard focus="relationship" title={supportFor === 'unsafe' ? 'You marked that interaction as unsafe.' : 'You noted that a boundary was not respected.'} onDismiss={() => setSupportFor(null)}>Your record is kept exactly as you wrote it. If it would help to talk it through or plan for your safety, these services are free and confidential.</SupportCard>}
     {drafts.length > 0 && <div className="living-inset"><p className="living-label mb-2">Saved drafts</p><div className="living-chips">{drafts.map((draft) => <button key={draft.id} className="living-chip" onClick={() => setEditing(draft)}>Resume draft from {formatDay(draft.date)}</button>)}</div></div>}
     {selectedKey && !selected && <p className="living-muted">This entry is no longer in your saved history.</p>}
-    {selected && <div><p className="living-label mb-2">Entry opened from your report or chart</p><EntryCard entry={selected} people={data.people} selected onEdit={edit} onDelete={setDeleting} /></div>}
+    {selected && <div><p className="living-label mb-2">The entry you opened</p><EntryCard entry={selected} people={data.people} selected onEdit={edit} onDelete={setDeleting} /></div>}
     {entries.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} onEdit={edit} onDelete={setDeleting} />)}
     {!entries.length && <p className="living-muted py-6">No entries match this view. Adjust the filters or keep a new moment.</p>}
     {entries.length > limit && <button className="living-secondary" onClick={() => setLimit((count) => count + 20)}>Show more history</button>}

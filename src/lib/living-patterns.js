@@ -1,7 +1,7 @@
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from 'date-fns';
 import { dateKey, todayKey, parseLocalDate, diffDaysKeys, addDaysKey, validDateKey } from './dates';
 import { STRESS_STATES, HELPFUL_OUTCOMES } from './practices';
-import { entryPeople, samePersonId } from './people';
+import { entryPeople, samePersonId, mentionsPerson } from './people';
 import { fisherGreater, cmhGreater } from './pattern-stats';
 
 export { entryPeople, validDateKey };
@@ -34,6 +34,24 @@ export function entryStates(entry) {
 /** @param {any} entry */
 export function entryText(entry) {
   return [entry.notes, entry.high_moment?.description, entry.low_moment?.description, entry.gratitude, entry.stress_context?.situation, entry.stress_context?.response, entry.stress_context?.need].filter(Boolean).join('\n\n');
+}
+
+/** What an entry is, as the journal names it. @param {any} entry */
+export const entryKindLabel = (entry) => (entry.kind === 'day' ? 'Daily check-in' : entry.entry_kind === 'interaction' || entry.interaction_feeling ? 'Interaction' : 'Journal moment');
+
+/**
+ * The words in an entry that concern a person: the moments they were tagged
+ * in, and the notes when they were tagged on the entry itself. Without picker
+ * tags, a moment counts when its "who was involved" names them. Falls back to
+ * all of the entry's words.
+ * @param {any} entry @param {any} person
+ */
+export function personExcerpt(entry, person) {
+  const tagged = (/** @type {any[] | undefined} */ ids) => (ids || []).some((id) => samePersonId(id, person.id));
+  const picked = entryPeople(entry).length > 0;
+  const about = (/** @type {any} */ moment) => Boolean(moment?.description) && (picked ? tagged(moment.person_ids) : mentionsPerson(moment.who_involved, person));
+  const parts = [about(entry.high_moment) && entry.high_moment.description, about(entry.low_moment) && entry.low_moment.description, tagged(entry.person_ids) && entry.notes].filter(Boolean);
+  return (parts.length ? parts.join('\n') : entryText(entry)).replace(/\n{2,}/g, '\n');
 }
 
 /** @param {any[]} entries @param {any} filters */

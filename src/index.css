@@ -17,6 +17,12 @@
     --plot-energy: #756032;
     --plot-sleep: #405b55;
     --plot-stress: #844b36;
+    /* How recorded interactions felt (the orbit and People). Each clears 3:1
+       on cream and on the orbit's wash. */
+    --feel-supportive: #4a6b3c;
+    --feel-strained: #86621a;
+    --feel-unsafe: #7f2f1d;
+    --feel-mixed: #6b6d5a;
     --sanctuary-sage: #929b78;
     --sanctuary-forest: #26392c;
     --sanctuary-evergreen: #1b241a;

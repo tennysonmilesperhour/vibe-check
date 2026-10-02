@@ -206,8 +206,7 @@ export default function HealingBoard() {
                                             style={{ color: 'var(--gh-ink-muted)' }}>
                                             <Edit className="w-4 h-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" aria-label={`Delete ${item.title}`} onClick={() => setDeletingItem(item)}
-                                            style={{ color: 'var(--gh-ink-muted)' }}>
+                                        <Button variant="ghost" size="icon" className="danger-icon" aria-label={`Delete ${item.title}`} onClick={() => setDeletingItem(item)}>
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </div>
@@ -257,8 +256,7 @@ export default function HealingBoard() {
 
                 {/* Add/Edit Dialog */}
                 <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                    <DialogContent className="max-w-lg"
-                        style={{ background: 'var(--gh-field)', border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)' }}>
+                    <DialogContent>
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2" style={{ color: 'var(--gh-ink)' }}>
                                 {React.createElement(categoryInfo[formData.category].icon, { className: "w-5 h-5", style: { color: 'var(--gh-accent)' } })}
@@ -341,7 +339,7 @@ export default function HealingBoard() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Keep it</AlertDialogCancel>
-                            <AlertDialogAction onClick={deleteItem}>Delete item</AlertDialogAction>
+                            <AlertDialogAction variant="destructive" onClick={deleteItem}>Delete item</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>

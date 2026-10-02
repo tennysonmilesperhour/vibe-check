@@ -123,6 +123,17 @@
   .dusk-surface { background: radial-gradient(ellipse at 50% 0%,#555e4177,transparent 65%),linear-gradient(160deg,#101a14,#2e3e2d); color: var(--gh-dusk-ink); }
   .hairline { border-top: 1px solid hsl(var(--border)); }
   .veil-card { background: var(--gh-cream); border: 1px solid hsl(var(--border)); border-radius: var(--radius); box-shadow: var(--shadow-soft); }
+  /* Dialogs and sheets: an inset, rounded cream panel. Only the body scrolls,
+     so the header and the close button stay in view. In this layer so a
+     dialog's own width utilities still apply. */
+  .dialog-shell { display: flex; flex-direction: column; width: calc(100vw - 28px); max-width: 32rem; max-height: 90dvh; overflow: hidden; background: var(--gh-cream); color: var(--gh-ink); border: 1px solid hsl(var(--border)); border-radius: var(--radius); box-shadow: var(--shadow-lift); }
+  .dialog-body { display: grid; gap: 16px; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px; scroll-padding-top: 88px; }
+  .dialog-header { position: sticky; top: -24px; z-index: 1; margin: -24px -24px 0; padding: 24px 64px 12px 24px; background: var(--gh-cream); text-align: left; }
+  .dialog-header + .dialog-description { margin-top: -18px; }
+  .dialog-close { position: absolute; top: 12px; right: 12px; z-index: 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--gh-ink) 18%, transparent); background: var(--gh-cream); color: var(--gh-ink); }
+  .dialog-close:hover { background: color-mix(in srgb, var(--gh-ink) 8%, var(--gh-cream)); }
+  .sheet-shell { display: flex; flex-direction: column; overflow: hidden; background: var(--gh-cream); color: var(--gh-ink); box-shadow: var(--shadow-lift); }
+  .sheet-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px; }
   .ink-button,.cream-button,.ghost-cream-button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: .85rem 1.5rem; border-radius: 8px; font-size: .875rem; font-weight: 600; transition: background .2s,transform .2s,box-shadow .2s; }
   .ink-button { background: var(--gh-accent); color: var(--gh-cream); border: 1px solid #ffffff08; box-shadow: var(--shadow-soft); }
   .cream-button { background: var(--gh-cream); color: var(--gh-ink); border: 1px solid #aca084; }

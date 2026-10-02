@@ -40,7 +40,7 @@ export default function InviteModal({ open, onClose }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent style={{ background: "var(--gh-field)", border: "1px solid hsl(var(--border))", maxWidth: 420 }}>
+      <DialogContent className="max-w-[420px]">
         <DialogHeader>
           <DialogTitle className="font-display text-xl" style={{ color: "var(--gh-ink)" }}>
             Invite a friend

@@ -17,9 +17,22 @@ textarea.living-input { resize: vertical; }
 .living-tag-alert { color: #673522; background: #e3c5ac; border-color: #a8795e; }
 .living-secondary, .living-icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 15px; border: 1px solid color-mix(in srgb, var(--gh-ink) 22%, transparent); border-radius: 9px; color: var(--gh-ink); background: var(--gh-cream); font-size: .85rem; font-weight: 500; }
 .living-icon-button { min-width: 44px; padding: 10px; }
+/* Actions that delete or discard something for good. Text uses a darker
+   rust so it stays above 4.5:1 on tinted surfaces. */
+:root { --danger-text: hsl(16 47% 28%); }
+.danger-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border: 1px solid hsl(var(--destructive)); border-radius: 10px; background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); font-size: .875rem; font-weight: 600; }
+.danger-button:hover:not(:disabled) { background: hsl(16 47% 28%); }
+.danger-outline { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 15px; border: 1px solid color-mix(in srgb, hsl(var(--destructive)) 60%, transparent); border-radius: 9px; background: transparent; color: var(--danger-text); font-size: .85rem; font-weight: 600; }
+.danger-outline:hover:not(:disabled) { background: color-mix(in srgb, hsl(var(--destructive)) 8%, transparent); }
+.danger-link { color: var(--danger-text); font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+.danger-icon { color: var(--danger-text); }
+.sky-surface .danger-outline { min-height: 48px; padding: .85rem 1.5rem; border-radius: 8px; }
+.sky-surface .danger-link, .sky-surface .danger-outline { color: #f2c4aa; }
+.sky-surface .danger-outline { border-color: #f2c4aa99; }
+.sky-surface .danger-outline:hover:not(:disabled) { background: #f2c4aa1a; }
 .living-text-link { display: inline-flex; align-items: center; gap: 6px; color: var(--gh-accent); font-size: .875rem; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
-.living-page .ink-button, .living-card .ink-button, .living-dialog .ink-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; border-radius: 10px; }
-.living-page button:disabled, .living-dialog button:disabled { opacity: .5; cursor: not-allowed; }
+.living-page .ink-button, .living-card .ink-button, .dialog-shell .ink-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; border-radius: 10px; }
+.living-page button:disabled, .dialog-shell button:disabled { opacity: .5; cursor: not-allowed; }
 .living-page button:focus-visible, .living-page a:focus-visible { outline: 2px solid var(--gh-accent); outline-offset: 4px; }
 .plant-voice { display: flex; align-items: flex-start; gap: 17px; padding: 25px; border-radius: 16px; color: var(--gh-ink); background: linear-gradient(115deg, var(--woodland-moss), #465238); --gh-ink: #eee7d2; --gh-ink-soft: #e3ddc5; --gh-ink-muted: #d1d6b9; --gh-accent: #eee7d2; border: 1px solid color-mix(in srgb, var(--gh-gold) 65%, transparent); }
 .plant-voice-compact { padding: 18px; }
@@ -58,7 +71,7 @@ textarea.living-input { resize: vertical; }
 .report-navigation label { min-width: 0; }
 .journal-entry-selected { border: 2px solid var(--gh-accent); }
 .journal-entry p { overflow-wrap: anywhere; }
-.living-dialog { width: min(720px, calc(100vw - 28px)); max-width: 720px !important; max-height: 90dvh; overflow-y: auto; background: var(--gh-cream); color: var(--gh-ink); }
+.living-dialog { max-width: 720px; }
 .living-error { color: #6e3525; background: #e5cbb5; border-radius: 9px; padding: 13px 16px; font-size: .875rem; }
 .living-success { color: #2f4329; background: #ccd3b4; border-radius: 9px; padding: 13px 16px; font-size: .875rem; }
 .export-preview { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 380px; overflow-y: auto; padding: 18px; border: 1px solid hsl(var(--border)); border-radius: 9px; font-size: .75rem; background: var(--woodland-paper); }

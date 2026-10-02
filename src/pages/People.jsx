@@ -197,21 +197,21 @@ export default function People() {
 
         {/* detail dialog */}
         <Dialog open={!!detail} onOpenChange={(open) => !open && setDetail(null)}>
-          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogContent>
             {detail && (
               <>
                 <DialogHeader>
-                  <DialogTitle className="font-display text-2xl flex items-center justify-between">
-                    {detail.name}
-                    <span className="flex gap-1">
-                      <button type="button" aria-label={`Edit ${detail.name}`} onClick={() => openEdit(detail)}>
-                        <Pencil className="w-4 h-4" style={{ color: "var(--gh-ink-muted)" }} />
+                  <div className="flex items-center justify-between gap-3">
+                    <DialogTitle className="font-display text-2xl min-w-0">{detail.name}</DialogTitle>
+                    <span className="flex gap-2 shrink-0">
+                      <button type="button" className="living-icon-button" aria-label={`Edit ${detail.name}`} onClick={() => openEdit(detail)}>
+                        <Pencil className="w-4 h-4" aria-hidden="true" />
                       </button>
-                      <button type="button" aria-label={`Delete ${detail.name}`} onClick={() => setDeleting(detail)}>
-                        <Trash2 className="w-4 h-4" style={{ color: "var(--gh-ink-muted)" }} />
+                      <button type="button" className="living-icon-button danger-icon" aria-label={`Delete ${detail.name}`} onClick={() => setDeleting(detail)}>
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </span>
-                  </DialogTitle>
+                  </div>
                 </DialogHeader>
 
                 {(() => {
@@ -365,7 +365,7 @@ export default function People() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Keep them</AlertDialogCancel>
-              <AlertDialogAction onClick={remove}>Remove person</AlertDialogAction>
+              <AlertDialogAction variant="destructive" onClick={remove}>Remove person</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

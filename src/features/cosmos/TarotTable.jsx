@@ -89,9 +89,9 @@ export default function TarotTable() {
     : cardCount > 1 ? (isDesktop ? 460 : 420)
     : (isDesktop ? 640 : 380);
   const tableMaxWidth = cardCount > 1 ? 720 : (isDesktop ? 420 : 320);
-  // Spreads of more than three cards number them, so a caption stays one short
-  // line between stacked cards; the positions are listed under the table.
-  const numbered = cardCount > 3;
+  // Cards too close together for their names are numbered, and the positions,
+  // with each card's name once it is turned, are listed under the table.
+  const numbered = cardCount > 3 || (cardCount > 1 && !isDesktop);
 
   const deal = async () => {
     const cards = drawSpread(deckId, spread, seed.trim() || null);
@@ -245,7 +245,8 @@ export default function TarotTable() {
                       flipped={!!flipped[i]}
                       onClick={() => setFlipped((f) => ({ ...f, [i]: true }))}
                       label={pos.label}
-                      caption={numbered ? String(i + 1) : undefined}
+                      number={numbered ? i + 1 : undefined}
+                      showCaption={!pos.rotate}
                     />
                   </div>
                 );
@@ -253,9 +254,15 @@ export default function TarotTable() {
             </div>
 
             {numbered && (
-              <ol className="max-w-xl mx-auto mt-6 grid grid-cols-2 gap-x-6 gap-y-1 text-sm" aria-label="Positions in this spread" style={{ color: duskInkSoft }}>
+              <ol className="max-w-xl mx-auto mt-6 grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm" aria-label="Positions in this spread" style={{ color: duskInkSoft }}>
                 {spread.positions.map((pos, i) => (
-                  <li key={i} className="flex gap-2"><span className="font-bold" style={{ color: "var(--gh-gold)" }}>{i + 1}</span>{pos.label}</li>
+                  <li key={i} className="flex gap-2">
+                    <span className="font-bold" style={{ color: "var(--gh-gold)" }}>{i + 1}</span>
+                    <span>
+                      {pos.label}{pos.rotate ? `, across ${i}` : ""}
+                      {flipped[i] && <span style={{ color: duskInk }}> · {drawn[i].card.name}{drawn[i].reversed ? ", reversed" : ""}</span>}
+                    </span>
+                  </li>
                 ))}
               </ol>
             )}

@@ -156,7 +156,9 @@ function CardFront({ card, reversed, cardWidth }) {
 // Controlled when a `flipped` prop is provided (lets "Reveal all" actually
 // flip the faces — the old internal-only state could not be driven from
 // outside); falls back to self-managed flipping when uncontrolled.
-export default function TarotCard({ card, reversed = false, size = "md", onClick, disabled = false, label, caption, flipped: flippedProp }) {
+// `label` names the card's position; `number`, when given, is what shows
+// under the card instead, and `showCaption` hides the caption entirely.
+export default function TarotCard({ card, reversed = false, size = "md", onClick, disabled = false, label, number, showCaption = true, flipped: flippedProp }) {
   const [flippedSelf, setFlippedSelf] = useState(false);
   const isControlled = flippedProp !== undefined;
   const flipped = isControlled ? flippedProp : flippedSelf;
@@ -169,6 +171,7 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
     xxl: { w: 340, h: 567 },
   };
   const { w, h } = sizes[size] || sizes.md;
+  const face = faceText(card, reversed, w);
 
   const handleClick = () => {
     if (disabled) return;
@@ -179,12 +182,16 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
   };
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    // The caption hangs below the card without taking space, so a spread
+    // centres every card on the card itself, turned or not.
+    <div className="relative">
       <div
         onClick={handleClick}
         role="button"
         tabIndex={disabled || flipped ? -1 : 0}
-        aria-label={flipped ? card.name : `Reveal ${label || "card"}`}
+        aria-label={flipped
+          ? `${number ? `Card ${number}, ` : ""}${label ? `${label}: ` : ""}${card.name}${reversed ? ", reversed" : ""}`
+          : `Reveal ${number ? `card ${number}, ` : ""}${label || "card"}`}
         aria-disabled={disabled || flipped}
         onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); handleClick(); } }}
         style={{
@@ -233,11 +240,11 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
           </div>
         </div>
       </div>
-      {(caption || label) && (
-        <span className="text-xs" style={{ color: 'rgba(245,229,216,0.8)', textAlign: 'center', maxWidth: Math.max(w, 96), lineHeight: 1.35 }}>
-          {caption || label}
-          {/* Once turned, a card too small to carry its name shows it here. */}
-          {!caption && flipped && !faceText(card, reversed, w).name && (
+      {showCaption && (number || label) && (
+        <span className="absolute left-1/2 top-full mt-1.5 -translate-x-1/2 text-xs" style={{ color: 'rgba(245,229,216,0.8)', textAlign: 'center', width: 'max-content', maxWidth: Math.max(w, 96), lineHeight: 1.35 }}>
+          {number || label}
+          {/* Once turned, what the face can't carry shows here. */}
+          {!number && flipped && (!face.name || (reversed && !face.reversed)) && (
             <span className="block" style={{ color: 'var(--gh-dusk-ink)' }}>{card.name}{reversed ? ' · reversed' : ''}</span>
           )}
         </span>

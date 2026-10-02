@@ -15,6 +15,7 @@ import { todayKey, addDaysKey, parseLocalDate, diffDaysKeys } from '@/lib/dates'
 import { filterEntries, historyChart, stateCards, stressPatterns, validDateKey } from '@/lib/living-patterns';
 import { STRESS_STATES } from '@/lib/practices';
 import { INTERACTION_FEELINGS } from '@/lib/people';
+import LoadingState from '@/features/shell/LoadingState';
 
 const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['365', 'Year'], ['all', 'All time'], ['custom', 'Custom']];
 
@@ -65,7 +66,7 @@ function Patterns() {
   }
   function openExport(initial = { start, end }) { setExporting(initial); }
 
-  if (living.isLoading) return <div className="living-page" role="status" aria-busy="true">Gathering your whole history…</div>;
+  if (living.isLoading) return <div className="living-page" aria-busy="true"><LoadingState variant="page" label="Gathering your whole history…" /></div>;
   if (living.isError || !data) return <div className="living-page"><h1>Your history is still yours.</h1><p className="living-error mt-4" role="alert">We could not load it right now. {living.error?.message}</p><button className="ink-button mt-4" onClick={() => living.refetch()}>Try loading again</button></div>;
 
   const showExport = exporting || (params.get('export') === '1' ? { start, end } : null);

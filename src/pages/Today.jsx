@@ -21,6 +21,7 @@ import DailySupport from '@/features/today/DailySupport';
 import { validDateKey } from '@/lib/living-patterns';
 import { createPageUrl } from "@/utils";
 import { useSearchParamState } from "@/lib/deeplink";
+import LoadingState from "@/features/shell/LoadingState";
 
 /**
  * State-adaptive landing:
@@ -84,7 +85,7 @@ export default function Today() {
   const dateLine = format(parseLocalDate(todayKey()), "EEEE, MMMM d");
 
   if (loadError) return <div className="living-page"><p className="living-error" role="alert">{loadError}</p><button className="ink-button mt-4" onClick={() => window.location.reload()}>Reload your history</button></div>;
-  if (loading || (isBackfill && loadedBackfillDate !== targetDate) || backfillLoading) return <div className="living-page" role="status">Opening this day's record…</div>;
+  if (loading || (isBackfill && loadedBackfillDate !== targetDate) || backfillLoading) return <div className="living-page"><LoadingState variant="page" label="Opening this day's record…" /></div>;
 
   if (mode === "ceremony") {
     return (

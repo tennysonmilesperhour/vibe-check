@@ -7,6 +7,7 @@ import { todayKey } from '@/lib/dates';
 import { collectCompleteExport } from './collect';
 import { downloadJson } from './download';
 import ExportPassword, { exportPasswordError } from './ExportPassword';
+import LoadingState from '@/features/shell/LoadingState';
 
 /** Download everything Vibe Check keeps for the account, after the password check. */
 export default function CompleteExport({ onClose }) {
@@ -47,7 +48,7 @@ export default function CompleteExport({ onClose }) {
     <DialogHeader><DialogTitle>Download everything</DialogTitle><DialogDescription>A complete copy of what Vibe Check keeps for your account, as one file you can keep, move to another tool, or open here later. Not included: settings kept only on this device, such as an app lock, and the dates of requests to retired AI features.</DialogDescription></DialogHeader>
     {!identityOk ? <ConfirmIdentity action="download everything" onConfirmed={confirmIdentity} /> : <div className="space-y-5">
       {loadError && <p className="living-error" role="alert">{loadError} <button type="button" className="underline" onClick={() => setAttempt((count) => count + 1)}>Try again</button></p>}
-      {!file && !loadError && <p className="living-muted text-sm" role="status">Gathering your record…</p>}
+      {!file && !loadError && <LoadingState label="Gathering your record…" />}
       {file && <>
         <ul className="text-sm grid grid-cols-2 gap-x-4 gap-y-1" aria-label="What the file holds">
           {counts.map(({ key, label, count }) => <li key={key} className="flex justify-between gap-2"><span>{label}</span><span className="living-muted">{count}</span></li>)}

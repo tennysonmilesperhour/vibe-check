@@ -235,6 +235,11 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   }
 
   useBeforeUnload(dirty && !finishedRef.current);
+  // While the check-in is open, the phone's tab bar steps aside (index.css).
+  useEffect(() => {
+    document.body.classList.add("ceremony-open");
+    return () => document.body.classList.remove("ceremony-open");
+  }, []);
 
   /**
    * Never write over a draft this tab has not seen. Returns a reason to stop,
@@ -481,8 +486,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   if (draftLoading || !stepIds) return <div className="living-page"><LoadingState variant="page" label="Opening your check-in…" /></div>;
 
   return (
-    <SkyField depth={depth} className="min-h-screen ceremony-surface">
-      <div className="max-w-3xl mx-auto px-6 py-10 min-h-screen flex flex-col">
+    <SkyField depth={depth} className="ceremony-surface">
+      <div className="ceremony-column max-w-3xl mx-auto px-6 py-10 flex flex-col">
         {/* progress: a thin gold line filling across */}
         <div className="h-px w-full" style={{ background: "rgba(255,253,246,0.25)" }} aria-hidden="true">
           <motion.div

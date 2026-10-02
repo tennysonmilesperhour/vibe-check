@@ -55,20 +55,41 @@ function CardBack() {
           <circle cx="0" cy="0" r="1.2" fill="#c2b184" opacity="0.8"/>
         </g>
       ))}
-      {/* Bottom label */}
-      <text x="60" y="192" textAnchor="middle" fontSize="5" fill="#a58e66" opacity="0.7" letterSpacing="2" fontFamily="serif">COSMIC WISDOM</text>
       {[18, 102].map((x) => <path key={x} d={`M${x} 187.5l0.7 2.1 2.1 0.7-2.1 0.7-0.7 2.1-0.7-2.1-2.1-0.7 2.1-0.7Z`} fill="#a58e66" opacity="0.7" />)}
     </svg>
   );
 }
 
+// Card art is drawn 120 units wide. Text on a face is drawn at least 12px
+// tall where the card is shown, and only when that size still sits on the
+// card: small cards show the art alone, and the card's name goes underneath.
+const FACE_WIDTH = 120;
+const faceSize = (cardWidth, size) => {
+  const units = Math.max(size, (12 * FACE_WIDTH) / cardWidth);
+  return units <= size * 1.6 ? units : null;
+};
+const fitsFace = (text, units, perChar) => units !== null && text.length * units * perChar <= 104;
+
+/** What a card face can show at a card width. */
+export function faceText(card, reversed, cardWidth) {
+  const numeral = faceSize(cardWidth, 9);
+  const name = faceSize(cardWidth, 8);
+  const keywords = faceSize(cardWidth, 5.8);
+  const turned = faceSize(cardWidth, 5.5);
+  const pair = card.keywords.slice(0, 2).join('  ·  ');
+  const keywordLine = [pair, card.keywords[0]].find((line) => fitsFace(line, keywords, 0.55)) || null;
+  return {
+    numeral: fitsFace(card.roman, numeral, 0.75) ? numeral : null,
+    name: fitsFace(card.name, name, 0.6) ? name : null,
+    keywordLine, keywords,
+    reversed: reversed && fitsFace('▽ REVERSED', turned, 0.7) ? turned : null,
+  };
+}
+
 // ── Card Front — geometry-based SVG art ─────────────────────────────────────
-function CardFront({ card, reversed }) {
+function CardFront({ card, reversed, cardWidth }) {
   const c = card.id % 3 === 0 ? "#b3bd96" : card.id % 3 === 1 ? "#c6b18a" : "#c2b184";
-  // Two keywords fit the card's bottom line only when short; otherwise the first.
-  const keywordPair = card.keywords.slice(0, 2).join('  ·  ');
-  const keywordLine = keywordPair.length > 30 ? card.keywords[0] : keywordPair;
-  const isMajor = card.id < 22;
+  const text = faceText(card, reversed, cardWidth);
 
   return (
     <svg viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"
@@ -90,8 +111,8 @@ function CardFront({ card, reversed }) {
       <rect x="3" y="3" width="114" height="194" rx="5" fill="none" stroke={c} strokeWidth="1.2" opacity="0.55"/>
       <rect x="6" y="6" width="108" height="188" rx="4" fill="none" stroke={c} strokeWidth="0.5" opacity="0.25"/>
       {/* Top roman numeral */}
-      <text x="60" y="20" textAnchor="middle" fontSize="9" fill={c} opacity="0.75"
-        fontFamily="Georgia, serif" fontWeight="bold">{card.roman}</text>
+      {text.numeral && <text x="60" y={Math.max(20, 8 + text.numeral)} textAnchor="middle" fontSize={text.numeral} fill={c} opacity="0.85"
+        fontFamily="Georgia, serif" fontWeight="bold">{card.roman}</text>}
       <line x1="15" y1="24" x2="105" y2="24" stroke={c} strokeWidth="0.5" opacity="0.25"/>
       {/* Glow */}
       <circle cx="60" cy="100" r="46" fill={`url(#glow-${card.id})`}/>
@@ -104,16 +125,16 @@ function CardFront({ card, reversed }) {
       </foreignObject>
       {/* Bottom section */}
       <line x1="15" y1="145" x2="105" y2="145" stroke={c} strokeWidth="0.5" opacity="0.25"/>
-      <text x="60" y="159" textAnchor="middle" fontSize="8" fill={c}
-        fontFamily="Georgia, serif" fontWeight="bold" opacity="0.88">
-        {card.name.length > 17 ? card.name.slice(0,16)+'…' : card.name}
-      </text>
-      <text x="60" y="171" textAnchor="middle" fontSize="5.8" fill={c} opacity="0.5"
+      {text.name && <text x="60" y={Math.max(159, 148 + text.name)} textAnchor="middle" fontSize={text.name} fill={c}
+        fontFamily="Georgia, serif" fontWeight="bold" opacity="0.9">
+        {card.name}
+      </text>}
+      {text.keywordLine && <text x="60" y="171" textAnchor="middle" fontSize={text.keywords} fill={c} opacity="0.75"
         fontFamily="Georgia, serif">
-        {keywordLine}
-      </text>
-      {reversed && (
-        <text x="60" y="184" textAnchor="middle" fontSize="5.5" fill="#b59b79" opacity="0.65"
+        {text.keywordLine}
+      </text>}
+      {text.reversed && (
+        <text x="60" y="184" textAnchor="middle" fontSize={text.reversed} fill="#b59b79" opacity="0.85"
           fontFamily="serif" letterSpacing="1">▽ REVERSED</text>
       )}
       {/* Corner marks */}
@@ -135,7 +156,7 @@ function CardFront({ card, reversed }) {
 // Controlled when a `flipped` prop is provided (lets "Reveal all" actually
 // flip the faces — the old internal-only state could not be driven from
 // outside); falls back to self-managed flipping when uncontrolled.
-export default function TarotCard({ card, reversed = false, size = "md", onClick, disabled = false, label, flipped: flippedProp }) {
+export default function TarotCard({ card, reversed = false, size = "md", onClick, disabled = false, label, caption, flipped: flippedProp }) {
   const [flippedSelf, setFlippedSelf] = useState(false);
   const isControlled = flippedProp !== undefined;
   const flipped = isControlled ? flippedProp : flippedSelf;
@@ -208,13 +229,17 @@ export default function TarotCard({ card, reversed = false, size = "md", onClick
             overflow: 'hidden',
             boxShadow: '0 8px 28px rgba(0,0,0,0.3)',
           }}>
-            <CardFront card={card} reversed={reversed} />
+            <CardFront card={card} reversed={reversed} cardWidth={w} />
           </div>
         </div>
       </div>
-      {label && (
-        <span style={{ fontSize: 10, color: 'rgba(245,229,216,0.55)', textAlign: 'center', maxWidth: w, fontFamily: 'Manrope, sans-serif' }}>
-          {label}
+      {(caption || label) && (
+        <span className="text-xs" style={{ color: 'rgba(245,229,216,0.8)', textAlign: 'center', maxWidth: Math.max(w, 96), lineHeight: 1.35 }}>
+          {caption || label}
+          {/* Once turned, a card too small to carry its name shows it here. */}
+          {!caption && flipped && !faceText(card, reversed, w).name && (
+            <span className="block" style={{ color: 'var(--gh-dusk-ink)' }}>{card.name}{reversed ? ' · reversed' : ''}</span>
+          )}
         </span>
       )}
     </div>

@@ -16,26 +16,29 @@ const ORDER = {
 
 /**
  * Writes a change into a cached part. A read of the part already under way
- * began before the change was stored and could land after it, so it is
- * dropped and done again. The copy keeps its age unless fresh says it was
- * just read, and a copy that was due for a reload (marked out of date, or its
- * last reload failed) still gets one. A part no page has loaded is left to
- * load whole.
+ * began before the change was stored and may not hold it: one with a copy in
+ * hand is replaced by a read begun now, which everyone waiting on the old one
+ * receives, and a first read is waited for, then changed. The copy keeps its
+ * age unless fresh says it was just read, and a copy that was due for a
+ * reload (marked out of date, or its last reload failed) still gets one. A
+ * part no page has loaded is left to load whole.
  * @param {import('@tanstack/react-query').QueryClient} client
  * @param {readonly unknown[]} queryKey @param {(rows: any[]) => any[]} change
  */
 async function writeIntoPart(client, queryKey, change, { fresh = false } = {}) {
-  const reading = client.getQueryState(queryKey)?.fetchStatus === 'fetching';
-  await client.cancelQueries({ queryKey, exact: true });
-  const state = client.getQueryState(queryKey);
-  const reload = () => client.invalidateQueries({ queryKey, exact: true }).catch(() => {});
-  if (!state || state.data === undefined) {
-    if (reading) reload();
-    return;
+  const query = client.getQueryCache().find({ queryKey, exact: true });
+  if (!query) return;
+  if (query.state.fetchStatus !== 'idle') {
+    const replace = query.state.data !== undefined;
+    await query.fetch(undefined, replace ? { cancelRefetch: true } : undefined).catch(() => {});
+    // A read begun after the change was stored holds it.
+    if (replace && query.state.status === 'success') return;
   }
-  const due = reading || state.isInvalidated || state.status === 'error';
+  const state = query.state;
+  if (state.data === undefined) return;
+  const due = state.isInvalidated || state.status === 'error';
   client.setQueryData(queryKey, (/** @type {any[]} */ rows) => change(rows), fresh ? undefined : { updatedAt: state.dataUpdatedAt });
-  if (due) reload();
+  if (due) client.invalidateQueries({ queryKey, exact: true }).catch(() => {});
 }
 
 /**

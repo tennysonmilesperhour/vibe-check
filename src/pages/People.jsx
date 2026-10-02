@@ -37,14 +37,17 @@ export default function People() {
   const client = useQueryClient();
   const { user } = useAuth();
   // People, check-ins and moments from the record every page shares, so a
-  // change made here or anywhere else shows at once.
+  // change made here or anywhere else shows at once. The page shows them only
+  // once all three are in: the harm check and the pause after a hard moment
+  // read the check-ins and moments, so people never show without them.
   const peopleQuery = useRecordPart('people');
   const checkInsQuery = useRecordPart('checkIns');
   const journalQuery = useRecordPart('journal');
-  const people = peopleQuery.data || NONE;
-  const checkIns = checkInsQuery.data || NONE;
-  const journal = useMemo(() => (journalQuery.data || NONE).filter((entry) => !entry.is_draft), [journalQuery.data]);
   const parts = [peopleQuery, checkInsQuery, journalQuery];
+  const ready = parts.every((query) => query.data !== undefined);
+  const people = ready ? peopleQuery.data : NONE;
+  const checkIns = ready ? checkInsQuery.data : NONE;
+  const journal = useMemo(() => (ready ? journalQuery.data.filter((entry) => !entry.is_draft) : NONE), [ready, journalQuery.data]);
   const loading = parts.some((query) => query.isLoading);
   const failed = parts.find((query) => query.isError && query.data === undefined);
   const loadError = failed ? failed.error?.message || "Your people couldn't load." : '';
@@ -186,7 +189,8 @@ export default function People() {
         <div className="mt-6"><Note>Keep people here by a name or nickname that works for you. Each person gathers the entries you tag or name them in. Adding someone sends no invitation or notification.</Note></div>
         <PeopleOrbit people={people} entries={entries} mixes={mixes} onChoose={setDetail} />
 
-        {people.length === 0 ? (
+        {/* Until the whole record is in, there is nothing to say about who is here. */}
+        {!ready ? null : people.length === 0 ? (
           <div className="text-center py-20">
             <Users className="w-10 h-10 mx-auto" style={{ color: "var(--gh-ink-muted)" }} aria-hidden="true" />
             <h2 className="text-2xl mt-4" style={{ color: "var(--gh-ink)" }}>No one in orbit yet</h2>

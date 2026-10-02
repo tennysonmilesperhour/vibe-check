@@ -61,17 +61,52 @@ describe('changes written into the cached record', () => {
     expect(rowsOf(client, 'people')).toEqual([{ id: 'p1' }]);
   });
 
-  it('drops a read begun before the change, so it cannot land over it, and reads again', async () => {
+  // A read whose answers are handed out one call at a time.
+  const reads = () => {
+    const calls = [];
+    const queryFn = () => new Promise((resolve, reject) => { calls.push({ resolve, reject }); });
+    return { calls, queryFn };
+  };
+
+  it('replaces a read begun before the change with one begun after it, for everyone waiting', async () => {
     const client = withPart('people', [{ id: 'p1', created_at: '2026-09-01' }]);
-    let finish;
-    const reading = client.fetchQuery({ queryKey: recordKey('u1', 'people'), queryFn: () => new Promise((resolve) => { finish = resolve; }), staleTime: 0 });
-    await putRecordRow(client, 'u1', 'people', { id: 'p2', created_at: '2026-09-29' });
-    // The read answers with the copy from before it began, and its own rows never land.
-    expect(await reading).toEqual([{ id: 'p1', created_at: '2026-09-01' }]);
-    finish([{ id: 'p1', created_at: '2026-09-01' }]);
+    const { calls, queryFn } = reads();
+    const waiting = client.fetchQuery({ queryKey: recordKey('u1', 'people'), queryFn, staleTime: 0 });
+    const writing = putRecordRow(client, 'u1', 'people', { id: 'p2', created_at: '2026-09-29' });
     await Promise.resolve();
+    expect(calls).toHaveLength(2);
+    // The old read's answer never lands; the new read holds the saved row.
+    calls[0].resolve([{ id: 'p1', created_at: '2026-09-01' }]);
+    calls[1].resolve([{ id: 'p2', created_at: '2026-09-29' }, { id: 'p1', created_at: '2026-09-01' }]);
+    await writing;
+    expect((await waiting).map((person) => person.id)).toEqual(['p2', 'p1']);
     expect(rowsOf(client, 'people').map((person) => person.id)).toEqual(['p2', 'p1']);
-    expect(client.getQueryState(recordKey('u1', 'people')).isInvalidated).toBe(true);
+  });
+
+  it('puts the row in after a first read lands, rather than dropping that read', async () => {
+    const client = new QueryClient();
+    const { calls, queryFn } = reads();
+    const waiting = client.fetchQuery({ queryKey: recordKey('u1', 'people'), queryFn });
+    const writing = putRecordRow(client, 'u1', 'people', { id: 'p2', created_at: '2026-09-29' });
+    calls[0].resolve([{ id: 'p1', created_at: '2026-09-01' }]);
+    await writing;
+    expect(calls).toHaveLength(1);
+    expect(await waiting).toEqual([{ id: 'p1', created_at: '2026-09-01' }]);
+    expect(rowsOf(client, 'people').map((person) => person.id)).toEqual(['p2', 'p1']);
+  });
+
+  it('puts the row into the old copy when the new read fails, and keeps a reload due', async () => {
+    const client = withPart('people', [{ id: 'p1', created_at: '2026-09-01' }], 1_000);
+    const { calls, queryFn } = reads();
+    client.fetchQuery({ queryKey: recordKey('u1', 'people'), queryFn, staleTime: 0 }).catch(() => {});
+    const writing = putRecordRow(client, 'u1', 'people', { id: 'p2', created_at: '2026-09-29' });
+    await Promise.resolve();
+    calls[1].reject(new Error('offline'));
+    await writing;
+    const state = client.getQueryState(recordKey('u1', 'people'));
+    expect(rowsOf(client, 'people').map((person) => person.id)).toEqual(['p2', 'p1']);
+    expect(state.dataUpdatedAt).toBe(1_000);
+    expect(state.isInvalidated).toBe(true);
   });
 
   it('keeps the age of a copy it adds a row to, so a reload that was due still comes', async () => {

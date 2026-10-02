@@ -61,12 +61,12 @@ export default function Today() {
   const { user } = useAuth();
   // Opening Today reads the check-ins afresh, since a check-in begun here
   // must start from what is stored; they are kept for the other pages. After
-  // a save the cached copy already holds the kept day.
-  const load = useCallback(async ({ fresh = true } = {}) => {
+  // a save the cached copy already holds the kept day, so it is shown as is.
+  const load = useCallback(async ({ fresh = true, cached = false } = {}) => {
     setLoading(true);
     try {
       const [checkIns, openAlerts, me, keptOther] = await Promise.all([
-        fetchRecordPart(client, user?.id, 'checkIns', { fresh }),
+        fetchRecordPart(client, user?.id, 'checkIns', { fresh, cached }),
         BoundaryAlert.filter({ is_acknowledged: false }).catch(() => []),
         base44.auth.me().catch(() => null),
         // Moments, people and practices count as history too, so only a truly
@@ -104,7 +104,7 @@ export default function Today() {
         key={`${targetDate}:${(isBackfill ? backfillEntry : entry)?.id || 'new'}`}
         dateKey={targetDate}
         existing={isBackfill ? backfillEntry : entry}
-        onDone={() => { setMode("landing"); setDateParam(""); load({ fresh: false }); }}
+        onDone={() => { setMode("landing"); setDateParam(""); load({ cached: true }); }}
         onCancel={() => { setMode("landing"); setDateParam(""); }}
       />
     );

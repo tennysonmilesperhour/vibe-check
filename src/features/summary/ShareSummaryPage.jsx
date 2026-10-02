@@ -9,6 +9,7 @@ import { addDaysKey, formatDay, todayKey } from '@/lib/dates';
 import { entryText, filterEntries, validDateKey } from '@/lib/living-patterns';
 import SummaryDocument from './SummaryDocument';
 import LoadingState from '@/features/shell/LoadingState';
+import RetryButton from '@/features/shell/RetryButton';
 
 const SECTIONS = [
   ['scores', 'Daily check-in scores'],
@@ -80,8 +81,8 @@ export default function ShareSummaryPage() {
           <p className="living-muted mt-2">Bring a short record of your days to a therapist, a doctor, or anyone you choose. You pick the dates and what goes in. Nothing is sent anywhere: print it, or save it as a PDF from the print window.</p>
         </div>
         {living.isLoading && <LoadingState label="Gathering your record…" />}
-        {living.isError && <p className="living-error" role="alert">Your record could not load. <button type="button" className="underline" aria-disabled={living.isFetching} onClick={() => { if (!living.isFetching) living.refetch(); }}>{living.isFetching ? 'Trying…' : 'Try again'}</button></p>}
-        {living.reloadFailed && <p className="living-error" role="alert">Your record couldn't refresh, so this summary may be out of date. <button type="button" className="underline" aria-disabled={living.isFetching} onClick={() => { if (!living.isFetching) living.refetch(); }}>{living.isFetching ? 'Trying…' : 'Try again'}</button></p>}
+        {living.isError && <p className="living-error" role="alert">Your record could not load. <RetryButton busy={living.retrying} onRetry={living.retry} /></p>}
+        {living.reloadFailed && <p className="living-error" role="alert">Your record couldn't refresh, so this summary may be out of date. <RetryButton busy={living.retrying} onRetry={living.retry} /></p>}
         {data && <>
           <fieldset className="space-y-3">
             <legend className="living-label">Dates</legend>

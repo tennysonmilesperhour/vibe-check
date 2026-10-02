@@ -84,6 +84,24 @@ describe('resonanceGraph', () => {
     expect(Array.isArray(graph.today.activeNodeIds)).toBe(true);
   });
 
+  it('lights the Moon placement today, and only placements that exist', () => {
+    // The Loom lights today's placements and their threads by these ids.
+    expect(graph.today.activeNodeIds).toContain('astrology.moon');
+    const ids = new Set(graph.nodes.map((n) => n.id));
+    for (const id of graph.today.activeNodeIds) expect(ids.has(id)).toBe(true);
+    for (const edge of graph.edges.filter((e) => e.isActiveToday)) {
+      expect(graph.today.activeNodeIds.includes(edge.a) || graph.today.activeNodeIds.includes(edge.b)).toBe(true);
+    }
+  });
+
+  it('lights nothing without a Moon placement or a matching personal day', () => {
+    const bare = resonanceGraph({ ...profile, astrology: { sun_sign: 'Cancer' }, birth_date: '' }, '2026-07-02');
+    expect(bare.today.moonPhase).toBeTruthy();
+    expect(bare.today.activeNodeIds).toEqual([]);
+    expect(bare.edges.some((e) => e.isActiveToday)).toBe(false);
+    expect(resonanceGraph(profile, undefined).today.activeNodeIds).toEqual([]);
+  });
+
   it('is serializable (no functions, no cycles)', () => {
     expect(() => JSON.stringify(graph)).not.toThrow();
   });

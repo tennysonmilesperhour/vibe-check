@@ -5,7 +5,7 @@ import { useSearchParamState } from "@/lib/deeplink";
 import { base44 } from "@/api/base44Client";
 import { Person } from "@/api/entities";
 import { useAuth } from "@/lib/AuthContext";
-import { dropRecordRow, putRecordRow, useRecordPart } from "@/features/patterns/useLivingData";
+import { dropRecordRow, hasFailed, putRecordRow, useFailure, useRecordPart } from "@/features/patterns/useLivingData";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import Note from '@/features/shell/Note';
 import { synergyReading } from "@/lib/wisdom/readings";
@@ -25,6 +25,7 @@ import { formatDay } from "@/lib/dates";
 import { createPageUrl } from "@/utils";
 import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
 import LoadingState from "@/features/shell/LoadingState";
+import RetryButton from "@/features/shell/RetryButton";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
 const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
@@ -48,10 +49,14 @@ export default function People() {
   const people = ready ? peopleQuery.data : NONE;
   const checkIns = ready ? checkInsQuery.data : NONE;
   const journal = useMemo(() => (ready ? journalQuery.data.filter((entry) => !entry.is_draft) : NONE), [ready, journalQuery.data]);
-  const loading = parts.some((query) => query.isLoading);
-  const failed = parts.find((query) => query.isError && query.data === undefined);
-  const loadError = failed ? failed.error?.message || "Your people couldn't load." : '';
-  const retry = () => parts.forEach((query) => { if (query.isError) query.refetch(); });
+  // A part being tried again still counts as failed (hasFailed), so the error
+  // and its button stay on screen until the retry lands.
+  const failed = parts.find((query) => hasFailed(query) && query.data === undefined);
+  const loading = !failed && parts.some((query) => query.isLoading);
+  const failure = useFailure(parts);
+  const loadError = failed ? failure?.message || "Your people couldn't load." : '';
+  const retrying = parts.some((query) => hasFailed(query) && query.isFetching);
+  const retry = () => parts.forEach((query) => { if (hasFailed(query) && !query.isFetching) query.refetch(); });
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null); // null | 'new' | person
   const [deleting, setDeleting] = useState(null);
@@ -185,7 +190,7 @@ export default function People() {
           </button>
         </header>
 
-        {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={retry}>Retry</button></p>}
+        {loadError && <p role="alert" className="living-error mt-4">{loadError} <RetryButton busy={retrying} onRetry={retry}>Retry</RetryButton></p>}
         <div className="mt-6"><Note>Keep people here by a name or nickname that works for you. Each person gathers the entries you tag or name them in. Adding someone sends no invitation or notification.</Note></div>
         <PeopleOrbit people={people} entries={entries} mixes={mixes} onChoose={setDetail} />
 

@@ -9,6 +9,7 @@ import { STRESS_STATES, PRACTICES, PRACTICE_SOURCES, ALIGNMENTS, OUTCOMES, state
 import { formatDay, todayKey } from '@/lib/dates';
 import useBeforeUnload from '@/hooks/use-before-unload';
 import LoadingState from '@/features/shell/LoadingState';
+import RetryButton from '@/features/shell/RetryButton';
 
 export function PlantCompanions() {
   const [chosen, setChosen] = useState(null);
@@ -142,8 +143,8 @@ export default function SomaticPractice() {
   return <div className="living-page space-y-8">
     <header><p className="sanctuary-eyebrow">A LITTLE ROOM TO CHOOSE · ALWAYS FREE</p><h1>Come back to yourself.</h1><p className="living-muted mt-3 max-w-xl">Find an action for this moment. Over time, notice what helps you respond in a way that feels like you.</p></header>
     <Note>{state ? state.invitation : 'Begin wherever you are. Choose what feels present, then take one small step.'}</Note>
-    {living.isError && <div className="living-error" role="alert">Your saved history could not load. Retry to load practices with your saved preferences. <button type="button" className="underline" aria-disabled={living.isFetching} onClick={() => { if (!living.isFetching) living.refetch(); }}>{living.isFetching ? 'Trying…' : 'Retry history'}</button></div>}
-    {living.reloadFailed && <div className="living-error" role="alert">Your record couldn't refresh, so what shows may be out of date. <button type="button" className="underline" aria-disabled={living.isFetching} onClick={() => { if (!living.isFetching) living.refetch(); }}>{living.isFetching ? 'Trying…' : 'Retry'}</button></div>}
+    {living.isError && <div className="living-error" role="alert">Your saved history could not load. Retry to load practices with your saved preferences. <RetryButton busy={living.retrying} onRetry={living.retry}>Retry history</RetryButton></div>}
+    {living.reloadFailed && <div className="living-error" role="alert">Your record couldn't refresh, so what shows may be out of date. <RetryButton busy={living.retrying} onRetry={living.retry}>Retry</RetryButton></div>}
     {notice && <p ref={noticeRef} tabIndex={-1} role="status" className="living-success outline-none">{notice}</p>}
     {askStop && <div ref={askStopRef} tabIndex={-1} className="living-inset space-y-3 outline-none" role="group" aria-labelledby="ask-stop-text"><p id="ask-stop-text">Your response is kept. Stop suggesting {practiceById(askStop)?.title.toLowerCase()}? It felt more uncomfortable this time. You can keep it available if it might fit another day.</p><div className="flex flex-wrap gap-3"><button type="button" className="living-secondary" disabled={busy} onClick={() => stopSuggesting(askStop)}>Stop suggesting it</button><button type="button" className="underline text-sm" disabled={busy} onClick={() => { setAskStop(null); announce('It stays available.'); }}>Keep it available</button></div></div>}
     {error && <p role="alert" className="living-error">{error}</p>}

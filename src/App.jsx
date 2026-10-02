@@ -36,7 +36,7 @@ const AuthenticatedApp = () => {
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
-      <div className="field-wash"><LoadingState variant="screen" label="Opening your sanctuary…" /></div>
+      <div className="field-wash min-h-screen"><LoadingState variant="screen" label="Opening your sanctuary…" /></div>
     );
   }
 

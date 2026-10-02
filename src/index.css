@@ -242,7 +242,6 @@
   .welcome-story h1 { font-size: clamp(42px,11vw,60px); margin-top: 16px; }
   .welcome-invitation, .welcome-caption, .welcome-form-mark { display: none; }
   .welcome-description { font-size: 12px; max-width: 310px; }
-  .welcome-caption { padding-bottom: 50px; }
   .welcome-panel { padding: 22px 18px 16px; }
   .welcome-form-wrap { max-width: 420px; padding: 20px 0 28px; }
   .welcome-form-wrap h2 { font-size: 38px; }
@@ -258,6 +257,10 @@
   .today-paths { margin-top: 55px; gap: 14px; }
   .today-paths strong { font-size: 22px; }
   .sanctuary-film-control { right: 18px; bottom: 18px; }
+  /* On the shorter sign-in hero the film control sits beside the name, as an
+     icon with its label kept for screen readers, clear of the hero's text. */
+  .welcome-landscape .sanctuary-film-control { top: 20px; bottom: auto; width: 44px; padding: 0; justify-content: center; }
+  .welcome-landscape .sanctuary-film-control span { display: none; }
   .reflection-header h1 { font-size: 42px; }
   .reflection-header>div { min-width: 0; }
 }
@@ -267,7 +270,6 @@
 @media (max-width: 360px) {
   .welcome-landscape .sanctuary-content { padding: 22px; }
   .reflection-header>svg { display: none; }
-  .welcome-story h1 { font-size: 52px; }
   .welcome-pillars { gap: 5px; }
   .welcome-pillars svg { width: 14px; }
   .today-heading h1 { font-size: 56px; }

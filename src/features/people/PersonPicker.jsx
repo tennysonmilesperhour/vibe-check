@@ -17,7 +17,10 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   // The people every page shares: someone added in one picker shows in all.
-  const people = useRecordPart("people").data || [];
+  // Someone added here shows here even while that list can't load.
+  const shared = useRecordPart("people").data;
+  const [added, setAdded] = useState([]);
+  const people = [...(shared || []), ...added.filter((person) => !shared?.some((row) => samePersonId(row.id, person.id)))];
   const client = useQueryClient();
   const { user } = useAuth();
 
@@ -44,7 +47,8 @@ export default function PersonPicker({ value = [], onChange, placeholder = "Who 
     }
     try {
       const created = await base44.entities.Person.create({ name: queryTrimmed, person_type: "other" });
-      putRecordRow(client, user?.id, "people", created);
+      setAdded((list) => [...list, created]);
+      await putRecordRow(client, user?.id, "people", created);
       onChange([...value, created.id]);
       setQuery("");
     } catch {

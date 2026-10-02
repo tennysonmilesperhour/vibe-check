@@ -5,7 +5,7 @@ import { useSearchParamState } from "@/lib/deeplink";
 import { base44 } from "@/api/base44Client";
 import { Person } from "@/entities/all";
 import { useAuth } from "@/lib/AuthContext";
-import { dropRecordRow, fetchRecordPart, putRecordRow } from "@/features/patterns/useLivingData";
+import { dropRecordRow, putRecordRow, useRecordPart } from "@/features/patterns/useLivingData";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import Note from '@/features/shell/Note';
 import { synergyReading } from "@/lib/wisdom/readings";
@@ -28,16 +28,27 @@ import LoadingState from "@/features/shell/LoadingState";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
 const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
+const NONE = [];
 
 
 /** Everyone you're in orbit with: merged Relationships + Constellation. */
 export default function People() {
   const { toast } = useToast();
-  const [people, setPeople] = useState([]);
-  const [checkIns, setCheckIns] = useState([]);
-  const [journal, setJournal] = useState([]);
-  const [loadError, setLoadError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const client = useQueryClient();
+  const { user } = useAuth();
+  // People, check-ins and moments from the record every page shares, so a
+  // change made here or anywhere else shows at once.
+  const peopleQuery = useRecordPart('people');
+  const checkInsQuery = useRecordPart('checkIns');
+  const journalQuery = useRecordPart('journal');
+  const people = peopleQuery.data || NONE;
+  const checkIns = checkInsQuery.data || NONE;
+  const journal = useMemo(() => (journalQuery.data || NONE).filter((entry) => !entry.is_draft), [journalQuery.data]);
+  const parts = [peopleQuery, checkInsQuery, journalQuery];
+  const loading = parts.some((query) => query.isLoading);
+  const failed = parts.find((query) => query.isError && query.data === undefined);
+  const loadError = failed ? failed.error?.message || "Your people couldn't load." : '';
+  const retry = () => parts.forEach((query) => { if (query.isError) query.refetch(); });
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null); // null | 'new' | person
   const [deleting, setDeleting] = useState(null);
@@ -64,32 +75,15 @@ export default function People() {
     [usesCosmos, askedForSynergy, harm, myChart, detail],
   );
 
-  const client = useQueryClient();
-  const { user } = useAuth();
-  // People, check-ins and moments come from the record other pages share;
-  // changes here go into it too, so this page reads them back without asking.
-  const load = useCallback(async () => {
-    try {
-      const [ppl, ci, entries, me] = await Promise.all([
-        fetchRecordPart(client, user?.id, 'people'), fetchRecordPart(client, user?.id, 'checkIns'), fetchRecordPart(client, user?.id, 'journal'),
-        base44.auth.me().catch(() => null),
-      ]);
-      // A failed account read keeps what was known, so readings don't vanish.
-      if (me) {
-        setUsesCosmos((me.cosmic_profile?.enabled_systems || []).length > 0);
-        setMyChart(me.cosmic_profile || {});
-      }
-      setPeople(ppl);
-      setCheckIns(ci);
-      setJournal(entries.filter((entry) => !entry.is_draft));
-      setLoadError('');
-    } catch (err) {
-      setLoadError(err.message);
-    }
-    setLoading(false);
-  }, [client, user?.id]);
-
-  useEffect(() => { load(); }, [load]);
+  // The account says whether Cosmos is in use, and holds the chart for
+  // synergy. A failed read keeps what was known, so readings don't vanish.
+  const loadAccount = useCallback(async () => {
+    const me = await base44.auth.me().catch(() => null);
+    if (!me) return;
+    setUsesCosmos((me.cosmic_profile?.enabled_systems || []).length > 0);
+    setMyChart(me.cosmic_profile || {});
+  }, []);
+  useEffect(() => { loadAccount(); }, [loadAccount]);
 
   const openEdit = (person) => {
     setEditing(person || "new");
@@ -121,10 +115,9 @@ export default function People() {
     };
     if (!payload.name) return;
     try {
-      putRecordRow(client, user?.id, 'people', editing === "new" ? await Person.create(payload) : await Person.update(editing.id, payload));
+      await putRecordRow(client, user?.id, 'people', editing === "new" ? await Person.create(payload) : await Person.update(editing.id, payload));
       setEditing(null);
       setDetail(null);
-      load();
       toast({ title: editing === "new" ? `${payload.name} added` : "Saved" });
     } catch (err) {
       toast({ title: "Could not save", description: err?.message, variant: "destructive" });
@@ -145,8 +138,7 @@ export default function People() {
     setRemoveError("");
     try {
       await Person.delete(person.id);
-      dropRecordRow(client, user?.id, 'people', person.id);
-      setPeople((list) => list.filter((other) => other.id !== person.id));
+      await dropRecordRow(client, user?.id, 'people', person.id);
       setDeleting(null);
       setDetail(null);
     } catch {
@@ -167,9 +159,8 @@ export default function People() {
     try {
       // Only the request is stored; text saved by earlier versions is never shown.
       const updated = await Person.update(person.id, { synergy_generated_at: new Date().toISOString() });
-      putRecordRow(client, user?.id, 'people', updated);
+      await putRecordRow(client, user?.id, 'people', updated);
       setDetail({ ...person, ...updated });
-      load();
     } catch (err) {
       toast({ title: "Synergy reading failed", description: err?.message, variant: "destructive" });
     }
@@ -191,7 +182,7 @@ export default function People() {
           </button>
         </header>
 
-        {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={load}>Retry</button></p>}
+        {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={retry}>Retry</button></p>}
         <div className="mt-6"><Note>Keep people here by a name or nickname that works for you. Each person gathers the entries you tag or name them in. Adding someone sends no invitation or notification.</Note></div>
         <PeopleOrbit people={people} entries={entries} mixes={mixes} onChoose={setDetail} />
 

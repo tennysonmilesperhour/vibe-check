@@ -20,8 +20,8 @@ import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import MoonGlyph from "@/features/loom/MoonGlyph";
 import { todayKey } from "@/lib/dates";
 import { moonPhase } from "@/lib/resonance/moon";
-import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
-import { usePreferences, useRecordPart } from "@/features/patterns/useLivingData";
+import { daysKeptLabel } from "@/lib/record-days";
+import { usePreferences, useDaysKeptThisMonth } from "@/features/patterns/useLivingData";
 import QuickExit from "@/features/safety/QuickExit";
 import TabBar from "@/features/shell/TabBar";
 import AddMenu from "@/features/shell/AddMenu";
@@ -151,10 +151,8 @@ export default function Layout({ children }) {
     // Quick exit is opt-in (Settings), so it never surprises anyone.
     const quickExitOn = Boolean(usePreferences().data?.quick_exit);
 
-    // The footer shows the days kept this month, from the check-ins every
-    // page shares, so a day kept anywhere shows at once.
-    const checkIns = useRecordPart('checkIns').data;
-    const keptDays = checkIns ? daysKeptThisMonth(checkIns, todayKey()) : null;
+    // The footer shows the days kept this month; a day kept anywhere shows at once.
+    const keptDays = useDaysKeptThisMonth();
 
     // Close on route change, including Back with the Add menu open.
     useEffect(() => { setMobileOpen(false); setAddOpen(false); }, [location.pathname]);

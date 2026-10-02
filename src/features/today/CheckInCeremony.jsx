@@ -11,7 +11,7 @@ import { ScaleStep, ChipsStep, FeelingsStep, MomentStep, ReflectionStep } from "
 import { EMOTIONS, ACTIVITIES } from "./vocab";
 import { picksFrom, typedFrom, combineWords, keepOrder } from "./check-in-words";
 import { ALL_STEPS, chooseSteps } from "./check-in-steps";
-import { usePreferences, putRecordRow, recordKey } from "@/features/patterns/useLivingData";
+import { usePreferences, putRecordRow, putRecentCheckIns } from "@/features/patterns/useLivingData";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
 import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { formatDay, todayKey } from "@/lib/dates";
@@ -449,23 +449,30 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     baselineRef.current = JSON.stringify(form);
     clearBuffer(bufferKey);
     if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current).catch(() => {});
-    // The kept day goes into the cached check-ins, so no page reads the whole
-    // history again for it. It can change whether readings wait.
-    putRecordRow(queryClient, ownerId, 'checkIns', saved);
+    // The newest check-ins as stored now, the kept day among them. They
+    // replace the cached ones for their dates, so Today and the sidebar show
+    // days kept on other devices too, without reading the whole history
+    // again; the notice pass and the days-kept count work from them. When
+    // they can't be read, the kept day alone goes into the cache.
+    let recent = null;
+    try {
+      recent = await DailyCheckIn.list("-date", 31);
+      await putRecentCheckIns(queryClient, ownerId, recent, 31);
+      // A day kept further back than these is put in on its own.
+      if (!recent.some((row) => row.id === saved.id)) await putRecordRow(queryClient, ownerId, 'checkIns', saved);
+    } catch {
+      await putRecordRow(queryClient, ownerId, 'checkIns', saved);
+    }
+    // A kept day can change whether readings wait.
     queryClient.invalidateQueries({ queryKey: ['living', ownerId, 'hard-moment'], exact: true }).catch(() => {});
-    // The check-ins as Today loaded them, with this day in place; read from
-    // the server only when no page has loaded them.
-    const cachedCheckIns = queryClient.getQueryData(recordKey(ownerId, 'checkIns'));
-    const recentCheckIns = (count) => (cachedCheckIns ? Promise.resolve(cachedCheckIns.slice(0, count)) : DailyCheckIn.list("-date", count));
 
     // Automatic boundary pass. Skipped when the profile could not load:
     // without the person's own thresholds, a default line must not be
     // described as theirs.
     let newAlerts = [];
-    if (me) {
+    if (me && recent) {
       try {
-        const recent = await recentCheckIns(30);
-        const candidates = evaluateBoundaries(recent, me.boundary_settings || {});
+        const candidates = evaluateBoundaries(recent.slice(0, 30), me.boundary_settings || {});
         const existingAlerts = await BoundaryAlert.list("-created_date", 50);
         newAlerts = dedupeAlerts(candidates, existingAlerts);
         for (const alert of newAlerts) {
@@ -479,12 +486,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     // A plain acknowledgement: no confetti and no run to keep, since a hard
     // day recorded honestly counts the same as any other.
     const title = existing ? "This day is updated" : "The day is kept";
-    try {
-      const label = daysKeptLabel(daysKeptThisMonth(await recentCheckIns(31), todayKey()), todayKey());
-      toast(label ? { title, description: `${label}.` } : { title });
-    } catch {
-      toast({ title });
-    }
+    const label = recent ? daysKeptLabel(daysKeptThisMonth(recent, todayKey()), todayKey()) : '';
+    toast(label ? { title, description: `${label}.` } : { title });
 
     setSaving(false);
     onDone?.(saved, { newAlerts });

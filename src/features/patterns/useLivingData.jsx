@@ -3,10 +3,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry, PracticeSession, ReportReflection, VibePreference, Person } from '@/api/entities';
 import { timelineEntries } from '@/lib/living-patterns';
+import { daysKeptThisMonth } from '@/lib/record-days';
+import { todayKey } from '@/lib/dates';
 import { inOrder, mergePreferences, preferenceStore } from '@/lib/preference-store';
 import { recordKey } from './record-cache';
 
-export { recordKey, putRecordRow, dropRecordRow } from './record-cache';
+export { recordKey, putRecordRow, dropRecordRow, putRecentCheckIns } from './record-cache';
 
 // The record in parts, each its own cached query shared by every page:
 // moving between pages shows what already loaded, and a change reloads only
@@ -21,10 +23,14 @@ const PARTS = {
 };
 export const RECORD_PARTS = /** @type {Array<keyof typeof PARTS>} */ (Object.keys(PARTS));
 // A part is read again when a page that uses it opens and its copy is over a
-// minute old. Changes made here update it or reload it at once.
+// minute old. Changes made here update it or reload it at once. Reads go out
+// offline too, so a page shows that it couldn't load rather than waiting, and
+// the Supabase client already retries a dropped connection, so they aren't
+// retried twice over.
 const STALE_MS = 60_000;
+const READS = { staleTime: STALE_MS, networkMode: /** @type {const} */ ('always'), retry: false };
 /** @param {string | undefined} userId @param {keyof typeof PARTS} part */
-const partQuery = (userId, part) => ({ queryKey: recordKey(userId, part), queryFn: PARTS[part], enabled: Boolean(userId), staleTime: STALE_MS });
+const partQuery = (userId, part) => ({ queryKey: recordKey(userId, part), queryFn: PARTS[part], enabled: Boolean(userId), ...READS });
 
 /** One part of the record, for a page that needs only that part. */
 export function useRecordPart(/** @type {keyof typeof PARTS} */ part) {
@@ -70,12 +76,15 @@ function storePreferences(client, userId, patch) {
 export function useLivingData() {
   const { user } = useAuth();
   const client = useQueryClient();
-  // One query per part, in RECORD_PARTS order.
-  const results = [
-    useQuery(partQuery(user?.id, 'checkIns')), useQuery(partQuery(user?.id, 'journal')), useQuery(partQuery(user?.id, 'sessions')),
-    useQuery(partQuery(user?.id, 'reflections')), useQuery(partQuery(user?.id, 'people')),
-  ];
-  const [checkIns, journal, sessions, reflections, people] = results.map((result) => result.data);
+  // Five plain queries: useQueries would bring its own observer code into
+  // the first load.
+  const byPart = {
+    checkIns: useQuery(partQuery(user?.id, 'checkIns')), journal: useQuery(partQuery(user?.id, 'journal')),
+    sessions: useQuery(partQuery(user?.id, 'sessions')), reflections: useQuery(partQuery(user?.id, 'reflections')),
+    people: useQuery(partQuery(user?.id, 'people')),
+  };
+  const results = RECORD_PARTS.map((part) => byPart[part]);
+  const { checkIns: { data: checkIns }, journal: { data: journal }, sessions: { data: sessions }, reflections: { data: reflections }, people: { data: people } } = byPart;
   const preferences = usePreferences();
   const entries = useMemo(() => (checkIns && journal ? timelineEntries(checkIns, journal) : undefined), [checkIns, journal]);
   const data = useMemo(() => (
@@ -120,6 +129,26 @@ export function useLivingData() {
     refresh,
     savePreferences: preferences.savePreferences,
   };
+}
+
+/**
+ * The days kept this month, for the sidebar: counted from the check-ins a page
+ * has loaded, or from a small read of this month's dates when none has, so a
+ * page that never needs the history doesn't download it for a count.
+ */
+export function useDaysKeptThisMonth() {
+  const { user } = useAuth();
+  const loaded = useQuery({ ...partQuery(user?.id, 'checkIns'), enabled: false }).data;
+  const today = todayKey();
+  const month = today.slice(0, 7);
+  const dates = useQuery({
+    queryKey: ['living', user?.id, 'month-days', month],
+    queryFn: () => DailyCheckIn.since(`${month}-01`, 'date'),
+    enabled: Boolean(user?.id) && !loaded,
+    ...READS,
+  }).data;
+  const rows = loaded || dates;
+  return rows ? daysKeptThisMonth(rows, today) : null;
 }
 
 /** Just the preferences: one small request, for controls that must show at once. */

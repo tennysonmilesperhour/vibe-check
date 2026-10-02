@@ -114,7 +114,7 @@ export default function AuthGate() {
         <div className="welcome-story">
           <p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p>
           <h1>A little closer<br />to yourself.</h1>
-          <p className="welcome-description">Your days, in their fullness. A private journal, honest patterns, and practices for coming back to yourself. Guided by the voice of the plants.</p>
+          <p className="welcome-description">Your days, in their fullness. A private journal, honest patterns, and practices for coming back to yourself.</p>
           <a href="#welcome-form" className="welcome-invitation">Your moment starts here <ArrowUpRight size={18} aria-hidden="true" /></a>
         </div>
         <div className="welcome-caption"><span className="caption-rule" />Rooted in nature. Made for reflection.</div>

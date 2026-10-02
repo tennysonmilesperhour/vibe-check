@@ -4,7 +4,7 @@ import { ArrowRight, Clock3, Leaf, Check, X } from 'lucide-react';
 import { PracticeSession } from '@/api/entities';
 import { useLivingData, usePreferences } from '@/features/patterns/useLivingData';
 import { useAuth } from '@/lib/AuthContext';
-import PlantVoice from '@/features/shell/PlantVoice';
+import Note from '@/features/shell/Note';
 import { STRESS_STATES, PRACTICES, PRACTICE_SOURCES, ALIGNMENTS, OUTCOMES, stateById, practiceById, recommendPractices, hiddenPractices, hiddenPracticesPatch, UNCOMFORTABLE_KEPT_HIDDEN, PLANT_COMPANIONS } from '@/lib/practices';
 import { formatDay, todayKey } from '@/lib/dates';
 import useBeforeUnload from '@/hooks/use-before-unload';
@@ -13,7 +13,7 @@ import LoadingState from '@/features/shell/LoadingState';
 export function PlantCompanions() {
   const [chosen, setChosen] = useState(null);
   return <section className="living-card space-y-5" aria-labelledby="plant-companions-heading">
-    <div><p className="sanctuary-eyebrow">AN OPTIONAL DEEPER LAYER</p><h2 id="plant-companions-heading">The plants beside you</h2><p className="living-muted mt-2">Seven chakra companions, offered as creative invitations for reflection.</p></div>
+    <div><p className="sanctuary-eyebrow">AN OPTIONAL DEEPER LAYER</p><h2 id="plant-companions-heading">Plant companions</h2><p className="living-muted mt-2">Seven chakra companions, offered as creative invitations for reflection.</p></div>
     <div className="living-chips">{PLANT_COMPANIONS.map((plant) => <button type="button" className="living-chip" aria-pressed={chosen?.plant === plant.plant} key={plant.plant} onClick={() => setChosen(plant)}>{plant.plant}<span className="text-xs ml-2 opacity-75">{plant.chakra}</span></button>)}</div>
     {chosen && <div className="living-inset"><p className="sanctuary-eyebrow">{chosen.plant} · {chosen.focus}</p><p className="text-xl font-display my-3">{chosen.question}</p><Link className="living-text-link" to={`/Analytics?tab=journal&compose=1&prompt=${encodeURIComponent(chosen.question)}`}>Reflect in your journal <ArrowRight size={15} /></Link></div>}
     <p className="living-muted text-xs">These pairings are authored for Vibe Check. They are symbolic, carry no medical claim, and require no plant use or consumption.</p>
@@ -141,7 +141,7 @@ export default function SomaticPractice() {
 
   return <div className="living-page space-y-8">
     <header><p className="sanctuary-eyebrow">A LITTLE ROOM TO CHOOSE · ALWAYS FREE</p><h1>Come back to yourself.</h1><p className="living-muted mt-3 max-w-xl">Find an action for this moment. Over time, notice what helps you respond in a way that feels like you.</p></header>
-    <PlantVoice>{state ? state.invitation : 'We are the plants, here beside you. Begin wherever you are. Choose what feels present, and we will take one small step.'}</PlantVoice>
+    <Note>{state ? state.invitation : 'Begin wherever you are. Choose what feels present, then take one small step.'}</Note>
     {living.isError && <div className="living-error" role="alert">Your saved history could not load. Retry to load practices with your saved preferences. <button className="underline" onClick={() => living.refetch()}>Retry history</button></div>}
     {living.reloadFailed && <div className="living-error" role="alert">Your record couldn't refresh, so what shows may be out of date. <button className="underline" onClick={() => living.refetch()}>{living.isFetching ? 'Trying…' : 'Retry'}</button></div>}
     {notice && <p ref={noticeRef} tabIndex={-1} role="status" className="living-success outline-none">{notice}</p>}

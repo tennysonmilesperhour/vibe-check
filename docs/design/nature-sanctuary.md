@@ -8,7 +8,7 @@ Vibe Check should feel like an elegant, luxurious sanctuary in nature: lush gree
 
 The latest palette comes from the user’s woodland reference image: moss and olive, shadowed forest, lichen, aged paper, and weathered wood. This reference supersedes the earlier pale sage and cream treatment. Luxury should come through art direction, typography, texture, composition, and polished interactions.
 
-The [plant voice direction](plant-voice.md) establishes the narrative: Nature connects the experience, the plants speak together as the central guide, and optional chakra companions offer a deeper layer of reflection. Carry that botanical presence through the imagery, symbols, motion, and copy.
+Nature connects the experience. Carry that botanical presence through the imagery, symbols, and motion, and keep the copy plain, with no persona (the [plants' voice](plant-voice.md) was retired on October 2, 2026). Optional chakra plant companions offer a deeper layer of reflection.
 
 The [product foundation](product-foundation.md) sets the priority: Free daily reflection, the orbit, complete relationship and habit patterns, and weekly and monthly reports with somatic practices matched to recurring stress patterns. Give these surfaces the full sanctuary treatment. Charts must make difficult periods, positive periods, and missing entries easy to distinguish. Practice cards should connect the recorded pattern, the user's desired response, short instructions, a skip option, and optional feedback. Show self-reported alignment separately from mood or calmness; avoid visual scores that declare how much someone is their “true self.” Optional paid systems add depth after the free journey is complete.
 
@@ -18,7 +18,7 @@ The central moss panel was sampled from the user’s September 8 woodland mood b
 
 | Color | Value | Use |
 | --- | --- | --- |
-| Moss | `#555E41` | The plants' voice panels, atmospheric gradients |
+| Moss | `#555E41` | Atmospheric gradients |
 | Forest | `#26392C` | Navigation, immersive scenes, selected surfaces |
 | Forest shadow | `#0C120F` | Deepest background and image shading |
 | Lichen | `#929B78` | Botanical details and intermediate chart shades |

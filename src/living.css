@@ -34,10 +34,7 @@ textarea.living-input { resize: vertical; }
 .living-page .ink-button, .living-card .ink-button, .dialog-shell .ink-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; border-radius: 10px; }
 .living-page button:disabled, .dialog-shell button:disabled { opacity: .5; cursor: not-allowed; }
 .living-page button:focus-visible, .living-page a:focus-visible { outline: 2px solid var(--gh-accent); outline-offset: 4px; }
-.plant-voice { display: flex; align-items: flex-start; gap: 17px; padding: 25px; border-radius: 16px; color: var(--gh-ink); background: linear-gradient(115deg, var(--woodland-moss), #465238); --gh-ink: #eee7d2; --gh-ink-soft: #e3ddc5; --gh-ink-muted: #d1d6b9; --gh-accent: #eee7d2; border: 1px solid color-mix(in srgb, var(--gh-gold) 65%, transparent); }
-.plant-voice-compact { padding: 18px; }
-.plant-voice-seal { display: grid; place-items: center; width: 44px; height: 54px; flex-shrink: 0; border: 1px solid var(--gh-gold); border-radius: 50%; color: var(--gh-accent); }
-.plant-voice-words { font-size: 1rem; line-height: 1.7; margin-top: 6px; }
+.app-note { max-width: 62ch; padding: 2px 0 2px 18px; border-left: 2px solid var(--gh-gold); color: var(--gh-ink-soft); font-size: 1.05rem; line-height: 1.7; }
 .state-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .state-card { text-align: left; padding: 21px; min-height: 145px; border: 1px solid hsl(var(--border)); border-radius: 14px; background: var(--gh-cream); color: var(--gh-ink); box-shadow: var(--shadow-soft); transition: background .18s, border-color .18s; }
 .state-card strong { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 400; margin: 6px 0; }
@@ -101,9 +98,7 @@ textarea.living-input { resize: vertical; }
   .practice-tabs { padding: 20px 18px 0; }
   .practice-board { padding: 28px 18px 56px; }
   .living-card { padding: 20px 17px; }
-  .plant-voice { padding: 19px 16px; gap: 12px; }
-  .plant-voice-seal { width: 33px; height: 44px; }
-  .plant-voice-words { font-size: .9rem; }
+  .app-note { padding-left: 14px; font-size: .95rem; }
   .state-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
   .state-card { padding: 16px; min-height: 150px; }
   .state-card strong { font-size: 1.2rem; }

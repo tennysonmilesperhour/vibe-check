@@ -1,5 +1,5 @@
 // Symbolic readings wait after a hard moment. A reading can't weigh what
-// happened, and the person's own record comes first (see plant-voice.md).
+// happened, and the person's own record comes first (see product-foundation.md).
 import { addDaysKey, todayKey } from './dates';
 import { entryInvolvesPerson } from './people';
 

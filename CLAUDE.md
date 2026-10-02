@@ -30,8 +30,8 @@ Caveats to be honest about:
 
 - Current plan: [Expert review plan](docs/roadmap/2026-09-29-expert-review-plan.md),
   September 29, 2026. The user adopted the review's recommendations except a
-  separate backend (the Supabase project stays shared) and retired Tobacco in
-  favor of the plants' collective voice. Work through its PR sequence.
+  separate backend (the Supabase project stays shared). Work through its PR
+  sequence.
 - Product foundation: [Free access to your own patterns](docs/design/product-foundation.md).
   Journaling, people and habit patterns, full history, weekly/monthly reports,
   stress pattern recognition, matched somatic recommendations with full
@@ -46,10 +46,11 @@ Caveats to be honest about:
   shutdown, emotional numbness, and procrastination, with a mixed/unsure
   path. Match the user's selected experience and feedback; no journal history
   is required, and no practice guarantees a state will disappear.
-- Narrative direction: [The voice of the plants](docs/design/plant-voice.md).
-  The plants speak together as one guide across the systems (Tobacco was
-  retired as the persona on September 29, 2026); optional chakra plant
-  companions add a deeper layer. The listed pairings are proposals.
+- Voice: plain copy with no persona. Notes speak to the user directly, with
+  no speaker label and no "we". The user retired Tobacco (September 29, 2026)
+  and then the plants' collective voice (October 2, 2026); history in
+  [The voice of the plants](docs/design/plant-voice.md). Optional chakra plant
+  companions stay as journal prompts. The listed pairings are proposals.
 - Current visual direction: [Nature Sanctuary](docs/design/nature-sanctuary.md),
   updated September 8, 2026. Use this for visual work; it supersedes conflicting
   Golden Hour and twilight guidance. The shared visual system is implemented.

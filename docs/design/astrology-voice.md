@@ -1,10 +1,10 @@
-# Astrology in the voice of the plants
+# Astrology voice
 
-Direction recorded September 8, 2026. Applies to the live astrology profile, deep readings, integrated readings, relationship reflections, and daily/weekly/monthly/yearly wisdom. It extends [the plant voice](plant-voice.md) and the [product foundation](product-foundation.md).
+Direction recorded September 8, 2026. Applies to the live astrology profile, deep readings, integrated readings, relationship reflections, and daily/weekly/monthly/yearly wisdom. It extends the [product foundation](product-foundation.md). The plants narrator this direction first used was retired on October 2, 2026 (see [plant voice](plant-voice.md)); readings speak plainly in the second person.
 
 ## Editorial direction
 
-The user named Susan Miller's *Planets and Possibilities* and Steven Forrest's *The Inner Sky* as influences. Vibe Check uses original language, with the plants as narrator. Adopt accessible explanations of planetary symbolism, practical possibilities in everyday life, psychological development, and personal choice. Do not imitate either author's distinctive prose or present the reading as authored or endorsed by them.
+The user named Susan Miller's *Planets and Possibilities* and Steven Forrest's *The Inner Sky* as influences. Vibe Check uses original language, in plain second person. Adopt accessible explanations of planetary symbolism, practical possibilities in everyday life, psychological development, and personal choice. Do not imitate either author's distinctive prose or present the reading as authored or endorsed by them.
 
 Public context reviewed:
 

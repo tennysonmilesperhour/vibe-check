@@ -5,9 +5,8 @@ A private record of your days, with the whole pattern in view.
 Vibe Check's [product foundation](docs/design/product-foundation.md) makes
 daily reflection, the orbit, relationship and habit charts, full history,
 and weekly and monthly reports with somatic practices matched to stress
-patterns the free baseline for everyone. The plants guide the experience
-as one collective voice, helping users notice patterns and practice responses
-that fit their own needs and values. Optional paid systems add
+patterns the free baseline for everyone. It helps users notice patterns and
+practice responses that fit their own needs and values. Optional paid systems add
 deeper interpretations; the core experience requires no external AI account.
 
 The free baseline is implemented: short check-ins and drafts, a full journal,
@@ -74,9 +73,9 @@ screen.
 
 ## Design language
 
-The [plant voice direction](docs/design/plant-voice.md) gives the app its
-narrative: the plants speak together as one guide and introduce the systems,
-with optional plant companions for deeper chakra reflections. The current chakra pairings are authored reflective invitations, not medical or universal traditional claims.
+Copy speaks plainly, with no persona (the [plant voice](docs/design/plant-voice.md)
+was retired on October 2, 2026). Optional plant companions offer deeper chakra
+reflections. The current chakra pairings are authored reflective invitations, not medical or universal traditional claims.
 
 The current direction is **Nature Sanctuary**, with the September 8 woodland
 palette: moss, fern, deep forest, warm bark, and weathered brass. The B1/Breath

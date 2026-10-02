@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
 import { parseLocalDate, addDaysKey, todayKey } from "@/lib/dates";
 import { entryPeople, samePersonId } from "@/lib/people";
-import { groupWords } from "@/lib/words";
 import { format } from "date-fns";
-import { feelingIcon } from "@/features/today/vocab";
+import { canonicalFeeling, feelingIcon } from "@/lib/feelings";
 import VocabularyIcon from "@/features/today/VocabularyIcon";
 
 /**
@@ -25,9 +24,10 @@ export default function WeekInReview({ checkIns, people = [], forceShow = false 
     const moods = entries.map((e) => e.mood_score).filter((m) => m != null);
     const avg = moods.reduce((a, b) => a + b, 0) / Math.max(moods.length, 1);
     const best = entries.reduce((a, b) => ((b.mood_score ?? 0) > (a.mood_score ?? 0) ? b : a));
-    // A feeling typed in lowercase and the same word picked from the list
-    // count together.
-    const topEmotions = groupWords(entries, (e) => e.emotions).slice(0, 3).map(({ label }) => label);
+    // A listed feeling typed in lowercase counts with the same word picked.
+    const emotionCounts = {};
+    for (const e of entries) for (const emo of new Set((e.emotions || []).map(canonicalFeeling))) emotionCounts[emo] = (emotionCounts[emo] || 0) + 1;
+    const topEmotions = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
 
     const personCounts = {};
     for (const e of entries) for (const id of entryPeople(e)) {

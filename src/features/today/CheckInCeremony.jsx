@@ -9,7 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import SkyField from "@/features/shell/SkyField";
 import { ScaleStep, ChipsStep, FeelingsStep, MomentStep, ReflectionStep } from "./CeremonySteps";
 import { EMOTIONS, ACTIVITIES } from "./vocab";
-import { picksFrom, typedFrom, combineWords } from "./check-in-words";
+import { picksFrom, typedFrom, combineWords, keepOrder } from "./check-in-words";
 import { ALL_STEPS, chooseSteps } from "./check-in-steps";
 import { usePreferences } from "@/features/patterns/useLivingData";
 import { evaluateBoundaries, dedupeAlerts } from "@/lib/boundaries";
@@ -85,6 +85,8 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const [serverVersion, setServerVersion] = useState(existing?.updated_at || null);
   const [form, setForm] = useState(() => formFrom(existing));
   // Chips picked and words typed for feelings and activities, kept apart.
+  // form.emotions and form.activities are always the two together, so every
+  // reset of the form sets these as well.
   const [picks, setPicks] = useState(() => picksOf(existing));
   const [typed, setTyped] = useState(() => typedOf(existing));
   // Which questions to ask, settled once the draft and preferences have loaded.
@@ -371,12 +373,12 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const togglePick = (key) => (label) => {
     const next = picks[key].includes(label) ? picks[key].filter((x) => x !== label) : [...picks[key], label];
     setPicks((current) => ({ ...current, [key]: next }));
-    edit((f) => ({ ...f, [key]: combineWords(next, typed[key]) }));
+    edit((f) => ({ ...f, [key]: keepOrder(f[key], combineWords(next, typed[key])) }));
   };
   const typeWords = (key) => (e) => {
     const text = e.target.value;
     setTyped((current) => ({ ...current, [key]: text }));
-    edit((f) => ({ ...f, [key]: combineWords(picks[key], text) }));
+    edit((f) => ({ ...f, [key]: keepOrder(f[key], combineWords(picks[key], text)) }));
   };
 
   // Choices saved before the check-in followed them didn't ask for that, so

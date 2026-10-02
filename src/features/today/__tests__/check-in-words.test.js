@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { picksFrom, typedFrom, combineWords } from '../check-in-words';
+import { picksFrom, typedFrom, combineWords, keepOrder } from '../check-in-words';
 import { EMOTIONS } from '../vocab';
 
 // The own-words field, one keystroke at a time.
@@ -24,6 +24,18 @@ describe('picked and typed words in a check-in', () => {
   it('keeps a pick when the same word is also typed and then deleted', () => {
     expect(combineWords(['Close'], 'Close')).toEqual(['Close']);
     expect(combineWords(['Close'], '')).toEqual(['Close']);
+  });
+
+  it('keeps a word once when it is picked and also typed in another case', () => {
+    expect(combineWords(['Sad'], 'sad, wistful, Wistful')).toEqual(['Sad', 'wistful']);
+  });
+
+  it('keeps the saved order, so undoing a change gives back what was kept', () => {
+    const saved = ['Sad', 'wistful', 'Tired'];
+    const off = keepOrder(saved, combineWords(['Sad'], 'wistful'));
+    expect(off).toEqual(['Sad', 'wistful']);
+    expect(keepOrder(off, combineWords(['Sad', 'Tired'], 'wistful'))).toEqual(saved);
+    expect(keepOrder(saved, combineWords(['Sad', 'Tired'], 'wistful, tense'))).toEqual(['Sad', 'wistful', 'Tired', 'tense']);
   });
 
   it('splits a saved day back into picks and typed words', () => {

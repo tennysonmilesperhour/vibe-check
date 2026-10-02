@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { EMOTIONS, FEELING_FAMILIES, findFeelings, feelingIcon, isListedFeeling } from '../vocab';
+import { canonicalFeeling } from '@/lib/feelings';
 import VocabularyIcon from '../VocabularyIcon';
 
 const EARLIER = ['Joyful', 'Grateful', 'Calm', 'Excited', 'Loved', 'Hopeful', 'Proud', 'Creative', 'Content', 'Relieved', 'Anxious', 'Sad',
@@ -32,6 +33,10 @@ describe('the feeling vocabulary', () => {
     expect(findFeelings('out').flatMap((family) => family.words)).toEqual(['Left out', 'Burnt out']);
     expect(findFeelings('self conscious').flatMap((family) => family.words)).toEqual(['Self-conscious']);
     expect(findFeelings('zzz')).toEqual([]);
+    // Never across two words, and never everything for a search with no letters.
+    expect(findFeelings('tou')).toEqual([]);
+    expect(findFeelings('?')).toEqual([]);
+    expect(findFeelings('é')).toEqual([]);
   });
 
   it('shows a whole family when the search names it', () => {
@@ -39,6 +44,8 @@ describe('the feeling vocabulary', () => {
     expect(findFeelings('anger')).toEqual([anger]);
     expect(findFeelings('Guilt').map((family) => family.name)).toEqual(['Shame and guilt']);
     expect(findFeelings('stress').map((family) => family.name)).toEqual(['Fear and stress']);
+    expect(findFeelings('fear a').map((family) => family.name)).toEqual(['Fear and stress']);
+    expect(findFeelings('Tired or distant').map((family) => family.name)).toEqual(['Tired or distant']);
     // "and" and "or" in a family name match nothing on their own.
     expect(findFeelings('or').find((family) => family.name === 'Tired or distant').words).toEqual(['Bored']);
   });
@@ -49,5 +56,11 @@ describe('the feeling vocabulary', () => {
     expect(feelingIcon('worried')).toBe('wind');
     expect(feelingIcon('In awe')).toBe('sprout');
     expect(feelingIcon('wistful')).toBeUndefined();
+  });
+
+  it('spells a listed word as the list does, and leaves your own words as written', () => {
+    expect(canonicalFeeling('worried')).toBe('Worried');
+    expect(canonicalFeeling('IN AWE')).toBe('In awe');
+    expect(canonicalFeeling('wistful')).toBe('wistful');
   });
 });

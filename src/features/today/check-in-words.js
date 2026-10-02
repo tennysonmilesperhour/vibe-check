@@ -16,5 +16,22 @@ export const typedFrom = (items = [], presets) => {
   return items.filter((item) => !labels.has(item)).join(', ');
 };
 
-/** What is saved: the picks, then each typed word once. */
-export const combineWords = (picks, text) => [...new Set([...picks, ...text.split(',').map((item) => item.trim()).filter(Boolean)])];
+/**
+ * What is saved: the picks, then each typed word. A word already there in
+ * another letter case ("Sad" picked, "sad" typed) is kept once.
+ */
+export const combineWords = (picks, text) => {
+  const seen = new Set();
+  return [...picks, ...text.split(',').map((item) => item.trim()).filter(Boolean)].filter((word) => {
+    const key = word.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+/**
+ * The next words in the order they were saved, new ones last, so undoing a
+ * change gives back exactly what was kept.
+ */
+export const keepOrder = (previous, next) => [...previous.filter((word) => next.includes(word)), ...next.filter((word) => !previous.includes(word))];

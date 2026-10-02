@@ -55,11 +55,32 @@ screen.
 | `npm run lint` | ESLint over the repo |
 | `npm test` | Vitest unit suites (the resonance/wisdom engines are exhaustively tested) |
 | `npm run typecheck` | `tsc` over `jsconfig.json` |
+| `npm run check:bundle` | First-load JavaScript budget; run after `npm run build` |
+| `npm run test:e2e` | Browser tests: every page, the main flows and WCAG A/AA checks, on desktop and phone |
+
+### Browser tests
+
+`npm run test:e2e` builds the app into `dist-e2e/` and runs Playwright against
+it, under the production headers from `vercel.json` (`vite preview` sends
+them, Content-Security-Policy included). The app talks to a stand-in Supabase
+(`e2e/support/mock-supabase.js`): auth is answered in JavaScript, and table
+requests run as SQL in an in-process Postgres (PGlite) built from
+`supabase/migrations/` (`e2e/support/database.js`), as the signed-in person
+with their JWT claims. Types, NOT NULL, CHECK, unique keys and the migrations'
+row-level security policies apply as they do live. Each test starts from an
+invented person (`e2e/support/persona.js`) at a fixed clock, so no network or
+account is needed. A migration that needs something more from the Supabase
+platform fails the tests with a pointer to `PLATFORM` in `database.js`.
+
+A test fails when a page throws or logs an error, when one of the app's files
+fails to load, when the app makes a request the mock refuses or doesn't
+model, or when it contacts any other site. The first run needs a browser:
+`npx playwright install chromium`.
 
 ## Project layout
 
-- `src/lib/` — pure logic: dates, streaks, boundaries, correlations, crypto
-  export, and the resonance + wisdom engines (`src/lib/resonance/`,
+- `src/lib/` — pure logic: dates, record days, boundaries, crypto export, and
+  the resonance + wisdom engines (`src/lib/resonance/`,
   `src/lib/wisdom/`). Keep this layer pure and unit-tested.
 - `src/features/` — feature UI grouped by surface (today, loom, practice,
   patterns, people, shell).

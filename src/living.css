@@ -150,6 +150,8 @@ textarea.living-input { resize: vertical; }
 .calendar-day:not(.calendar-outside):hover { box-shadow: inset 0 0 0 1px currentColor; }
 .calendar-unsafe { position: absolute; right: 3px; top: 2px; font-size: 12px; line-height: 1.1; }
 .calendar-outside { background: #bdc2a5; color: #a1a395; border-color: transparent; opacity: .4; }
+/* A day outside the view keeps a readable date; its dashed edge marks it as outside. */
+.calendar-day.calendar-outside { background: transparent; color: #4f5445; border: 1px dashed rgba(35,59,36,.32); opacity: 1; }
 .calendar-rhythm { padding-top: 10px; }
 .calendar-weekday-bars { margin-top: 20px; display: grid; gap: 12px; }
 .calendar-weekday-row { display: grid; grid-template-columns: 29px 1fr 28px 56px; align-items: center; gap: 9px; font-size: 12px; }

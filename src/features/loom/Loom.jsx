@@ -122,6 +122,8 @@ export default function Loom({ profile, dateKey = todayKey(), size = 400, onDeep
                 <motion.circle
                   cx={node.x} cy={node.y} r={r + 5}
                   fill="none" stroke="var(--gh-gold)" strokeWidth="1"
+                  // Without a starting value the first frame writes r and opacity as "undefined".
+                  initial={{ opacity: 0.2, r: r + 3 }}
                   animate={{ opacity: [0.2, 0.8, 0.2], r: [r + 3, r + 7, r + 3] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                 />

@@ -14,6 +14,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# Browser tests
+dist-e2e
+test-results
+playwright-report
+blob-report
 *.local
 
 # Editor directories and files

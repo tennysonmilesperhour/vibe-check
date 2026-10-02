@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
-import { writeFileSync, mkdirSync } from 'fs'
+import { writeFileSync, mkdirSync, readFileSync } from 'fs'
 
 // Build stamp: baked into the bundle AND published as /version.json so the
 // running app can notice when a newer deployment exists (UpdateToast).
@@ -12,16 +12,37 @@ const BUILD_ID = String(Date.now())
 // Local development and local preview builds stay quiet.
 const BUILD_ENVIRONMENT = process.env.VERCEL_ENV || 'development'
 
-const versionFilePlugin = () => ({
-  name: 'emit-version-json',
-  closeBundle() {
-    mkdirSync(path.resolve(__dirname, 'dist'), { recursive: true })
-    writeFileSync(
-      path.resolve(__dirname, 'dist/version.json'),
-      JSON.stringify({ build: BUILD_ID, environment: BUILD_ENVIRONMENT })
-    )
-  },
-})
+// Written next to the build it describes, whichever folder that is.
+const versionFilePlugin = () => {
+  let outDir
+  return {
+    name: 'emit-version-json',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir)
+    },
+    closeBundle() {
+      mkdirSync(outDir, { recursive: true })
+      writeFileSync(
+        path.join(outDir, 'version.json'),
+        JSON.stringify({ build: BUILD_ID, environment: BUILD_ENVIRONMENT })
+      )
+    },
+  }
+}
+
+// `vite preview` sends the headers Vercel sends for every page (vercel.json),
+// so local previews and the browser tests run under the production
+// Content-Security-Policy. A missing or reshaped rule leaves preview without
+// them (the browser tests check they arrive) rather than breaking builds.
+function productionHeaders() {
+  try {
+    const rules = JSON.parse(readFileSync(path.resolve(__dirname, 'vercel.json'), 'utf8')).headers || []
+    const everyPage = rules.find((rule) => rule.source === '/(.*)')
+    return Object.fromEntries((everyPage?.headers || []).map(({ key, value }) => [key, value]))
+  } catch {
+    return {}
+  }
+}
 
 export default defineConfig(({ mode }) => ({
   define: {
@@ -59,6 +80,9 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
+  },
+  preview: {
+    headers: productionHeaders(),
   },
   resolve: {
     alias: [

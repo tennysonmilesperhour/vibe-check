@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { HealingProgress } from "@/entities/all";
+import { HealingProgress } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Plus, Edit, Heart, Shield, Gift, Star, TrendingUp, Trash2, X } from "lucide-react";
 import { todayKey, formatDay } from "@/lib/dates";
 import LoadingState from "@/features/shell/LoadingState";
+import RetryButton from "@/features/shell/RetryButton";
 
 // Categories share the ink/accent voice; each keeps its own quiet wash drawn
 // from the palette so the four areas still read apart at a glance.
@@ -78,10 +79,7 @@ export default function HealingBoard() {
         }
     };
 
-    // Buttons that are busy use aria-disabled rather than disabled, so focus
-    // stays on them while they work and a failure can be read out from there.
     const retryLoad = async () => {
-        if (retrying) return;
         setRetrying(true);
         await loadHealingProgress();
         setRetrying(false);
@@ -177,7 +175,7 @@ export default function HealingBoard() {
             {loadState === 'error' && (
                 <div className="space-y-3 text-center" role="alert">
                     <p className="living-error">Your practice board couldn't load. Check your connection.</p>
-                    <button type="button" className="living-secondary" aria-disabled={retrying} onClick={retryLoad}>{retrying ? 'Trying…' : 'Try again'}</button>
+                    <RetryButton className="living-secondary" busy={retrying} onRetry={retryLoad} />
                 </div>
             )}
             {loadState === 'ready' && <>

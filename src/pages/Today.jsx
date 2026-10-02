@@ -4,7 +4,7 @@ import { Leaf, Sprout, Orbit, ArrowRight } from "lucide-react";
 import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { DailyCheckIn, BoundaryAlert, JournalEntry, PracticeSession, Person } from "@/entities/all";
+import { DailyCheckIn, BoundaryAlert, JournalEntry, PracticeSession, Person } from "@/api/entities";
 import { formatDay, todayKey } from "@/lib/dates";
 import { LOW_MOOD } from "@/lib/symbolic-guard";
 import { moonPhase } from "@/lib/resonance/moon";

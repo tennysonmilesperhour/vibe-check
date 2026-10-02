@@ -1,10 +1,10 @@
-// The resonance engine's domain tables — the single source of truth for
+// The resonance engine's domain tables, the single source of truth for
 // cross-system structure. The prose descriptions live in
 // components/cosmic/correspondences.jsx (SYSTEM_CORRESPONDENCES); these are
 // the machine-readable counterparts.
-import { ZODIAC_SIGNS, SYSTEM_CORRESPONDENCES } from '@/components/cosmic/correspondences';
+import { ZODIAC_SIGNS } from '@/components/cosmic/correspondences';
 
-export { ZODIAC_SIGNS, SYSTEM_CORRESPONDENCES };
+export { ZODIAC_SIGNS };
 
 /** 0° Aries = 0; each sign spans 30°. */
 export function signStartDegree(sign) {
@@ -50,23 +50,6 @@ export const ARCANA_ASTRO = {
 };
 
 /**
- * HD centers -> chakras, exactly as the app's own doctrine states it
- * (correspondences.jsx: human_design_chakras). The spleen center has no
- * single chakra there and is intentionally unmapped.
- */
-export const CENTER_CHAKRA = {
-  head: 'Crown',
-  ajna: 'Third Eye',
-  throat: 'Throat',
-  g: ['Heart', 'Throat'],
-  heart: 'Solar Plexus',   // will center / Manipura
-  solar_plexus: 'Sacral',  // emotional wave / Svadhisthana (water)
-  sacral: 'Sacral',
-  root: 'Root',
-  spleen: null,
-};
-
-/**
  * The Human Design mandala: 64 gates in wheel order, clockwise through the
  * zodiac, starting from the gate that opens 0° Aries. Each gate spans 5.625°.
  * The wheel is globally offset -1.875° (gate 25 begins at 28.125° Pisces),
@@ -89,13 +72,6 @@ export function gateWheelDegree(gate) {
   if (idx === -1) return null;
   return (idx * GATE_SPAN + WHEEL_OFFSET + GATE_SPAN / 2 + 360) % 360;
 }
-
-/** Machine-readable correspondence pair index (prose lives in SYSTEM_CORRESPONDENCES). */
-export const CORRESPONDENCE_PAIRS = Object.keys(SYSTEM_CORRESPONDENCES).map((key) => {
-  const [a, ...rest] = key.split('_');
-  // keys are like 'astrology_human_design' — split on known system names
-  return { key, text: SYSTEM_CORRESPONDENCES[key] };
-});
 
 /** The seven systems, their profile fields, and display labels. */
 export const SYSTEMS = [

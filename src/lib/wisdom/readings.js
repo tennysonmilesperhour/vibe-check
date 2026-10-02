@@ -253,76 +253,6 @@ function elementChemistry(e1, e2, s1, s2, name) {
   return `Your ${s1} Sun is associated with ${e1.toLowerCase()}, while ${name}'s ${s2} Sun is associated with ${e2.toLowerCase()}. ${e1 === e2 ? "A shared element can prompt a conversation about familiar priorities; it does not demonstrate emotional understanding." : "Different elements can prompt a conversation about different priorities; they do not establish conflict."} Consider ${ZODIAC[s1].keywords[0]} and ${ZODIAC[s2].keywords[0]} as topics to discuss if you want to. Ask what each of you actually needs. Sun signs alone cannot establish aspects or tell you whether a relationship is supportive.`;
 }
 
-// ── Check-in pattern reading (Analytics oracle) ───────────────────────────────
-
-export function patternReading(checkIns = []) {
-  const rows = checkIns.filter((c) => c && (c.mood_score != null || c.energy_level != null));
-  if (rows.length < 3) {
-    return "A few more evenings of checking in and real patterns will start to show. Right now there is not quite enough to read, come back after a handful more days and this page will start telling you things you did not consciously know.";
-  }
-
-  const moods = rows.map((c) => c.mood_score).filter((m) => m != null);
-  const avgMood = avg(moods);
-  const trend = slope(moods.slice().reverse()); // rows are newest-first
-  const emoCounts = tally(rows.flatMap((c) => c.emotions || []));
-  const topEmos = Object.entries(emoCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([e]) => e);
-
-  const paras = [];
-
-  // 1. the overall weather
-  const weather = avgMood >= 7 ? "generally bright" : avgMood >= 5 ? "steady, with real ups and downs" : "on the heavier side lately";
-  paras.push(
-    `Across your last ${rows.length} check-ins, the overall weather has been ${weather}, your mood has averaged ${avgMood.toFixed(1)} out of 10${trend > 0.15 ? ", and it has been climbing" : trend < -0.15 ? ", and it has been sliding downward" : ", holding fairly level"}. ${trend < -0.15 ? "That downward drift is worth taking seriously, not as alarm but as information." : trend > 0.15 ? "Something you are doing is working; it is worth noticing what." : "Level is not the same as stuck, sometimes it means you have found a floor to stand on."}`
-  );
-
-  // 2. the emotional texture
-  if (topEmos.length) {
-    paras.push(
-      `The feelings you name most often are ${joinNicely(topEmos)}. ${topEmos.length > 1 ? `Notice that ${topEmos[0]} and ${topEmos[topEmos.length - 1]} keep appearing together, they may be two faces of the same underlying thing.` : `${cap(topEmos[0])} has been the throughline.`} These are not random; they are the emotional key your days keep returning to.`
-    );
-  }
-
-  // 3. a correlation the data hints at
-  const corr = findCorrelation(rows);
-  if (corr) paras.push(corr);
-
-  // 4. the experiment
-  paras.push(
-    `One experiment for the coming week: ${buildExperiment(avgMood, trend, topEmos, corr)} Keep checking in, and next week you can see whether the pattern shifted.`
-  );
-
-  return paras.join("\n\n");
-}
-
-function findCorrelation(rows) {
-  const withBoth = rows.filter((c) => c.mood_score != null && c.sleep_quality != null);
-  if (withBoth.length >= 5) {
-    const good = withBoth.filter((c) => c.sleep_quality >= 7);
-    const poor = withBoth.filter((c) => c.sleep_quality < 5);
-    if (good.length >= 2 && poor.length >= 2) {
-      const gm = avg(good.map((c) => c.mood_score)), pm = avg(poor.map((c) => c.mood_score));
-      if (gm - pm >= 1.2) return `There is a thread worth pulling: on your well-slept nights your mood averages ${gm.toFixed(1)}, and on poorly-slept ones it drops to ${pm.toFixed(1)}. Sleep looks less like a side issue and more like a lever, for you, it may be the lever.`;
-    }
-  }
-  const withEnergy = rows.filter((c) => c.mood_score != null && c.energy_level != null);
-  if (withEnergy.length >= 5) {
-    const hi = withEnergy.filter((c) => c.energy_level >= 7), lo = withEnergy.filter((c) => c.energy_level < 5);
-    if (hi.length >= 2 && lo.length >= 2) {
-      const hm = avg(hi.map((c) => c.mood_score)), lm = avg(lo.map((c) => c.mood_score));
-      if (hm - lm >= 1.2) return `Your mood and your energy move together closely, high-energy days average ${hm.toFixed(1)} in mood, low-energy days ${lm.toFixed(1)}. Tending your energy, rest, movement, food, may be the most direct way to tend your mood.`;
-    }
-  }
-  return null;
-}
-
-function buildExperiment(avgMood, trend, topEmos, corr) {
-  if (corr && corr.includes("Sleep")) return "protect your sleep as if it were the appointment that matters most, guard the same wind-down window each night, and watch what it does to the rest.";
-  if (corr && corr.includes("energy")) return "pick one small daily act that reliably lifts your energy, a walk, a real meal, ten minutes outside, and do it on purpose rather than hoping the day provides it.";
-  if (trend < -0.15) return "name the one thing that has been quietly draining you, and remove or shrink it for a week. Do not add a new practice; subtract the weight.";
-  if (topEmos.length) return `when ${topEmos[0]} shows up this week, pause and ask what it is actually pointing to before you move to fix it. Let it be a messenger, not just a mood.`;
-  return "at each check-in, add one sentence about what shaped the day. In a week you will have a map of your own levers.";
-}
-
 // ── Period wisdom (daily / weekly / monthly / yearly) ─────────────────────────
 
 export function periodWisdom(periodType = "daily", profile = {}, graph = null) {
@@ -418,19 +348,8 @@ function dayContemplation(key) {
   return map[key] || "What is today asking of me?";
 }
 
-// ── small stats + text utils ─────────────────────────────────────────────────
+// ── text utils ───────────────────────────────────────────────────────────────
 
-const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
-function slope(a) {
-  if (a.length < 2) return 0;
-  const n = a.length, xs = a.map((_, i) => i);
-  const mx = avg(xs), my = avg(a);
-  let num = 0, den = 0;
-  for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (a[i] - my); den += (xs[i] - mx) ** 2; }
-  return den ? num / den : 0;
-}
-function tally(arr) { const o = {}; arr.forEach((x) => { if (x) o[x] = (o[x] || 0) + 1; }); return o; }
-function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 function joinNicely(arr) {
   const a = arr.filter(Boolean);
   if (a.length === 0) return "";

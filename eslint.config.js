@@ -11,12 +11,12 @@ import pluginUnusedImports from "eslint-plugin-unused-imports";
 export default [
   {
     files: ["src/**/*.{js,mjs,cjs,jsx}"],
-    ignores: ["src/components/ui/**/*", "src/test/**/*"],
+    ignores: ["src/components/ui/**/*"],
     ...pluginJs.configs.recommended,
   },
   {
     files: ["src/**/*.{js,mjs,cjs,jsx}"],
-    ignores: ["src/components/ui/**/*", "src/test/**/*"],
+    ignores: ["src/components/ui/**/*"],
     languageOptions: {
       globals: {
         ...globals.browser,

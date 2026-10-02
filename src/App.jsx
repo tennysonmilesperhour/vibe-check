@@ -6,7 +6,6 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AuthGate from '@/features/shell/AuthGate';
 import PasswordReset from '@/features/shell/PasswordReset';
 import OfflineGate from '@/features/shell/OfflineGate';
@@ -31,10 +30,10 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { user, isLoadingAuth, isLoadingPublicSettings, authError, isPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const { user, isLoadingAuth, authError, isPasswordRecovery, clearPasswordRecovery } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
+  // Show loading spinner while checking auth
+  if (isLoadingAuth) {
     return (
       <div className="field-wash min-h-screen"><LoadingState variant="screen" label="Opening your sanctuary…" /></div>
     );
@@ -47,9 +46,7 @@ const AuthenticatedApp = () => {
 
   // Handle authentication errors
   if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'offline') {
+    if (authError.type === 'offline') {
       return <OfflineGate />;
     } else if (authError.type === 'auth_required') {
       // Inline sign-in: the golden hour front door

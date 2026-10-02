@@ -12,7 +12,6 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: '@/entities/all', replacement: path.resolve(__dirname, 'src/test/mocks/entities.js') },
       { find: '@', replacement: path.resolve(__dirname, 'src') },
     ],
   },

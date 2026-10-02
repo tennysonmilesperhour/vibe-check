@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { polar, ringPoints, starPoints, arcPath, pts, degToWheel } from '../geometry.js';
+import { polar, ringPoints, starPoints, pts, degToWheel } from '../geometry.js';
 
 const close = (a, b) => Math.abs(a - b) < 1e-9;
 
@@ -37,14 +37,6 @@ describe('starPoints', () => {
     expect(points).toHaveLength(10);
     expect(close(Math.hypot(...points[0]), 2)).toBe(true);
     expect(close(Math.hypot(...points[1]), 1)).toBe(true);
-  });
-});
-
-describe('arcPath', () => {
-  it('emits a valid SVG arc command between two angles', () => {
-    const d = arcPath(0, 0, 10, 0, 90);
-    expect(d.startsWith('M ')).toBe(true);
-    expect(d).toContain('A 10 10');
   });
 });
 

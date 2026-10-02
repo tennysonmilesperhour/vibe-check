@@ -24,14 +24,9 @@ export function todayKey() {
   return dateKey();
 }
 
-export function isTodayKey(key) {
-  return key === todayKey();
-}
-
 /**
- * Period cache keys shared with backend functions.
- * Kept in exact parity with base44/functions/shared/periodKey.ts —
- * the parity test in __tests__/periodKeyParity.test.js guards drift.
+ * The key for the day, ISO week, month or year a date falls in (2026-09-29,
+ * 2026-W40, 2026-09, 2026), used to remember what was read in each period.
  */
 export function getPeriodKey(type, date = new Date()) {
   if (type === 'daily') return dateKey(date);

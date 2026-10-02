@@ -48,7 +48,7 @@ export async function decryptJson(envelope, password) {
   return JSON.parse(dec.decode(plain));
 }
 
-/** Fetch every page of an entity list (Base44 lists cap results per call). */
+/** Fetch every page of an entity list, pageSize rows per request. */
 export async function fetchAllPages(listFn, pageSize = 100) {
   const all = [];
   let offset = 0;

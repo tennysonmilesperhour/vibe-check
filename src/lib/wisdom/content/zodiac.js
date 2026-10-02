@@ -1,6 +1,5 @@
 // Original prompts using common Western tropical sign correspondences.
 import { signAttributes } from '@/lib/resonance/astrology';
-export { ELEMENT_TEMPERAMENT, MODALITY_MODE } from './astrology';
 
 const SIGNS = {
   Aries: { keywords: ['courage', 'initiative', 'directness'], gift: 'the courage to begin', shadow: 'urgency that leaves little room to choose', style: 'direct action and a willingness to begin', question: 'Where would a considered first step help more than rushing?', practice: 'Choose a first step small enough to finish without overriding your limits.' },

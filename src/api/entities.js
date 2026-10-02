@@ -181,16 +181,7 @@ export const ReportReflection = makeEntity('vibe_report_reflections');
 export const VibePreference = makeEntity('vibe_preferences');
 export const CheckInDraft = makeEntity('vibe_checkin_drafts');
 
-// Cross-user lookup (synergy snapshot refresh) is not possible client-side
-// under RLS; returns empty so callers degrade gracefully. A share model can
-// bring this back properly later.
-export const User = {
-  list: async () => [],
-  filter: async () => [],
-};
-
 export default {
   DailyCheckIn, Person, Reading, BoundaryAlert, HealingProgress, CosmicWisdom,
   JournalEntry, PracticeSession, ReportReflection, VibePreference, CheckInDraft,
-  User,
 };

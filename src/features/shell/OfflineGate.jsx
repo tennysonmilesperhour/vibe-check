@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import SanctuaryMark from "./SanctuaryMark";
+import RetryButton from "./RetryButton";
 
 /** Shown when the account can't be reached at startup; never a sign-out. */
 export default function OfflineGate() {
@@ -20,9 +21,7 @@ export default function OfflineGate() {
         <p className="living-muted mt-4">
           Anything you were writing stays in this tab. We'll reconnect as soon as you're back online.
         </p>
-        <button type="button" className="ink-button mt-6" disabled={busy} onClick={retry}>
-          {busy ? "Trying…" : "Try again"}
-        </button>
+        <RetryButton className="ink-button mt-6" busy={busy} onRetry={retry} />
       </div>
     </main>
   );

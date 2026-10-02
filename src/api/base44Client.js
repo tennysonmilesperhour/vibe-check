@@ -1,6 +1,6 @@
 // Compatibility facade: the app was written against the Base44 client shape
-// (base44.auth.me / base44.entities.X / base44.users.inviteUser). This keeps
-// that surface alive on top of Supabase so call sites did not have to change.
+// (base44.auth.me / updateMe / deleteAccount, base44.entities.X). This keeps
+// that surface on top of Supabase so call sites did not have to change.
 import { supabase } from './supabase';
 import entities from './entities';
 import { isTransientAuthError } from '../lib/auth-session';
@@ -63,14 +63,6 @@ export const base44 = {
       if (!data?.deleted) throw new Error(data?.error || 'Account deletion did not complete.');
       return data;
     },
-    logout: async () => { await supabase.auth.signOut(); },
-    redirectToLogin: () => { window.location.assign('/'); },
   },
   entities,
-  users: {
-    // Server-side invites need the service role; client-side we share a link.
-    inviteUser: async () => {
-      throw new Error('Email invites are not wired yet; share the app link instead.');
-    },
-  },
 };

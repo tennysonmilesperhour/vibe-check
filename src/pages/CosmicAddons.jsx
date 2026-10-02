@@ -26,6 +26,7 @@ import { holdsRetiredFields, settleCosmicProfile, settleOnSave } from "@/lib/res
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
 import Note from '@/features/shell/Note';
+import RetryButton from '@/features/shell/RetryButton';
 import { PlantCompanions } from '@/features/practice/SomaticPractice';
 import useBeforeUnload from '@/hooks/use-before-unload';
 
@@ -94,8 +95,15 @@ export default function CosmicAddons() {
 
     useEffect(() => { loadProfile(); }, []);
 
-    const loadProfile = async () => {
-        setProfileLoad('loading');
+    // A retry leaves the error and its button on screen until it settles.
+    const [retryingProfile, setRetryingProfile] = useState(false);
+    const retryProfile = async () => {
+        setRetryingProfile(true);
+        await loadProfile({ retry: true });
+        setRetryingProfile(false);
+    };
+    const loadProfile = async ({ retry = false } = {}) => {
+        if (!retry) setProfileLoad('loading');
         try {
             const user = await base44.auth.me();
             if (user?.cosmic_profile) {
@@ -185,7 +193,7 @@ export default function CosmicAddons() {
     return (
         <div className="p-6 space-y-8 min-h-screen relative">
             <div className="max-w-4xl mx-auto relative z-10">
-                {profileLoad === 'error' && <p className="living-error mb-6" role="alert">We could not load your saved profile. Saving is paused so nothing overwrites it. <button type="button" className="underline" onClick={loadProfile}>Try again</button></p>}<div className="mb-8 space-y-6"><Note>These systems are here if you are curious. They offer perspectives for reflection. Your own experiences, needs, and choices remain yours to define.</Note><p className="living-muted">An optional deeper layer. Your journal, full pattern history, reports, and everyday practices stay free without setting up any system.</p><PlantCompanions /></div>
+                {profileLoad === 'error' && <p className="living-error mb-6" role="alert">Your saved profile couldn't load. Saving is paused so nothing overwrites it. <RetryButton busy={retryingProfile} onRetry={retryProfile} /></p>}<div className="mb-8 space-y-6"><Note>These systems are here if you are curious. They offer perspectives for reflection. Your own experiences, needs, and choices remain yours to define.</Note><p className="living-muted">An optional deeper layer. Your journal, full pattern history, reports, and everyday practices stay free without setting up any system.</p><PlantCompanions /></div>
 
                 {/* Header */}
                 {/* ── The Loom: hero of the cosmos ── */}

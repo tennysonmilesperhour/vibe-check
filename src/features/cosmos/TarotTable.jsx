@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Reading } from "@/entities/all";
+import { Reading } from "@/api/entities";
 import { tarotReading } from "@/lib/wisdom/readings";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { polar, ringPoints, pts } from "@/lib/geometry";
+import { polar, ringPoints } from "@/lib/geometry";
 import { ZODIAC_SIGNS, GATE_WHEEL } from "@/lib/resonance/tables";
 
 import ZodiacGlyph from "./ZodiacGlyph";
@@ -79,57 +79,6 @@ export function WheelRings({ cx, cy, rZodiac, rGates, highlightGates = [] }) {
       })}
     </g>
   );
-}
-
-/**
- * Progressive sacred geometry, carried over from CosmicBlueprint:
- * tiers unlock with the number of systems that hold data.
- * 2+ petals · 3+ interlocking triangles · 5+ hexagon · 7 flower of life.
- */
-export function ProgressiveGeometry({ cx, cy, r, completedCount }) {
-  const tiers = [];
-  const petal = (radius, count, startDeg, key, delay) => (
-    <g key={key}>
-      {ringPoints(cx, cy, radius, count, startDeg).map(([x, y], i) => (
-        <Bloom key={i} delay={delay + i * 0.06}>
-          <circle cx={x} cy={y} r={radius} fill="none" stroke={cream(0.22)} strokeWidth="0.8" />
-        </Bloom>
-      ))}
-    </g>
-  );
-
-  if (completedCount >= 2) tiers.push(petal(r * 0.33, 6, 0, "petals", 0.2));
-  if (completedCount >= 3) {
-    const up = ringPoints(cx, cy, r * 0.62, 3, 0);
-    const down = ringPoints(cx, cy, r * 0.62, 3, 60);
-    tiers.push(
-      <g key="triangles">
-        <DrawPath d={`M ${pts(up).replace(/ /g, " L ")} Z`.replace("M", "M ")} delay={0.4} stroke={cream(0.35)} />
-        <DrawPath d={`M ${pts(down).replace(/ /g, " L ")} Z`} delay={0.55} stroke={cream(0.35)} />
-      </g>
-    );
-  }
-  if (completedCount >= 4) tiers.push(petal(r * 0.33, 6, 30, "petals-rot", 0.6));
-  if (completedCount >= 5) {
-    const hex = ringPoints(cx, cy, r * 0.74, 6, 0);
-    tiers.push(<DrawPath key="hexagon" d={`M ${pts(hex).replace(/ /g, " L ")} Z`} delay={0.8} stroke="rgba(165,142,102,0.55)" strokeWidth="1.2" />);
-  }
-  if (completedCount >= 7) {
-    // full flower of life: center + two rings of six
-    tiers.push(
-      <g key="flower">
-        <Bloom delay={1}>
-          <circle cx={cx} cy={cy} r={r * 0.33} fill="none" stroke={cream(0.3)} strokeWidth="0.8" />
-        </Bloom>
-        {ringPoints(cx, cy, r * 0.57, 6, 30).map(([x, y], i) => (
-          <Bloom key={`f2-${i}`} delay={1.1 + i * 0.05}>
-            <circle cx={x} cy={y} r={r * 0.33} fill="none" stroke={cream(0.16)} strokeWidth="0.7" />
-          </Bloom>
-        ))}
-      </g>
-    );
-  }
-  return <g aria-hidden="true">{tiers}</g>;
 }
 
 // ── Selectable geometry figures ──────────────────────────────────────────

@@ -3,6 +3,7 @@ import { usePreferences } from '@/features/patterns/useLivingData';
 import useBeforeUnload from '@/hooks/use-before-unload';
 import { saveProblem } from '@/lib/preference-store';
 import LoadingState from '@/features/shell/LoadingState';
+import RetryButton from '@/features/shell/RetryButton';
 
 // Structure follows the widely used Stanley-Brown safety plan, in plain words.
 const FIELDS = [
@@ -60,7 +61,7 @@ export default function SafetyPlan() {
       {prefs.isLoading ? <LoadingState label="Loading your plan…" /> : !prefs.data ? (
         <div className="space-y-3" role="alert">
           <p className="living-error">Your safety plan couldn't load. Check your connection.</p>
-          <button type="button" className="living-secondary" disabled={prefs.isFetching} onClick={() => prefs.refetch()}>{prefs.isFetching ? 'Trying…' : 'Try again'}</button>
+          <RetryButton className="living-secondary" busy={prefs.retrying} onRetry={prefs.retry} />
         </div>
       ) : FIELDS.map(([key, label, placeholder]) => (
         <label key={key} className="living-label block">

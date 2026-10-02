@@ -1,6 +1,6 @@
 // Check-in vocabulary shared by the ceremony and summaries.
 
-export { FEELING_FAMILIES, EMOTIONS, isListedFeeling, feelingIcon, findFeelings } from '@/lib/feelings';
+export { EMOTIONS, isListedFeeling, feelingIcon, findFeelings } from '@/lib/feelings';
 
 export const ACTIVITIES = [
   { label: 'Exercise', icon: 'footprints' },

@@ -1,7 +1,7 @@
 // The resonance graph: a serializable picture of which placements exist,
-// where they live on the wheel, and which of them corroborate each other —
-// including what is active *today*. Consumed by the Loom and by the
-// wisdom/weather prompts (replacing loose prose context).
+// where they live on the wheel, and which of them echo each other, including
+// what is active *today*. Used by the Loom, the period wisdom card and the
+// tarot reading.
 import { deriveAll } from './derive.js';
 import { moonPhase } from './moon.js';
 import { personalDay, reduceSingle } from './numerology.js';
@@ -35,7 +35,7 @@ export function resonanceGraph(profile = {}, dateKey) {
     const a = profile.astrology || {};
     // The Sun sign is computable from the birth date alone, so plot it even
     // before the user opens the astrology form. Moon/Rising/Node still need a
-    // birth time, so they stay whatever the user (or the AI calc) filled in.
+    // birth time, so they stay whatever the user entered.
     const sunSign = a.sun_source === 'unknown' ? null : a.sun_source === 'date_estimate' ? values.astrology?.sun_sign : a.sun_sign || values.astrology?.sun_sign || null;
     addNode('astrology.sun', 'astrology', sunSign && `Sun in ${sunSign}`, sunSign ? signMidDegree(sunSign) : null, { sign: sunSign });
     addNode('astrology.moon', 'astrology', a.moon_sign && `Moon in ${a.moon_sign}`, a.moon_sign ? signMidDegree(a.moon_sign) : null, { sign: a.moon_sign });
@@ -155,7 +155,7 @@ export function resonanceGraph(profile = {}, dateKey) {
   return { nodes, edges, today };
 }
 
-/** Compact text summary of the graph for LLM prompts. */
+/** The graph as short lines of text, which the tarot reading draws on. */
 export function summarizeGraph(graph) {
   const lines = [];
   for (const node of graph.nodes) lines.push(`- ${node.label} (${node.system})`);

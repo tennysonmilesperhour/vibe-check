@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { BoundaryAlert } from "@/entities/all";
+import { BoundaryAlert } from "@/api/entities";
 import { HandHeart } from "lucide-react";
 
 /**

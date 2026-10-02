@@ -7,8 +7,10 @@ import { daysKeptThisMonth } from '@/lib/record-days';
 import { todayKey } from '@/lib/dates';
 import { inOrder, mergePreferences, preferenceStore } from '@/lib/preference-store';
 import { recordKey } from './record-cache';
+import { useRetry } from './read-state';
 
 export { recordKey, putRecordRow, dropRecordRow, putRecentCheckIns } from './record-cache';
+export { useRetry } from './read-state';
 
 // The record in parts, each its own cached query shared by every page:
 // moving between pages shows what already loaded, and a change reloads only
@@ -117,18 +119,23 @@ export function useLivingData() {
     });
     return fresh ? cached() : undefined;
   };
-  const failed = results.some((result) => result.isError) || preferences.isError;
+  const reads = [...results, preferences];
+  // A reload that fails keeps what loaded on screen; only a record that
+  // never loaded is an error. reloadFailed says a reload failed since.
+  const failed = reads.some((read) => read.isError);
+  const shown = !failed ? null : data ? 'reload' : 'load';
+  // retry reads again only what failed or never loaded, not the whole
+  // history; while it runs the page keeps showing what it showed.
+  const { retry, retrying, showing, error } = useRetry(reads, shown, Boolean(data));
   return {
     data,
-    isLoading: results.some((result) => result.isLoading) || preferences.isLoading,
-    // A reload that fails keeps what loaded on screen; only a record that
-    // never loaded is an error. reloadFailed says a reload failed since.
-    isError: !data && failed,
-    reloadFailed: Boolean(data) && failed,
-    isFetching: results.some((result) => result.isFetching) || preferences.isFetching,
+    isLoading: !retrying && reads.some((read) => read.isLoading),
+    isError: showing === 'load',
+    reloadFailed: showing === 'reload',
     isSuccess: Boolean(data),
-    error: results.find((result) => result.error)?.error || preferences.error,
-    refetch: () => Promise.all([...results.map((result) => result.refetch()), preferences.refetch()]),
+    error,
+    retry,
+    retrying,
     refresh,
     savePreferences: preferences.savePreferences,
   };
@@ -154,7 +161,11 @@ export function useDaysKeptThisMonth() {
   return rows ? daysKeptThisMonth(rows, today) : null;
 }
 
-/** Just the preferences: one small request, for controls that must show at once. */
+/**
+ * Just the preferences: one small request, for controls that must show at
+ * once. Like the record, read again when a page opens and the copy is over a
+ * minute old; saves here reload it at once.
+ */
 export function usePreferences() {
   const { user } = useAuth();
   const client = useQueryClient();
@@ -162,7 +173,10 @@ export function usePreferences() {
     queryKey: preferencesKey(user?.id),
     queryFn: async () => (await VibePreference.list())[0]?.values || {},
     enabled: Boolean(user?.id),
+    staleTime: STALE_MS,
   });
   const savePreferences = (patch) => storePreferences(client, user?.id, patch);
-  return { ...query, savePreferences };
+  // While a retry asked for here runs, this keeps showing the failure (see useRetry).
+  const { retry, retrying, showing, error } = useRetry([query], query.isError, query.data !== undefined);
+  return { ...query, isError: showing, isLoading: query.isLoading && !retrying, error, retry, retrying, savePreferences };
 }

@@ -23,15 +23,6 @@ export function starPoints(cx, cy, rOuter, rInner, n) {
   });
 }
 
-/** SVG path arc from angle a1 to a2 on a circle (short way when |a2-a1| <= 180). */
-export function arcPath(cx, cy, r, a1, a2) {
-  const [x1, y1] = polar(cx, cy, r, a1);
-  const [x2, y2] = polar(cx, cy, r, a2);
-  const large = Math.abs(a2 - a1) > 180 ? 1 : 0;
-  const sweep = a2 > a1 ? 1 : 0;
-  return `M ${x1} ${y1} A ${r} ${r} 0 ${large} ${sweep} ${x2} ${y2}`;
-}
-
 /** Serialize [[x,y],...] for <polygon points>. */
 export function pts(arr) {
   return arr.map(([x, y]) => `${x},${y}`).join(' ');

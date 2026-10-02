@@ -51,9 +51,9 @@ export default function People() {
   const journal = useMemo(() => (ready ? journalQuery.data.filter((entry) => !entry.is_draft) : NONE), [ready, journalQuery.data]);
   // While a retry runs, the error and its button stay on screen (useRetry).
   const failed = parts.some((query) => query.isError && query.data === undefined);
-  const { retry, retrying, held, error } = useRetry(parts, failed);
+  const { retry, retrying, showing, error } = useRetry(parts, failed, ready);
   const loading = !retrying && parts.some((query) => query.isLoading);
-  const loadError = (retrying ? held : failed) ? error?.message || "Your people couldn't load." : '';
+  const loadError = showing ? error?.message || "Your people couldn't load." : '';
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null); // null | 'new' | person
   const [deleting, setDeleting] = useState(null);

@@ -80,7 +80,7 @@ export default function ShareSummaryPage() {
           <h1 id="summary-options-heading" className="text-3xl">A summary to share</h1>
           <p className="living-muted mt-2">Bring a short record of your days to a therapist, a doctor, or anyone you choose. You pick the dates and what goes in. Nothing is sent anywhere: print it, or save it as a PDF from the print window.</p>
         </div>
-        {living.isLoading && <LoadingState label="Gathering your record…" />}
+        {living.isLoading && !living.isError && <LoadingState label="Gathering your record…" />}
         {living.isError && <p className="living-error" role="alert">Your record could not load. <RetryButton busy={living.retrying} onRetry={living.retry} /></p>}
         {living.reloadFailed && <p className="living-error" role="alert">Your record couldn't refresh, so this summary may be out of date. <RetryButton busy={living.retrying} onRetry={living.retry} /></p>}
         {data && <>

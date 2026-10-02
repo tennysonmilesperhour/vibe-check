@@ -126,8 +126,7 @@ export function useLivingData() {
   const shown = !failed ? null : data ? 'reload' : 'load';
   // retry reads again only what failed or never loaded, not the whole
   // history; while it runs the page keeps showing what it showed.
-  const { retry, retrying, held, error } = useRetry(reads, shown);
-  const showing = retrying ? held : shown;
+  const { retry, retrying, showing, error } = useRetry(reads, shown, Boolean(data));
   return {
     data,
     isLoading: !retrying && reads.some((read) => read.isLoading),
@@ -178,6 +177,6 @@ export function usePreferences() {
   });
   const savePreferences = (patch) => storePreferences(client, user?.id, patch);
   // While a retry asked for here runs, this keeps showing the failure (see useRetry).
-  const { retry, retrying, error } = useRetry([query], null);
-  return { ...query, isError: query.isError || retrying, isLoading: query.isLoading && !retrying, error, retry, retrying, savePreferences };
+  const { retry, retrying, showing, error } = useRetry([query], query.isError, query.data !== undefined);
+  return { ...query, isError: showing, isLoading: query.isLoading && !retrying, error, retry, retrying, savePreferences };
 }

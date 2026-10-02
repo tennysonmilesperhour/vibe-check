@@ -54,7 +54,10 @@ describe('what a retry shows and reads again', () => {
   it('keeps the failure on screen with the button free when the read is paused waiting for a connection', () => {
     const pending = { shown: true, error: offline };
     const paused = read({ data: undefined, fetchStatus: 'paused' });
-    expect(retryView([paused], false, false, pending)).toEqual({ retrying: false, showing: true, error: offline });
+    const view = retryView([paused], false, false, pending);
+    expect(view).toEqual({ retrying: false, showing: true, error: offline });
+    // A second press holds what the page shows, as useRetry does, not the cleared state.
+    expect(retryView([paused], false, false, { shown: view.showing, error: view.error })).toEqual(view);
   });
 
   // TanStack puts a read with nothing loaded back to pending and clears its

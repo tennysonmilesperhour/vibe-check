@@ -45,7 +45,9 @@ export function useRetry(reads, shown, done) {
   const retry = async () => {
     if (view.retrying) return;
     const token = {};
-    setPending({ shown, error: failureOf(reads), token });
+    // What the page shows now: a press while an earlier retry waits offline
+    // keeps the failure that retry is holding.
+    setPending({ shown: view.showing, error: view.error, token });
     try {
       await Promise.all(retryTargets(reads).map((read) => read.refetch()));
     } finally {

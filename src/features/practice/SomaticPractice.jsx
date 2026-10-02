@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight, Clock3, Leaf, Check, X } from 'lucide-react';
 import { PracticeSession } from '@/api/entities';
-import { useLivingData } from '@/features/patterns/useLivingData';
+import { useLivingData, usePreferences } from '@/features/patterns/useLivingData';
 import { useAuth } from '@/lib/AuthContext';
 import PlantVoice from '@/features/shell/PlantVoice';
 import { STRESS_STATES, PRACTICES, PRACTICE_SOURCES, ALIGNMENTS, OUTCOMES, stateById, practiceById, recommendPractices, hiddenPractices, hiddenPracticesPatch, UNCOMFORTABLE_KEPT_HIDDEN, PLANT_COMPANIONS } from '@/lib/practices';
@@ -22,6 +22,9 @@ export function PlantCompanions() {
 
 export default function SomaticPractice() {
   const living = useLivingData();
+  // Preferences load on their own, and quickly: they keep hidden practices out
+  // of suggestions before the history arrives.
+  const preferences = usePreferences();
   // Saves name the account this page opened in (see CheckInCeremony).
   const { user } = useAuth();
   const ownerId = useRef(user?.id).current;
@@ -49,7 +52,9 @@ export default function SomaticPractice() {
   const data = living.data;
   const sessions = data?.sessions || [];
   const hidden = hiddenPractices(data?.preferences, sessions);
-  const blocked = new Set(hidden);
+  // Before the history loads, what the preferences hide is left out of
+  // suggestions and the full list.
+  const blocked = new Set(living.isSuccess ? hidden : hiddenPractices(preferences.data, []));
   // Save the earlier promise as explicit hidden entries, once, so it shows
   // under Hidden practices with Unhide. The patch works from what is stored,
   // so another device's newer choices are never overwritten.
@@ -58,10 +63,13 @@ export default function SomaticPractice() {
   useEffect(() => {
     if (living.isSuccess && !promiseSaved) keepPromise().catch(() => {});
   }, [living.isSuccess, promiseSaved]);
-  // Help never waits for the history: until it loads, suggestions are the
-  // defaults for the state and any practice opens straight to its steps.
-  const suggestions = state ? recommendPractices(state.id, living.isSuccess ? sessions : [], living.isSuccess ? hidden : []) : [];
-  const active = activeId && !(living.isSuccess && blocked.has(activeId)) ? practiceById(activeId) : null;
+  // Help never waits for the history: suggestions show at once and any
+  // practice opens straight to its steps. Saving waits for the history
+  // (canSave), since what it writes depends on it.
+  const canSave = living.isSuccess;
+  const suggestions = state ? recommendPractices(state.id, sessions, [...blocked]) : [];
+  // A practice that is open stays open: hiding is about suggestions.
+  const active = activeId ? practiceById(activeId) : null;
   useBeforeUnload(Boolean(active) && Boolean(before.trim() || after.trim()));
 
   useEffect(() => {
@@ -156,10 +164,11 @@ export default function SomaticPractice() {
         <label className="living-label">What would you like more room for?<input className="living-input mt-2" value={intention} maxLength={1000} onChange={(e) => setIntention(e.target.value)} placeholder="My needs, a boundary, time to decide… (optional)" /></label>
         <label className="living-label">{active.reflection}<textarea className="living-input mt-2" rows={3} value={after} maxLength={5000} onChange={(e) => setAfter(e.target.value)} placeholder="Your own words, if you want to keep them." /></label>
         <label className="living-label">Did your response feel like you?<select className="living-input mt-2" value={alignment} onChange={(e) => setAlignment(e.target.value)}><option value="">Not recorded</option>{ALIGNMENTS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select>{data?.preferences?.personal_values?.length > 0 && <span className="living-muted block mt-1">Your values: {data.preferences.personal_values.join(' · ')}</span>}</label>
-        <div className="flex flex-wrap gap-3"><button className="ink-button" type="button" disabled={busy || living.isLoading} onClick={() => save('completed')}><Check size={16} />{busy ? 'Saving…' : 'Keep this practice experience'}</button><button type="button" className="living-secondary" disabled={busy} onClick={() => save('stopped')}>I stopped · keep my response</button></div>
+        <div className="flex flex-wrap gap-3"><button className="ink-button" type="button" disabled={busy || !canSave} onClick={() => save('completed')}><Check size={16} />{busy ? 'Saving…' : 'Keep this practice experience'}</button><button type="button" className="living-secondary" disabled={busy || !canSave} onClick={() => save('stopped')}>I stopped · keep my response</button></div>
+        {!canSave && <p className="living-muted text-sm" role="status">{living.isError ? 'Your history could not load, so this response can be kept once you retry it above.' : 'You can keep this response as soon as your history has loaded. The steps are yours to use now.'}</p>}
         <p className="living-muted text-xs">Feedback is optional. Closing this practice saves nothing. A practice can leave you unsettled and a choice can still respect your values.</p>
       </div>
-      <div className="flex flex-wrap justify-between gap-4 text-xs"><a className="underline" href={PRACTICE_SOURCES[active.source].url} target="_blank" rel="noreferrer">Practice background · {PRACTICE_SOURCES[active.source].title}</a><button type="button" className="underline" disabled={busy} onClick={() => hidePractice(active.id)}>Do not suggest this practice</button></div>
+      <div className="flex flex-wrap justify-between gap-4 text-xs"><a className="underline" href={PRACTICE_SOURCES[active.source].url} target="_blank" rel="noreferrer">Practice background · {PRACTICE_SOURCES[active.source].title}</a><button type="button" className="underline" disabled={busy || !canSave} onClick={() => hidePractice(active.id)}>Do not suggest this practice</button></div>
     </section>}
     <section className="living-card space-y-4" aria-labelledby="practice-history-heading"><div className="flex flex-wrap justify-between gap-3"><div><p className="sanctuary-eyebrow">YOUR EXPERIENCE OVER TIME</p><h2 id="practice-history-heading">Practice history</h2></div><Link className="living-text-link" to="/Analytics?tab=reports">See your reports <ArrowRight size={15} /></Link></div>
       {living.isLoading ? <LoadingState label="Loading your practice history…" /> : sessions.length === 0 ? <p className="living-muted">Your first saved practice will appear here. There is no streak to maintain.</p> : sessions.slice(0, showHistory).map((session) => <article key={session.id} className="practice-history-row">

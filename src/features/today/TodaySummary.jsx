@@ -49,8 +49,14 @@ function ShareDialog({ entry, open, onOpenChange }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => { if (open) { setInclude({}); setError(""); } }, [open]);
+  // Feelings from the check-in's own list go in; ones typed in your own words
+  // are words, so they wait to be chosen like the rest.
+  const listed = (entry.emotions || []).filter((label) => EMOTIONS.some((e) => e.label === label));
+  const own = (entry.emotions || []).filter((label) => !EMOTIONS.some((e) => e.label === label));
   const words = [
-    ["good", "A good moment", entry.gratitude || entry.high_moment?.description],
+    ["own", "Feelings in your own words", own.join(", ")],
+    ["gratitude", "Gratitude", entry.gratitude],
+    ["high", "The high point", entry.high_moment?.description],
     ["difficult", "A difficult moment", entry.low_moment?.description],
     ["notes", "Your notes", entry.notes],
   ].filter(([, , text]) => text);
@@ -73,8 +79,8 @@ function ShareDialog({ entry, open, onOpenChange }) {
           <p className="sanctuary-eyebrow">{formatDay(entry.date, { style: "long", withYear: true })}</p>
           <h3 className="text-2xl mt-1" style={{ color: "var(--gh-ink)" }}>Today, kept</h3>
           <Scores entry={entry} />
-          <Feelings emotions={entry.emotions} />
-          {words.filter(([key]) => include[key]).map(([key, label, text]) => (
+          <Feelings emotions={include.own ? [...listed, ...own] : listed} />
+          {words.filter(([key]) => key !== "own" && include[key]).map(([key, label, text]) => (
             <p key={key} className="mt-3 text-sm whitespace-pre-wrap" style={{ color: "var(--gh-ink-soft)" }}><strong>{label}: </strong>{text}</p>
           ))}
           <p className="share-card-mark">vibe check</p>

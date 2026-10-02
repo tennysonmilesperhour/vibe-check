@@ -3,7 +3,7 @@ import { Leaf, Sprout, Orbit, ArrowRight } from "lucide-react";
 import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { DailyCheckIn, BoundaryAlert } from "@/entities/all";
+import { DailyCheckIn, BoundaryAlert, JournalEntry, PracticeSession } from "@/entities/all";
 import { formatDay, todayKey } from "@/lib/dates";
 import { LOW_MOOD } from "@/lib/symbolic-guard";
 import { moonPhase } from "@/lib/resonance/moon";
@@ -59,17 +59,21 @@ export default function Today() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [checkIns, openAlerts, me] = await Promise.all([
+      const [checkIns, openAlerts, me, keptOther] = await Promise.all([
         DailyCheckIn.all("-date"),
         BoundaryAlert.filter({ is_acknowledged: false }).catch(() => []),
         base44.auth.me().catch(() => null),
+        // Moments, people and practices count as history too, so only a truly
+        // first visit gets the one-action welcome. Unknown counts as history.
+        Promise.all([JournalEntry, Person, PracticeSession].map((entity) => entity.list("-created_date", 1)))
+          .then((lists) => lists.some((list) => list.length > 0), () => true),
       ]);
       const today = checkIns.find((c) => c.date === todayKey()) || null;
       setEntry(today);
       // Notices are opt-in. Turning them on marks older ones as seen (Settings).
       setAlerts(me?.boundary_settings?.notices_enabled ? openAlerts : []);
       setKeptDays(daysKeptThisMonth(checkIns, todayKey()));
-      setHasHistory(checkIns.length > 0);
+      setHasHistory(checkIns.length > 0 || keptOther);
       setFirstDay(checkIns.length === 1 && checkIns[0].date === todayKey());
     } catch (err) {
       setLoadError(err.message || 'Could not load your check-ins.');

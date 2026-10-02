@@ -17,7 +17,8 @@ describe('astrology chart reading', () => {
     expect(reading).toContain('VENUS SQUARE SATURN');
     expect(reading).toContain('chart entry');
     expect(reading).toContain('generation');
-    expect(reading).toContain('We are the plants');
+    expect(reading).toContain('A CHART YOU CAN GROW WITH');
+    expect(reading).not.toMatch(/\bplants\b|\bwe\b|\blet us\b/i);
     expect(reading).toContain('No placement makes mistreatment necessary');
   });
   it('does not invent unknown planets, houses, or aspects from a Sun sign', () => {
@@ -74,7 +75,8 @@ describe('astrology over time', () => {
     it(`makes the ${period} reflection explicit about its natal basis`, () => {
       const reflection = periodWisdom(period, profile);
       expect(reflection.basis).toContain('rotating natal reflection');
-      expect(reflection.wisdom).toContain('We are the plants');
+      expect(reflection.wisdom).toMatch(/^Give .+ some attention/);
+      expect(reflection.wisdom).not.toMatch(/\bplants\b|\bwe\b|\blet us\b/i);
       expect(reflection.wisdom).not.toMatch(/Life Path|personal day|personal month|personal year/i);
       expect(reflection.contemplation).toContain('choice');
     });

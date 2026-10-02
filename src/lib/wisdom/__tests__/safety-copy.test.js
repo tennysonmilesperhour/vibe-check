@@ -18,6 +18,8 @@ import correspondencesSource from '../../../components/cosmic/correspondences.js
 // Lines that told someone recording harm to doubt themselves, promised safety
 // or fate, or treated a feeling as being off course.
 const BYPASSING = /universe (supports|is benevolent)|gift from the universe|meant for you|meant to carry|of your own making|trapped by your own choices|fundamentally well|knocking on your own door|surrender your struggle|I am safe|exact medicine|disguised as a challenge|dashboard lights|unfolding as it should|peace is a choice|stop replaying|evidence arrives after the trust|necessary growth|perfect consequence|blame fate|only you are here to play|how the cards answer/i;
+// The plants' voice was retired: readings speak plainly, with no persona.
+const PERSONA = /\bplants\b|\bwe\b|\blet us\b/i;
 
 // Lines that pushed toward risk or past someone's own sense of safety, framed
 // hard things as necessary or as a teacher, or read a feeling as failure.
@@ -158,7 +160,20 @@ describe('symbolic readings never talk over harm', () => {
       const reading = synergyReading(mine, theirs, 'Sam');
       expect(reading).toMatch(/A chart cannot establish compatibility or excuse mistreatment/);
       expect(reading).not.toMatch(/reveal themselves|structural, not personal|one of you being wrong|avoiding the same lesson/);
+      expect(reading).not.toMatch(PERSONA);
     }
+  });
+
+  it('speaks plainly, with no persona, in the integrated reading', () => {
+    const one = { birth_date: '1990-04-12', enabled_systems: ['astrology'], astrology: { sun_sign: 'Aries' } };
+    const two = { ...one, enabled_systems: ['astrology', 'numerology'], numerology: { life_path: '7' } };
+    expect(integratedReading([], {})).not.toMatch(PERSONA);
+    const single = integratedReading(one.enabled_systems, one);
+    expect(single).toMatch(/^Here is the perspective you chose/);
+    expect(single).not.toMatch(PERSONA);
+    const both = integratedReading(two.enabled_systems, two);
+    expect(both).toMatch(/^Here are the systems you chose, side by side/);
+    expect(both).not.toMatch(PERSONA);
   });
 
   it('frames the not-self theme as the person\'s to interpret, and timing as never applying to safety', () => {

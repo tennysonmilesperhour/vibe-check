@@ -33,7 +33,7 @@ export default function Today() {
   const [alerts, setAlerts] = useState([]);
   const [keptDays, setKeptDays] = useState(0);
   const [hasHistory, setHasHistory] = useState(false);
-  // The day of someone's first check-in: the plants introduce themselves then.
+  // The day of someone's first check-in, when the welcome note shows.
   const [firstDay, setFirstDay] = useState(false);
   const [mode, setMode] = useState("landing"); // landing | ceremony | peek
   // ?date=yyyy-MM-dd lets you write a past day (never a future one).
@@ -121,7 +121,7 @@ export default function Today() {
           <div className="today-heading">
             <p className="sanctuary-eyebrow">A MOMENT, JUST FOR YOU</p>
             <h1>{isFirstRun ? "Welcome to your sanctuary." : "Come back to yourself."}</h1>
-            <p>{isFirstRun ? "Keep a private record of your days. See your patterns over time, with the plants guiding you toward practices that fit what you need." : "What happened, how did it feel, and what do you want to remember? A short check-in is enough."}</p>
+            <p>{isFirstRun ? "Keep a private record of your days. See your patterns over time, and find practices that fit what you need." : "What happened, how did it feel, and what do you want to remember? A short check-in is enough."}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button type="button" className="cream-button gap-5" onClick={() => setMode("ceremony")}>{isFirstRun ? "Begin your first check-in" : "Begin check-in"}<ArrowRight size={16} aria-hidden="true" /></button>
               {!isFirstRun && <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>Explore your reflections</button>}

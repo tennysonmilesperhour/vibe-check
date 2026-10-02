@@ -114,8 +114,10 @@ export function integratedReading(enabledSystems = [], profile = {}) {
   try { computed = deriveAll(profile, todayKey()).values || {}; } catch { computed = {}; }
 
   const signals = collectSignals(enabledSystems, profile, computed);
-  if (signals.length === 0) return "Choose an optional system and add the details you know. We will help you explore its questions while keeping your own experience at the center.";
-  const paras = ["We are the plants. Let us put the systems you chose beside one another and see which questions are useful in your life."];
+  if (signals.length === 0) return "Choose an optional system and add the details you know. Its questions are yours to explore, with your own experience at the center.";
+  const paras = [signals.length > 1
+    ? "Here are the systems you chose, side by side. Keep the questions that are useful in your life."
+    : "Here is the perspective you chose. Keep the questions that are useful in your life."];
   paras.push(`A possible through-line to explore: ${joinNicely(signals.map(s => s.essence).slice(0, 3))}. These are symbolic associations, not independent evidence about who you are.`);
   const mirrorPairs = findResonances(signals);
   if (mirrorPairs.length) paras.push(mirrorPairs.join(" "));
@@ -204,10 +206,10 @@ function findTension(signals) {
 // ── Relationship synergy reading (two profiles) ───────────────────────────────
 
 export function synergyReading(mine = {}, theirs = null, name = "this person") {
-  const lived = `We are the plants. Let us keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`;
+  const lived = `Keep your lived relationship in view: how are you treated, are your boundaries respected, and what repeats over time? A chart cannot establish compatibility or excuse mistreatment. A good day does not erase earlier harm, and no symbolic reading obliges you to stay.`;
   if (!theirs || Object.keys(theirs).length === 0) {
     return [
-      `We don't have ${name}'s chart, and a chart couldn't tell you how ${name} treats you anyway. What you have recorded with ${name} says more than any reading could.`,
+      `There's no chart here for ${name}, and a chart couldn't tell you how ${name} treats you anyway. What you have recorded with ${name} says more than any reading could.`,
       lived,
     ].join("\n\n");
   }
@@ -286,7 +288,7 @@ export function patternReading(checkIns = []) {
 
   // 4. the experiment
   paras.push(
-    `One experiment for the coming week: ${buildExperiment(avgMood, trend, topEmos, corr)} Keep checking in, and next week we will see whether the pattern shifted.`
+    `One experiment for the coming week: ${buildExperiment(avgMood, trend, topEmos, corr)} Keep checking in, and next week you can see whether the pattern shifted.`
   );
 
   return paras.join("\n\n");

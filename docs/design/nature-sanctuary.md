@@ -8,7 +8,7 @@ Vibe Check should feel like an elegant, luxurious sanctuary in nature: lush gree
 
 The latest palette comes from the user’s woodland reference image: moss and olive, shadowed forest, lichen, aged paper, and weathered wood. This reference supersedes the earlier pale sage and cream treatment. Luxury should come through art direction, typography, texture, composition, and polished interactions.
 
-The [plant voice direction](plant-voice.md) establishes the narrative: Nature connects the experience, the plants speak together as the central guide, and optional chakra companions offer a deeper layer of reflection. Carry that botanical presence through the imagery, symbols, motion, and copy.
+Nature connects the experience. Carry that botanical presence through the imagery, symbols, and motion, and keep the copy plain, with no persona (the [plants' voice](plant-voice.md) was retired on October 2, 2026). Optional chakra plant companions offer a deeper layer of reflection.
 
 The [product foundation](product-foundation.md) sets the priority: Free daily reflection, the orbit, complete relationship and habit patterns, and weekly and monthly reports with somatic practices matched to recurring stress patterns. Give these surfaces the full sanctuary treatment. Charts must make difficult periods, positive periods, and missing entries easy to distinguish. Practice cards should connect the recorded pattern, the user's desired response, short instructions, a skip option, and optional feedback. Show self-reported alignment separately from mood or calmness; avoid visual scores that declare how much someone is their “true self.” Optional paid systems add depth after the free journey is complete.
 
@@ -18,7 +18,7 @@ The central moss panel was sampled from the user’s September 8 woodland mood b
 
 | Color | Value | Use |
 | --- | --- | --- |
-| Moss | `#555E41` | The plants' voice panels, atmospheric gradients |
+| Moss | `#555E41` | Atmospheric gradients |
 | Forest | `#26392C` | Navigation, immersive scenes, selected surfaces |
 | Forest shadow | `#0C120F` | Deepest background and image shading |
 | Lichen | `#929B78` | Botanical details and intermediate chart shades |
@@ -29,7 +29,7 @@ The central moss panel was sampled from the user’s September 8 woodland mood b
 | Antique brass | `#A58E66` | Restrained linework and small highlights |
 | Pine ink | `#1B241A` | Text on lichen and parchment |
 
-Use parchment lettering on the moss guide and forest navigation. Keep page and card text dark. The mobile header follows the same forest treatment as the desktop rail. Nature posters and films receive a muted olive grade through CSS; artwork remains separate from text and controls. Decorative brass is not the only indicator of selection or status.
+Use parchment lettering on forest navigation. Keep page and card text dark. The mobile header follows the same forest treatment as the desktop rail. Nature posters and films receive a muted olive grade through CSS; artwork remains separate from text and controls. Decorative brass is not the only indicator of selection or status.
 
 Mood retains a diverging brown–parchment–green scale. Stress increases through distinct paper-to-brown bands; energy and sleep use paper-to-green bands. Numeric scores, legends, missing-day hatching, unsafe markers, and different timeline line styles remain visible. This reskin changes no scores, filtering, chart aggregation, or saved records.
 
@@ -78,7 +78,7 @@ Generated artwork supplies atmosphere and symbolic illustration. Actual charts a
 | --- | --- |
 | Welcome and Today | Cinematic forest or water background, cream type, clear forest/cream action, fine gold emblem |
 | Check-in | Sage and cream working surfaces with subtle botanical depth and fluid step changes |
-| Patterns and People | Lichen canvas, parchment reading surfaces, moss guide panels, dark pine labels |
+| Patterns and People | Lichen canvas, parchment reading surfaces, plain notes with a brass rule, dark pine labels |
 | Practice and Cosmos | Deep forest atmosphere, generated sanctuary art, coherent gold symbols and Loom linework |
 | Navigation and settings | Forest rail and mobile header, parchment labels, clear active and focus states |
 

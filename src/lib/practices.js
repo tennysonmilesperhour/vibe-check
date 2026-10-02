@@ -7,12 +7,12 @@ export const PRACTICE_SOURCES = {
 };
 
 export const STRESS_STATES = [
-  { id: 'confusion', label: 'Confusion', description: 'Too much to untangle', invitation: 'We can begin with what is clear enough for one next step.', practices: ['one-clear-thing', 'decision-pause', 'orient'] },
-  { id: 'on-edge', label: 'Fight or flight', description: 'On edge or ready to react', invitation: 'Let us make a little room to notice what you need right now.', practices: ['orient', 'comfortable-breath'] },
+  { id: 'confusion', label: 'Confusion', description: 'Too much to untangle', invitation: 'Begin with what is clear enough for one next step.', practices: ['one-clear-thing', 'decision-pause', 'orient'] },
+  { id: 'on-edge', label: 'Fight or flight', description: 'On edge or ready to react', invitation: 'Make a little room to notice what you need right now.', practices: ['orient', 'comfortable-breath'] },
   { id: 'anger', label: 'Anger', description: 'Heat, frustration, or a crossed line', invitation: 'Your anger has room here. You can take time before choosing a response.', practices: ['space-before-response', 'comfortable-movement'] },
   { id: 'shutdown', label: 'Shutdown', description: 'Everything feels hard to begin', invitation: 'A small movement or a moment of care is enough to begin with.', practices: ['small-movement', 'one-care-action'] },
-  { id: 'numbness', label: 'Emotional numbness', description: 'Distant or disconnected', invitation: 'You do not have to force a feeling. We can notice one familiar thing.', practices: ['familiar-sense', 'one-care-action'] },
-  { id: 'procrastination', label: 'Procrastination', description: 'Putting off a step that matters', invitation: 'Let us find what is in the way, then make the first step smaller.', practices: ['small-start', 'name-the-obstacle'] },
+  { id: 'numbness', label: 'Emotional numbness', description: 'Distant or disconnected', invitation: 'You do not have to force a feeling. Notice one familiar thing.', practices: ['familiar-sense', 'one-care-action'] },
+  { id: 'procrastination', label: 'Procrastination', description: 'Putting off a step that matters', invitation: 'Find what is in the way, then make the first step smaller.', practices: ['small-start', 'name-the-obstacle'] },
   { id: 'unsure', label: 'Mixed or unsure', description: 'I do not have a word for it yet', invitation: 'You can start without finding the right word.', practices: ['orient', 'one-care-action'] },
 ];
 

@@ -6,7 +6,8 @@
 ## Decisions (from the user)
 
 - **Adopt the review's recommendations**, with one exception: Vibe Check keeps the Supabase project it shares with Campground and Daily Digest. No separate project and no schema move.
-- **Tobacco is retired as the persona.** The plants speak together as one collective voice (“we are the plants”). See [plant voice](../design/plant-voice.md).
+- **Tobacco is retired as the persona** (September 29, 2026). PR 1 replaced it with the plants' collective voice.
+- **The plants' voice is retired too** (October 2, 2026). Notes are plain, with no speaker label and no “we.” Plant companions stay as optional chakra journal prompts. See [plant voice](../design/plant-voice.md).
 
 ## Sequence (one PR each, merged per CLAUDE.md)
 

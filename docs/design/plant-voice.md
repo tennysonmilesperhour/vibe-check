@@ -1,5 +1,7 @@
 # Vibe Check: The voice of the plants
 
+**Status: retired October 2, 2026.** The user retired the plants' collective voice. App copy now speaks plainly to the person, with no speaker label, no “we,” and no persona. The optional chakra plant companions stay as journal prompts and do not speak either. These rules from below still apply to them: the pairings are authored, symbolic, and carry no medical claim; give one line of origin context where a plant's symbolism has a specific origin; never encourage eating, smoking, burning, or harvesting a plant; and attribute any traditional teaching to the people who shared it. Everything else here, including the voice, speaking companions, and handoffs, is kept only as a record of the earlier direction.
+
 Direction recorded September 8, 2026 and expanded with the user's feedback on free journaling and pattern access. Updated September 29, 2026: the user retired Tobacco as the app's persona. The plants now speak together as one collective voice. The central concept comes from the user. The voice examples and chakra pairings below are editorial proposals. This document guides future implementation and accompanies [Nature Sanctuary](nature-sanctuary.md) and the [product foundation](product-foundation.md).
 
 ## Narrative foundation
@@ -77,6 +79,10 @@ Present the plants' voice as Vibe Check's creative framing. It does not represen
 Give each chakra companion one line of context where its symbolism has a specific origin; for example, the lotus is central to Hindu and Buddhist iconography, and chakra texts describe every chakra as a lotus. Never encourage eating, smoking, burning, or harvesting a plant. Some companions (for example, mugwort) are allergens or unsafe in pregnancy, so the no-use rule is absolute.
 
 Public descriptions can explain that the plant voices are authored reflective guides. A source record should keep the author or community, the specific teaching, its publication, and any permission relevant to reuse together. References establish context; they do not constitute endorsement of Vibe Check.
+
+### Why the plants' voice was retired
+
+On October 2, 2026 the user retired the collective voice as well. The notes it framed were short pieces of guidance, and presenting them as the plants speaking added a speaker and a personification that the text did not need. Notes now carry their content alone, addressed to the person in the second person.
 
 ### Why Tobacco was retired
 

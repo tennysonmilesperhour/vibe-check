@@ -4,7 +4,7 @@ import { useSearchParamState } from "@/lib/deeplink";
 import { base44 } from "@/api/base44Client";
 import { Person, Relationship, DailyCheckIn, JournalEntry } from "@/entities/all";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
-import PlantVoice from '@/features/shell/PlantVoice';
+import Note from '@/features/shell/Note';
 import { synergyReading } from "@/lib/wisdom/readings";
 import { harmRecordedWith, recentHardMoment } from "@/lib/symbolic-guard";
 import GuardedReading from "@/features/cosmos/GuardedReading";
@@ -182,7 +182,7 @@ export default function People() {
         </header>
 
         {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={load}>Retry</button></p>}
-        <div className="mt-6"><PlantVoice compact>Keep people here by a name or nickname that works for you. We can return to the experiences you recorded together. Adding someone sends no invitation or notification.</PlantVoice></div>
+        <div className="mt-6"><Note>Keep people here by a name or nickname that works for you. Each person gathers the entries you tag or name them in. Adding someone sends no invitation or notification.</Note></div>
         <PeopleOrbit people={people} entries={entries} mixes={mixes} onChoose={setDetail} />
 
         {people.length === 0 ? (

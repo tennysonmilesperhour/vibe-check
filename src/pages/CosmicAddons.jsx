@@ -25,7 +25,7 @@ import { followBirthCard, withComputedCard } from "@/lib/resonance/tarotCards";
 import { holdsRetiredFields, settleCosmicProfile, settleOnSave } from "@/lib/resonance/settle";
 import SkyField from "@/features/shell/SkyField";
 import { useSearchParamState } from "@/lib/deeplink";
-import PlantVoice from '@/features/shell/PlantVoice';
+import Note from '@/features/shell/Note';
 import { PlantCompanions } from '@/features/practice/SomaticPractice';
 import useBeforeUnload from '@/hooks/use-before-unload';
 
@@ -185,7 +185,7 @@ export default function CosmicAddons() {
     return (
         <div className="p-6 space-y-8 min-h-screen relative">
             <div className="max-w-4xl mx-auto relative z-10">
-                {profileLoad === 'error' && <p className="living-error mb-6" role="alert">We could not load your saved profile. Saving is paused so nothing overwrites it. <button type="button" className="underline" onClick={loadProfile}>Try again</button></p>}<div className="mb-8 space-y-6"><PlantVoice>We can explore these systems together, if you are curious. They offer perspectives for reflection. Your own experiences, needs, and choices remain yours to define.</PlantVoice><p className="living-muted">An optional deeper layer. Your journal, full pattern history, reports, and everyday practices stay free without setting up any system.</p><PlantCompanions /></div>
+                {profileLoad === 'error' && <p className="living-error mb-6" role="alert">We could not load your saved profile. Saving is paused so nothing overwrites it. <button type="button" className="underline" onClick={loadProfile}>Try again</button></p>}<div className="mb-8 space-y-6"><Note>These systems are here if you are curious. They offer perspectives for reflection. Your own experiences, needs, and choices remain yours to define.</Note><p className="living-muted">An optional deeper layer. Your journal, full pattern history, reports, and everyday practices stay free without setting up any system.</p><PlantCompanions /></div>
 
                 {/* Header */}
                 {/* ── The Loom: hero of the cosmos ── */}

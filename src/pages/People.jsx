@@ -5,7 +5,7 @@ import { useSearchParamState } from "@/lib/deeplink";
 import { base44 } from "@/api/base44Client";
 import { Person } from "@/api/entities";
 import { useAuth } from "@/lib/AuthContext";
-import { dropRecordRow, hasFailed, putRecordRow, useFailure, useRecordPart } from "@/features/patterns/useLivingData";
+import { dropRecordRow, putRecordRow, useRecordPart, useRetry } from "@/features/patterns/useLivingData";
 import PeopleOrbit from '@/features/people/PeopleOrbit';
 import Note from '@/features/shell/Note';
 import { synergyReading } from "@/lib/wisdom/readings";
@@ -49,14 +49,11 @@ export default function People() {
   const people = ready ? peopleQuery.data : NONE;
   const checkIns = ready ? checkInsQuery.data : NONE;
   const journal = useMemo(() => (ready ? journalQuery.data.filter((entry) => !entry.is_draft) : NONE), [ready, journalQuery.data]);
-  // A part being tried again still counts as failed (hasFailed), so the error
-  // and its button stay on screen until the retry lands.
-  const failed = parts.find((query) => hasFailed(query) && query.data === undefined);
-  const loading = !failed && parts.some((query) => query.isLoading);
-  const failure = useFailure(parts);
-  const loadError = failed ? failure?.message || "Your people couldn't load." : '';
-  const retrying = parts.some((query) => hasFailed(query) && query.isFetching);
-  const retry = () => parts.forEach((query) => { if (hasFailed(query) && !query.isFetching) query.refetch(); });
+  // While a retry runs, the error and its button stay on screen (useRetry).
+  const failed = parts.some((query) => query.isError && query.data === undefined);
+  const { retry, retrying, held, error } = useRetry(parts, failed);
+  const loading = !retrying && parts.some((query) => query.isLoading);
+  const loadError = (retrying ? held : failed) ? error?.message || "Your people couldn't load." : '';
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null); // null | 'new' | person
   const [deleting, setDeleting] = useState(null);

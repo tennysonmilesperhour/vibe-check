@@ -8,6 +8,7 @@ import { collectCompleteExport } from './collect';
 import { downloadJson } from './download';
 import ExportPassword, { exportPasswordError } from './ExportPassword';
 import LoadingState from '@/features/shell/LoadingState';
+import RetryButton from '@/features/shell/RetryButton';
 
 /** Download everything Vibe Check keeps for the account, after the password check. */
 export default function CompleteExport({ onClose }) {
@@ -16,6 +17,8 @@ export default function CompleteExport({ onClose }) {
   const [file, setFile] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [attempt, setAttempt] = useState(0);
+  // A retry keeps the error and its button on screen until it settles.
+  const [retrying, setRetrying] = useState(false);
   const [encrypt, setEncrypt] = useState(true);
   const [password, setPassword] = useState('');
   const [repeat, setRepeat] = useState('');
@@ -26,10 +29,10 @@ export default function CompleteExport({ onClose }) {
   useEffect(() => {
     if (!identityOk) return undefined;
     const reading = new AbortController();
-    setFile(null); setLoadError('');
+    setFile(null);
     collectCompleteExport({ signal: reading.signal }).then(
-      (document) => { if (!reading.signal.aborted) setFile(document); },
-      () => { if (!reading.signal.aborted) setLoadError('Part of your record could not be loaded, so nothing was prepared. Try again.'); },
+      (document) => { if (!reading.signal.aborted) { setFile(document); setLoadError(''); setRetrying(false); } },
+      () => { if (!reading.signal.aborted) { setLoadError('Part of your record could not be loaded, so nothing was prepared. Try again.'); setRetrying(false); } },
     );
     return () => reading.abort();
   }, [identityOk, attempt]);
@@ -47,7 +50,7 @@ export default function CompleteExport({ onClose }) {
   return <Dialog open onOpenChange={(open) => { if (!open && !busy) onClose(); }}><DialogContent className="living-dialog">
     <DialogHeader><DialogTitle>Download everything</DialogTitle><DialogDescription>A complete copy of what Vibe Check keeps for your account, as one file you can keep, move to another tool, or open here later. Not included: settings kept only on this device, such as an app lock, and the dates of requests to retired AI features.</DialogDescription></DialogHeader>
     {!identityOk ? <ConfirmIdentity action="download everything" onConfirmed={confirmIdentity} /> : <div className="space-y-5">
-      {loadError && <p className="living-error" role="alert">{loadError} <button type="button" className="underline" onClick={() => setAttempt((count) => count + 1)}>Try again</button></p>}
+      {loadError && <p className="living-error" role="alert">{loadError} <RetryButton busy={retrying} onRetry={() => { setRetrying(true); setAttempt((count) => count + 1); }} /></p>}
       {!file && !loadError && <LoadingState label="Gathering your record…" />}
       {file && <>
         <ul className="text-sm grid grid-cols-2 gap-x-4 gap-y-1" aria-label="What the file holds">

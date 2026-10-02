@@ -15,6 +15,7 @@ import { NOTICE_DEFAULTS } from '@/lib/boundaries';
 import { removeAppLock } from '@/lib/app-lock';
 import AppLockSettings from '@/features/safety/AppLockSettings';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
+import RetryButton from './RetryButton';
 
 const DEFAULTS = NOTICE_DEFAULTS;
 // The export dialogs load when first opened, which keeps them off the first load.
@@ -34,6 +35,7 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const savedSettings = useRef({}); // what the account has now, to notice notices being turned on
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [settingsRetrying, setSettingsRetrying] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -75,7 +77,7 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
       savedSettings.current = me.boundary_settings || {};
       setSettingsLoaded(true);
       setError('');
-    }).catch((err) => { if (active) setError(err.message); });
+    }).catch((err) => { if (active) setError(err.message); }).finally(() => { if (active) setSettingsRetrying(false); });
     return () => { active = false; };
   }, [open, loadAttempt]);
   useEffect(() => { setWeekStart(prefs.data?.week_start ?? 1); }, [prefs.data?.week_start]);
@@ -142,7 +144,7 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
   return <><Sheet open={open} onOpenChange={onOpenChange}><SheetContent onCloseAutoFocus={onCloseAutoFocus}>
     <SheetHeader><SheetTitle className="font-display text-2xl">Settings & privacy</SheetTitle><SheetDescription>Your record, your preferences, and who can see this device.</SheetDescription></SheetHeader>
     <div className="space-y-7 mt-6">
-      {error && <p className="living-error" role="alert">{error}{!settingsLoaded && <> Your low-mood lines are paused until they load; other settings still save. <button type="button" className="underline" onClick={() => setLoadAttempt((count) => count + 1)}>Try again</button></>}</p>}
+      {error && <p className="living-error" role="alert">{error}{!settingsLoaded && <> Your low-mood lines are paused until they load; other settings still save. <RetryButton busy={settingsRetrying} onRetry={() => { setSettingsRetrying(true); setLoadAttempt((count) => count + 1); }} /></>}</p>}
       <section className="space-y-5" aria-labelledby="settings-reflections"><h3 id="settings-reflections" className="text-xl">Reflections & reports</h3>
         <label className="flex items-start gap-3">
           <input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={Boolean(settings.notices_enabled)} disabled={!settingsLoaded} onChange={(event) => setSettings({ ...settings, notices_enabled: event.target.checked })} />

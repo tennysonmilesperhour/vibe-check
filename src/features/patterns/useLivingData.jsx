@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry, PracticeSession, ReportReflection, VibePreference, Person } from '@/api/entities';
@@ -7,10 +7,10 @@ import { daysKeptThisMonth } from '@/lib/record-days';
 import { todayKey } from '@/lib/dates';
 import { inOrder, mergePreferences, preferenceStore } from '@/lib/preference-store';
 import { recordKey } from './record-cache';
-import { hasFailed } from './read-state';
+import { useRetry } from './read-state';
 
 export { recordKey, putRecordRow, dropRecordRow, putRecentCheckIns } from './record-cache';
-export { hasFailed } from './read-state';
+export { useRetry } from './read-state';
 
 // The record in parts, each its own cached query shared by every page:
 // moving between pages shows what already loaded, and a change reloads only
@@ -31,14 +31,6 @@ export const RECORD_PARTS = /** @type {Array<keyof typeof PARTS>} */ (Object.key
 // retried twice over.
 const STALE_MS = 60_000;
 const READS = { staleTime: STALE_MS, networkMode: /** @type {const} */ ('always'), retry: false };
-/** The error behind a failed read, kept while it is tried again (TanStack clears it). */
-export function useFailure(/** @type {any[]} */ reads) {
-  const last = useRef(null);
-  const current = reads.find((read) => read.error)?.error;
-  if (current) last.current = current;
-  return reads.some(hasFailed) ? current || last.current : null;
-}
-
 /** @param {string | undefined} userId @param {keyof typeof PARTS} part */
 const partQuery = (userId, part) => ({ queryKey: recordKey(userId, part), queryFn: PARTS[part], enabled: Boolean(userId), ...READS });
 
@@ -128,23 +120,23 @@ export function useLivingData() {
     return fresh ? cached() : undefined;
   };
   const reads = [...results, preferences];
-  const failing = reads.filter(hasFailed);
-  const failed = failing.length > 0;
-  const error = useFailure(reads);
+  // A reload that fails keeps what loaded on screen; only a record that
+  // never loaded is an error. reloadFailed says a reload failed since.
+  const failed = reads.some((read) => read.isError);
+  const shown = !failed ? null : data ? 'reload' : 'load';
+  // retry reads again only what failed or never loaded, not the whole
+  // history; while it runs the page keeps showing what it showed.
+  const { retry, retrying, held, error } = useRetry(reads, shown);
+  const showing = retrying ? held : shown;
   return {
     data,
-    isLoading: !failed && reads.some((read) => read.isLoading),
-    // A reload that fails keeps what loaded on screen; only a record that
-    // never loaded is an error. reloadFailed says a reload failed since.
-    isError: !data && failed,
-    reloadFailed: Boolean(data) && failed,
-    isFetching: reads.some((read) => read.isFetching),
+    isLoading: !retrying && reads.some((read) => read.isLoading),
+    isError: showing === 'load',
+    reloadFailed: showing === 'reload',
     isSuccess: Boolean(data),
     error,
-    // Tries again only what failed or never loaded, so one failed part
-    // doesn't read the whole history again; retrying says it is under way.
-    retry: () => Promise.all(reads.filter((read) => !read.isFetching && (hasFailed(read) || read.data === undefined)).map((read) => read.refetch())),
-    retrying: failing.some((read) => read.isFetching),
+    retry,
+    retrying,
     refresh,
     savePreferences: preferences.savePreferences,
   };
@@ -184,7 +176,8 @@ export function usePreferences() {
     enabled: Boolean(user?.id),
     staleTime: STALE_MS,
   });
-  const failed = hasFailed(query);
   const savePreferences = (patch) => storePreferences(client, user?.id, patch);
-  return { ...query, isError: failed, isLoading: !failed && query.isLoading, retry: () => query.refetch(), retrying: failed && query.isFetching, savePreferences };
+  // While a retry asked for here runs, this keeps showing the failure (see useRetry).
+  const { retry, retrying, error } = useRetry([query], null);
+  return { ...query, isError: query.isError || retrying, isLoading: query.isLoading && !retrying, error, retry, retrying, savePreferences };
 }

@@ -68,7 +68,7 @@ function Patterns() {
   function openExport(initial = { start, end }) { setExporting(initial); }
 
   if (living.isLoading) return <div className="living-page" aria-busy="true"><LoadingState variant="page" label="Gathering your whole history…" /></div>;
-  if (living.isError || !data) return <div className="living-page"><h1>Your history is still yours.</h1><p className="living-error mt-4" role="alert">It couldn't load right now. {living.error?.message}</p><RetryButton className="ink-button mt-4" busy={living.retrying} onRetry={living.retry}>Try loading again</RetryButton></div>;
+  if (living.isError || !data) return <div className="living-page"><h1>Your history is still yours.</h1><div className="mt-4 space-y-4" role="alert"><p className="living-error">It couldn't load right now. {living.error?.message}</p><RetryButton className="ink-button" busy={living.retrying} onRetry={living.retry}>Try loading again</RetryButton></div></div>;
 
   const showExport = exporting || (params.get('export') === '1' ? { start, end } : null);
   return <div className="field-wash min-h-screen"><PageTransition className="living-page space-y-8">

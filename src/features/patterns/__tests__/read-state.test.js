@@ -1,52 +1,41 @@
 import { describe, it, expect } from 'vitest';
 import { QueryClient, QueryObserver } from '@tanstack/react-query';
-import { hasFailed } from '../read-state';
+import { failureOf, retryTargets } from '../read-state';
 
-// A read whose answers are handed out one call at a time, watched the way a page watches it.
-const watched = (data) => {
-  const client = new QueryClient();
-  const calls = [];
-  const queryKey = ['part'];
-  if (data) client.setQueryData(queryKey, data);
-  const observer = new QueryObserver(client, { queryKey, queryFn: () => new Promise((resolve, reject) => { calls.push({ resolve, reject }); }), retry: false, staleTime: Infinity });
-  const unsubscribe = observer.subscribe(() => {});
-  return { observer, calls, unsubscribe };
-};
-const settle = () => new Promise((resolve) => { setTimeout(resolve, 0); });
+const read = (fields) => ({ isError: false, isFetching: false, data: ['row'], error: null, ...fields });
 
-describe('a failed read being tried again', () => {
-  it('still counts as failed while the retry runs with nothing loaded', async () => {
-    const { observer, calls, unsubscribe } = watched();
+describe('what a retry shows and reads again', () => {
+  it('shows the error of a read with nothing loaded before a failed reload', () => {
+    const reload = read({ isError: true, error: new Error('JWT expired') });
+    const load = read({ isError: true, data: undefined, error: new Error('Failed to fetch') });
+    expect(failureOf([reload, load]).message).toBe('Failed to fetch');
+    expect(failureOf([reload, read({})]).message).toBe('JWT expired');
+    expect(failureOf([read({}), read({ data: undefined, isFetching: true })])).toBeNull();
+  });
+
+  it('reads again what failed or never loaded, but not what is already on its way', () => {
+    const failed = read({ isError: true });
+    const neverLoaded = read({ data: undefined });
+    const loading = read({ data: undefined, isFetching: true });
+    const fine = read({});
+    expect(retryTargets([failed, neverLoaded, loading, fine])).toEqual([failed, neverLoaded]);
+  });
+
+  // Why a retry holds what the page showed: TanStack puts a read with nothing
+  // loaded back to pending and clears its error while it retries.
+  it('matches how TanStack reports a failed read being tried again', async () => {
+    const client = new QueryClient();
+    const calls = [];
+    const observer = new QueryObserver(client, { queryKey: ['part'], queryFn: () => new Promise((resolve, reject) => { calls.push({ resolve, reject }); }), retry: false });
+    const unsubscribe = observer.subscribe(() => {});
+    const settle = () => new Promise((resolve) => { setTimeout(resolve, 0); });
     calls[0].reject(new Error('offline')); await settle();
-    expect(hasFailed(observer.getCurrentResult())).toBe(true);
+    expect(observer.getCurrentResult().isError).toBe(true);
     observer.refetch(); await settle();
     const retrying = observer.getCurrentResult();
-    // TanStack puts it back to pending and clears the error while it retries.
-    expect(retrying.isPending && retrying.isFetching && retrying.error === null).toBe(true);
-    expect(hasFailed(retrying)).toBe(true);
+    expect([retrying.isError, retrying.isPending, retrying.isLoading, retrying.error]).toEqual([false, true, true, null]);
     calls[1].resolve(['row']); await settle();
-    expect(hasFailed(observer.getCurrentResult())).toBe(false);
-    unsubscribe();
-  });
-
-  it('still counts as failed while a reload of a loaded copy is retried', async () => {
-    const { observer, calls, unsubscribe } = watched(['old']);
-    observer.refetch(); await settle();
-    calls[0].reject(new Error('offline')); await settle();
-    observer.refetch(); await settle();
-    const retrying = observer.getCurrentResult();
-    expect(retrying.data).toEqual(['old']);
-    expect(hasFailed(retrying)).toBe(true);
-    calls[1].resolve(['new']); await settle();
-    expect(hasFailed(observer.getCurrentResult())).toBe(false);
-    unsubscribe();
-  });
-
-  it('is not a failure on a first read', async () => {
-    const { observer, calls, unsubscribe } = watched();
-    expect(hasFailed(observer.getCurrentResult())).toBe(false);
-    calls[0].resolve(['row']); await settle();
-    expect(hasFailed(observer.getCurrentResult())).toBe(false);
+    expect(observer.getCurrentResult().data).toEqual(['row']);
     unsubscribe();
   });
 });

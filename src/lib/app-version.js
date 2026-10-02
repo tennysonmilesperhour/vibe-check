@@ -34,7 +34,7 @@ export function latestVersionUrl(currentHref, build) {
   const current = new URL(currentHref);
   const target = new URL(LIVE_ORIGIN);
   target.pathname = current.pathname;
-  for (const key of ["tab", "date", "range", "person", "review", "start", "end", "habit", "search", "calendarMetric", "calendarMonth", "calendarDay", "period", "reportDate", "entry", "practice", "pattern", "sources", "compose", "prompt", "export"]) {
+  for (const key of ["tab", "date", "range", "person", "review", "start", "end", "habit", "search", "calendarMetric", "calendarMonth", "calendarDay", "period", "reportDate", "entry", "practice", "pattern", "sources", "compose", "prompt", "kind", "add", "highlights", "export"]) {
     const value = current.searchParams.get(key);
     if (value) target.searchParams.set(key, value);
   }

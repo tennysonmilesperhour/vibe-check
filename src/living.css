@@ -226,3 +226,8 @@ textarea.living-input { resize: vertical; }
 /* The image shared from Today, previewed exactly as it is saved. */
 .share-card { padding: 20px; border: 1px solid hsl(var(--border)); border-radius: var(--radius); }
 .share-card-mark { margin-top: 16px; font-family: var(--font-display); font-size: 1rem; color: var(--gh-ink-muted); text-align: right; }
+/* The letter that opens a report. */
+.report-letter-heading { font-size: clamp(1.45rem, 3vw, 1.85rem); line-height: 1.2; margin-bottom: 10px; color: var(--gh-ink); }
+.report-letter-list { list-style: decimal; padding-left: 1.25rem; margin: 12px 0; display: grid; gap: 10px; }
+.report-letter-list li { padding-left: 2px; }
+.plant-voice-words > p + p, .plant-voice-words > ol + p { margin-top: 10px; }

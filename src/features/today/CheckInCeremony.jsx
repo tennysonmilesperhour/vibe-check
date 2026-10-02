@@ -20,6 +20,7 @@ import useWritingBuffer from "@/hooks/use-writing-buffer";
 import useBeforeUnload from "@/hooks/use-before-unload";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import LoadingState from "@/features/shell/LoadingState";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 // Autosave waits for a pause in typing before writing the server draft.
 const AUTOSAVE_DELAY_MS = 1500;
@@ -72,6 +73,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftMessage, setDraftMessage] = useState('');
   const [restored, setRestored] = useState(false); // a saved draft or tab copy was brought back
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
   // Unsaved words from this tab that can't be proven newer than the server copy.
   const [heldBuffer, setHeldBuffer] = useState(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -315,7 +317,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
       if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current);
       draftIdRef.current = null;
     }, 'Could not discard the draft');
-    if (!done) return;
+    if (!done) return false;
     const initial = formFrom(existing);
     baselineRef.current = JSON.stringify(initial);
     visitStartDraftRef.current = null;
@@ -328,6 +330,7 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     setDraftMessage('Draft discarded.');
     editedRef.current = false;
     finishedRef.current = false;
+    return true;
   }
 
   function acceptHeldBuffer() {
@@ -506,7 +509,19 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
           </span>
         </div>
         <p className="mt-4 text-sm" style={{ color: 'var(--gh-cream)' }}>{formatDay(dateKey, { style: 'long' })} · A mood is enough. Every detail after it is optional.{stepOrder.length < ALL_STEPS.length && <> Some questions are left out to match what you chose to notice. <button type="button" className="underline underline-offset-4" onClick={showAllSteps}>Show all questions</button></>}</p>
-        {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="danger-link ml-3" disabled={saving} onClick={discardRestored}>Discard draft</button>}</p>}
+        {draftMessage && <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>{draftMessage}{restored && <button type="button" className="danger-link ml-3" disabled={saving} onClick={() => setConfirmDiscard(true)}>Discard draft</button>}</p>}
+        <AlertDialog open={confirmDiscard} onOpenChange={(open) => { if (!open && !saving) setConfirmDiscard(false); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard this draft?</AlertDialogTitle>
+              <AlertDialogDescription>What the draft for {formatDay(dateKey, { style: "long" })} holds is deleted, and the check-in goes back to what was last kept. Check-ins you have kept are not affected.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={saving}>Keep the draft</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" aria-disabled={saving} onClick={async (e) => { e.preventDefault(); if (saving) return; if (await discardRestored()) setConfirmDiscard(false); }}>Discard draft</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         {heldBuffer && (
           <p className="mt-2 text-sm" role="status" style={{ color: 'var(--gh-cream)' }}>
             This tab also kept unsaved words that may be newer than what is shown.

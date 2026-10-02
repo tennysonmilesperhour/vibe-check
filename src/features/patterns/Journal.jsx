@@ -118,7 +118,7 @@ export function JournalComposer({ open, existing = null, prompt = '', kind = 're
   </DialogContent></Dialog>;
 }
 
-export default function Journal({ data, entries, onChanged }) {
+export default function Journal({ data, entries, onChanged, savePreferences }) {
   const [params, setParams] = useSearchParams();
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -128,6 +128,10 @@ export default function Journal({ data, entries, onChanged }) {
   // After someone records an unsafe interaction or a crossed boundary, offer
   // support quietly beside their words; they decide whether to open it.
   const [supportFor, setSupportFor] = useState(null);
+  // Highlights: entries starred to come back to, from any date, kept in the
+  // preferences as entry keys. Showing only them is a view of this page.
+  const [onlyHighlights, setOnlyHighlights] = useState(false);
+  const [pending, setPending] = useState({});
   const selectedKey = params.get('entry');
   const selected = data.entries.find((entry) => entry.key === selectedKey);
   const open = params.get('compose') === '1' || Boolean(editing);
@@ -135,22 +139,51 @@ export default function Journal({ data, entries, onChanged }) {
   const compose = () => setParams((previous) => { const next = new URLSearchParams(previous); next.set('compose', '1'); return next; });
   async function remove() {
     setBusy(true); setError('');
-    try { await (deleting.kind === 'day' ? DailyCheckIn : JournalEntry).delete(deleting.id); await onChanged(); setDeleting(null); }
+    try {
+      await (deleting.kind === 'day' ? DailyCheckIn : JournalEntry).delete(deleting.id);
+      // A deleted entry leaves the highlights too.
+      if (stored.has(deleting.key)) savePreferences?.((values) => ({ highlighted_entries: (values.highlighted_entries || []).filter((key) => key !== deleting.key) })).catch(() => {});
+      await onChanged(); setDeleting(null);
+    }
     catch (err) { setError(err.message); }
     setBusy(false);
   }
   const edit = (entry) => { if (entry.kind === 'day') window.location.assign(`/Today?date=${entry.date}`); else setEditing(entry); };
   const drafts = data.journal.filter((entry) => entry.is_draft);
+  // Highlights: entries starred to come back to, from any date. Kept in the
+  // preferences as entry keys.
+  // A star shows its new state at once and takes no second tap until saved.
+  const stored = new Set(data.preferences.highlighted_entries || []);
+  const highlighted = new Set([...stored].filter((key) => !(key in pending)));
+  for (const [key, on] of Object.entries(pending)) if (on) highlighted.add(key);
+  const toggleHighlight = async (entry) => {
+    if (entry.key in pending) return;
+    const on = !highlighted.has(entry.key);
+    setPending((current) => ({ ...current, [entry.key]: on }));
+    try {
+      await savePreferences((values) => {
+        const list = (values.highlighted_entries || []).filter((key) => key !== entry.key);
+        return { highlighted_entries: on ? [...list, entry.key] : list };
+      });
+      setError('');
+    } catch (err) {
+      setError(err.message || "The highlight couldn't be saved. Please try again.");
+    } finally {
+      setPending((current) => { const next = { ...current }; delete next[entry.key]; return next; });
+    }
+  };
+  const highlightedEntries = data.entries.filter((entry) => highlighted.has(entry.key));
+  const listed = onlyHighlights ? highlightedEntries : entries;
   return <section className="space-y-5" aria-labelledby="journal-heading">
-    <div className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR WORDS, KEPT TOGETHER</p><h2 id="journal-heading">Journal & history</h2><p className="living-muted mt-2">{entries.length} entries in this view. A good day belongs beside everything that came before.</p></div><button className="ink-button" onClick={compose}><Plus size={16} />Keep a moment</button></div>
+    <div className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR WORDS, KEPT TOGETHER</p><h2 id="journal-heading">Journal & history</h2><p className="living-muted mt-2">{onlyHighlights ? `${listed.length} highlighted ${listed.length === 1 ? 'entry' : 'entries'}, from any date.` : `${entries.length} entries in this view. A good day belongs beside everything that came before.`}</p><div className="living-chips mt-3"><button type="button" className="living-chip" aria-pressed={!onlyHighlights} onClick={() => setOnlyHighlights(false)}>This view</button><button type="button" className="living-chip" aria-pressed={onlyHighlights} onClick={() => setOnlyHighlights(true)}>Highlights · {highlightedEntries.length}</button></div></div><button className="ink-button" onClick={compose}><Plus size={16} />Keep a moment</button></div>
     {error && <p className="living-error" role="alert">{error}</p>}
     {supportFor && <SupportCard focus="relationship" title={supportFor === 'unsafe' ? 'You marked that interaction as unsafe.' : 'You noted that a boundary was not respected.'} onDismiss={() => setSupportFor(null)}>Your record is kept exactly as you wrote it. If it would help to talk it through or plan for your safety, these services are free and confidential.</SupportCard>}
     {drafts.length > 0 && <div className="living-inset"><p className="living-label mb-2">Saved drafts</p><div className="living-chips">{drafts.map((draft) => <button key={draft.id} className="living-chip" onClick={() => setEditing(draft)}>Resume draft from {formatDay(draft.date)}</button>)}</div></div>}
     {selectedKey && !selected && <p className="living-muted">This entry is no longer in your saved history.</p>}
-    {selected && <div><p className="living-label mb-2">The entry you opened</p><EntryCard entry={selected} people={data.people} selected onEdit={edit} onDelete={setDeleting} /></div>}
-    {entries.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} onEdit={edit} onDelete={setDeleting} />)}
-    {!entries.length && <p className="living-muted py-6">No entries match this view. Adjust the filters or keep a new moment.</p>}
-    {entries.length > limit && <button className="living-secondary" onClick={() => setLimit((count) => count + 20)}>Show more history</button>}
+    {selected && <div><p className="living-label mb-2">The entry you opened</p><EntryCard entry={selected} people={data.people} selected highlighted={highlighted.has(selected.key)} highlightBusy={selected.key in pending} onHighlight={savePreferences ? toggleHighlight : undefined} onEdit={edit} onDelete={setDeleting} /></div>}
+    {listed.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} highlighted={highlighted.has(entry.key)} highlightBusy={entry.key in pending} onHighlight={savePreferences ? toggleHighlight : undefined} onEdit={edit} onDelete={setDeleting} />)}
+    {!listed.length && <p className="living-muted py-6">{onlyHighlights ? 'No highlights yet. Star an entry to come back to it here.' : 'No entries match this view. Adjust the filters or keep a new moment.'}</p>}
+    {listed.length > limit && <button className="living-secondary" onClick={() => setLimit((count) => count + 20)}>Show more history</button>}
     <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} kind={params.get('kind') || 'reflection'} onClose={close} onSaved={async (saved) => { await onChanged(); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} />
     <Dialog open={Boolean(deleting)} onOpenChange={(isOpen) => { if (!isOpen && !busy) setDeleting(null); }}><DialogContent><DialogHeader><DialogTitle>Delete this entry?</DialogTitle><DialogDescription>This removes the entry from your journal, charts, and reports. This cannot be undone.</DialogDescription></DialogHeader><div className="flex gap-3"><button className="living-secondary" onClick={() => setDeleting(null)}>Keep it</button><button className="danger-button" disabled={busy} onClick={remove}>{busy ? 'Deleting…' : 'Delete entry'}</button></div></DialogContent></Dialog>
   </section>;

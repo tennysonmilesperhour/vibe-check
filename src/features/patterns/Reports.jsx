@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Download, ArrowRight, FileText } from 'lucide-react';
 import { ReportReflection } from '@/api/entities';
 import { reportPeriod, previousPeriod, buildReport, entryText } from '@/lib/living-patterns';
 import { addDaysKey, formatDay, formatRange, todayKey } from '@/lib/dates';
 import { practiceById, ALIGNMENTS } from '@/lib/practices';
-import PlantVoice from '@/features/shell/PlantVoice';
+import ReportObservations from './ReportObservations';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import StressPatternCards from './StressPatternCards';
 import EntryLink from './EntryLink';
 import useBeforeUnload from '@/hooks/use-before-unload';
@@ -23,9 +24,14 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  // The reflection a removal is for, held so changing the period can't change it.
+  const [removing, setRemoving] = useState(null);
+  const removeButtonRef = useRef(null);
+  const reflectionRef = useRef(null);
   const [momentsShown, setMomentsShown] = useState(6);
   const [themeEdit, setThemeEdit] = useState(null);
   useEffect(() => { setReflection(saved?.notes || ''); setError(''); setMomentsShown(6); }, [period.start, type, saved?.notes]);
+  useEffect(() => { if (!busy) setRemoving(null); }, [period.start, type]);
   useBeforeUnload(reflection !== (saved?.notes || ''));
 
   const archive = useMemo(() => {
@@ -61,12 +67,15 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
     <section className="living-card space-y-5" aria-labelledby="report-heading"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="sanctuary-eyebrow">YOUR WHOLE RECORD · ALWAYS FREE</p><h2 id="report-heading">{type === 'monthly' ? 'Your month, in perspective' : 'Your week, in perspective'}</h2></div><div className="living-chips" aria-label="Report frequency">{['weekly', 'monthly'].map((value) => <button className="living-chip capitalize" type="button" key={value} aria-pressed={type === value} onClick={() => navigate(period.start, value)}>{value}</button>)}</div></div>
       <div className="report-navigation"><button className="living-icon-button" aria-label="Previous report" onClick={() => navigate(previous.start)}><ChevronLeft size={20} /></button><label className="flex-1"><span className="sr-only">Report archive</span><select className="living-input" value={period.start} onChange={(e) => navigate(e.target.value)}>{!archive.some((item) => item.start === period.start) && <option value={period.start}>{formatRange(period.start, period.end)}</option>}{archive.map((item) => <option key={item.start} value={item.start}>{item.label}</option>)}</select></label><button className="living-icon-button" aria-label="Next report" disabled={period.end >= todayKey()} onClick={() => navigate(addDaysKey(period.end, 1))}><ChevronRight size={20} /></button></div>
       <p className="living-muted">{formatRange(period.start, period.end)} · {report.partial ? 'In progress; includes entries through today' : 'Completed period'} · Your local calendar{type === 'weekly' ? `, ${weekStart === 0 ? 'Sunday' : 'Monday'} week start` : ''}.</p>
+    </section>
+
+    <ReportObservations report={report} type={type} themeLabels={data.preferences.theme_labels} />
+
+    <section className="living-card space-y-5" aria-label="This period in numbers">
       <div className="living-stats"><div><span>RECORDED DAYS</span><strong>{report.days}<small> / {report.calendarDays}</small></strong></div><div><span>DAYS NOT RECORDED</span><strong>{report.missing}</strong></div><div><span>DAILY MOOD RANGE</span><strong>{report.moods ? `${report.moods.min}–${report.moods.max}` : '—'}<small>{report.moods ? ' / 10' : ''}</small></strong></div></div>
       <p className="living-muted text-sm">{report.rows.length} journal and daily entries. Daily mood uses {report.moods?.count || 0} check-ins; interaction feelings remain separate. Page filters do not narrow this full-period report.</p>
       <div className="flex flex-wrap gap-3"><button className="living-secondary" type="button" onClick={() => onExport({ start: period.start, end: period.end > todayKey() ? todayKey() : period.end, report })}><Download size={16} />Preview a report export</button><Link className="living-secondary" to={`/Summary?${new URLSearchParams({ start: period.start, end: period.end > todayKey() ? todayKey() : period.end })}`}><FileText size={16} aria-hidden="true" />A summary to share</Link></div>
     </section>
-
-    <PlantVoice>{report.days ? <>Let us keep the whole {type === 'monthly' ? 'month' : 'week'} in view. You recorded {report.days} days{report.missing ? ` and left ${report.missing} unrecorded` : ''}. A good moment can sit beside a difficult one. What do you want to remember about the pattern?</> : 'This period has no journal entries yet. Nothing needs to be invented to fill the space. You can begin with one moment or choose a practice for now.'}</PlantVoice>
 
     <section className="living-card space-y-4" aria-labelledby="comparison-heading"><h2 id="comparison-heading">Alongside the previous {type === 'monthly' ? 'month' : 'week'}</h2><div className="overflow-x-auto"><table className="living-table"><thead><tr><th>Recorded measure</th><th>This period{report.partial ? ' · partial' : ''}</th><th>{formatRange(previous.start, previous.end)}</th></tr></thead><tbody><tr><th>Days with entries</th><td>{report.days} / {report.calendarDays}</td><td>{comparison.days} / {comparison.calendarDays}</td></tr><tr><th>Average daily mood</th><td>{report.moods ? report.moods.mean.toFixed(1) : 'Not recorded'}</td><td>{comparison.moods ? comparison.moods.mean.toFixed(1) : 'Not recorded'}</td></tr><tr><th>Daily mood range</th><td>{report.moods ? `${report.moods.min}–${report.moods.max}` : 'Not recorded'}</td><td>{comparison.moods ? `${comparison.moods.min}–${comparison.moods.max}` : 'Not recorded'}</td></tr><tr><th>Interactions marked unsafe</th><td>{report.interactions.filter((entry) => entry.interaction_feeling === 'unsafe').length} / {report.interactions.length} labeled</td><td>{comparison.interactions.filter((entry) => entry.interaction_feeling === 'unsafe').length} / {comparison.interactions.length} labeled</td></tr></tbody></table></div><p className="living-muted text-xs">Different recording coverage can change these comparisons. An unrecorded experience is unknown.</p>{report.interactions.some((entry) => entry.interaction_feeling === 'unsafe') && <p className="text-sm"><Link className="living-text-link" to="/support-now?focus=relationship">Support options for unsafe relationships <ArrowRight size={15} /></Link></p>}</section>
 
@@ -89,6 +98,19 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
       <Link className="living-text-link" to="/Practice?tab=somatic">Choose a practice or revisit your responses <ArrowRight size={15} /></Link>
     </section>
 
-    <section className="living-card space-y-4" aria-labelledby="report-reflection-heading"><h2 id="report-reflection-heading">What do you want to carry forward?</h2><p className="living-muted">{type === 'monthly' ? 'What keeps returning? Where did you have more choice? What would you like to try or protect next month?' : 'What repeated? When did you feel like yourself? What would you like to practice next week?'}</p><label className="living-label">Your optional reflection<textarea className="living-input mt-2" rows={5} maxLength={30000} value={reflection} onChange={(e) => setReflection(e.target.value)} placeholder="Your understanding may change. Keep what matters to you now." /></label>{saved?.is_demo && <p className="living-muted text-xs">This saved reflection is demo data.</p>}{notice && <p role="status" className="living-success">{notice}</p>}{error && <p role="alert" className="living-error">{error}</p>}<div className="flex flex-wrap gap-3"><button className="ink-button" disabled={busy} onClick={saveReflection}>{busy ? 'Saving…' : 'Save reflection'}</button>{saved && <button className="danger-outline" disabled={busy} onClick={async () => { setBusy(true); try { await ReportReflection.delete(saved.id); await onChanged(); setReflection(''); setNotice('Reflection removed. The report remains available.'); } catch (err) { setError(err.message); } setBusy(false); }}>Remove saved reflection</button>}</div></section>
+    <section className="living-card space-y-4" aria-labelledby="report-reflection-heading"><h2 id="report-reflection-heading">What do you want to carry forward?</h2><p className="living-muted">{type === 'monthly' ? 'What keeps returning? Where did you have more choice? What would you like to try or protect next month?' : 'What repeated? When did you feel like yourself? What would you like to practice next week?'}</p><label className="living-label">Your optional reflection<textarea ref={reflectionRef} className="living-input mt-2" rows={5} maxLength={30000} value={reflection} onChange={(e) => setReflection(e.target.value)} placeholder="Your understanding may change. Keep what matters to you now." /></label>{saved?.is_demo && <p className="living-muted text-xs">This saved reflection is demo data.</p>}{notice && <p role="status" className="living-success">{notice}</p>}{error && <p role="alert" className="living-error">{error}</p>}<div className="flex flex-wrap gap-3"><button className="ink-button" disabled={busy} onClick={saveReflection}>{busy ? 'Saving…' : 'Save reflection'}</button>{saved && <button ref={removeButtonRef} className="danger-outline" disabled={busy} onClick={() => { setError(''); setRemoving(saved); }}>Remove saved reflection</button>}</div></section>
+    <AlertDialog open={Boolean(removing)} onOpenChange={(open) => { if (!open && !busy) setRemoving(null); }}>
+      <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); (removeButtonRef.current || reflectionRef.current)?.focus(); }}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remove your saved reflection?</AlertDialogTitle>
+          <AlertDialogDescription>Your reflection for this {type === 'monthly' ? 'month' : 'week'} is deleted. The report itself stays.</AlertDialogDescription>
+        </AlertDialogHeader>
+        {error && <p className="living-error" role="alert">{error}</p>}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Keep it</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" aria-disabled={busy} onClick={async (e) => { e.preventDefault(); if (busy || !removing) return; setBusy(true); setError(''); try { await ReportReflection.delete(removing.id); await onChanged(); setReflection(''); setRemoving(null); setNotice('Reflection removed. The report remains available.'); } catch (err) { setError(err.message || "The reflection couldn't be removed. Please try again."); } setBusy(false); }}>{busy ? 'Removing…' : 'Remove reflection'}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>;
 }

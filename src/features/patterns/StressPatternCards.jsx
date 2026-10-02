@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { stateById, recommendPractices, hiddenPractices } from '@/lib/practices';
 import EntryLink from './EntryLink';
+import { describePattern } from '@/lib/living-patterns';
 import { formatDay } from '@/lib/dates';
 
 export default function StressPatternCards({ patterns, data, onFeedback, max = 6 }) {
@@ -26,9 +27,7 @@ export default function StressPatternCards({ patterns, data, onFeedback, max = 6
       const target = new URLSearchParams({ tab: 'somatic', state: pattern.state, pattern: pattern.key, sources: pattern.entries.map((entry) => entry.key).slice(0, 10).join(',') });
       if (practice) target.set('practice', practice.id);
       return <article key={pattern.key} className="living-card space-y-4"><div><span className="living-tag">{pattern.status === 'confirmed' ? 'You confirmed this' : connection ? 'Shows up more with this' : 'What you recorded'}</span><h3 className="mt-3">{state?.label}{connection ? ` · ${pattern.context.label}` : ''}</h3>
-        <p className="living-muted mt-2">{connection
-          ? `${state?.label} on ${pattern.days} of the ${pattern.total} compared check-ins with ${pattern.context.label}${pattern.without.total ? `, and on ${pattern.without.days} of the ${pattern.without.total} with ${others} but not ${pattern.context.label}.` : `. None of the compared check-ins in this view tag ${others} without ${pattern.context.label}, so there is nothing to compare with.`}`
-          : `You chose ${state?.label} on ${pattern.days} of the ${pattern.total} days recorded in this view.`}</p></div>
+        <p className="living-muted mt-2">{describePattern(pattern)}</p></div>
         {connection && <p className="text-sm">{pattern.significant
           ? "In this view, that gap is larger than chance would easily explain. It doesn't show a cause, and the days behind it can hold other things too."
           : pattern.without.total ? "In this view the gap could be chance. It's here because you said it fits your experience." : "It's here because you said it fits your experience."}</p>}

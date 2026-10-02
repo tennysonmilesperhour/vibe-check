@@ -1,6 +1,6 @@
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from 'date-fns';
 import { dateKey, todayKey, parseLocalDate, diffDaysKeys, addDaysKey, validDateKey } from './dates';
-import { STRESS_STATES, HELPFUL_OUTCOMES } from './practices';
+import { STRESS_STATES, HELPFUL_OUTCOMES, stateById } from './practices';
 import { entryPeople, samePersonId, mentionsPerson } from './people';
 import { fisherGreater, cmhGreater } from './pattern-stats';
 
@@ -52,6 +52,21 @@ export function personExcerpt(entry, person) {
   const about = (/** @type {any} */ moment) => Boolean(moment?.description) && (picked ? tagged(moment.person_ids) : mentionsPerson(moment.who_involved, person));
   const parts = [about(entry.high_moment) && entry.high_moment.description, about(entry.low_moment) && entry.low_moment.description, tagged(entry.person_ids) && entry.notes].filter(Boolean);
   return (parts.length ? parts.join('\n') : entryText(entry)).replace(/\n{2,}/g, '\n');
+}
+
+/**
+ * A pattern in words, as its card shows it: a connection compares check-ins
+ * with and without a person or habit; a state card counts the days it was
+ * chosen.
+ * @param {any} pattern
+ */
+export function describePattern(pattern) {
+  const state = stateById(pattern.state)?.label || 'A state you chose';
+  if (!pattern.context || pattern.context.type === 'state') return `You chose ${state} on ${pattern.days} of the ${pattern.total} days recorded in this view.`;
+  const others = pattern.context.type === 'person' ? 'other people' : 'other habits';
+  return `${state} on ${pattern.days} of the ${pattern.total} compared check-ins with ${pattern.context.label}${pattern.without?.total
+    ? `, and on ${pattern.without.days} of the ${pattern.without.total} with ${others} but not ${pattern.context.label}.`
+    : `. None of the compared check-ins in this view tag ${others} without ${pattern.context.label}, so there is nothing to compare with.`}`;
 }
 
 /** @param {any[]} entries @param {any} filters */

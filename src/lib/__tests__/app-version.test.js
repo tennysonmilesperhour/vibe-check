@@ -52,6 +52,11 @@ describe('opening the current live app', () => {
     expect(target.hash).toBe('');
     expect(target.href).not.toContain('private');
   });
+  it('keeps an open interaction form', () => {
+    expect(Object.fromEntries(new URL(latestVersionUrl('https://preview.vercel.app/Analytics?tab=journal&compose=1&kind=interaction', 'new')).searchParams)).toEqual({
+      tab: 'journal', compose: '1', kind: 'interaction', _vibe_version: 'new',
+    });
+  });
   it('keeps a selected historical check-in and analytics filters', () => {
     const target = new URL(latestVersionUrl('https://preview.vercel.app/Analytics?tab=patterns&date=2026-09-01&range=90&person=friend-id&review=weekly', 'new'));
     expect(Object.fromEntries(target.searchParams)).toEqual({

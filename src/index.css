@@ -335,6 +335,7 @@
   body.ceremony-open .tab-bar { display: none; }
   body.ceremony-open { --tab-bar-h: 0px; --mobile-chrome: calc(var(--mobile-header-h) + env(safe-area-inset-bottom)); }
   .layout-content { padding-bottom: calc(var(--tab-bar-h) + env(safe-area-inset-bottom)); }
+  html { scroll-padding-top: calc(var(--mobile-header-h) + 12px); }
   .woodland-mobile-header { box-sizing: border-box; height: var(--mobile-header-h); padding-top: max(12px, env(safe-area-inset-top)); padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
   .mobile-drawer { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); }
   .today-invitation { min-height: calc(100svh - var(--mobile-chrome)); }

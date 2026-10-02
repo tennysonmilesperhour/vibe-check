@@ -29,7 +29,7 @@ The central moss panel was sampled from the user’s September 8 woodland mood b
 | Antique brass | `#A58E66` | Restrained linework and small highlights |
 | Pine ink | `#1B241A` | Text on lichen and parchment |
 
-Use parchment lettering on the moss guide and forest navigation. Keep page and card text dark. The mobile header follows the same forest treatment as the desktop rail. Nature posters and films receive a muted olive grade through CSS; artwork remains separate from text and controls. Decorative brass is not the only indicator of selection or status.
+Use parchment lettering on forest navigation. Keep page and card text dark. The mobile header follows the same forest treatment as the desktop rail. Nature posters and films receive a muted olive grade through CSS; artwork remains separate from text and controls. Decorative brass is not the only indicator of selection or status.
 
 Mood retains a diverging brown–parchment–green scale. Stress increases through distinct paper-to-brown bands; energy and sleep use paper-to-green bands. Numeric scores, legends, missing-day hatching, unsafe markers, and different timeline line styles remain visible. This reskin changes no scores, filtering, chart aggregation, or saved records.
 
@@ -78,7 +78,7 @@ Generated artwork supplies atmosphere and symbolic illustration. Actual charts a
 | --- | --- |
 | Welcome and Today | Cinematic forest or water background, cream type, clear forest/cream action, fine gold emblem |
 | Check-in | Sage and cream working surfaces with subtle botanical depth and fluid step changes |
-| Patterns and People | Lichen canvas, parchment reading surfaces, moss guide panels, dark pine labels |
+| Patterns and People | Lichen canvas, parchment reading surfaces, plain notes with a brass rule, dark pine labels |
 | Practice and Cosmos | Deep forest atmosphere, generated sanctuary art, coherent gold symbols and Loom linework |
 | Navigation and settings | Forest rail and mobile header, parchment labels, clear active and focus states |
 

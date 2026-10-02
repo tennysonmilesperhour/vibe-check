@@ -182,7 +182,7 @@ export default function People() {
         </header>
 
         {loadError && <p role="alert" className="living-error mt-4">{loadError} <button className="underline" onClick={load}>Retry</button></p>}
-        <div className="mt-6"><Note>Keep people here by a name or nickname that works for you. Each person gathers the entries you tag them in. Adding someone sends no invitation or notification.</Note></div>
+        <div className="mt-6"><Note>Keep people here by a name or nickname that works for you. Each person gathers the entries you tag or name them in. Adding someone sends no invitation or notification.</Note></div>
         <PeopleOrbit people={people} entries={entries} mixes={mixes} onChoose={setDetail} />
 
         {people.length === 0 ? (

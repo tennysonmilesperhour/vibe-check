@@ -52,4 +52,23 @@ export default [
       "react-hooks/rules-of-hooks": "error",
     },
   },
+  // Browser tests: Node code, with callbacks that run in the page.
+  {
+    files: ["e2e/**/*.js", "playwright.config.js"],
+    ...pluginJs.configs.recommended,
+  },
+  {
+    files: ["e2e/**/*.js", "playwright.config.js"],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+      parserOptions: { ecmaVersion: 2022, sourceType: "module" },
+    },
+    plugins: { "unused-imports": pluginUnusedImports },
+    rules: {
+      "no-undef": "error",
+      "no-unused-vars": "off",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": ["warn", { vars: "all", args: "after-used", argsIgnorePattern: "^_" }],
+    },
+  },
 ];

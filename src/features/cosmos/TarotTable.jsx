@@ -145,7 +145,7 @@ export default function TarotTable() {
       <div className="max-w-4xl mx-auto px-6 py-10">
         <header className="text-center">
           <SanctuaryMark size={52} className="mx-auto mb-5 text-[var(--gh-gold)]" />
-          <h1 className="text-4xl md:text-5xl" style={{ color: duskInk }}>The table is set</h1>
+          <h2 className="text-4xl md:text-5xl" style={{ color: duskInk }}>The table is set</h2>
           <p className="text-sm mt-2" style={{ color: duskInkSoft }}>
             {deckId === "tarot" ? "78 cards, reversals included" : "44 oracle cards, always upright"}
           </p>

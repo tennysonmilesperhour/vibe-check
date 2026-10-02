@@ -55,11 +55,23 @@ screen.
 | `npm run lint` | ESLint over the repo |
 | `npm test` | Vitest unit suites (the resonance/wisdom engines are exhaustively tested) |
 | `npm run typecheck` | `tsc` over `jsconfig.json` |
+| `npm run check:bundle` | First-load JavaScript budget; run after `npm run build` |
+| `npm run test:e2e` | Browser tests: every page, the main flows and WCAG A/AA checks, on desktop and phone |
+
+### Browser tests
+
+`npm run test:e2e` builds the app into `dist-e2e/` and runs Playwright against
+it. The app talks to an in-memory Supabase (`e2e/support/mock-supabase.js`)
+filled with an invented person (`e2e/support/persona.js`), at a fixed clock,
+so no network or account is needed. A test fails when a page throws or logs
+an error, when it asks for something the mock doesn't model, or when it
+contacts any other site. The first run needs a browser:
+`npx playwright install chromium`.
 
 ## Project layout
 
-- `src/lib/` — pure logic: dates, streaks, boundaries, correlations, crypto
-  export, and the resonance + wisdom engines (`src/lib/resonance/`,
+- `src/lib/` — pure logic: dates, record days, boundaries, crypto export, and
+  the resonance + wisdom engines (`src/lib/resonance/`,
   `src/lib/wisdom/`). Keep this layer pure and unit-tested.
 - `src/features/` — feature UI grouped by surface (today, loom, practice,
   patterns, people, shell).

@@ -13,6 +13,7 @@
     "typecheck": "tsc -p ./tsconfig.typecheck.json",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "analyze": "vite build --mode analyze"
   },
   "dependencies": {
@@ -45,7 +46,9 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@eslint/js": "^9.19.0",
+    "@playwright/test": "1.56.1",
     "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.13.5",
     "@types/react": "^18.3.28",

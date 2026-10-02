@@ -260,7 +260,7 @@ export default function HealingBoard() {
                                     <span className="text-xs" style={{ color: 'var(--gh-ink-muted)' }}>Your sense of it</span>
                                     <span className="text-sm font-bold" style={{ color: 'var(--gh-accent)' }}>{item.progress_level} of 100</span>
                                 </div>
-                                <Progress value={item.progress_level} className="h-1.5" />
+                                <Progress value={item.progress_level} className="h-1.5" aria-label={`Your sense of ${item.title}`} getValueLabel={(value) => `${value} of 100`} />
                             </div>
                             {item.reflection_notes && (
                                 <div className="p-3 text-xs mb-3" style={{ background: cat.bg, border: '1px solid hsl(var(--border))', borderRadius: 'calc(var(--radius) - 3px)', color: 'var(--gh-ink-soft)' }}>

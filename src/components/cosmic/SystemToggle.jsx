@@ -13,16 +13,14 @@ export default function SystemToggle({ enabledSystems, onToggle }) {
                 const { Icon } = system;
                 return (
                     <div key={system.id}
-                        className="flex items-center justify-between gap-4 py-4 cursor-pointer transition-opacity duration-200"
-                        style={{
-                            borderTop: i === 0 ? "none" : "1px solid hsl(var(--border))",
-                            opacity: isEnabled ? 1 : 0.55,
-                        }}
+                        className="flex items-center justify-between gap-4 py-4 cursor-pointer"
+                        style={{ borderTop: i === 0 ? "none" : "1px solid hsl(var(--border))" }}
                         onClick={() => onToggle(system.id)}>
                         <div className="flex items-start gap-3 flex-1">
-                            <Icon className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "var(--gh-accent)" }} aria-hidden="true" />
+                            {/* An off system dims only its icon, so the text stays readable. */}
+                            <Icon className="w-5 h-5 mt-0.5 shrink-0 transition-opacity duration-200" style={{ color: "var(--gh-accent)", opacity: isEnabled ? 1 : 0.45 }} aria-hidden="true" />
                             <div>
-                                <span className="font-semibold text-sm block" style={{ color: "var(--gh-ink)" }}>
+                                <span className="font-semibold text-sm block" style={{ color: isEnabled ? "var(--gh-ink)" : "var(--gh-ink-soft)" }}>
                                     {system.label}
                                 </span>
                                 <p className="text-xs mt-0.5" style={{ color: "var(--gh-ink-muted)" }}>{system.description}</p>

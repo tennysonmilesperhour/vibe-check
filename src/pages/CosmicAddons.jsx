@@ -265,20 +265,20 @@ export default function CosmicAddons() {
                             </p>
                             <div className="grid md:grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>First Name</Label>
-                                    <Input className="mt-1" placeholder="Your first name" value={profile.first_name}
+                                    <Label htmlFor="cosmic-first-name" style={{ color: 'var(--gh-ink-soft)' }}>First Name</Label>
+                                    <Input id="cosmic-first-name" className="mt-1" placeholder="Your first name" value={profile.first_name}
                                         onChange={e => setProfile(prev => ({ ...prev, first_name: e.target.value }))} />
                                 </div>
                                 <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Last Name</Label>
-                                    <Input className="mt-1" placeholder="Your last name" value={profile.last_name}
+                                    <Label htmlFor="cosmic-last-name" style={{ color: 'var(--gh-ink-soft)' }}>Last Name</Label>
+                                    <Input id="cosmic-last-name" className="mt-1" placeholder="Your last name" value={profile.last_name}
                                         onChange={e => setProfile(prev => ({ ...prev, last_name: e.target.value }))} />
                                 </div>
                             </div>
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div>
-                                    <Label style={{ color: 'var(--gh-ink-soft)' }}>Date of Birth</Label>
-                                    <Input type="date" className="mt-1" value={profile.birth_date}
+                                    <Label htmlFor="cosmic-birth-date" style={{ color: 'var(--gh-ink-soft)' }}>Date of Birth</Label>
+                                    <Input id="cosmic-birth-date" type="date" className="mt-1" value={profile.birth_date}
                                         onChange={e => setBirthDate(e.target.value)} />
                                 </div>
                             </div>

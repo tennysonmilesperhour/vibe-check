@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Vibe Check</title>
     <link rel="preload" as="image" href="/media/sanctuary.webp" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <meta name="description" content="Your free daily journal, people and habit patterns, weekly and monthly reflections, and everyday practices. Track how your days actually feel and watch real patterns emerge." />
+    <link rel="preload" as="font" type="font/woff2" href="/node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2" crossorigin />
+    <meta name="description" content="See how the people and habits in your life affect you. A free, private journal with patterns, reports and practices. No AI reads your journal." />
     <!-- Matches the woodland mobile header. -->
     <meta name="theme-color" content="#18231b" />
 
@@ -19,24 +17,29 @@
     <link rel="manifest" href="/manifest.json?v=b1" />
 
     <!-- Scrapers need absolute URLs; update these when a custom domain lands.
-         Must be the public production origin (keep in sync with
-         CANONICAL_ORIGIN in src/features/shell/UpdateToast.jsx) — the other
-         vercel.app aliases sit behind Vercel SSO, which scrapers can't pass. -->
+         Must be the public production origin (keep in sync with LIVE_ORIGIN
+         in src/lib/app-version.js): the other vercel.app aliases sit behind
+         Vercel SSO, which scrapers can't pass. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Vibe Check" />
     <meta property="og:title" content="Vibe Check" />
-    <meta property="og:description" content="Your free daily journal, people and habit patterns, weekly and monthly reflections, and everyday practices." />
+    <meta property="og:description" content="See how the people and habits in your life affect you. A free, private journal with patterns, reports and practices. No AI reads your journal." />
     <meta property="og:url" content="https://vibe-check-flame-nu.vercel.app/" />
     <meta property="og:image" content="https://vibe-check-flame-nu.vercel.app/og.png?v=b1" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Vibe Check" />
-    <meta name="twitter:description" content="Your free daily journal, people and habit patterns, weekly and monthly reflections, and everyday practices." />
+    <meta name="twitter:description" content="See how the people and habits in your life affect you. A free, private journal with patterns, reports and practices. No AI reads your journal." />
     <meta name="twitter:image" content="https://vibe-check-flame-nu.vercel.app/og.png?v=b1" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Vibe Check</h1>
+      <p>See how the people and habits in your life affect you. A free, private journal with patterns, weekly and monthly reports, and practices for hard moments. No AI reads your journal.</p>
+      <p>Vibe Check needs JavaScript turned on. If you might not be safe right now, contact local emergency services or a crisis line in your region.</p>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

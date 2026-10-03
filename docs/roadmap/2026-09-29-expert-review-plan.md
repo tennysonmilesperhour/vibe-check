@@ -32,7 +32,7 @@ After launch readiness: importers, the affect-grid check-in, the living-plant vi
 
 - A domain, a support address on it, and the legal entity name for the policies.
 - A trademark search and a decision on the name: the App Store already lists “VibeCheck: daily mood journal” in the same category.
-- Legal review of the consumer health data policy, privacy policy, and terms.
+- Legal review of the consumer health data policy ([draft](../legal/consumer-health-data-policy.md), not yet published), privacy policy, and terms.
 - Gene Keys: a license, or approval to replace the key names with original reflections, before any paid depth.
 - A payment processor that approves astrology and tarot content (Stripe lists psychic services and fortune tellers as restricted), and final pricing.
 - Supabase dashboard: leaked-password protection and redirect URLs for the PKCE sign-in flow.

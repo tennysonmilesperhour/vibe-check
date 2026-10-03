@@ -17,7 +17,11 @@ export const PAGES = [
   { path: '/privacy', heading: 'Privacy policy', marker: (page) => page.getByRole('heading', { level: 1, name: 'Privacy policy' }) },
   { path: '/terms', heading: 'Terms of use', marker: (page) => page.getByRole('heading', { level: 1, name: 'Terms of use' }) },
   { path: '/support', heading: 'Support', marker: (page) => page.getByRole('heading', { level: 1, name: 'Support' }) },
+  { path: '/help-now', heading: 'Help for this moment.', marker: (page) => page.getByRole('heading', { name: 'What feels present?' }) },
 ];
+
+/** The front page's headline, for visitors who aren't signed in. */
+export const LANDING_HEADING = 'See how the people and habits in your life affect you.';
 
 /** Opens Settings, through the menu on a phone. */
 export async function openSettings(page, testInfo) {

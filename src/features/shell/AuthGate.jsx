@@ -23,13 +23,38 @@ function friendlyAuthError(err) {
 }
 
 /**
+ * Why a confirmation or magic link didn't sign the person in, from the
+ * reason Supabase puts in the address; null when there isn't one.
+ */
+export function authLinkError(location = window.location) {
+  const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const query = new URLSearchParams(location.search);
+  const code = params.get('error_code') || query.get('error_code');
+  if (!code && !params.get('error_description') && !query.get('error_description')) return null;
+  if (code === 'otp_expired') return "That link has expired or was already used. Sign in, or ask for a new link below.";
+  return "That link didn't sign you in. Sign in, or ask for a new link below.";
+}
+
+const LINK_ERROR_PARAMS = ['error', 'error_code', 'error_description'];
+
+/** Takes a failed link's reason out of the address once it has been read. */
+export function clearAuthLinkError(location = window.location, history = window.history) {
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const query = new URLSearchParams(location.search);
+  for (const key of LINK_ERROR_PARAMS) { hash.delete(key); query.delete(key); }
+  const search = query.toString();
+  const fragment = hash.toString();
+  history.replaceState(history.state, '', `${location.pathname}${search ? `?${search}` : ''}${fragment ? `#${fragment}` : ''}`);
+}
+
+/**
  * The front door: email + password sign in / sign up, or a magic link.
  * Rendered inline whenever there is no session.
  */
 const NEUTRAL_SIGNUP_NOTICE = "Check your email. If this address is new, there's a link to confirm your account. If you already have an account, sign in or reset your password instead.";
 
-export default function AuthGate() {
-  const [mode, setMode] = useState("signin"); // signin | signup | magic | reset
+export default function AuthGate({ initialMode = "signin", initialError = null }) {
+  const [mode, setMode] = useState(initialMode); // signin | signup | magic | reset
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -37,7 +62,7 @@ export default function AuthGate() {
   const [adult, setAdult] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(initialError);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -104,7 +129,7 @@ export default function AuthGate() {
   const changeMode = (next) => { setMode(next); setError(null); setNotice(null); };
   const title = mode === "signup" ? "Make space for you."
     : mode === "reset" ? "A fresh start."
-    : mode === "magic" ? "Let us send you in."
+    : mode === "magic" ? "Sign in by email."
     : "Welcome back.";
 
   return (
@@ -113,20 +138,20 @@ export default function AuthGate() {
         <div className="welcome-brand"><SanctuaryMark size={50} /><span>vibe check</span></div>
         <div className="welcome-story">
           <p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p>
-          <h1>A little closer<br />to yourself.</h1>
-          <p className="welcome-description">Your days, in their fullness. A private journal, honest patterns, and practices for coming back to yourself.</p>
+          <h1>Free forever.<br />No AI reads your journal.</h1>
+          <p className="welcome-description">See how the people and habits in your life affect you, with a private journal, patterns, weekly and monthly reports, and practices for hard moments.</p>
           <a href="#welcome-form" className="welcome-invitation">Your moment starts here <ArrowUpRight size={18} aria-hidden="true" /></a>
         </div>
         <div className="welcome-caption"><span className="caption-rule" />Rooted in nature. Made for reflection.</div>
       </SkyField>
       <section className="welcome-panel" aria-labelledby="welcome-title">
-        <div className="welcome-topline"><span>Room to grow.</span><a href="mailto:morphiclabsdata@gmail.com">Need a hand? <ArrowUpRight size={13} aria-hidden="true" /></a></div>
+        <div className="welcome-topline"><a href="/">What is Vibe Check?</a><a href="mailto:morphiclabsdata@gmail.com">Need a hand? <ArrowUpRight size={13} aria-hidden="true" /></a></div>
         <div id="welcome-form" className="welcome-form-wrap">
           <SanctuaryMark className="welcome-form-mark" size={64} />
           <p className="sanctuary-eyebrow">PAUSE. NOTICE. BEGIN AGAIN.</p>
           <h2 id="welcome-title">{title}</h2>
           <p className="welcome-form-intro">{mode === "signup" ? "Begin a daily ritual, entirely your own."
-            : mode === "reset" ? "We'll email you a link to reset your password."
+            : mode === "reset" ? "A link to reset your password goes to your inbox."
             : mode === "magic" ? "One link in your inbox. No password needed."
             : "Your space for a softer landing, every day."}</p>
           {(mode === "signin" || mode === "signup") && (
@@ -155,10 +180,10 @@ export default function AuthGate() {
           <button type="button" className="auth-magic" onClick={() => changeMode(mode === "magic" || mode === "reset" ? "signin" : "magic")}>
             {mode === "magic" || mode === "reset" ? "Sign in with a password" : "Email me a magic link"}
           </button>
-          <p className="auth-footnote">Your journal, full history, charts, weekly and monthly reports, and everyday practices are free. No AI account required.</p>
+          <p className="auth-footnote">Free forever: your journal, full history, patterns, reports, practices, app lock and export. No AI account needed.</p>
         </div>
-          <div className="welcome-pillars" aria-label="A place to reflect"><span><Leaf size={18} aria-hidden="true" />Daily rituals</span><span><Sprout size={18} aria-hidden="true" />Personal growth</span><span><Orbit size={18} aria-hidden="true" />Inner connection</span></div>
-          <nav className="flex flex-wrap justify-center gap-5 text-xs py-3" aria-label="App information"><a className="underline underline-offset-4 py-2" href="/privacy">Privacy</a><a className="underline underline-offset-4 py-2" href="/terms">Terms</a><a className="underline underline-offset-4 py-2" href="/support">Support</a><a className="underline underline-offset-4 py-2" href="/support-now">Support now</a></nav>
+          <div className="welcome-pillars" aria-label="How it works"><span><Leaf size={18} aria-hidden="true" />Check in</span><span><Orbit size={18} aria-hidden="true" />See your patterns</span><span><Sprout size={18} aria-hidden="true" />Find what helps</span></div>
+          <nav className="flex flex-wrap justify-center gap-5 text-xs py-3" aria-label="App information"><a className="underline underline-offset-4 py-2" href="/privacy">Privacy</a><a className="underline underline-offset-4 py-2" href="/terms">Terms</a><a className="underline underline-offset-4 py-2" href="/support">Support</a><a className="underline underline-offset-4 py-2" href="/support-now">Support now</a><a className="underline underline-offset-4 py-2" href="/help-now">Help now</a></nav>
       </section>
     </main>
   );

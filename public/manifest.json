@@ -1,7 +1,7 @@
 {
   "name": "Vibe Check",
   "short_name": "Vibe Check",
-  "description": "One honest check-in each evening, woven into your cosmic map.",
+  "description": "See how the people and habits in your life affect you. A free, private journal with patterns, reports and practices. No AI reads your journal.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#adb498",

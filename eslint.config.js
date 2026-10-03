@@ -20,7 +20,6 @@ export default [
     languageOptions: {
       globals: {
         ...globals.browser,
-        __BUILD_ID__: "readonly",
         __BUILD_ENVIRONMENT__: "readonly",
       },
       parserOptions: {
@@ -50,6 +49,19 @@ export default [
       "react/react-in-jsx-scope": "off",
       "react/no-unknown-property": ["error", { ignore: ["cmdk-input-wrapper", "toast-close"] }],
       "react-hooks/rules-of-hooks": "error",
+    },
+  },
+  // The service worker runs in its own scope; vite.config.js fills in its values.
+  {
+    files: ["src/service-worker.js"],
+    languageOptions: {
+      globals: {
+        ...globals.serviceworker,
+        __SW_BUILD__: "readonly",
+        __SW_PRECACHE__: "readonly",
+        __SW_ASSETS__: "readonly",
+        __SW_ENTRY__: "readonly",
+      },
     },
   },
   // Browser tests: Node code, with callbacks that run in the page.

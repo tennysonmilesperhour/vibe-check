@@ -1,7 +1,7 @@
 import "./UpdateToast.css";
 import React, { useEffect, useState } from "react";
 import { ArrowUpRight, RefreshCw, X } from "lucide-react";
-import { getVersionNotice, latestVersionUrl, LIVE_ORIGIN, UPDATE_POLL_MS, UPDATE_SNOOZE_MS } from "@/lib/app-version";
+import { currentBuild, getVersionNotice, latestVersionUrl, LIVE_ORIGIN, UPDATE_POLL_MS, UPDATE_SNOOZE_MS } from "@/lib/app-version";
 
 /** Offer the current live release from any deployed version, without reloading edits. */
 export default function UpdateToast() {
@@ -9,10 +9,11 @@ export default function UpdateToast() {
   const [snoozed, setSnoozed] = useState(null);
 
   useEffect(() => {
-    if (typeof __BUILD_ID__ === "undefined" || typeof __BUILD_ENVIRONMENT__ === "undefined") return;
+    const build = currentBuild();
+    if (!build || typeof __BUILD_ENVIRONMENT__ === "undefined") return;
     if (!["production", "preview"].includes(__BUILD_ENVIRONMENT__)) return;
     const current = {
-      build: __BUILD_ID__,
+      build,
       environment: window.location.origin === LIVE_ORIGIN ? "production" : __BUILD_ENVIRONMENT__,
     };
     let cancelled = false;

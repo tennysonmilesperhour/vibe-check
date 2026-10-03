@@ -52,7 +52,7 @@ screen.
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Vite dev server |
-| `npm run build` | Production build into `dist/` (also emits `/version.json` for the update toast) |
+| `npm run build` | Production build into `dist/` (also emits `/version.json` for the update toast and `/sw.js`, the service worker) |
 | `npm run preview` | Serve the production build locally |
 | `npm run lint` | ESLint over the repo |
 | `npm test` | Vitest unit suites (the resonance/wisdom engines are exhaustively tested) |
@@ -78,6 +78,42 @@ A test fails when a page throws or logs an error, when one of the app's files
 fails to load, when the app makes a request the mock refuses or doesn't
 model, or when it contacts any other site. The first run needs a browser:
 `npx playwright install chromium`.
+
+`e2e/offline.spec.js` checks opening without a connection. Each of its tests
+starts its own server for the test build and stops it partway through, since
+Playwright's offline switch doesn't reach the service worker.
+
+## Offline
+
+The service worker (`src/service-worker.js`, built into `/sw.js` by
+`vite.config.js`) lets the app open without a connection. It keeps app files
+only, never records: sign-in, records, and other sites always go to the
+network.
+
+- Pages come from the network first, so a deploy arrives as before. Without
+  a connection, or when the network gives no answer in 4 seconds, the app's
+  page from the worker's build opens instead. An address that asks for the
+  latest version (`_vibe_version`, from the update notice) always waits for
+  the network.
+- Each build keeps its first-load files, fonts, and icons from the start,
+  plus Support now, help now, Practice, and the policies (`OFFLINE_PAGES` in
+  `vite.config.js`). Other pages are kept once they've been opened.
+- A new build's worker takes over at once. Pages kept before stay kept:
+  unchanged files are copied over, and a changed page's new version is
+  fetched (or, without a connection then, the next time it opens online).
+  The previous build's files stay too, so a tab still open from before a
+  deploy can load what that build kept. The build id lives in index.html
+  (a `vibe-build` meta tag), not in the scripts, so the libraries, styles,
+  and fonts keep their file names across builds.
+- When a page's files fail to load, the app asks the server (`/version.json`)
+  rather than trusting `navigator.onLine`, which stays true on a network
+  without internet: no answer means no connection, a different build means
+  an update, and otherwise the load just failed.
+
+To switch it off for everyone: in `src/main.jsx`, replace the registration
+with code that unregisters any existing worker, and deploy a worker that
+deletes the `vibe-app-` and `vibe-meta` caches and unregisters itself (see
+the comment at the top of `src/service-worker.js`).
 
 ## Project layout
 

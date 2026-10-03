@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import SanctuaryMark from "./SanctuaryMark";
 import RetryButton from "./RetryButton";
@@ -17,10 +18,16 @@ export default function OfflineGate() {
       <div className="max-w-md text-center" role="status" aria-live="polite">
         <SanctuaryMark size={56} className="mx-auto" />
         <p className="sanctuary-eyebrow mt-6">{typeof navigator !== "undefined" && navigator.onLine === false ? "YOU ARE OFFLINE" : "STILL CONNECTING"}</p>
-        <h1 className="text-4xl mt-2">We can't reach your account right now.</h1>
+        <h1 className="text-4xl mt-2">Your account can't be reached right now.</h1>
         <p className="living-muted mt-4">
-          Anything you were writing stays in this tab. We'll reconnect as soon as you're back online.
+          Anything you were writing stays in this tab. Vibe Check reconnects as soon as you're back online.
         </p>
+        {/* Only true once the service worker has the app's files. */}
+        {typeof navigator !== "undefined" && navigator.serviceWorker?.controller && (
+          <p className="living-muted mt-3">
+            <Link className="underline" to="/support-now">Support now</Link> and <Link className="underline" to="/help-now">help now</Link> open without a connection.
+          </p>
+        )}
         <RetryButton className="ink-button mt-6" busy={busy} onRetry={retry} />
       </div>
     </main>

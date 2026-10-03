@@ -76,8 +76,10 @@ test.describe('signed in', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'People' })).toBeVisible();
     await goOffline({ context, server, backend });
     await page.goto('/People');
-    // The page opens from what the worker kept; its records wait for a connection.
-    await expect(page.getByRole('status').filter({ hasText: 'Gathering your people…' })).toBeVisible();
+    // The page opens from what the worker kept; its records need a connection,
+    // and with the device offline they say so at once.
+    await expect(page.getByRole('heading', { level: 1, name: 'People' })).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: "Your people can't load without a connection." })).toBeVisible();
     await page.goto('/CosmicAddons');
     const notice = page.getByRole('alert').filter({ hasText: 'This page needs a connection to open.' });
     await expect(notice.getByRole('heading', { level: 1 })).toHaveText('This page needs a connection to open.');

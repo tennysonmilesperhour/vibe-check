@@ -82,6 +82,9 @@ model, or when it contacts any other site. The first run needs a browser:
 `e2e/offline.spec.js` checks opening without a connection. Each of its tests
 starts its own server for the test build and stops it partway through, since
 Playwright's offline switch doesn't reach the service worker.
+`e2e/kept-saves.spec.js` checks saves kept without a connection, with the
+stand-in Supabase out of reach (`backend.control.offline`) or losing answers
+on the way back (`backend.control.loseAnswers`).
 
 ## Offline
 
@@ -114,6 +117,37 @@ To switch it off for everyone: in `src/main.jsx`, replace the registration
 with code that unregisters any existing worker, and deploy a worker that
 deletes the `vibe-app-` and `vibe-meta` caches and unregisters itself (see
 the comment at the top of `src/service-worker.js`).
+
+Saves made without a connection are kept on the device and sent later
+(`src/lib/kept-saves.js`, sent by `src/features/shell/KeptSaves.jsx`):
+
+- A check-in or journal entry whose save fails for want of a connection is
+  kept in localStorage, per person, and sent when the connection returns,
+  when the tab comes back into view, and every minute while any wait.
+- Sending twice changes nothing: a check-in writes its day again, and a new
+  journal entry carries an id made on the device, inserted only if it isn't
+  there yet.
+- Each kept check-in and journal edit records which stored version it
+  started from (`base`, its `updated_at`), and earlier versions kept here
+  (`prior`). If the account holds a different version, saved somewhere else,
+  it isn't written over: the person chooses on Today (or in the journal) to
+  save their version or discard it. A check-in begun while Today couldn't
+  load the history, and a kept check-in or journal change reopened and saved
+  again, go through the same check, even once the connection is back.
+- Nothing is sent until requests go out signed in: after a long time offline
+  the Supabase client waits up to a minute to renew the session, and sends
+  requests signed out meanwhile (reads come back empty, writes are refused).
+  Today waits for the session the same way before trusting what it reads.
+- An answer about the save itself (a database refusal) leaves it for the
+  person too, with the reason. A server error or an expired session is
+  tried again later.
+- Signing out from Settings or deleting the account removes kept saves;
+  Settings says how many there are first. An expired session or a forgotten
+  app-lock PIN keeps them for when the person signs back in.
+- Reads through `src/api/entities.js` are tried again on a dropped connection
+  (the Supabase client waits 1, 2 and 4 seconds), except while the device
+  reports it's offline: then they fail at once, so Today and the check-in
+  open without the wait.
 
 ## Project layout
 

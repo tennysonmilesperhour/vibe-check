@@ -5,6 +5,7 @@ import { queryClientInstance } from '@/lib/query-client';
 import { isTransientAuthError, userFromSession, sessionChange } from '@/lib/auth-session';
 import { clearLegacyDrafts } from '@/lib/legacy-drafts';
 import { clearAllBuffers } from '@/lib/writing-buffer';
+import { clearKeptSaves } from '@/lib/kept-saves';
 
 // Supabase-backed auth: the user, whether the first answer is still loading,
 // any auth error (signed out or offline), sign-out, a re-check, and the
@@ -121,9 +122,15 @@ export const AuthProvider = ({ children }) => {
     return () => { active = false; };
   }, [user?.id]);
 
-  const logout = async (scope = 'local') => {
+  const logout = async (scope = 'local', { keepSaves = false } = {}) => {
+    // Read before signing out: the sign-out event clears the signed-in id.
+    const userId = userIdRef.current;
     const { error } = await supabase.auth.signOut({ scope });
     if (error) throw error;
+    // Signing out from Settings removes saves kept on this device while
+    // offline (Settings warns first). A forgotten PIN keeps them, as an
+    // expired session does, for when the person signs back in.
+    if (!keepSaves) clearKeptSaves(userId);
     applySession(null);
   };
 

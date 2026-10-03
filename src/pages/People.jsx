@@ -26,6 +26,7 @@ import { createPageUrl } from "@/utils";
 import { UserPlus, Users, RefreshCw, Trash2, Pencil } from "lucide-react";
 import LoadingState from "@/features/shell/LoadingState";
 import RetryButton from "@/features/shell/RetryButton";
+import { isConnectionError } from "@/lib/kept-saves";
 
 const TYPES = ["family", "friend", "partner", "colleague", "community", "other"];
 const EMPTY_FORM = { name: "", person_type: "friend", qualities: "", concerns: "", boundary_notes: "" };
@@ -53,7 +54,7 @@ export default function People() {
   const failed = parts.some((query) => query.isError && query.data === undefined);
   const { retry, retrying, showing, error } = useRetry(parts, failed, ready);
   const loading = !retrying && parts.some((query) => query.isLoading);
-  const loadError = showing ? error?.message || "Your people couldn't load." : '';
+  const loadError = !showing ? '' : isConnectionError(error) ? "Your people can't load without a connection." : error?.message || "Your people couldn't load.";
   const [detail, setDetail] = useState(null);
   const [editing, setEditing] = useState(null); // null | 'new' | person
   const [deleting, setDeleting] = useState(null);

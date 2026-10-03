@@ -17,6 +17,7 @@ import { daysKeptThisMonth, daysKeptLabel } from "@/lib/record-days";
 import { formatDay, todayKey } from "@/lib/dates";
 import { useAuth } from "@/lib/AuthContext";
 import { readBuffer, clearBuffer, bufferRestorable, latestVersion, isNewerVersion } from "@/lib/writing-buffer";
+import { dropSave, isConnectionError, keepSave, sendKeptSavesNow } from "@/lib/kept-saves";
 import useWritingBuffer from "@/hooks/use-writing-buffer";
 import useBeforeUnload from "@/hooks/use-before-unload";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
@@ -59,7 +60,7 @@ const formFrom = (existing) => answersOnly({
 const picksOf = (payload) => ({ emotions: picksFrom(payload?.emotions, EMOTIONS), activities: picksFrom(payload?.activities, ACTIVITIES) });
 const typedOf = (payload) => ({ emotions: typedFrom(payload?.emotions, EMOTIONS), activities: typedFrom(payload?.activities, ACTIVITIES) });
 
-export default function CheckInCeremony({ dateKey = todayKey(), existing = null, onDone, onCancel }) {
+export default function CheckInCeremony({ dateKey = todayKey(), existing = null, historyKnown = true, onDone, onCancel }) {
   const { toast } = useToast();
   const reduced = useReducedMotion();
   const queryClient = useQueryClient();
@@ -422,22 +423,52 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     // profile hiccup block keeping the day. A check-in keeps what the person
     // recorded, nothing from the optional systems.
     const me = await base44.auth.me().catch(() => null);
+    const personIds = [
+      ...new Set([...(form.person_ids || []), ...(form.high_moment?.person_ids || []), ...(form.low_moment?.person_ids || [])]),
+    ];
+    const asked = askedRef.current;
+    const payload = {
+      ...form,
+      date: dateKey,
+      person_ids: personIds,
+      stress_context: { ...form.stress_context, asked_steps: ALL_STEPS.filter((id) => asked.has(id)) },
+    };
+    // A kept check-in is sent over the stored day it started from and no
+    // other: base is when that was saved. seen: the newest saved version (the
+    // day or its draft) these answers already hold, so reopening it never
+    // brings back an older draft over it. prior: the kept check-in this one
+    // began from, which may already be in the account.
+    const base = existing?.keptOnDevice ? existing.keptBase ?? null : existing?.updated_at ?? null;
+    const keep = () => keepSave(ownerId, { id: `check-in:${dateKey}`, kind: "check-in", payload, base, seen: serverVersion, prior: [existing?.keptOnDevice && existing.keptPayload].filter(Boolean) });
+    const kept = ({ sending }) => {
+      baselineRef.current = JSON.stringify(form);
+      clearBuffer(bufferKey);
+      // Sent now, it's SendKeptSaves that says how it went.
+      if (sending) sendKeptSavesNow();
+      else toast({ title: "Kept on this device", description: "It will be saved to your account when you're back online." });
+      setSaving(false);
+      onDone?.(null, { newAlerts: [], kept: true });
+    };
+    // Begun without the stored day in view (the history couldn't load), or
+    // from the check-in kept on this device, the day is saved the way a kept
+    // one is: checked against the stored day first, so a version saved
+    // somewhere else is never written over unasked.
+    if ((!historyKnown || existing?.keptOnDevice) && keep()) {
+      kept({ sending: navigator.onLine !== false });
+      return;
+    }
     let saved;
     try {
-      const personIds = [
-        ...new Set([...(form.person_ids || []), ...(form.high_moment?.person_ids || []), ...(form.low_moment?.person_ids || [])]),
-      ];
-      const asked = askedRef.current;
-      const payload = {
-        ...form,
-        date: dateKey,
-        person_ids: personIds,
-        stress_context: { ...form.stress_context, asked_steps: ALL_STEPS.filter((id) => asked.has(id)) },
-      };
       // Single atomic write on (user_id, date): a second tab or a re-entered
       // ceremony can't race a read-then-create into a unique violation.
       saved = await DailyCheckIn.upsertFor(ownerId, payload);
     } catch (e) {
+      // Without a connection the day is kept on this device and saved to the
+      // account when the connection returns (SendKeptSaves).
+      if (isConnectionError(e) && keep()) {
+        kept({ sending: false });
+        return;
+      }
       resumeAutosave();
       toast({ title: "Could not save", description: e?.message || "Please try again. Your words are still here.", variant: "destructive" });
       setSaving(false);
@@ -448,6 +479,9 @@ export default function CheckInCeremony({ dateKey = todayKey(), existing = null,
     // save as failed.
     baselineRef.current = JSON.stringify(form);
     clearBuffer(bufferKey);
+    // Begun from the check-in kept on this device (when it couldn't be kept
+    // again), this one carries it to the account.
+    if (existing?.keptOnDevice) dropSave(ownerId, `check-in:${dateKey}`);
     if (draftIdRef.current) await CheckInDraft.delete(draftIdRef.current).catch(() => {});
     // The newest check-ins as stored now, the kept day among them. They
     // replace the cached ones for their dates, so Today and the sidebar show

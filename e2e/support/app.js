@@ -17,8 +17,10 @@ export { STORAGE_KEY };
 export const test = base.extend({
   /** Who is signed in: 'established', 'newcomer', or null for signed out. */
   persona: ['established', { option: true }],
-  /** For a test that makes a request fail on purpose, such as going offline: the browser logs each failed load. */
+  /** For a test that makes a request fail on purpose: the browser logs each failed load. */
   allowFailedRequests: [false, { option: true }],
+  /** For a test that cuts the connection or breaks a page's files: loads of the app's own files may fail too. */
+  allowFailedAppLoads: [false, { option: true }],
   /** Console errors a test causes on purpose (one RegExp), such as React reporting a page that can't load offline. */
   allowConsoleErrors: [null, { option: true }],
   /**
@@ -59,7 +61,7 @@ export const test = base.extend({
     await context.unrouteAll({ behavior: 'wait' });
   },
 
-  page: async ({ page, backend, baseURL, allowFailedRequests, allowConsoleErrors, expectedFaults }, use) => {
+  page: async ({ page, backend, baseURL, allowFailedRequests, allowFailedAppLoads, allowConsoleErrors, expectedFaults }, use) => {
     await page.clock.setFixedTime(new Date(NOW));
     const appOrigin = new URL(baseURL).origin;
     // A copy without g or y, whose lastIndex would carry from one fault to the next.
@@ -71,7 +73,7 @@ export const test = base.extend({
       if (message.type() !== 'error') return;
       if (allowConsoleErrors && new RegExp(allowConsoleErrors.source, allowConsoleErrors.flags.replace(/[gy]/g, '')).test(message.text())) return;
       if (/Failed to load resource/.test(message.text())) {
-        if (allowFailedRequests) return;
+        if (allowFailedRequests || allowFailedAppLoads) return;
         // The failed load an expected refusal causes, and only that one.
         if (backend.faultLog.some((fault) => isExpected(fault) && fault.url === message.location().url)) return;
       }
@@ -82,7 +84,7 @@ export const test = base.extend({
     });
     page.on('requestfailed', (request) => {
       // A load the page itself abandoned (a navigation, an aborted read) isn't a failure.
-      if (allowFailedRequests || !request.url().startsWith(appOrigin) || /ERR_ABORTED/.test(request.failure()?.errorText || '')) return;
+      if (allowFailedAppLoads || !request.url().startsWith(appOrigin) || /ERR_ABORTED/.test(request.failure()?.errorText || '')) return;
       problems.push(`failed to load ${request.url()}: ${request.failure()?.errorText}`);
     });
     await use(page);

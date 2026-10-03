@@ -39,6 +39,28 @@ test('an unknown address says so', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: "This page isn't on the map" })).toBeVisible();
 });
 
+test.describe("a page whose files don't load", () => {
+  // Cosmos's script fails on purpose, and React reports it: the first time
+  // with no module at all, as the app reloads once to look for a newer one.
+  test.use({ allowFailedAppLoads: true, allowFailedRequests: true, allowConsoleErrors: /dynamically imported module|reading 'default'/ });
+
+  for (const { server, heading } of [{ server: 'a newer build', heading: 'Vibe Check was updated.' }, { server: 'this build', heading: "This page didn't load." }]) {
+    test(`says "${heading}" when the server has ${server}`, async ({ page }) => {
+      await page.route(/\/assets\/CosmicAddons-[\w-]+\.js$/, (route) => route.abort());
+      await page.goto('/Today');
+      const build = await page.locator('meta[name="vibe-build"]').getAttribute('content');
+      const answer = server === 'this build' ? build : 'newer-build';
+      await page.route(/\/version\.json/, (route) => route.fulfill({ json: { build: answer, environment: 'development' } }));
+      await page.goto('/CosmicAddons');
+      await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+      if (server === 'a newer build') {
+        await page.getByRole('button', { name: 'Open the latest version' }).click();
+        await expect(page).toHaveURL(/_vibe_version=newer-build/);
+      }
+    });
+  }
+});
+
 test.describe('signed out', () => {
   test.use({ persona: null });
 

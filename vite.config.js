@@ -7,8 +7,8 @@ import { attr, tags } from './scripts/html.mjs'
 
 // Build stamp: written into index.html (a vibe-build meta tag) and published
 // as /version.json, so the running app can notice a newer deployment
-// (UpdateToast). It stays out of the scripts: identical code keeps identical
-// file names from build to build, so the service worker's kept pages last.
+// (UpdateToast). It stays out of the scripts, so a build of unchanged code
+// keeps the same file names.
 const BUILD_ID = String(Date.now())
 
 // Deployed previews also offer a route back to the current production app.
@@ -45,20 +45,16 @@ const OFFLINE_PAGES = ['SupportNow', 'HelpNow', 'Practice', 'SomaticPractice', '
 // it keeps from the start (everything index.html loads, the fonts, and the
 // offline pages with what they import) and the list of every built file.
 const serviceWorkerPlugin = () => {
-  let outDir
   let root
-  let bundle = {}
   return {
     name: 'emit-service-worker',
     apply: 'build',
     configResolved(config) {
       root = config.root
-      outDir = path.resolve(config.root, config.build.outDir)
     },
-    generateBundle(_options, output) {
-      bundle = output
-    },
-    closeBundle() {
+    // After a successful write only, so a failed build reports its own error.
+    writeBundle(options, bundle) {
+      const outDir = options.dir
       const html = readFileSync(path.join(outDir, 'index.html'), 'utf8')
       const scripts = tags(html, 'script')
       const entry = scripts.map((tag) => attr(tag, 'type') === 'module' && attr(tag, 'src')).find(Boolean)
@@ -80,11 +76,12 @@ const serviceWorkerPlugin = () => {
       for (const item of Object.values(bundle)) if (item.fileName.endsWith('.woff2')) files.add(`/${item.fileName}`)
       files.delete('/index.html')
       const assets = Object.values(bundle).map((item) => `/${item.fileName}`).filter((name) => name.startsWith('/assets/'))
+      // Replacer functions, so a $ in a file name is never read as a pattern.
       const source = readFileSync(path.resolve(root, 'src/service-worker.js'), 'utf8')
-        .replace('__SW_BUILD__', JSON.stringify(BUILD_ID))
-        .replace('__SW_PRECACHE__', JSON.stringify([...files].sort()))
-        .replace('__SW_ASSETS__', JSON.stringify(assets.sort()))
-        .replace('__SW_ENTRY__', JSON.stringify(entry))
+        .replace('__SW_BUILD__', () => JSON.stringify(BUILD_ID))
+        .replace('__SW_PRECACHE__', () => JSON.stringify([...files].sort()))
+        .replace('__SW_ASSETS__', () => JSON.stringify(assets.sort()))
+        .replace('__SW_ENTRY__', () => JSON.stringify(entry))
       writeFileSync(path.join(outDir, 'sw.js'), source)
     },
   }

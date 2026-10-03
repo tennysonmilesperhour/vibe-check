@@ -58,7 +58,7 @@ function network(files, state = { offline: false, hang: false }) {
   return Object.assign(fetch, { state });
 }
 
-function worker({ build, precache, assets = precache, entry = '/assets/index-a.js', caches, fetch }) {
+function worker({ build, precache, assets = precache, entry = '/assets/index-AAAAAAAA.js', caches, fetch }) {
   const source = TEMPLATE
     .replace('__SW_BUILD__', JSON.stringify(build))
     .replace('__SW_PRECACHE__', JSON.stringify(precache))
@@ -94,10 +94,10 @@ function worker({ build, precache, assets = precache, entry = '/assets/index-a.j
   };
 }
 
-const PAGE = '<script type="module" src="/assets/index-a.js"></script>';
-const B1 = { '/index.html': PAGE, '/assets/index-a.js': 'entry', '/assets/People-p.js': 'people', '/assets/Cosmos-c1.js': 'cosmos one', '/favicon.svg': 'icon' };
+const PAGE = '<script type="module" src="/assets/index-AAAAAAAA.js"></script>';
+const B1 = { '/index.html': PAGE, '/assets/index-AAAAAAAA.js': 'entry', '/assets/People-PPPPPPPP.js': 'people', '/assets/Cosmos-CCCCCC01.js': 'cosmos one', '/favicon.svg': 'icon' };
 
-async function installed({ caches, fetch, build = '1', precache = ['/assets/index-a.js', '/favicon.svg'], assets = Object.keys(B1).filter((path) => path.startsWith('/assets/')) }) {
+async function installed({ caches, fetch, build = '1', precache = ['/assets/index-AAAAAAAA.js', '/favicon.svg'], assets = Object.keys(B1).filter((path) => path.startsWith('/assets/')) }) {
   const sw = worker({ build, precache, assets, caches, fetch });
   await sw.event('install');
   await sw.event('activate');
@@ -109,13 +109,13 @@ describe('the service worker', () => {
     const fetch = network(B1);
     const caches = new MemoryCaches(fetch);
     await installed({ caches, fetch });
-    expect(caches.paths('vibe-app-1')).toEqual(['/assets/index-a.js', '/favicon.svg', '/index.html']);
+    expect(caches.paths('vibe-app-1')).toEqual(['/assets/index-AAAAAAAA.js', '/favicon.svg', '/index.html']);
   });
 
   it("fails to install, and keeps nothing, when the page belongs to another build", async () => {
-    const fetch = network({ ...B1, '/index.html': '<script type="module" src="/assets/index-z.js"></script>' });
+    const fetch = network({ ...B1, '/index.html': '<script type="module" src="/assets/index-ZZZZZZZZ.js"></script>' });
     const caches = new MemoryCaches(fetch);
-    const sw = worker({ build: '1', precache: ['/assets/index-a.js'], caches, fetch });
+    const sw = worker({ build: '1', precache: ['/assets/index-AAAAAAAA.js'], caches, fetch });
     await expect(sw.event('install')).rejects.toThrow('another build');
     expect(await caches.keys()).toEqual([]);
   });
@@ -123,7 +123,7 @@ describe('the service worker', () => {
   it('fails to install, and keeps nothing, when a file is missing', async () => {
     const fetch = network(B1);
     const caches = new MemoryCaches(fetch);
-    const sw = worker({ build: '1', precache: ['/assets/index-a.js', '/assets/gone.js'], caches, fetch });
+    const sw = worker({ build: '1', precache: ['/assets/index-AAAAAAAA.js', '/assets/gone-GGGGGGGG.js'], caches, fetch });
     await expect(sw.event('install')).rejects.toThrow('404');
     expect(await caches.keys()).toEqual([]);
   });
@@ -145,6 +145,22 @@ describe('the service worker', () => {
     expect(await (await sw.request('/support-now', { mode: 'navigate' })).text()).toBe(PAGE);
   });
 
+  it('waits for the network when the latest version is asked for', async () => {
+    const files = { ...B1, '/index.html': PAGE };
+    let answer;
+    const slow = Object.assign(async (input) => {
+      if (new URL(href(input)).search.includes('_vibe_version')) return new Promise((resolve) => { answer = resolve; });
+      return network(files)(input);
+    }, { state: { offline: false, hang: false } });
+    const caches = new MemoryCaches(slow);
+    const sw = await installed({ caches, fetch: slow });
+    const pending = sw.request('/Today?_vibe_version=2', { mode: 'navigate' });
+    // Well past the page wait (shortened here), the newest page arrives and is used.
+    await new Promise((resolve) => { setTimeout(resolve, 20); });
+    answer(new Response('the newest page'));
+    expect(await (await pending).text()).toBe('the newest page');
+  });
+
   it("uses the browser's early page request when there is one", async () => {
     const fetch = network(B1);
     const caches = new MemoryCaches(fetch);
@@ -157,10 +173,10 @@ describe('the service worker', () => {
     const fetch = network(B1);
     const caches = new MemoryCaches(fetch);
     const sw = await installed({ caches, fetch });
-    expect(await (await sw.request('/assets/People-p.js')).text()).toBe('people');
+    expect(await (await sw.request('/assets/People-PPPPPPPP.js')).text()).toBe('people');
     await new Promise((resolve) => { setTimeout(resolve, 0); });
     fetch.state.offline = true;
-    expect(await (await sw.request('/assets/People-p.js')).text()).toBe('people');
+    expect(await (await sw.request('/assets/People-PPPPPPPP.js')).text()).toBe('people');
   });
 
   it('leaves records, sign-in and other sites to the network', async () => {
@@ -171,19 +187,38 @@ describe('the service worker', () => {
     expect(await sw.request('/version.json')).toBeUndefined();
   });
 
-  it("carries a kept page over to the next build when its file hasn't changed, and drops one that changed", async () => {
+  it('keeps pages opened on the last build: unchanged files copied over, changed ones fetched anew', async () => {
     const fetch = network(B1);
     const caches = new MemoryCaches(fetch);
     const first = await installed({ caches, fetch });
-    await first.request('/assets/People-p.js');
-    await first.request('/assets/Cosmos-c1.js');
+    await first.request('/assets/People-PPPPPPPP.js');
+    await first.request('/assets/Cosmos-CCCCCC01.js');
     await new Promise((resolve) => { setTimeout(resolve, 0); });
     // The next build changes Cosmos only.
-    const files = { ...B1, '/assets/Cosmos-c2.js': 'cosmos two' };
-    delete files['/assets/Cosmos-c1.js'];
+    const files = { ...B1, '/assets/Cosmos-CCCCCC02.js': 'cosmos two' };
+    delete files['/assets/Cosmos-CCCCCC01.js'];
     const next = network(files);
-    await installed({ caches, fetch: next, build: '2', assets: ['/assets/index-a.js', '/assets/People-p.js', '/assets/Cosmos-c2.js'] });
-    expect(caches.paths('vibe-app-2')).toEqual(['/assets/People-p.js', '/assets/index-a.js', '/favicon.svg', '/index.html']);
+    await installed({ caches, fetch: next, build: '2', assets: ['/assets/index-AAAAAAAA.js', '/assets/People-PPPPPPPP.js', '/assets/Cosmos-CCCCCC02.js'] });
+    expect(caches.paths('vibe-app-2')).toEqual(['/assets/Cosmos-CCCCCC02.js', '/assets/People-PPPPPPPP.js', '/assets/index-AAAAAAAA.js', '/favicon.svg', '/index.html']);
+    next.state.offline = true;
+    const sw = worker({ build: '2', precache: [], assets: ['/assets/Cosmos-CCCCCC02.js'], caches, fetch: next });
+    expect(await (await sw.request('/assets/Cosmos-CCCCCC02.js')).text()).toBe('cosmos two');
+  });
+
+  it("still takes over without a connection, fetching a changed page when it's next opened online", async () => {
+    const fetch = network(B1);
+    const caches = new MemoryCaches(fetch);
+    const first = await installed({ caches, fetch });
+    await first.request('/assets/Cosmos-CCCCCC01.js');
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+    // Build 2's files were kept while online; it takes over offline.
+    const files = { ...B1, '/assets/Cosmos-CCCCCC02.js': 'cosmos two' };
+    const next = network(files);
+    const sw = worker({ build: '2', precache: ['/assets/index-AAAAAAAA.js'], assets: ['/assets/index-AAAAAAAA.js', '/assets/Cosmos-CCCCCC02.js'], caches, fetch: next });
+    await sw.event('install');
+    next.state.offline = true;
+    await sw.event('activate');
+    expect(caches.paths('vibe-app-2')).toEqual(['/assets/index-AAAAAAAA.js', '/index.html']);
   });
 
   it('keeps the build that ran before for a page still open, and lets go of older ones', async () => {

@@ -1,4 +1,5 @@
 import React from "react";
+import { currentBuild } from "@/lib/app-version";
 
 // Old script chunks disappear after a deploy; the browser reports it in one
 // of these ways depending on the engine.
@@ -6,38 +7,50 @@ const STALE_CHUNK = /dynamically imported module|Importing a module script faile
 const isChunkError = (error) => STALE_CHUNK.test(String(error?.message || error));
 
 /**
- * Whether the app's own server answers. navigator.onLine stays true on a
- * network without internet, and the service worker doesn't answer for
- * /version.json, so this asks the server itself.
+ * Whether the app's own server answers, and with which build. navigator.onLine
+ * stays true on a network without internet, and the service worker doesn't
+ * answer for /version.json, so this asks the server itself.
+ * @returns {Promise<{ answers: boolean, build: string | null }>}
  */
-export async function serverAnswers() {
-  if (navigator.onLine === false) return false;
+export async function askServer() {
+  if (navigator.onLine === false) return { answers: false, build: null };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
-    await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store", signal: controller.signal });
-    return true;
+    const response = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store", signal: controller.signal });
+    const build = await response.json().then((manifest) => manifest?.build, () => null);
+    return { answers: true, build: typeof build === "string" ? build : null };
   } catch {
-    return false;
+    return { answers: false, build: null };
   } finally {
     clearTimeout(timer);
   }
 }
 
+// Opens the latest version: the service worker waits for the network for an
+// address that asks for it, rather than opening the page it kept.
+function openLatest(build) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("_vibe_version", build);
+  window.location.assign(url.href);
+}
+
 /**
  * Per-page safety net: a page error keeps the navigation and the rest of the
  * app usable. Keyed by route in App.jsx, so moving to another page resets it.
- * A page's files that fail to load mean an update, or no connection: which
- * one is settled by asking the server, once, when it happens.
+ * A page whose files fail to load is settled by asking the server, once:
+ * no answer means no connection, a different build means an update, and
+ * otherwise the load just failed. (React keeps a failed page load until the
+ * app reloads, so the same failure can come back after the connection does.)
  */
 export default class RouteErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { error: null, connection: null };
+    this.state = { error: null, connection: null, build: null };
   }
 
   static getDerivedStateFromError(error) {
-    return { error, connection: isChunkError(error) ? "checking" : null };
+    return { error, connection: isChunkError(error) ? "checking" : null, build: null };
   }
 
   componentDidMount() {
@@ -53,8 +66,11 @@ export default class RouteErrorBoundary extends React.Component {
       console.error("Page error:", error, info?.componentStack);
       return;
     }
-    serverAnswers().then((answers) => {
-      if (this.mounted && this.state.error === error) this.setState({ connection: answers ? "online" : "offline" });
+    askServer().then(({ answers, build }) => {
+      if (!this.mounted || this.state.error !== error) return;
+      const current = currentBuild();
+      const connection = !answers ? "offline" : build && current && build !== current ? "updated" : "failed";
+      this.setState({ connection, build });
     });
   }
 
@@ -78,23 +94,40 @@ export default class RouteErrorBoundary extends React.Component {
         </div>
       );
     }
-    const stale = connection === "online";
+    if (connection === "updated") {
+      return (
+        <div className="living-page" role="alert">
+          <p className="sanctuary-eyebrow">A NEWER VERSION IS READY</p>
+          <h1>Vibe Check was updated.</h1>
+          <p className="living-muted mt-3">Open the latest version to see this page. Your saved record is safe.</p>
+          <div className="flex flex-wrap gap-3 mt-6">
+            <button type="button" className="ink-button" onClick={() => openLatest(this.state.build)}>Open the latest version</button>
+          </div>
+        </div>
+      );
+    }
+    if (connection === "failed") {
+      return (
+        <div className="living-page" role="alert">
+          <p className="sanctuary-eyebrow">THIS PAGE DIDN'T LOAD</p>
+          <h1>This page didn't load.</h1>
+          <p className="living-muted mt-3">Reload the app to try again. Your saved record is safe.</p>
+          <div className="flex flex-wrap gap-3 mt-6">
+            <button type="button" className="ink-button" onClick={() => window.location.reload()}>Reload the app</button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="living-page" role="alert">
-        <p className="sanctuary-eyebrow">{stale ? "A NEWER VERSION IS READY" : "THIS PAGE STUMBLED"}</p>
-        <h1>{stale ? "Vibe Check was updated." : "Something went wrong on this page."}</h1>
-        <p className="living-muted mt-3">
-          {stale
-            ? "Reload to open the latest version. Your saved record is safe."
-            : "Your saved record is safe. Try this page again, or reload the app."}
-        </p>
+        <p className="sanctuary-eyebrow">THIS PAGE STUMBLED</p>
+        <h1>Something went wrong on this page.</h1>
+        <p className="living-muted mt-3">Your saved record is safe. Try this page again, or reload the app.</p>
         <div className="flex flex-wrap gap-3 mt-6">
-          {!stale && (
-            <button type="button" className="ink-button" onClick={() => this.setState({ error: null, connection: null })}>
-              Try again
-            </button>
-          )}
-          <button type="button" className={stale ? "ink-button" : "living-secondary"} onClick={() => window.location.reload()}>
+          <button type="button" className="ink-button" onClick={() => this.setState({ error: null, connection: null, build: null })}>
+            Try again
+          </button>
+          <button type="button" className="living-secondary" onClick={() => window.location.reload()}>
             Reload the app
           </button>
         </div>

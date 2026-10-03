@@ -66,7 +66,7 @@ test.describe('signed out', () => {
 test.describe('signed in', () => {
   // Pages and records that can't load offline fail on purpose, and React
   // reports the page that can't.
-  test.use({ allowFailedRequests: true, allowConsoleErrors: /dynamically imported module/ });
+  test.use({ allowFailedAppLoads: true, allowConsoleErrors: /dynamically imported module/ });
 
   test("a page opened before opens offline, and one that wasn't says it needs a connection", async ({ page, context, server, backend }) => {
     await page.goto('/Today');

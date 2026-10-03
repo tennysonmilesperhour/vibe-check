@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import SanctuaryMark from "./SanctuaryMark";
 import RetryButton from "./RetryButton";
@@ -21,9 +22,12 @@ export default function OfflineGate() {
         <p className="living-muted mt-4">
           Anything you were writing stays in this tab. Vibe Check reconnects as soon as you're back online.
         </p>
-        <p className="living-muted mt-3">
-          <a className="underline" href="/support-now">Support now</a> and <a className="underline" href="/help-now">help now</a> open without a connection.
-        </p>
+        {/* Only true once the service worker has the app's files. */}
+        {typeof navigator !== "undefined" && navigator.serviceWorker?.controller && (
+          <p className="living-muted mt-3">
+            <Link className="underline" to="/support-now">Support now</Link> and <Link className="underline" to="/help-now">help now</Link> open without a connection.
+          </p>
+        )}
         <RetryButton className="ink-button mt-6" busy={busy} onRetry={retry} />
       </div>
     </main>

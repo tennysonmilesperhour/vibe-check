@@ -10,6 +10,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import StressPatternCards from './StressPatternCards';
 import EntryLink from './EntryLink';
 import useBeforeUnload from '@/hooks/use-before-unload';
+import { useAuth } from '@/lib/AuthContext';
+import { lastWeek, markWeekSeen } from '@/lib/week-ready';
 
 export default function Reports({ data, onChanged, savePreferences, onExport }) {
   const [params, setParams] = useSearchParams();
@@ -32,6 +34,11 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
   const [themeEdit, setThemeEdit] = useState(null);
   useEffect(() => { setReflection(saved?.notes || ''); setError(''); setMomentsShown(6); }, [period.start, type, saved?.notes]);
   useEffect(() => { if (!busy) setRemoving(null); }, [period.start, type]);
+  // Last week's report opened here: Today's note about it has done its job.
+  const { user } = useAuth();
+  useEffect(() => {
+    if (type === 'weekly' && period.start === lastWeek(todayKey(), weekStart).start) markWeekSeen(user?.id, period.start);
+  }, [type, period.start, weekStart, user?.id]);
   useBeforeUnload(reflection !== (saved?.notes || ''));
 
   const archive = useMemo(() => {

@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/AuthContext';
 import { usePreferences } from '@/features/patterns/useLivingData';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/components/ui/use-toast';
 import { clearLegacyDrafts } from '@/lib/legacy-drafts';
 import { queryClientInstance } from '@/lib/query-client';
@@ -171,8 +170,8 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
           <span><span className="font-medium block">Notice low-mood days</span><span className="living-muted text-xs block mt-1">Off unless you turn it on. When on, a gentle notice appears after you keep a day at or below the line you choose, with a practice and support options nearby. Notices start from the day you turn this on.</span></span>
         </label>
         {settings.notices_enabled && <>
-        <div><Label>Low mood line: {settings.mood_threshold}</Label><Slider disabled={!settingsLoaded} min={1} max={7} step={1} value={[settings.mood_threshold]} onValueChange={([value]) => setSettings({ ...settings, mood_threshold: value })} className="mt-3" aria-label="Low mood threshold" /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
-        <div><Label>Declining run: {settings.consecutive_days} days</Label><Slider disabled={!settingsLoaded} min={2} max={7} step={1} value={[settings.consecutive_days]} onValueChange={([value]) => setSettings({ ...settings, consecutive_days: value })} className="mt-3" aria-label="Consecutive declining days" /></div>
+        <div><Label>Low mood line: {settings.mood_threshold}</Label><input type="range" className="living-range mt-3" disabled={!settingsLoaded} min={1} max={7} step={1} value={settings.mood_threshold} onChange={(event) => setSettings({ ...settings, mood_threshold: Number(event.target.value) })} aria-label="Low mood threshold" /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
+        <div><Label>Declining run: {settings.consecutive_days} days</Label><input type="range" className="living-range mt-3" disabled={!settingsLoaded} min={2} max={7} step={1} value={settings.consecutive_days} onChange={(event) => setSettings({ ...settings, consecutive_days: Number(event.target.value) })} aria-label="Consecutive declining days" /></div>
         </>}
         <label className="living-label">Your week begins<select className="living-input mt-2" value={weekStart} disabled={prefs.data === undefined || saving} onChange={(event) => setWeekStart(Number(event.target.value))}><option value={1}>Monday</option><option value={0}>Sunday</option></select></label>
         <button className="ink-button" onClick={save} disabled={saving || prefs.isLoading}>{saving ? 'Saving…' : 'Save settings'}</button>

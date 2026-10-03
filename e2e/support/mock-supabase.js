@@ -46,10 +46,12 @@ function statusFor(code, signedIn) {
 }
 
 // An INSERT of JSON rows the way PostgREST builds it: only the keys given,
-// converted by json_populate_recordset, merging on a conflict when asked.
-function insertStatement(table, keys, payload, { conflict = null, returning }) {
+// converted by json_populate_recordset, merging on a conflict when asked or
+// leaving the stored row as it is (resolution=ignore-duplicates).
+function insertStatement(table, keys, payload, { conflict = null, ignore = false, returning }) {
   const list = keys.map(quoted).join(', ');
-  const merge = conflict ? ` on conflict (${conflict.map(quoted).join(', ')}) do update set ${keys.map((key) => `${quoted(key)} = excluded.${quoted(key)}`).join(', ')}` : '';
+  const target = conflict ? ` on conflict (${conflict.map(quoted).join(', ')})` : '';
+  const merge = !conflict ? '' : ignore ? `${target} do nothing` : `${target} do update set ${keys.map((key) => `${quoted(key)} = excluded.${quoted(key)}`).join(', ')}`;
   return `insert into public.${quoted(table)} as t (${list}) select ${list} from json_populate_recordset(null::public.${quoted(table)}, ${payload}::text::json)${merge} returning ${returning}`;
 }
 
@@ -68,8 +70,9 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
   /** What the database refused, or the mock doesn't model: { text, url }. */
   const faultLog = [];
   // Levers for loading and error states: tables that answer slowly or fail,
-  // or the whole project out of reach, as without a connection.
-  const control = { delayMs: 0, delayTables: new Set(), failTables: new Set(), offline: false };
+  // the whole project out of reach, as without a connection, or tables whose
+  // writes are made but whose answers are lost on the way back.
+  const control = { delayMs: 0, delayTables: new Set(), failTables: new Set(), offline: false, loseAnswers: new Set() };
   const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
   // Once the test ends, requests still arriving are dropped: the next test shares the database.
   let closed = false;
@@ -214,11 +217,12 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
         if (!keys.length) return refuse(route, request, 400, 'PGRST100', "an insert of an empty row, which the mock doesn't model");
         params.push(JSON.stringify(items));
         let conflict = null;
-        if (prefer.includes('resolution=merge-duplicates')) {
+        const ignore = prefer.includes('resolution=ignore-duplicates');
+        if (ignore || prefer.includes('resolution=merge-duplicates')) {
           conflict = (url.searchParams.get('on_conflict') || 'id').split(',');
           if (conflict.some((column) => !tableColumns.has(column))) return refuse(route, request, 400, '42703', `on_conflict=${conflict.join(',')} names a column ${table} doesn't have`);
         }
-        sql = asJson(insertStatement(table, keys, `$${params.length}`, { conflict, returning }));
+        sql = asJson(insertStatement(table, keys, `$${params.length}`, { conflict, ignore, returning }));
       } else if (method === 'PATCH') {
         const keys = Object.keys(body || {});
         const unknown = keys.find((key) => !tableColumns.has(key));
@@ -271,6 +275,7 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
     }
     // A delete that didn't ask for its rows leaves only a count behind.
     writes.push({ method, table, rows: method === 'DELETE' && !representation ? [] : rows });
+    if (control.loseAnswers.has(table)) return route.abort('connectionreset');
     if (!representation) return empty(route, request, method === 'POST' ? 201 : 204);
     if (single && rows.length !== 1) return json(route, request, 406, { code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' });
     return json(route, request, method === 'POST' ? 201 : 200, single ? rows[0] : rows);

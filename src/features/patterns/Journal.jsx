@@ -14,6 +14,9 @@ import useWritingBuffer from '@/hooks/use-writing-buffer';
 import SupportCard from '@/features/safety/SupportCard';
 import EntryCard from './EntryCard';
 import useBeforeUnload from '@/hooks/use-before-unload';
+import { dropSave, isConnectionError, keepSave, needsChoice } from '@/lib/kept-saves';
+import { useKeptSaves } from '@/features/shell/KeptSaves';
+import KeptSavesList from '@/features/shell/KeptSavesList';
 
 /** Short, stable key for a prompt's text (djb2). */
 function promptKey(text) {
@@ -22,7 +25,7 @@ function promptKey(text) {
   return hash.toString(36);
 }
 
-export function JournalComposer({ open, existing = null, prompt = '', kind = 'reflection', onClose, onSaved }) {
+export function JournalComposer({ open, existing = null, prompt = '', kind = 'reflection', onClose, onSaved, onKept }) {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -88,14 +91,33 @@ export function JournalComposer({ open, existing = null, prompt = '', kind = 're
     if (!validDateKey(form.date) || form.date > todayKey()) { setError('Choose a valid date up to today.'); return; }
     if (!asDraft && !form.notes.trim() && !form.stress_context?.state_ids?.length && form.mood_score == null && !form.interaction_feeling) { setError('Add a few words, a feeling, or a mood to keep this entry.'); return; }
     setBusy(true); setError('');
+    const payload = { date: form.date, occurred_at: form.time ? new Date(`${form.date}T${form.time}:00`).toISOString() : null, emotions: [...new Set(form.emotions_text.split(',').map((value) => value.trim()).filter(Boolean))], kind: form.kind, notes: form.notes, mood_score: form.mood_score, person_ids: form.person_ids || [], activities: [...new Set(form.activities_text.split(',').map((value) => value.trim()).filter(Boolean))], stress_context: form.stress_context || {}, interaction_feeling: form.kind === 'interaction' ? form.interaction_feeling || null : null, boundary_respected: form.kind === 'interaction' ? form.boundary_respected || null : null, is_draft: asDraft };
     try {
-      const payload = { date: form.date, occurred_at: form.time ? new Date(`${form.date}T${form.time}:00`).toISOString() : null, emotions: [...new Set(form.emotions_text.split(',').map((value) => value.trim()).filter(Boolean))], kind: form.kind, notes: form.notes, mood_score: form.mood_score, person_ids: form.person_ids || [], activities: [...new Set(form.activities_text.split(',').map((value) => value.trim()).filter(Boolean))], stress_context: form.stress_context || {}, interaction_feeling: form.kind === 'interaction' ? form.interaction_feeling || null : null, boundary_respected: form.kind === 'interaction' ? form.boundary_respected || null : null, is_draft: asDraft };
       if (existing?.id) await JournalEntry.update(existing.id, payload); else await JournalEntry.createFor(ownerId, payload);
+      // Resumed from a change kept on this device, this save carries it to the account.
+      if (existing?.keptOnDevice) dropSave(ownerId, existing.id);
       clearBuffer(bufferKey);
       baselineRef.current = null;
       setConfirmClose(false);
       await onSaved?.(payload); onClose();
-    } catch (err) { setError(err.message || 'Could not save. Your words are still here.'); }
+    } catch (err) {
+      // Without a connection the entry is kept on this device, with its own
+      // id so sending it twice can't make two, and saved to the account when
+      // the connection returns (SendKeptSaves).
+      // A change is sent over the stored entry it started from and no other:
+      // base is when that was saved.
+      const base = existing?.keptOnDevice ? existing.keptBase ?? null : existing?.updated_at ?? null;
+      const save = existing?.id ? { id: existing.id, kind: 'journal', edit: true, payload, base } : { id: crypto.randomUUID(), kind: 'journal', payload };
+      if (isConnectionError(err) && keepSave(ownerId, save)) {
+        clearBuffer(bufferKey);
+        baselineRef.current = null;
+        setConfirmClose(false);
+        onKept?.(payload);
+        onClose();
+      } else {
+        setError(err.message || 'Could not save. Your words are still here.');
+      }
+    }
     setBusy(false);
   }
   return <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) requestClose(); }}><DialogContent className="living-dialog"><DialogHeader><DialogTitle>{existing ? 'Revisit your words' : 'Keep a moment'}</DialogTitle><DialogDescription>Your private journal. People you add are not notified.</DialogDescription></DialogHeader>
@@ -118,6 +140,29 @@ export function JournalComposer({ open, existing = null, prompt = '', kind = 're
   </DialogContent></Dialog>;
 }
 
+/**
+ * Keeping a moment while the history can't load for want of a connection:
+ * the entry is kept on this device and saved to the account when the
+ * connection returns.
+ */
+export function KeepMomentOffline() {
+  const [params, setParams] = useSearchParams();
+  const [notice, setNotice] = useState('');
+  const [supportFor, setSupportFor] = useState(null);
+  const { user } = useAuth();
+  const kept = useKeptSaves(user?.id).filter((save) => save.kind === 'journal');
+  const setCompose = (on) => setParams((previous) => { const next = new URLSearchParams(previous); if (on) next.set('compose', '1'); else { next.delete('compose'); next.delete('prompt'); next.delete('kind'); } return next; });
+  const offerSupport = (saved) => { if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); };
+  return <section className="living-card space-y-4 mt-6" aria-labelledby="offline-moment-heading">
+    <h2 id="offline-moment-heading">Keep a moment now</h2>
+    <p className="living-muted">It's kept on this device and saved to your account when you're back online.{kept.length > 0 && ` ${kept.length} kept so far.`}</p>
+    {notice && <p className="living-success" role="status">{notice}</p>}
+    {supportFor && <SupportCard focus="relationship" title={supportFor === 'unsafe' ? 'You marked that interaction as unsafe.' : 'You noted that a boundary was not respected.'} onDismiss={() => setSupportFor(null)}>Your record is kept exactly as you wrote it. If it would help to talk it through or plan for your safety, these services are free and confidential.</SupportCard>}
+    <button type="button" className="ink-button" onClick={() => setCompose(true)}><Plus size={16} />Keep a moment</button>
+    <JournalComposer open={params.get('compose') === '1'} prompt={params.get('prompt') || ''} kind={params.get('kind') || 'reflection'} onClose={() => setCompose(false)} onSaved={(saved) => { setNotice('Saved to your journal.'); offerSupport(saved); }} onKept={(saved) => { setNotice("Kept on this device. It will be saved to your account when you're back online."); offerSupport(saved); }} />
+  </section>;
+}
+
 export default function Journal({ data, entries, onChanged, savePreferences }) {
   const [params, setParams] = useSearchParams();
   const [editing, setEditing] = useState(null);
@@ -132,6 +177,10 @@ export default function Journal({ data, entries, onChanged, savePreferences }) {
   // preferences as entry keys. Showing only them is a view of this page.
   const [onlyHighlights, setOnlyHighlights] = useState(false);
   const [pending, setPending] = useState({});
+  const [notice, setNotice] = useState('');
+  const { user } = useAuth();
+  // Entries kept on this device while offline, until they're saved.
+  const kept = useKeptSaves(user?.id).filter((save) => save.kind === 'journal');
   const selectedKey = params.get('entry');
   const selected = data.entries.find((entry) => entry.key === selectedKey);
   const open = params.get('compose') === '1' || Boolean(editing);
@@ -148,7 +197,12 @@ export default function Journal({ data, entries, onChanged, savePreferences }) {
     catch (err) { setError(err.message); }
     setBusy(false);
   }
-  const edit = (entry) => { if (entry.kind === 'day') window.location.assign(`/Today?date=${entry.date}`); else setEditing(entry); };
+  // A change kept on this device while offline is where editing the entry resumes.
+  const edit = (entry) => {
+    if (entry.kind === 'day') { window.location.assign(`/Today?date=${entry.date}`); return; }
+    const keptEdit = kept.find((save) => save.edit && save.id === entry.id && !needsChoice(save));
+    setEditing(keptEdit ? { ...entry, ...keptEdit.payload, entry_kind: keptEdit.payload.kind, keptOnDevice: true, keptBase: keptEdit.base ?? null } : entry);
+  };
   const drafts = data.journal.filter((entry) => entry.is_draft);
   // Highlights: entries starred to come back to, from any date. Kept in the
   // preferences as entry keys.
@@ -177,6 +231,8 @@ export default function Journal({ data, entries, onChanged, savePreferences }) {
   return <section className="space-y-5" aria-labelledby="journal-heading">
     <div className="flex flex-wrap justify-between items-end gap-4"><div><p className="sanctuary-eyebrow">YOUR WORDS, KEPT TOGETHER</p><h2 id="journal-heading">Journal & history</h2><p className="living-muted mt-2">{onlyHighlights ? `${listed.length} highlighted ${listed.length === 1 ? 'entry' : 'entries'}, from any date.` : `${entries.length} entries in this view. A good day belongs beside everything that came before.`}</p><div className="living-chips mt-3"><button type="button" className="living-chip" aria-pressed={!onlyHighlights} onClick={() => setOnlyHighlights(false)}>This view</button><button type="button" className="living-chip" aria-pressed={onlyHighlights} onClick={() => setOnlyHighlights(true)}>Highlights · {highlightedEntries.length}</button></div></div><button className="ink-button" onClick={compose}><Plus size={16} />Keep a moment</button></div>
     {error && <p className="living-error" role="alert">{error}</p>}
+    {notice && <p className="living-success" role="status">{notice}</p>}
+    {kept.length > 0 && <div className="living-inset space-y-3" role="region" aria-label="Kept on this device"><p className="living-label">Kept on this device · {kept.length}</p><p className="living-muted text-sm">Saved to your account when you're back online, unless one needs your choice.</p><KeptSavesList userId={user?.id} saves={kept} /></div>}
     {supportFor && <SupportCard focus="relationship" title={supportFor === 'unsafe' ? 'You marked that interaction as unsafe.' : 'You noted that a boundary was not respected.'} onDismiss={() => setSupportFor(null)}>Your record is kept exactly as you wrote it. If it would help to talk it through or plan for your safety, these services are free and confidential.</SupportCard>}
     {drafts.length > 0 && <div className="living-inset"><p className="living-label mb-2">Saved drafts</p><div className="living-chips">{drafts.map((draft) => <button key={draft.id} className="living-chip" onClick={() => setEditing(draft)}>Resume draft from {formatDay(draft.date)}</button>)}</div></div>}
     {selectedKey && !selected && <p className="living-muted">This entry is no longer in your saved history.</p>}
@@ -184,7 +240,7 @@ export default function Journal({ data, entries, onChanged, savePreferences }) {
     {listed.filter((entry) => entry.key !== selectedKey).slice(0, limit).map((entry) => <EntryCard key={entry.key} entry={entry} people={data.people} highlighted={highlighted.has(entry.key)} highlightBusy={entry.key in pending} onHighlight={savePreferences ? toggleHighlight : undefined} onEdit={edit} onDelete={setDeleting} />)}
     {!listed.length && <p className="living-muted py-6">{onlyHighlights ? 'No highlights yet. Star an entry to come back to it here.' : 'No entries match this view. Adjust the filters or keep a new moment.'}</p>}
     {listed.length > limit && <button className="living-secondary" onClick={() => setLimit((count) => count + 20)}>Show more history</button>}
-    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} kind={params.get('kind') || 'reflection'} onClose={close} onSaved={async (saved) => { await onChanged(['journal']); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} />
+    <JournalComposer open={open} existing={editing} prompt={params.get('prompt') || ''} kind={params.get('kind') || 'reflection'} onClose={close} onSaved={async (saved) => { setNotice(''); await onChanged(['journal']); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} onKept={(saved) => { setNotice("Kept on this device. It will be saved to your account when you're back online."); if (saved?.interaction_feeling === 'unsafe') setSupportFor('unsafe'); else if (saved?.boundary_respected === 'no') setSupportFor('boundary'); }} />
     <Dialog open={Boolean(deleting)} onOpenChange={(isOpen) => { if (!isOpen && !busy) setDeleting(null); }}><DialogContent><DialogHeader><DialogTitle>Delete this entry?</DialogTitle><DialogDescription>This removes the entry from your journal, charts, and reports. This cannot be undone.</DialogDescription></DialogHeader><div className="flex gap-3"><button className="living-secondary" onClick={() => setDeleting(null)}>Keep it</button><button className="danger-button" disabled={busy} onClick={remove}>{busy ? 'Deleting…' : 'Delete entry'}</button></div></DialogContent></Dialog>
   </section>;
 }

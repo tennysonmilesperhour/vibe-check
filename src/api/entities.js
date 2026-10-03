@@ -27,6 +27,11 @@ function inbound(data) {
   return rest;
 }
 
+// Reads are tried again on a dropped connection (the Supabase client waits
+// 1, 2 and 4 seconds), but not while the device reports it's offline: then
+// they fail at once, so a page shows what it can without the wait.
+const retryReads = (query) => query.retry(globalThis.navigator?.onLine !== false);
+
 async function currentUserId() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) throw new Error('Not signed in');
@@ -41,12 +46,12 @@ function makeEntity(table) {
      */
     async list(sort = '-created_date', limit = 100, offset = 0, { signal } = {}) {
       const { column, ascending } = parseSort(sort);
-      let query = supabase
+      let query = retryReads(supabase
         .from(table)
         .select('*')
         .order(column, { ascending })
         .order('id', { ascending: true })
-        .range(offset, offset + limit - 1);
+        .range(offset, offset + limit - 1));
       if (signal) query = query.abortSignal(signal);
       const { data, error } = await query;
       if (error) throw error;
@@ -59,12 +64,12 @@ function makeEntity(table) {
      * @param {string} sinceDate @param {string} [columns]
      */
     async since(sinceDate, columns = '*') {
-      const { data, error } = await supabase
+      const { data, error } = await retryReads(supabase
         .from(table)
         .select(columns)
         .gte('date', sinceDate)
         .order('date', { ascending: false })
-        .limit(500);
+        .limit(500));
       if (error) throw error;
       return (data || []).map(outbound);
     },
@@ -83,7 +88,7 @@ function makeEntity(table) {
      * @returns {Promise<{ rows: any[], total: number | null }>}
      */
     async pageAfter(after, limit, { withTotal = false, signal } = {}) {
-      let query = supabase.from(table).select('*', withTotal ? { count: 'exact' } : undefined).order('id', { ascending: true }).limit(limit);
+      let query = retryReads(supabase.from(table).select('*', withTotal ? { count: 'exact' } : undefined).order('id', { ascending: true }).limit(limit));
       if (after != null) query = query.gt('id', after);
       if (signal) query = query.abortSignal(signal);
       const { data, error, count } = await query;
@@ -97,7 +102,7 @@ function makeEntity(table) {
       for (const [key, value] of Object.entries(criteria)) {
         query = query.eq(key, value);
       }
-      const { data, error } = await query.order(column, { ascending }).limit(limit);
+      const { data, error } = await retryReads(query.order(column, { ascending }).limit(limit));
       if (error) throw error;
       return (data || []).map(outbound);
     },
@@ -159,6 +164,31 @@ function makeEntity(table) {
       const { data: row, error } = await query.single();
       if (error) throw error;
       return outbound(row);
+    },
+
+    /**
+     * Insert with an id made on this device, for a save kept while offline.
+     * Sent again after its answer was lost, it changes nothing: the row is
+     * already there.
+     * @param {string} user_id @param {string} id @param {any} data
+     */
+    async createOnce(user_id, id, data) {
+      const { error } = await supabase
+        .from(table)
+        .upsert({ ...inbound(data), id, user_id }, { onConflict: 'id', ignoreDuplicates: true });
+      if (error) throw error;
+    },
+
+    /**
+     * Writes a row under its own id: replaces the stored values, or puts the
+     * row back when it was deleted meanwhile. For a change kept while offline.
+     * @param {string} user_id @param {string} id @param {any} data
+     */
+    async putWithId(user_id, id, data) {
+      const { error } = await supabase
+        .from(table)
+        .upsert({ ...inbound(data), id, user_id }, { onConflict: 'id' });
+      if (error) throw error;
     },
 
     async delete(id) {

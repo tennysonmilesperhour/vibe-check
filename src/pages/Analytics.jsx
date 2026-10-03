@@ -6,7 +6,8 @@ import { format } from 'date-fns';
 import PageTransition from '@/features/shell/PageTransition';
 import Note from '@/features/shell/Note';
 import { useLivingData } from '@/features/patterns/useLivingData';
-import Journal from '@/features/patterns/Journal';
+import Journal, { KeepMomentOffline } from '@/features/patterns/Journal';
+import { isConnectionError } from '@/lib/kept-saves';
 import Reports from '@/features/patterns/Reports';
 import StressPatternCards from '@/features/patterns/StressPatternCards';
 import ExportHistory from '@/features/patterns/ExportHistory';
@@ -68,7 +69,11 @@ function Patterns() {
   function openExport(initial = { start, end }) { setExporting(initial); }
 
   if (living.isLoading) return <div className="living-page" aria-busy="true"><LoadingState variant="page" label="Gathering your whole history…" /></div>;
-  if (living.isError || !data) return <div className="living-page"><h1>Your history is still yours.</h1><div className="mt-4 space-y-4" role="alert"><p className="living-error">It couldn't load right now. {living.error?.message}</p><RetryButton className="ink-button" busy={living.retrying} onRetry={living.retry}>Try loading again</RetryButton></div></div>;
+  if (living.isError || !data) {
+    // Without a connection, a moment can still be kept on this device.
+    const offline = isConnectionError(living.error);
+    return <div className="living-page"><h1>Your history is still yours.</h1><div className="mt-4 space-y-4" role="alert"><p className="living-error">{offline ? "It can't load without a connection." : `It couldn't load right now. ${living.error?.message || ''}`}</p><RetryButton className="ink-button" busy={living.retrying} onRetry={living.retry}>Try loading again</RetryButton></div>{offline && <KeepMomentOffline />}</div>;
+  }
 
   const showExport = exporting || (params.get('export') === '1' ? { start, end } : null);
   return <div className="field-wash min-h-screen"><PageTransition className="living-page space-y-8">

@@ -15,7 +15,7 @@ export default function Support() {
       <ul>
         <li>Confirm you are using the same email address you used to create the account.</li>
         <li>Use “Forgot your password?” on the sign-in screen if you cannot sign in.</li>
-        <li>Check-ins save a draft as you write. If saving fails, keep the tab open: your words stay in that tab and Vibe Check tries again when your connection returns. Words that haven't saved can be lost if you close the tab.</li>
+        <li>Check-ins save a draft as you write. A check-in or journal entry saved without a connection is kept on this device and saved to your account when you're back online, even if you close the tab. Signing out from Settings deletes anything not yet saved, after telling you how much there is.</li>
         <li>If you set an app lock and forgot the PIN, choose “Forgot your PIN?” on the lock screen. It signs you out and removes the lock on that device; your records stay in your account.</li>
       </ul>
 

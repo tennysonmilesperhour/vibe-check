@@ -14,6 +14,7 @@ import LockGate from '@/features/safety/LockGate';
 import AppErrorBoundary from '@/components/AppErrorBoundary';
 import RouteErrorBoundary from '@/components/RouteErrorBoundary';
 import UpdateToast from '@/features/shell/UpdateToast';
+import SendKeptSaves from '@/features/shell/KeptSaves';
 import './living.css';
 import LoadingState from '@/features/shell/LoadingState';
 
@@ -84,8 +85,11 @@ const AuthenticatedApp = () => {
   }
 
   // Render the main app. A different account starts it afresh, so no open
-  // form can save one person's words into another's account.
+  // form can save one person's words into another's account. Saves kept
+  // while offline are sent whether or not the app is locked.
   return (
+    <>
+    <SendKeptSaves userId={user?.id} />
     <LockGate key={user?.id}>
     {(frozenLocation) => (
     <Suspense fallback={<div className="min-h-screen field-wash" aria-busy="true" />}>
@@ -125,6 +129,7 @@ const AuthenticatedApp = () => {
     </Suspense>
     )}
     </LockGate>
+    </>
   );
 };
 

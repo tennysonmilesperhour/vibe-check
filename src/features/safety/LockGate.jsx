@@ -123,7 +123,7 @@ export function LockScreen({ userId, onUnlock, onForgot, onClosed = () => {}, on
             <div className="flex flex-col items-center gap-3 pt-2">
               {confirmForgot ? (
                 <div className="living-inset space-y-3 text-sm">
-                  <p>This signs you out on this device and removes the lock. Anything not saved yet is lost. Your saved journal stays in your account.</p>
+                  <p>This signs you out on this device and removes the lock. Unsaved words in an open form are lost. Your saved journal stays in your account, and anything kept on this device while offline is saved to it when you sign back in.</p>
                   <div className="flex flex-wrap justify-center gap-3">
                     <button type="button" className="living-secondary" disabled={busy} onClick={forgot}>Sign out and remove the lock</button>
                     <button type="button" className="underline" disabled={busy} onClick={() => setConfirmForgot(false)}>Cancel</button>
@@ -176,7 +176,7 @@ export default function LockGate({ children }) {
           userId={userId}
           onUnlock={() => { unlock(); setContentReady(true); }}
           // Stay covered until the sign-out lands; then the lock can go.
-          onForgot={async () => { await logout('local'); removeAppLock(userId); }}
+          onForgot={async () => { await logout('local', { keepSaves: true }); removeAppLock(userId); }}
           onClosed={() => {
             // Only after a real unlock (the lock can reopen itself), and only into
             // the top dialog if one is open, which otherwise keeps its own focus.

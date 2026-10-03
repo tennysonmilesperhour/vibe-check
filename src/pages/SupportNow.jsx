@@ -67,7 +67,7 @@ function PlanForAccount({ user, logout }) {
       <LockScreen
         userId={user.id}
         onUnlock={() => { unlockedHere.current = true; unlock(); setAskPin(false); }}
-        onForgot={async () => { await logout('local'); removeAppLock(user.id); }}
+        onForgot={async () => { await logout('local', { keepSaves: true }); removeAppLock(user.id); }}
         onCancel={() => setAskPin(false)}
         // Back to where the person was: the plan after unlocking, the button after "Not now".
         onClosed={() => {

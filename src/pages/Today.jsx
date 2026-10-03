@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Leaf, Sprout, Orbit, ArrowRight } from "lucide-react";
 import SanctuaryMark from "@/features/shell/SanctuaryMark";
@@ -22,6 +22,9 @@ import { useSearchParamState } from "@/lib/deeplink";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchRecordPart, recordKey } from "@/features/patterns/useLivingData";
 import LoadingState from "@/features/shell/LoadingState";
+import { useKeptSaves } from "@/features/shell/KeptSaves";
+import KeptSavesList from "@/features/shell/KeptSavesList";
+import { isConnectionError, needsChoice } from "@/lib/kept-saves";
 
 /**
  * State-adaptive landing:
@@ -45,6 +48,9 @@ export default function Today() {
   const [loadedBackfillDate, setLoadedBackfillDate] = useState(null);
   const [backfillLoading, setBackfillLoading] = useState(false);
   const [loadError, setLoadError] = useState('');
+  // The history couldn't load for want of a connection: a check-in can still
+  // be kept on this device.
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     if (!isBackfill) { setBackfillEntry(null); setBackfillLoading(false); return; }
@@ -62,8 +68,11 @@ export default function Today() {
   // Opening Today reads the check-ins afresh, since a check-in begun here
   // must start from what is stored; they are kept for the other pages. After
   // a save the cached copy already holds the kept day, so it is shown as is.
-  const load = useCallback(async ({ fresh = true, cached = false } = {}) => {
-    setLoading(true);
+  // A quiet load updates the page without the loading screen, so a check-in
+  // open meanwhile stays open: the connection coming back, or a check-in
+  // kept on this device reaching the account.
+  const load = useCallback(async ({ fresh = true, cached = false, quiet = false } = {}) => {
+    if (!quiet) setLoading(true);
     try {
       const [checkIns, openAlerts, me, keptOther] = await Promise.all([
         fetchRecordPart(client, user?.id, 'checkIns', { fresh, cached }),
@@ -84,13 +93,53 @@ export default function Today() {
       setKeptDays(daysKeptThisMonth(checkIns, todayKey()));
       setHasHistory(checkIns.length > 0 || keptOther);
       setFirstDay(checkIns.length === 1 && checkIns[0].date === todayKey());
+      setOffline(false);
     } catch (err) {
-      setLoadError(err.message || 'Could not load your check-ins.');
+      if (isConnectionError(err)) {
+        // Unknown counts as history, as above.
+        setOffline(true);
+        setHasHistory(true);
+      } else if (!quiet) {
+        setLoadError(err.message || 'Could not load your check-ins.');
+      }
     }
-    setLoading(false);
+    if (!quiet) setLoading(false);
   }, [client, user?.id]);
 
   useEffect(() => { load(); }, [load]);
+  // The history loads once the connection is back: when the browser says so,
+  // and every minute, for a connection that's up but couldn't reach the account.
+  useEffect(() => {
+    if (!offline) return undefined;
+    const retry = () => load({ quiet: true });
+    window.addEventListener('online', retry);
+    const timer = window.setInterval(retry, 60_000);
+    return () => {
+      window.removeEventListener('online', retry);
+      window.clearInterval(timer);
+    };
+  }, [offline, load]);
+
+  // Today's check-in kept on this device shows as kept until it's saved to
+  // the account. Once it is, or the account turns out to hold a different
+  // version of the day, the stored day is read again; one waiting for the
+  // person's choice leaves the stored day in view, with the choice beside it.
+  const kept = useKeptSaves(user?.id);
+  const choices = kept.filter(needsChoice);
+  const keptToday = kept.find((save) => save.kind === 'check-in' && save.payload?.date === todayKey()) || null;
+  const keptState = !keptToday ? 'none' : needsChoice(keptToday) ? 'choice' : 'waiting';
+  const lastKeptState = useRef(keptState);
+  useEffect(() => {
+    if (lastKeptState.current === 'waiting' && keptState !== 'waiting') load({ quiet: true });
+    lastKeptState.current = keptState;
+  }, [keptState, load]);
+  // Opened again, the kept check-in counts as of the newest saved version
+  // it holds (updated_at), so an older draft isn't brought back over it.
+  const shown = keptState === 'waiting' ? { ...keptToday.payload, keptOnDevice: true, keptBase: keptToday.base ?? null, updated_at: keptToday.seen ?? null } : entry;
+  // What a check-in opened with stays its starting point while it's open,
+  // so a quiet load finishing meanwhile doesn't start it over.
+  const openedWith = useRef(null);
+  if (mode !== "ceremony") openedWith.current = null;
 
   const moon = moonPhase(todayKey());
   const dateLine = formatDay(todayKey(), { style: 'long' });
@@ -99,13 +148,18 @@ export default function Today() {
   if (loading || (isBackfill && loadedBackfillDate !== targetDate) || backfillLoading) return <div className="living-page"><LoadingState variant="page" label="Opening this day's record…" /></div>;
 
   if (mode === "ceremony") {
+    if (openedWith.current?.date !== targetDate) openedWith.current = { date: targetDate, existing: isBackfill ? backfillEntry : shown };
+    const { existing } = openedWith.current;
+    const close = () => { setMode("landing"); setDateParam(""); };
+    // A check-in kept on this device changed nothing in the account, so
+    // there's nothing to read again.
     return (
       <CheckInCeremony
-        key={`${targetDate}:${(isBackfill ? backfillEntry : entry)?.id || 'new'}`}
+        key={`${targetDate}:${existing?.id || (existing?.keptOnDevice ? 'kept' : 'new')}`}
         dateKey={targetDate}
-        existing={isBackfill ? backfillEntry : entry}
-        onDone={() => { setMode("landing"); setDateParam(""); load({ cached: true }); }}
-        onCancel={() => { setMode("landing"); setDateParam(""); }}
+        existing={existing}
+        onDone={(_saved, { kept: keptHere } = {}) => { close(); if (!keptHere) load({ cached: true }); }}
+        onCancel={close}
       />
     );
   }
@@ -117,7 +171,7 @@ export default function Today() {
   // ── pre-check-in: the invitation. A first visit gets one thing to do:
   // the first check-in. Paths, reports and preferences wait until there is
   // something to show. ──
-  if (!entry && mode !== "peek") {
+  if (!shown && mode !== "peek" && !choices.length) {
     const isFirstRun = !hasHistory;
     return (
       <><SkyField className="today-invitation" film>
@@ -132,6 +186,7 @@ export default function Today() {
               {!isFirstRun && <button type="button" className="ghost-cream-button" onClick={() => setMode("peek")}>Explore your reflections</button>}
             </div>
             {keptDays > 0 && <p className="mt-6 text-xs">{daysKeptLabel(keptDays, todayKey())}. Any time today works.</p>}
+            {offline && <p className="mt-6 text-xs" role="status">Your history will load when you're back online. A check-in now is kept on this device until then.</p>}
           </div>
           {!isFirstRun && <nav className="today-paths" aria-label="Explore your sanctuary">
             <Link to={createPageUrl("Analytics")}><Sprout size={24} aria-hidden="true" /><strong>Your patterns</strong><span>See what helps you grow.</span></Link>
@@ -152,7 +207,9 @@ export default function Today() {
           <p className="text-sm" style={{ color: "var(--gh-ink-muted)" }}>
             {dateLine} · <span className="inline-flex items-center gap-1.5"><MoonGlyph name={moon.name} illumination={moon.illumination} />{moon.name}</span>{keptDays > 0 && ` · ${daysKeptLabel(keptDays, todayKey())}`}
           </p>
-          {!entry && (
+          {shown?.keptOnDevice && <p className="mt-3 text-sm" role="status" style={{ color: "var(--gh-ink)" }}>Today's check-in is kept on this device. It will be saved to your account when you're back online.</p>}
+          {offline && !shown?.keptOnDevice && <p className="mt-3 text-sm" role="status" style={{ color: "var(--gh-ink)" }}>Your history will load when you're back online.</p>}
+          {!shown && (
             <div className="mt-4 p-4 flex items-center justify-between" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}>
               <span className="text-sm" style={{ color: "var(--gh-ink)" }}>Today is still unwritten.</span>
               <button type="button" className="ink-button text-sm py-2" onClick={() => setMode("ceremony")}>
@@ -162,16 +219,24 @@ export default function Today() {
           )}
         </header>
 
+        {choices.length > 0 && (
+          <section className="living-inset space-y-3" aria-labelledby="kept-choices-heading">
+            <h2 id="kept-choices-heading" className="living-label">Kept on this device: your choice</h2>
+            <p className="living-muted text-sm">{choices.length === 1 ? "This was kept on this device while you were offline. Choose what happens to it." : "These were kept on this device while you were offline. Choose what happens to each."}</p>
+            <KeptSavesList userId={user?.id} saves={choices} />
+          </section>
+        )}
+
         <AlertInline alerts={alerts} onAcknowledged={(id) => setAlerts((a) => a.filter((x) => x.id !== id))} />
 
-        {entry && <TodaySummary entry={entry} onEdit={() => setMode("ceremony")} />}
+        {shown && <TodaySummary entry={shown} onEdit={() => setMode("ceremony")} />}
         <DailySupport welcome={firstDay} />
 
         <nav aria-label="Continue" className="flex flex-wrap gap-4 hairline pt-6 text-sm font-medium">
           <Link to={createPageUrl("Analytics")} style={{ color: "var(--gh-accent)" }}>See your patterns</Link>
           <Link to={createPageUrl("Practice")} style={{ color: "var(--gh-accent)" }}>Find a practice</Link>
           {/* After a hard day, support comes before the optional systems. */}
-          {entry?.mood_score != null && Number(entry.mood_score) <= LOW_MOOD
+          {shown?.mood_score != null && Number(shown.mood_score) <= LOW_MOOD
             ? <Link to="/support-now" style={{ color: "var(--gh-accent)" }}>Support now</Link>
             : <Link to={createPageUrl("CosmicAddons")} style={{ color: "var(--gh-accent)" }}>Explore optional systems</Link>}
         </nav>

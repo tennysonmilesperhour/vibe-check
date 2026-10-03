@@ -9,6 +9,10 @@
 .living-input { display: block; width: 100%; min-width: 0; min-height: 44px; padding: 11px 12px; border: 1px solid hsl(var(--input)); border-radius: 9px; background: var(--woodland-paper); color: var(--gh-ink); font-family: inherit; font-weight: 400; font-size: 16px; line-height: 1.4; }
 textarea.living-input { resize: vertical; }
 .living-input:focus { outline: 2px solid var(--gh-accent); outline-offset: 2px; }
+/* A native range: the browser's own control, in the app's colour. */
+.living-range { display: block; width: 100%; min-height: 44px; accent-color: hsl(var(--primary)); cursor: pointer; }
+.living-range:disabled { cursor: default; opacity: 0.5; }
+.living-range:focus-visible { outline: 2px solid var(--gh-accent); outline-offset: 2px; }
 .living-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
 .living-chip { min-height: 44px; padding: 9px 13px; border: 1px solid color-mix(in srgb, var(--gh-ink) 23%, transparent); border-radius: 999px; font-size: .82rem; line-height: 1.3; color: var(--gh-ink); background: color-mix(in srgb, var(--gh-cream) 92%, transparent); text-align: left; transition: background .18s; }
 .living-chip:hover { background: color-mix(in srgb, var(--gh-sage, var(--sanctuary-sage)) 25%, var(--gh-cream)); }

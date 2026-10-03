@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { DailyCheckIn, JournalEntry, PracticeSession, ReportReflection, VibePreference, Person } from '@/api/entities';
 import { timelineEntries } from '@/lib/living-patterns';
 import { daysKeptThisMonth } from '@/lib/record-days';
-import { todayKey } from '@/lib/dates';
+import { addDaysKey, todayKey } from '@/lib/dates';
 import { inOrder, mergePreferences, preferenceStore } from '@/lib/preference-store';
 import { recordKey } from './record-cache';
 import { useRetry } from './read-state';
@@ -159,6 +159,26 @@ export function useDaysKeptThisMonth() {
   }).data;
   const rows = loaded || dates;
   return rows ? daysKeptThisMonth(rows, today) : null;
+}
+
+/**
+ * The days with a journal entry lately (drafts aside, as reports leave them
+ * out), for Today's note that last week's report is ready: from the journal a
+ * page has loaded, or a small read of their dates, kept like any other part.
+ * @param {number} days how far back
+ */
+export function useRecentJournalDays(days) {
+  const { user } = useAuth();
+  const loaded = useQuery({ ...partQuery(user?.id, 'journal'), enabled: false }).data;
+  const since = addDaysKey(todayKey(), -days);
+  const recent = useQuery({
+    queryKey: ['living', user?.id, 'journal-days', since],
+    queryFn: () => JournalEntry.since(since, 'date,is_draft'),
+    enabled: Boolean(user?.id) && !loaded,
+    ...READS,
+  }).data;
+  const rows = loaded || recent;
+  return useMemo(() => (rows ? rows.filter((row) => !row.is_draft && row.date >= since).map((row) => row.date) : []), [rows, since]);
 }
 
 /**

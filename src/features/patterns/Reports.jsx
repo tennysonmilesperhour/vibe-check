@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Download, ArrowRight, FileText } from 'lucide-react';
 import { ReportReflection } from '@/api/entities';
-import { reportPeriod, previousPeriod, buildReport, entryText } from '@/lib/living-patterns';
+import { reportPeriod, previousPeriod, buildReport, entryText, weekStartOf } from '@/lib/living-patterns';
 import { addDaysKey, formatDay, formatRange, todayKey } from '@/lib/dates';
 import { practiceById, ALIGNMENTS } from '@/lib/practices';
 import ReportObservations from './ReportObservations';
@@ -10,11 +10,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import StressPatternCards from './StressPatternCards';
 import EntryLink from './EntryLink';
 import useBeforeUnload from '@/hooks/use-before-unload';
+import { useAuth } from '@/lib/AuthContext';
+import { lastWeek, markWeekSeen } from '@/lib/week-ready';
 
 export default function Reports({ data, onChanged, savePreferences, onExport }) {
   const [params, setParams] = useSearchParams();
   const type = params.get('period') === 'monthly' ? 'monthly' : 'weekly';
-  const weekStart = data.preferences.week_start === 0 ? 0 : 1;
+  const weekStart = weekStartOf(data.preferences);
   const period = reportPeriod(type, params.get('reportDate') || todayKey(), weekStart);
   const report = useMemo(() => buildReport(data.entries, period, data.sessions, data.people, data.preferences.pattern_feedback), [data, period.start, period.end, type]);
   const previous = previousPeriod(period, weekStart);
@@ -32,6 +34,11 @@ export default function Reports({ data, onChanged, savePreferences, onExport }) 
   const [themeEdit, setThemeEdit] = useState(null);
   useEffect(() => { setReflection(saved?.notes || ''); setError(''); setMomentsShown(6); }, [period.start, type, saved?.notes]);
   useEffect(() => { if (!busy) setRemoving(null); }, [period.start, type]);
+  // Last week's report opened here: Today's note about it has done its job.
+  const { user } = useAuth();
+  useEffect(() => {
+    if (type === 'weekly' && period.start === lastWeek(todayKey(), weekStart).start) markWeekSeen(user?.id, period.start);
+  }, [type, period.start, weekStart, user?.id]);
   useBeforeUnload(reflection !== (saved?.notes || ''));
 
   const archive = useMemo(() => {

@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/AuthContext';
 import { usePreferences } from '@/features/patterns/useLivingData';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/components/ui/use-toast';
 import { clearLegacyDrafts } from '@/lib/legacy-drafts';
 import { queryClientInstance } from '@/lib/query-client';
@@ -18,8 +17,18 @@ import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import RetryButton from './RetryButton';
 import { useKeptSaves } from './KeptSaves';
 import { clearKeptSaves, holdKeptSaves } from '@/lib/kept-saves';
+import { clearWeekSeen } from '@/lib/week-ready';
 
 const DEFAULTS = NOTICE_DEFAULTS;
+// Older versions saved lines the range controls can't show (half steps, or
+// past their ends). Moods are whole numbers, so a line of 5.5 already acted
+// as 5: rounding down keeps what it did, and the controls show what's saved.
+const fit = (value, min, max, fallback) => (value != null && Number.isFinite(Number(value)) ? Math.min(max, Math.max(min, Math.floor(Number(value)))) : fallback);
+const withinRange = (settings) => ({
+  ...settings,
+  mood_threshold: fit(settings.mood_threshold, 1, 7, DEFAULTS.mood_threshold),
+  consecutive_days: fit(settings.consecutive_days, 2, 7, DEFAULTS.consecutive_days),
+});
 // The export dialogs load when first opened, which keeps them off the first load.
 const loadCompleteExport = () => import('@/features/export/CompleteExport');
 const loadOpenExport = () => import('@/features/export/OpenExport');
@@ -75,7 +84,7 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
     setSettingsLoaded(false);
     base44.auth.me().then((me) => {
       if (!active) return;
-      setSettings({ ...DEFAULTS, ...me.boundary_settings });
+      setSettings(withinRange({ ...DEFAULTS, ...me.boundary_settings }));
       savedSettings.current = me.boundary_settings || {};
       setSettingsLoaded(true);
       setError('');
@@ -142,6 +151,7 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
         erased = true;
         setDeletionFinished(true);
         if (user?.id) removeAppLock(user.id);
+        clearWeekSeen(user?.id);
         clearLegacyDrafts();
         queryClientInstance.clear();
       }
@@ -171,8 +181,8 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
           <span><span className="font-medium block">Notice low-mood days</span><span className="living-muted text-xs block mt-1">Off unless you turn it on. When on, a gentle notice appears after you keep a day at or below the line you choose, with a practice and support options nearby. Notices start from the day you turn this on.</span></span>
         </label>
         {settings.notices_enabled && <>
-        <div><Label>Low mood line: {settings.mood_threshold}</Label><Slider disabled={!settingsLoaded} min={1} max={7} step={1} value={[settings.mood_threshold]} onValueChange={([value]) => setSettings({ ...settings, mood_threshold: value })} className="mt-3" aria-label="Low mood threshold" /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
-        <div><Label>Declining run: {settings.consecutive_days} days</Label><Slider disabled={!settingsLoaded} min={2} max={7} step={1} value={[settings.consecutive_days]} onValueChange={([value]) => setSettings({ ...settings, consecutive_days: value })} className="mt-3" aria-label="Consecutive declining days" /></div>
+        <div><Label htmlFor="settings-mood-line">Low mood line: {settings.mood_threshold}</Label><input id="settings-mood-line" type="range" className="living-range mt-3" disabled={!settingsLoaded} min={1} max={7} step={1} value={settings.mood_threshold} onChange={(event) => setSettings({ ...settings, mood_threshold: Number(event.target.value) })} /><p className="living-muted text-xs mt-2">A day at or below this gets a gentle notice when you save a check-in.</p></div>
+        <div><Label htmlFor="settings-declining-run">Declining run: {settings.consecutive_days} days</Label><input id="settings-declining-run" type="range" className="living-range mt-3" disabled={!settingsLoaded} min={2} max={7} step={1} value={settings.consecutive_days} onChange={(event) => setSettings({ ...settings, consecutive_days: Number(event.target.value) })} /></div>
         </>}
         <label className="living-label">Your week begins<select className="living-input mt-2" value={weekStart} disabled={prefs.data === undefined || saving} onChange={(event) => setWeekStart(Number(event.target.value))}><option value={1}>Monday</option><option value={0}>Sunday</option></select></label>
         <button className="ink-button" onClick={save} disabled={saving || prefs.isLoading}>{saving ? 'Saving…' : 'Save settings'}</button>

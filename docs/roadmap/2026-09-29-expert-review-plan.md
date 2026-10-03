@@ -1,6 +1,6 @@
 # Vibe Check: expert review plan
 
-**Date:** 2026-09-29 · **Status:** In progress
+**Date:** 2026-09-29 · **Status:** PRs 1 to 12 merged by October 3, 2026. PR 6d (deleting stored birth places and third-party people fields) waits for the user's go-ahead, with the items under "Needs the user".
 **Basis:** A seven-lens expert review of `main` at `e8e0692` (engineering, product design, visual design, psychology, spiritual and cultural, business, marketing). This plan supersedes the sequencing in the July roadmaps where they conflict.
 
 ## Decisions (from the user)

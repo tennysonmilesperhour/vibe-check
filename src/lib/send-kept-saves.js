@@ -1,7 +1,7 @@
 // Sending the saves kept on this device (kept-saves.js). Each answer decides
 // what happens to a save: sent, tried again later, or left for the person to
 // choose.
-import { dropSave, keptSaves, markSave, needsChoice } from './kept-saves';
+import { dropSave, keptSaves, markSave, needsChoice, storageOf } from './kept-saves';
 
 /** @typedef {import('./kept-saves').KeptSave} KeptSave */
 /** @typedef {import('./kept-saves').SaveStorage} SaveStorage */
@@ -64,7 +64,7 @@ export const writtenHere = (row, save) => [save.payload, ...(save.prior || [])].
  * @param {SaveStorage} [storage]
  * @returns {Promise<{ sent: number, waiting: number, kinds: Set<KeptSave['kind']> }>} kinds: what was sent
  */
-export async function sendKeptSaves(userId, send, storage = globalThis.localStorage) {
+export async function sendKeptSaves(userId, send, storage = storageOf()) {
   let sent = 0;
   const kinds = new Set();
   // Only this version of the save: a newer one kept meanwhile is sent next.

@@ -67,8 +67,9 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
   const authCalls = [];
   /** What the database refused, or the mock doesn't model: { text, url }. */
   const faultLog = [];
-  // Levers for loading and error states: tables that answer slowly or fail.
-  const control = { delayMs: 0, delayTables: new Set(), failTables: new Set() };
+  // Levers for loading and error states: tables that answer slowly or fail,
+  // or the whole project out of reach, as without a connection.
+  const control = { delayMs: 0, delayTables: new Set(), failTables: new Set(), offline: false };
   const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
   // Once the test ends, requests still arriving are dropped: the next test shares the database.
   let closed = false;
@@ -278,6 +279,7 @@ export async function createMockSupabase({ database, fixture, nowIso }) {
   /** Playwright route handler for every request to the Supabase origin. */
   async function handle(route) {
     if (closed) return route.abort().catch(() => {});
+    if (control.offline) return route.abort('internetdisconnected');
     const request = route.request();
     const url = new URL(request.url());
     if (request.method() === 'OPTIONS') return empty(route, request);

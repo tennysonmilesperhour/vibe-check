@@ -4,6 +4,11 @@ export const LIVE_ORIGIN = "https://vibe-check-flame-nu.vercel.app";
 export const UPDATE_POLL_MS = 60 * 1000;
 export const UPDATE_SNOOZE_MS = 15 * 60 * 1000;
 
+/** This page's build, from the meta tag the build writes into index.html. */
+export function currentBuild(doc = globalThis.document) {
+  return doc?.querySelector('meta[name="vibe-build"]')?.getAttribute('content') || null;
+}
+
 /**
  * Production is the authority, including after a rollback. A preview may be
  * newer than production, so call it a preview rather than claiming it is old.

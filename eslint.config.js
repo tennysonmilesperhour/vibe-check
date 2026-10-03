@@ -20,7 +20,6 @@ export default [
     languageOptions: {
       globals: {
         ...globals.browser,
-        __BUILD_ID__: "readonly",
         __BUILD_ENVIRONMENT__: "readonly",
       },
       parserOptions: {
@@ -60,6 +59,7 @@ export default [
         ...globals.serviceworker,
         __SW_BUILD__: "readonly",
         __SW_PRECACHE__: "readonly",
+        __SW_ASSETS__: "readonly",
         __SW_ENTRY__: "readonly",
       },
     },

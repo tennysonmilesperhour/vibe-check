@@ -5,19 +5,17 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 import path from 'node:path'
+import { attr, tags } from './html.mjs'
 
 const BUDGET_GZIP_KB = 285
 const LAZY_ONLY = /charts|recharts|jspdf|html2canvas|canvg|purify/i
 
 const dist = path.resolve(process.cwd(), 'dist')
 const html = readFileSync(path.join(dist, 'index.html'), 'utf8')
-// Read attributes independently of their order or quoting.
-// Anchor on whitespace so data-src or data-type never match src or type.
-const attr = (tag, name) => tag.match(new RegExp(`\\s${name}\\s*=\\s*["']?([^"'\\s>]+)`, 'i'))?.[1]
-const entries = [...html.matchAll(/<script\b[^>]*>/gi)].map(([tag]) => tag)
+const entries = tags(html, 'script')
   .filter((tag) => attr(tag, 'type') === 'module' && attr(tag, 'src')?.endsWith('.js'))
   .map((tag) => attr(tag, 'src'))
-const preloads = [...html.matchAll(/<link\b[^>]*>/gi)].map(([tag]) => tag)
+const preloads = tags(html, 'link')
   .filter((tag) => attr(tag, 'rel') === 'modulepreload' && attr(tag, 'href')?.endsWith('.js'))
   .map((tag) => attr(tag, 'href'))
 if (!entries.length) {
@@ -38,7 +36,7 @@ for (const file of files) {
 console.log(`${total.toFixed(1).padStart(7)} kB gzip  first-load total (budget ${BUDGET_GZIP_KB} kB)`)
 // Vite keeps a preload path it can't resolve (a font package renamed its
 // files), and the site answers that path with index.html, not a font.
-const fontPreloads = [...html.matchAll(/<link\b[^>]*>/gi)].map(([tag]) => tag)
+const fontPreloads = tags(html, 'link')
   .filter((tag) => attr(tag, 'rel') === 'preload' && attr(tag, 'as') === 'font')
   .map((tag) => attr(tag, 'href') || '')
 for (const href of fontPreloads) {

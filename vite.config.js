@@ -3,9 +3,12 @@ import { defineConfig } from 'vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 import { writeFileSync, mkdirSync, readFileSync } from 'fs'
+import { attr, tags } from './scripts/html.mjs'
 
-// Build stamp: baked into the bundle AND published as /version.json so the
-// running app can notice when a newer deployment exists (UpdateToast).
+// Build stamp: written into index.html (a vibe-build meta tag) and published
+// as /version.json, so the running app can notice a newer deployment
+// (UpdateToast). It stays out of the scripts: identical code keeps identical
+// file names from build to build, so the service worker's kept pages last.
 const BUILD_ID = String(Date.now())
 
 // Deployed previews also offer a route back to the current production app.
@@ -20,6 +23,9 @@ const versionFilePlugin = () => {
     configResolved(config) {
       outDir = path.resolve(config.root, config.build.outDir)
     },
+    transformIndexHtml() {
+      return [{ tag: 'meta', attrs: { name: 'vibe-build', content: BUILD_ID }, injectTo: 'head' }]
+    },
     closeBundle() {
       mkdirSync(outDir, { recursive: true })
       writeFileSync(
@@ -32,12 +38,12 @@ const versionFilePlugin = () => {
 
 // The pages kept from the start for opening without a connection, by chunk
 // name: help and practices, which need no records, and the policies. Every
-// other page is kept once it has been opened.
+// other page is kept once it has been opened, until an update changes it.
 const OFFLINE_PAGES = ['SupportNow', 'HelpNow', 'Practice', 'SomaticPractice', 'Privacy', 'Terms', 'Support']
 
-// Writes /sw.js from src/service-worker.js with this build's id and the files
-// it keeps: everything index.html loads, the fonts, and the offline pages
-// with the files they import.
+// Writes /sw.js from src/service-worker.js with this build's id, the files
+// it keeps from the start (everything index.html loads, the fonts, and the
+// offline pages with what they import) and the list of every built file.
 const serviceWorkerPlugin = () => {
   let outDir
   let root
@@ -54,24 +60,30 @@ const serviceWorkerPlugin = () => {
     },
     closeBundle() {
       const html = readFileSync(path.join(outDir, 'index.html'), 'utf8')
-      const entry = html.match(/<script type="module"[^>]*\ssrc="(\/[^"]+)"/)?.[1]
+      const scripts = tags(html, 'script')
+      const entry = scripts.map((tag) => attr(tag, 'type') === 'module' && attr(tag, 'src')).find(Boolean)
       if (!entry) throw new Error('index.html has no module script for the service worker to check against.')
-      const files = new Set([...html.matchAll(/\s(?:src|href)="(\/[^"]+)"/g)].map(([, url]) => url))
+      const local = (url) => (url?.startsWith('/') ? url : null)
+      const files = new Set([...scripts.map((tag) => local(attr(tag, 'src'))), ...tags(html, 'link').map((tag) => local(attr(tag, 'href')))].filter(Boolean))
       const chunks = Object.values(bundle).filter((item) => item.type === 'chunk')
+      const visited = new Set()
       const keepChunk = (chunk) => {
-        if (files.has(`/${chunk.fileName}`)) return
+        if (visited.has(chunk.fileName)) return
+        visited.add(chunk.fileName)
         files.add(`/${chunk.fileName}`)
         for (const css of chunk.viteMetadata?.importedCss || []) files.add(`/${css}`)
         for (const name of chunk.imports) keepChunk(bundle[name])
       }
-      for (const chunk of chunks.filter((item) => OFFLINE_PAGES.includes(item.name))) keepChunk(chunk)
       const missing = OFFLINE_PAGES.filter((name) => !chunks.some((item) => item.name === name))
       if (missing.length) throw new Error(`The service worker's offline pages aren't chunks of this build: ${missing.join(', ')}. Update OFFLINE_PAGES in vite.config.js.`)
+      for (const chunk of chunks.filter((item) => item.isEntry || OFFLINE_PAGES.includes(item.name))) keepChunk(chunk)
       for (const item of Object.values(bundle)) if (item.fileName.endsWith('.woff2')) files.add(`/${item.fileName}`)
       files.delete('/index.html')
+      const assets = Object.values(bundle).map((item) => `/${item.fileName}`).filter((name) => name.startsWith('/assets/'))
       const source = readFileSync(path.resolve(root, 'src/service-worker.js'), 'utf8')
         .replace('__SW_BUILD__', JSON.stringify(BUILD_ID))
         .replace('__SW_PRECACHE__', JSON.stringify([...files].sort()))
+        .replace('__SW_ASSETS__', JSON.stringify(assets.sort()))
         .replace('__SW_ENTRY__', JSON.stringify(entry))
       writeFileSync(path.join(outDir, 'sw.js'), source)
     },
@@ -94,7 +106,6 @@ function productionHeaders() {
 
 export default defineConfig(({ mode }) => ({
   define: {
-    __BUILD_ID__: JSON.stringify(BUILD_ID),
     __BUILD_ENVIRONMENT__: JSON.stringify(BUILD_ENVIRONMENT),
   },
   plugins: [

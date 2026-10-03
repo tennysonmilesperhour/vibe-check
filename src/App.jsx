@@ -139,11 +139,13 @@ function App() {
             <ScrollToTop />
             <Suspense fallback={<div className="min-h-screen field-wash" aria-busy="true" />}>
               <Routes>
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/support-now" element={<SupportNow />} />
-                <Route path="/help-now/:stateId?/:practiceId?" element={<HelpNow />} />
+                {/* Public pages get the same per-page safety net as the app's,
+                    so one that can't load offline says so instead of crashing. */}
+                <Route path="/privacy" element={<RouteErrorBoundary key="/privacy"><Privacy /></RouteErrorBoundary>} />
+                <Route path="/terms" element={<RouteErrorBoundary key="/terms"><Terms /></RouteErrorBoundary>} />
+                <Route path="/support" element={<RouteErrorBoundary key="/support"><Support /></RouteErrorBoundary>} />
+                <Route path="/support-now" element={<RouteErrorBoundary key="/support-now"><SupportNow /></RouteErrorBoundary>} />
+                <Route path="/help-now/:stateId?/:practiceId?" element={<RouteErrorBoundary key="/help-now"><HelpNow /></RouteErrorBoundary>} />
                 <Route path="*" element={<AuthenticatedApp />} />
               </Routes>
             </Suspense>

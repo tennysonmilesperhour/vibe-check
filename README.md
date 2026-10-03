@@ -91,16 +91,23 @@ only, never records: sign-in, records, and other sites always go to the
 network.
 
 - Pages come from the network first, so a deploy arrives as before. Without
-  a connection, the app's page from the worker's build opens instead.
+  a connection, or when the network gives no answer in 4 seconds, the app's
+  page from the worker's build opens instead.
 - Each build keeps its first-load files, fonts, and icons from the start,
   plus Support now, help now, Practice, and the policies (`OFFLINE_PAGES` in
   `vite.config.js`). Other pages are kept once they've been opened.
-- A new build's worker takes over at once and keeps the previous build's
-  files, so a tab still open from before a deploy can load the rest of its
-  files.
+- The build id lives in index.html (a `vibe-build` meta tag), not in the
+  scripts, so unchanged code keeps its file names from build to build. A new
+  build's worker takes over at once and carries over the pages kept before
+  whose files haven't changed. It also keeps the previous build's files, so a
+  tab still open from before a deploy can load what that build kept.
+- Offline, a page that hasn't been kept says it needs a connection to open.
+  Whether a page's files failed for want of a connection or because of an
+  update is settled by asking the server (`/version.json`), since
+  `navigator.onLine` stays true on a network without internet.
 
 To switch it off for everyone, deploy a worker that deletes the `vibe-app-`
-caches and unregisters itself (see the comment at the top of
+and `vibe-meta` caches and unregisters itself (see the comment at the top of
 `src/service-worker.js`).
 
 ## Project layout

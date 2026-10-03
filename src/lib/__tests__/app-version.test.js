@@ -1,8 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { getVersionNotice, latestVersionUrl, LIVE_ORIGIN } from '../app-version';
+import { currentBuild, getVersionNotice, latestVersionUrl, LIVE_ORIGIN } from '../app-version';
 import { STRESS_STATES } from '../practices';
 
 const production = { build: '1788894000000', environment: 'production' };
+
+describe('the page\'s own build', () => {
+  // Only the part of a document currentBuild reads.
+  const page = (content) => /** @type {any} */ ({ querySelector: (selector) => (selector === 'meta[name="vibe-build"]' && content !== undefined ? { getAttribute: (name) => (name === 'content' ? content : null) } : null) });
+
+  it('comes from the vibe-build meta tag', () => {
+    expect(currentBuild(page('1790991595699'))).toBe('1790991595699');
+  });
+
+  it('is unknown without the tag or a document', () => {
+    expect(currentBuild(page(undefined))).toBeNull();
+    expect(currentBuild(page(''))).toBeNull();
+    expect(currentBuild(undefined)).toBeNull();
+  });
+});
 
 describe('live version notices', () => {
   it('stays quiet on the current production build, including its aliases', () => {

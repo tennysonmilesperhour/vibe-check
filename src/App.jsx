@@ -1,12 +1,12 @@
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import AuthGate, { authLinkError } from '@/features/shell/AuthGate';
+import AuthGate, { authLinkError, clearAuthLinkError } from '@/features/shell/AuthGate';
 import Landing from '@/features/shell/Landing';
 import PasswordReset from '@/features/shell/PasswordReset';
 import OfflineGate from '@/features/shell/OfflineGate';
@@ -31,11 +31,33 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
 
+/**
+ * A page opened from a link starts at its top, so Support now never opens
+ * part-way down. Back and Forward keep the browser's own scroll position.
+ */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  const navigation = useNavigationType();
+  const shown = useRef(pathname);
+  // A layout effect, so it runs before the page's own effects, which may move
+  // focus (and scroll) on purpose. A change of query alone keeps the scroll.
+  useLayoutEffect(() => {
+    if (shown.current === pathname) return;
+    shown.current = pathname;
+    if (navigation !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, navigation]);
+  return null;
+}
+
 const AuthenticatedApp = () => {
   const { user, isLoadingAuth, authError, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const { pathname } = useLocation();
   // A sign-in link that didn't work comes back with its reason in the address.
-  const [linkError] = useState(authLinkError);
+  // It shows once: the address forgets it, and signing in clears it, so a
+  // later sign-out shows the front page again.
+  const [linkError, setLinkError] = useState(authLinkError);
+  useEffect(() => { if (linkError) clearAuthLinkError(); }, [linkError]);
+  useEffect(() => { if (user) setLinkError(null); }, [user]);
 
   // Show loading spinner while checking auth
   if (isLoadingAuth) {
@@ -114,6 +136,7 @@ function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
+            <ScrollToTop />
             <Suspense fallback={<div className="min-h-screen field-wash" aria-busy="true" />}>
               <Routes>
                 <Route path="/privacy" element={<Privacy />} />

@@ -1,7 +1,7 @@
 // The everyday paths: keeping a day, a moment and a person, signing in and
 // out, and getting a page back after a failed load.
 import { test, expect, SIGNED_OUT_FLAG, STORAGE_KEY } from './support/app.js';
-import { openSettings } from './support/pages.js';
+import { LANDING_HEADING, openSettings } from './support/pages.js';
 import { TODAY } from './support/persona.js';
 
 const written = (backend, table) => backend.writes.filter((write) => write.table === table && write.method !== 'DELETE').flatMap((write) => write.rows);
@@ -57,6 +57,33 @@ test('signing out ends the session on this device', async ({ page, backend }, te
   expect(await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY)).toBeNull();
 });
 
+test('a failed sign-in link is forgotten once someone is signed in', async ({ page }, testInfo) => {
+  await page.goto('/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired');
+  await expect(page.getByRole('button', { name: /Begin check-in/ })).toBeVisible();
+  await expect(page).toHaveURL('/');
+  await openSettings(page, testInfo);
+  await page.evaluate((flag) => sessionStorage.setItem(flag, '1'), SIGNED_OUT_FLAG);
+  await page.getByRole('button', { name: 'Sign out on this device' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: LANDING_HEADING })).toBeVisible();
+});
+
+test('support now opens at its top from a link part-way down a page', async ({ page }) => {
+  await page.goto('/Practice');
+  await expect(page.getByRole('heading', { name: 'Practice history' })).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await page.getByRole('link', { name: /I might not be safe right now/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: "You don't have to hold this alone." })).toBeInViewport();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('help now leaves out practices someone asked not to be suggested', async ({ page, database }) => {
+  await database.db.query(`update public.vibe_preferences set "values" = "values" || '{"hidden_practices": ["comfortable-breath"], "uncomfortable_hidden_v1": true}'::jsonb`);
+  await page.goto('/help-now/on-edge');
+  await expect(page.getByRole('link', { name: 'Try find your surroundings' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Try an unforced breath' })).toHaveCount(0);
+});
+
 test.describe('without an account', () => {
   test.use({ persona: null });
 
@@ -71,6 +98,13 @@ test.describe('without an account', () => {
     await page.getByRole('link', { name: 'Back to the options for fight or flight' }).click();
     await expect(page.getByRole('heading', { name: 'One small invitation' })).toBeFocused();
     expect(backend.writes).toEqual([]);
+  });
+
+  test('a help-now address opened directly starts at the top, with the practice in view', async ({ page }) => {
+    await page.goto('/help-now/on-edge/orient');
+    await expect(page.getByRole('heading', { name: 'Find your surroundings' })).toBeInViewport();
+    await expect(page.getByRole('button', { name: /Quick exit/ })).toBeInViewport();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 });
 

@@ -35,6 +35,18 @@ export function authLinkError(location = window.location) {
   return "That link didn't sign you in. Sign in, or ask for a new link below.";
 }
 
+const LINK_ERROR_PARAMS = ['error', 'error_code', 'error_description'];
+
+/** Takes a failed link's reason out of the address once it has been read. */
+export function clearAuthLinkError(location = window.location, history = window.history) {
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const query = new URLSearchParams(location.search);
+  for (const key of LINK_ERROR_PARAMS) { hash.delete(key); query.delete(key); }
+  const search = query.toString();
+  const fragment = hash.toString();
+  history.replaceState(history.state, '', `${location.pathname}${search ? `?${search}` : ''}${fragment ? `#${fragment}` : ''}`);
+}
+
 /**
  * The front door: email + password sign in / sign up, or a magic link.
  * Rendered inline whenever there is no session.

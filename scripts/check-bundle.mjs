@@ -1,8 +1,8 @@
 // First-load budget: the entry script plus everything index.html preloads.
-// Fails CI when first load grows past the budget, or when a library that
-// belongs to a single lazy page (charts, PDF, canvas capture) sneaks into it.
-// Run after `npm run build`.
-import { readFileSync } from 'node:fs'
+// Fails CI when first load grows past the budget, when a library that
+// belongs to a single lazy page (charts, PDF, canvas capture) sneaks into it,
+// or when a preloaded font isn't a built file. Run after `npm run build`.
+import { existsSync, readFileSync } from 'node:fs'
 import { gzipSync } from 'node:zlib'
 import path from 'node:path'
 
@@ -36,6 +36,16 @@ for (const file of files) {
   if (LAZY_ONLY.test(file)) problems.push(`${file} belongs to a lazy page but loads on every page`)
 }
 console.log(`${total.toFixed(1).padStart(7)} kB gzip  first-load total (budget ${BUDGET_GZIP_KB} kB)`)
+// Vite keeps a preload path it can't resolve (a font package renamed its
+// files), and the site answers that path with index.html, not a font.
+const fontPreloads = [...html.matchAll(/<link\b[^>]*>/gi)].map(([tag]) => tag)
+  .filter((tag) => attr(tag, 'rel') === 'preload' && attr(tag, 'as') === 'font')
+  .map((tag) => attr(tag, 'href') || '')
+for (const href of fontPreloads) {
+  if (!href.startsWith('/assets/') || !existsSync(path.join(dist, href.replace(/^\//, '')))) {
+    problems.push(`the font preload ${href} in index.html isn't a built file; check its path`)
+  }
+}
 if (total > BUDGET_GZIP_KB) problems.push(`first-load JavaScript is ${total.toFixed(1)} kB gzip, over the ${BUDGET_GZIP_KB} kB budget`)
 if (problems.length) {
   for (const problem of problems) console.error(`✗ ${problem}`)

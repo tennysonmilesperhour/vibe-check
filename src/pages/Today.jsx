@@ -68,11 +68,11 @@ export default function Today() {
   // Opening Today reads the check-ins afresh, since a check-in begun here
   // must start from what is stored; they are kept for the other pages. After
   // a save the cached copy already holds the kept day, so it is shown as is.
-  // A quiet load updates the page without the loading screen, so a check-in
-  // open meanwhile stays open: the connection coming back, or a check-in
-  // kept on this device reaching the account.
-  const load = useCallback(async ({ fresh = true, cached = false, quiet = false } = {}) => {
-    if (!quiet) setLoading(true);
+  // A background load updates the page without the loading screen, so a
+  // check-in open meanwhile stays open: the connection coming back, or a
+  // check-in kept on this device reaching the account.
+  const load = useCallback(async ({ fresh = true, cached = false, background = false } = {}) => {
+    if (!background) setLoading(true);
     try {
       const [checkIns, openAlerts, me, keptOther] = await Promise.all([
         fetchRecordPart(client, user?.id, 'checkIns', { fresh, cached }),
@@ -99,11 +99,11 @@ export default function Today() {
         // Unknown counts as history, as above.
         setOffline(true);
         setHasHistory(true);
-      } else if (!quiet) {
+      } else if (!background) {
         setLoadError(err.message || 'Could not load your check-ins.');
       }
     }
-    if (!quiet) setLoading(false);
+    if (!background) setLoading(false);
   }, [client, user?.id]);
 
   useEffect(() => { load(); }, [load]);
@@ -111,7 +111,7 @@ export default function Today() {
   // and every minute, for a connection that's up but couldn't reach the account.
   useEffect(() => {
     if (!offline) return undefined;
-    const retry = () => load({ quiet: true });
+    const retry = () => load({ background: true });
     window.addEventListener('online', retry);
     const timer = window.setInterval(retry, 60_000);
     return () => {
@@ -130,14 +130,14 @@ export default function Today() {
   const keptState = !keptToday ? 'none' : needsChoice(keptToday) ? 'choice' : 'waiting';
   const lastKeptState = useRef(keptState);
   useEffect(() => {
-    if (lastKeptState.current === 'waiting' && keptState !== 'waiting') load({ quiet: true });
+    if (lastKeptState.current === 'waiting' && keptState !== 'waiting') load({ background: true });
     lastKeptState.current = keptState;
   }, [keptState, load]);
   // Opened again, the kept check-in counts as of the newest saved version
   // it holds (updated_at), so an older draft isn't brought back over it.
   const shown = keptState === 'waiting' ? { ...keptToday.payload, keptOnDevice: true, keptBase: keptToday.base ?? null, updated_at: keptToday.seen ?? null } : entry;
   // What a check-in opened with stays its starting point while it's open,
-  // so a quiet load finishing meanwhile doesn't start it over.
+  // so a background load finishing meanwhile doesn't start it over.
   const openedWith = useRef(null);
   if (mode !== "ceremony") openedWith.current = null;
 

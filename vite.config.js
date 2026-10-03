@@ -30,6 +30,54 @@ const versionFilePlugin = () => {
   }
 }
 
+// The pages kept from the start for opening without a connection, by chunk
+// name: help and practices, which need no records, and the policies. Every
+// other page is kept once it has been opened.
+const OFFLINE_PAGES = ['SupportNow', 'HelpNow', 'Practice', 'SomaticPractice', 'Privacy', 'Terms', 'Support']
+
+// Writes /sw.js from src/service-worker.js with this build's id and the files
+// it keeps: everything index.html loads, the fonts, and the offline pages
+// with the files they import.
+const serviceWorkerPlugin = () => {
+  let outDir
+  let root
+  let bundle = {}
+  return {
+    name: 'emit-service-worker',
+    apply: 'build',
+    configResolved(config) {
+      root = config.root
+      outDir = path.resolve(config.root, config.build.outDir)
+    },
+    generateBundle(_options, output) {
+      bundle = output
+    },
+    closeBundle() {
+      const html = readFileSync(path.join(outDir, 'index.html'), 'utf8')
+      const entry = html.match(/<script type="module"[^>]*\ssrc="(\/[^"]+)"/)?.[1]
+      if (!entry) throw new Error('index.html has no module script for the service worker to check against.')
+      const files = new Set([...html.matchAll(/\s(?:src|href)="(\/[^"]+)"/g)].map(([, url]) => url))
+      const chunks = Object.values(bundle).filter((item) => item.type === 'chunk')
+      const keepChunk = (chunk) => {
+        if (files.has(`/${chunk.fileName}`)) return
+        files.add(`/${chunk.fileName}`)
+        for (const css of chunk.viteMetadata?.importedCss || []) files.add(`/${css}`)
+        for (const name of chunk.imports) keepChunk(bundle[name])
+      }
+      for (const chunk of chunks.filter((item) => OFFLINE_PAGES.includes(item.name))) keepChunk(chunk)
+      const missing = OFFLINE_PAGES.filter((name) => !chunks.some((item) => item.name === name))
+      if (missing.length) throw new Error(`The service worker's offline pages aren't chunks of this build: ${missing.join(', ')}. Update OFFLINE_PAGES in vite.config.js.`)
+      for (const item of Object.values(bundle)) if (item.fileName.endsWith('.woff2')) files.add(`/${item.fileName}`)
+      files.delete('/index.html')
+      const source = readFileSync(path.resolve(root, 'src/service-worker.js'), 'utf8')
+        .replace('__SW_BUILD__', JSON.stringify(BUILD_ID))
+        .replace('__SW_PRECACHE__', JSON.stringify([...files].sort()))
+        .replace('__SW_ENTRY__', JSON.stringify(entry))
+      writeFileSync(path.join(outDir, 'sw.js'), source)
+    },
+  }
+}
+
 // `vite preview` sends the headers Vercel sends for every page (vercel.json),
 // so local previews and the browser tests run under the production
 // Content-Security-Policy. A missing or reshaped rule leaves preview without
@@ -52,6 +100,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     versionFilePlugin(),
+    serviceWorkerPlugin(),
     // `npm run analyze` writes an interactive treemap to dist/stats.html.
     mode === 'analyze' && visualizer({ filename: 'dist/stats.html', gzipSize: true }),
   ].filter(Boolean),

@@ -13,13 +13,18 @@ export default function SkyField({ depth = 1, film = false, className = "", chil
   const [playing, setPlaying] = useState(false);
   const [failed, setFailed] = useState(false);
   const [blocked, setBlocked] = useState(false);
-  const permitted = film && !reduced && !saveData && !failed;
+  // Without a connection the film can't load; the artwork stands in.
+  const [online, setOnline] = useState(() => navigator.onLine !== false);
+  const permitted = film && !reduced && !saveData && !failed && online;
   const shouldPlay = permitted && visible && pageVisible && !paused && !blocked;
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.05 });
     if (surfaceRef.current) observer.observe(surfaceRef.current);
     const visibility = () => setPageVisible(!document.hidden);
+    const onlineChange = () => setOnline(navigator.onLine !== false);
+    window.addEventListener("online", onlineChange);
+    window.addEventListener("offline", onlineChange);
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     const motionChange = () => setReduced(motionQuery.matches);
     motionQuery.addEventListener("change", motionChange);
@@ -31,6 +36,8 @@ export default function SkyField({ depth = 1, film = false, className = "", chil
       observer.disconnect();
       motionQuery.removeEventListener("change", motionChange);
       document.removeEventListener("visibilitychange", visibility);
+      window.removeEventListener("online", onlineChange);
+      window.removeEventListener("offline", onlineChange);
       connection?.removeEventListener("change", dataChange);
     };
   }, []);

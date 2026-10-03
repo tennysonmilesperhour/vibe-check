@@ -52,6 +52,18 @@ export default [
       "react-hooks/rules-of-hooks": "error",
     },
   },
+  // The service worker runs in its own scope; vite.config.js fills in its values.
+  {
+    files: ["src/service-worker.js"],
+    languageOptions: {
+      globals: {
+        ...globals.serviceworker,
+        __SW_BUILD__: "readonly",
+        __SW_PRECACHE__: "readonly",
+        __SW_ENTRY__: "readonly",
+      },
+    },
+  },
   // Browser tests: Node code, with callbacks that run in the page.
   {
     files: ["e2e/**/*.js", "playwright.config.js"],

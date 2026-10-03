@@ -17,8 +17,10 @@ export { STORAGE_KEY };
 export const test = base.extend({
   /** Who is signed in: 'established', 'newcomer', or null for signed out. */
   persona: ['established', { option: true }],
-  /** For a test that makes a request fail on purpose: the browser logs each failed load. */
+  /** For a test that makes a request fail on purpose, such as going offline: the browser logs each failed load. */
   allowFailedRequests: [false, { option: true }],
+  /** Console errors a test causes on purpose (one RegExp), such as React reporting a page that can't load offline. */
+  allowConsoleErrors: [null, { option: true }],
   /**
    * A refusal a test expects, such as the duplicate key a second tab's save
    * meets: a pattern for the faults it may produce, at least one of which
@@ -57,7 +59,7 @@ export const test = base.extend({
     await context.unrouteAll({ behavior: 'wait' });
   },
 
-  page: async ({ page, backend, baseURL, allowFailedRequests, expectedFaults }, use) => {
+  page: async ({ page, backend, baseURL, allowFailedRequests, allowConsoleErrors, expectedFaults }, use) => {
     await page.clock.setFixedTime(new Date(NOW));
     const appOrigin = new URL(baseURL).origin;
     // A copy without g or y, whose lastIndex would carry from one fault to the next.
@@ -67,6 +69,7 @@ export const test = base.extend({
     page.on('pageerror', (error) => problems.push(`page error: ${error.message}`));
     page.on('console', (message) => {
       if (message.type() !== 'error') return;
+      if (allowConsoleErrors && new RegExp(allowConsoleErrors.source, allowConsoleErrors.flags.replace(/[gy]/g, '')).test(message.text())) return;
       if (/Failed to load resource/.test(message.text())) {
         if (allowFailedRequests) return;
         // The failed load an expected refusal causes, and only that one.
@@ -79,7 +82,8 @@ export const test = base.extend({
     });
     page.on('requestfailed', (request) => {
       // A load the page itself abandoned (a navigation, an aborted read) isn't a failure.
-      if (request.url().startsWith(appOrigin) && !/ERR_ABORTED/.test(request.failure()?.errorText || '')) problems.push(`failed to load ${request.url()}: ${request.failure()?.errorText}`);
+      if (allowFailedRequests || !request.url().startsWith(appOrigin) || /ERR_ABORTED/.test(request.failure()?.errorText || '')) return;
+      problems.push(`failed to load ${request.url()}: ${request.failure()?.errorText}`);
     });
     await use(page);
     const expected = backend.faultLog.filter(isExpected);

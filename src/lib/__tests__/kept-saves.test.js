@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { clearKeptSaves, dropSave, isConnectionError, keepSave, keptSaves, needsChoice, sendAgain } from '../kept-saves';
-import { changedElsewhere, holdsSave, isRefusal, sendKeptSaves } from '../send-kept-saves';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { clearKeptSaves, dropSave, holdKeptSaves, isConnectionError, keepSave, keptSaves, needsChoice, sendAgain } from '../kept-saves';
+import { changedElsewhere, holdsSave, isRefusal, sendKeptSaves, writtenHere } from '../send-kept-saves';
 
 /** A device's storage, in memory. */
 function memory() {
@@ -66,7 +66,7 @@ describe('kept saves', () => {
     keepSave('a', { id: 'entry-1', kind: 'journal', payload: { notes: 'one' } }, { storage, now });
     keepSave('a', { id: 'entry-2', kind: 'journal', payload: { notes: 'two' } }, { storage, now });
     const sent = [];
-    expect(await sendKeptSaves('a', async (save) => { sent.push(save.id); }, storage)).toEqual({ sent: 2, waiting: 0 });
+    expect(await sendKeptSaves('a', async (save) => { sent.push(save.id); }, storage)).toMatchObject({ sent: 2, waiting: 0 });
     expect(sent).toEqual(['entry-1', 'entry-2']);
   });
 
@@ -75,7 +75,7 @@ describe('kept saves', () => {
     keepSave('a', { id: 'entry-1', kind: 'journal', payload: {} }, { storage, now });
     keepSave('a', { id: 'entry-2', kind: 'journal', payload: {} }, { storage, now });
     const tried = [];
-    expect(await sendKeptSaves('a', async (save) => { tried.push(save.id); throw offline(); }, storage)).toEqual({ sent: 0, waiting: 2 });
+    expect(await sendKeptSaves('a', async (save) => { tried.push(save.id); throw offline(); }, storage)).toMatchObject({ sent: 0, waiting: 2 });
     expect(tried).toEqual(['entry-1']);
   });
 
@@ -84,7 +84,7 @@ describe('kept saves', () => {
     keepSave('a', { id: 'entry-1', kind: 'journal', payload: {} }, { storage, now });
     keepSave('a', { id: 'entry-2', kind: 'journal', payload: {} }, { storage, now });
     const send = async (save) => { if (save.id === 'entry-1') throw { message: 'value too long', code: '22001' }; };
-    expect(await sendKeptSaves('a', send, storage)).toEqual({ sent: 1, waiting: 1 });
+    expect(await sendKeptSaves('a', send, storage)).toMatchObject({ sent: 1, waiting: 1 });
     expect(keptSaves('a', storage)).toEqual([expect.objectContaining({ id: 'entry-1', refused: 'value too long' })]);
     // It isn't sent again; the person decides.
     const tried = [];
@@ -96,7 +96,7 @@ describe('kept saves', () => {
     const storage = memory();
     keepSave('a', { id: 'check-in:2026-10-02', kind: 'check-in', payload: { mood_score: 3 } }, { storage, now });
     const send = async () => { keepSave('a', { id: 'check-in:2026-10-02', kind: 'check-in', payload: { mood_score: 8 } }, { storage, now }); };
-    expect(await sendKeptSaves('a', send, storage)).toEqual({ sent: 1, waiting: 1 });
+    expect(await sendKeptSaves('a', send, storage)).toMatchObject({ sent: 1, waiting: 1 });
     expect(keptSaves('a', storage)[0].payload.mood_score).toBe(8);
   });
 });
@@ -115,7 +115,7 @@ describe('what the account answers', () => {
     keepSave('a', { id: 'entry-2', kind: 'journal', payload: {} }, { storage, now });
     const tried = [];
     const send = async (save) => { tried.push(save.id); throw { message: 'Bad gateway' }; };
-    expect(await sendKeptSaves('a', send, storage)).toEqual({ sent: 0, waiting: 2 });
+    expect(await sendKeptSaves('a', send, storage)).toMatchObject({ sent: 0, waiting: 2 });
     expect(tried).toEqual(['entry-1']);
     expect(keptSaves('a', storage).some(needsChoice)).toBe(false);
   });
@@ -125,7 +125,7 @@ describe('what the account answers', () => {
     keepSave('a', { id: 'check-in:2026-10-02', kind: 'check-in', payload: { mood_score: 3 }, base: null }, { storage, now });
     keepSave('a', { id: 'entry-1', kind: 'journal', payload: {} }, { storage, now });
     const send = async (save) => { if (save.id.startsWith('check-in') && !save.force) throw changedElsewhere('This day already has a saved check-in.'); };
-    expect(await sendKeptSaves('a', send, storage)).toEqual({ sent: 1, waiting: 1 });
+    expect(await sendKeptSaves('a', send, storage)).toMatchObject({ sent: 1, waiting: 1 });
     expect(keptSaves('a', storage)).toEqual([expect.objectContaining({ id: 'check-in:2026-10-02', conflict: 'This day already has a saved check-in.' })]);
     const tried = [];
     await sendKeptSaves('a', async (save) => { tried.push(save.id); }, storage);
@@ -133,7 +133,7 @@ describe('what the account answers', () => {
     // The person chooses this version: it's sent as it is.
     sendAgain('a', 'check-in:2026-10-02', storage);
     expect(keptSaves('a', storage)[0]).toEqual(expect.not.objectContaining({ conflict: expect.anything() }));
-    expect(await sendKeptSaves('a', send, storage)).toEqual({ sent: 1, waiting: 0 });
+    expect(await sendKeptSaves('a', send, storage)).toMatchObject({ sent: 1, waiting: 0 });
   });
 
   it('tries a refused save again when the person asks', async () => {
@@ -143,7 +143,7 @@ describe('what the account answers', () => {
     expect(keptSaves('a', storage)[0].refused).toBe('value too long');
     sendAgain('a', 'entry-1', storage);
     const sent = [];
-    expect(await sendKeptSaves('a', async (save) => { sent.push(save); }, storage)).toEqual({ sent: 1, waiting: 0 });
+    expect(await sendKeptSaves('a', async (save) => { sent.push(save); }, storage)).toMatchObject({ sent: 1, waiting: 0 });
     expect(sent[0]).toEqual(expect.not.objectContaining({ refused: expect.anything(), force: true }));
   });
 
@@ -168,5 +168,66 @@ describe('what the account answers', () => {
     expect(holdsSave({ ...row, stress_context: { need: 'rest' } }, payload)).toBe(false);
     expect(holdsSave({ ...row, occurred_at: '2026-10-02T12:31:00+00:00' }, payload)).toBe(false);
     expect(holdsSave(undefined, payload)).toBe(false);
+  });
+});
+
+describe('versions kept on this device', () => {
+  it('remembers the versions a save replaces, newest first, a few at most', () => {
+    const storage = memory();
+    for (const mood of [3, 4, 5, 6, 7]) keepSave('a', { id: 'check-in:2026-10-02', kind: 'check-in', payload: { mood_score: mood } }, { storage, now });
+    const [save] = keptSaves('a', storage);
+    expect(save.payload).toEqual({ mood_score: 7 });
+    expect(save.prior).toEqual([{ mood_score: 6 }, { mood_score: 5 }, { mood_score: 4 }]);
+  });
+
+  it('remembers the version an edit began from, once', () => {
+    const storage = memory();
+    keepSave('a', { id: 'entry-1', kind: 'journal', edit: true, payload: { notes: 'first' } }, { storage, now });
+    keepSave('a', { id: 'entry-1', kind: 'journal', edit: true, payload: { notes: 'second' }, prior: [{ notes: 'first' }] }, { storage, now });
+    expect(keptSaves('a', storage)[0].prior).toEqual([{ notes: 'first' }]);
+    // Begun from a kept version that has since been sent, it still knows it.
+    keepSave('a', { id: 'entry-2', kind: 'journal', edit: true, payload: { notes: 'later' }, prior: [{ notes: 'sent' }] }, { storage, now });
+    expect(keptSaves('a', storage)[1].prior).toEqual([{ notes: 'sent' }]);
+  });
+
+  it('knows a stored row written from this device', () => {
+    /** @type {import('../kept-saves').KeptSave} */
+    const save = { id: 'check-in:2026-10-02', kind: 'check-in', payload: { mood_score: 7 }, prior: [{ mood_score: 5 }], keptAt: '', version: 'v' };
+    expect(writtenHere({ mood_score: 7, notes: null }, save)).toBe(true);
+    expect(writtenHere({ mood_score: 5 }, save)).toBe(true);
+    expect(writtenHere({ mood_score: 3 }, save)).toBe(false);
+  });
+
+  it('says what kinds of save were sent', async () => {
+    const storage = memory();
+    keepSave('a', { id: 'check-in:2026-10-02', kind: 'check-in', payload: {} }, { storage, now });
+    keepSave('a', { id: 'entry-1', kind: 'journal', payload: {} }, { storage, now });
+    const { kinds } = await sendKeptSaves('a', async () => {}, storage);
+    expect([...kinds].sort()).toEqual(['check-in', 'journal']);
+  });
+});
+
+describe('holding the kept saves', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('runs the work at once where the browser has no locks', async () => {
+    vi.stubGlobal('navigator', {});
+    expect(await holdKeptSaves('a', async () => 'done')).toBe('done');
+  });
+
+  it('runs the work holding the lock the sender holds', async () => {
+    const held = [];
+    vi.stubGlobal('navigator', { locks: { request: async (name, ...rest) => { held.push(name); return rest.at(-1)(); } } });
+    expect(await holdKeptSaves('a', async () => 'done')).toBe('done');
+    expect(held).toEqual(['vibe-kept-saves:a']);
+  });
+
+  it('stops waiting for a send that hangs', async () => {
+    // A lock that's never released: only the signal ends the wait.
+    const request = (_name, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })));
+    });
+    vi.stubGlobal('navigator', { locks: { request } });
+    expect(await holdKeptSaves('a', async () => 'done', { waitMs: 10 })).toBe('done');
   });
 });

@@ -17,7 +17,7 @@ import AppLockSettings from '@/features/safety/AppLockSettings';
 import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import RetryButton from './RetryButton';
 import { useKeptSaves } from './KeptSaves';
-import { clearKeptSaves } from '@/lib/kept-saves';
+import { clearKeptSaves, holdKeptSaves } from '@/lib/kept-saves';
 
 const DEFAULTS = NOTICE_DEFAULTS;
 // The export dialogs load when first opened, which keeps them off the first load.
@@ -112,6 +112,8 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
   // the person is told first and chooses.
   const keptCount = useKeptSaves(user?.id).length;
   const [confirmSignOut, setConfirmSignOut] = useState(null);
+  // Sent while the warning was open: there's nothing left to warn about.
+  useEffect(() => { if (!keptCount) setConfirmSignOut(null); }, [keptCount]);
   async function signOut(scope, { confirmed = false } = {}) {
     if (keptCount && !confirmed) { setConfirmSignOut(scope); return; }
     setConfirmSignOut(null);
@@ -126,12 +128,20 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
     let erased = deletionFinished;
     try {
       if (!erased) {
-        await base44.auth.deleteAccount();
+        // Nothing kept on this device may reach the account once deletion
+        // begins: no tab sends while it runs, and what's kept goes with it.
+        await holdKeptSaves(user?.id, async () => {
+          try {
+            await base44.auth.deleteAccount();
+          } catch (err) {
+            if (err.recordsDeleted) clearKeptSaves(user?.id);
+            throw err;
+          }
+          clearKeptSaves(user?.id);
+        }, { waitMs: 10_000 });
         erased = true;
         setDeletionFinished(true);
         if (user?.id) removeAppLock(user.id);
-        // Nothing kept on this device may be sent to the account afterwards.
-        clearKeptSaves(user?.id);
         clearLegacyDrafts();
         queryClientInstance.clear();
       }
@@ -142,7 +152,6 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
     } catch (err) {
       if (err.recordsDeleted) {
         setDeletionFinished(true);
-        clearKeptSaves(user?.id);
         clearLegacyDrafts();
         queryClientInstance.clear();
         setDeleteError('Your Vibe Check records were deleted, but sign-in removal did not finish. Sign out below and contact support if you need help removing the remaining sign-in.');
@@ -169,7 +178,7 @@ export default function SettingsSheet({ open, onOpenChange, onCloseAutoFocus }) 
         <button className="ink-button" onClick={save} disabled={saving || prefs.isLoading}>{saving ? 'Saving…' : 'Save settings'}</button>
       </section>
       <section className="space-y-3 hairline pt-6"><h3 className="text-xl">Your private record</h3><p className="living-muted text-sm">Check-ins, journal entries, people, and practice responses are saved to your account. Adding someone to your orbit does not invite them or share your entries.</p><p className="living-muted text-sm">Download everything as one file, encrypted with a password unless you choose otherwise. To share part of your record, choose a date range and entries, remove saved people’s names, and preview the exact contents first.</p><div className="flex flex-wrap gap-3"><button className="living-secondary" onClick={() => showExportDialog(loadCompleteExport)}>Download everything</button><button className="living-secondary" onClick={() => { onOpenChange(false); navigate('/Analytics?export=1'); }}>Choose & preview an export</button></div><p className="living-muted text-sm">A summary to share gathers chosen dates into a short record you can print or save as a PDF and bring to a therapist, a doctor, or anyone you choose.</p><button className="living-secondary" onClick={() => { onOpenChange(false); navigate('/Summary'); }}>A summary to share</button><p className="living-muted text-sm">Read an export file here, encrypted or not. It stays on this device.</p><button className="living-secondary" onClick={() => showExportDialog(loadOpenExport)}>Open an export file</button>{exportLoadError && <p className="living-error" role="alert">{exportLoadError}</p>}<p className="living-muted text-sm">Edit or delete individual records from their history. Reports update with those changes. Your patterns, full history, and reports stay free.</p></section>
-      <section className="space-y-3 hairline pt-6"><h3 className="text-xl">On a shared device</h3><label className="flex items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={quickExitChoice ?? Boolean(prefs.data?.quick_exit)} disabled={prefs.data === undefined || quickExitChoice !== null} onChange={(event) => changeQuickExit(event.target.checked)} /><span><span className="font-medium block">Show a quick exit button</span><span className="living-muted text-xs block mt-1">Leaves Vibe Check at once for a neutral page. It doesn't erase your browser history.</span></span></label><p className="living-muted text-sm">Sign out to close access to your account on this device. Downloaded files and browser history remain on the device.</p><div className="flex flex-wrap gap-3"><button className="living-secondary" disabled={saving} onClick={() => signOut('local')}>Sign out on this device</button><button className="living-secondary" disabled={saving} onClick={() => signOut('global')}>Sign out on all devices</button></div>{confirmSignOut && <div className="living-inset space-y-3" role="alert"><p className="text-sm">{keptCount === 1 ? "1 entry kept on this device hasn't" : `${keptCount} entries kept on this device haven't`} been saved to your account yet. Signing out deletes {keptCount === 1 ? 'it' : 'them'} from this device.</p><div className="flex flex-wrap gap-3"><button type="button" className="living-secondary" onClick={() => setConfirmSignOut(null)}>Stay signed in</button><button type="button" className="danger-link text-sm" disabled={saving} onClick={() => signOut(confirmSignOut, { confirmed: true })}>Sign out and delete {keptCount === 1 ? 'it' : 'them'}</button></div></div>}<p className="living-muted text-xs">Other sessions are revoked immediately; an already issued access token may remain valid until it expires.</p></section>
+      <section className="space-y-3 hairline pt-6"><h3 className="text-xl">On a shared device</h3><label className="flex items-start gap-3"><input type="checkbox" className="mt-1 h-5 w-5 shrink-0" checked={quickExitChoice ?? Boolean(prefs.data?.quick_exit)} disabled={prefs.data === undefined || quickExitChoice !== null} onChange={(event) => changeQuickExit(event.target.checked)} /><span><span className="font-medium block">Show a quick exit button</span><span className="living-muted text-xs block mt-1">Leaves Vibe Check at once for a neutral page. It doesn't erase your browser history.</span></span></label><p className="living-muted text-sm">Sign out to close access to your account on this device. Downloaded files and browser history remain on the device.</p><div className="flex flex-wrap gap-3"><button className="living-secondary" disabled={saving} onClick={() => signOut('local')}>Sign out on this device</button><button className="living-secondary" disabled={saving} onClick={() => signOut('global')}>Sign out on all devices</button></div>{confirmSignOut && keptCount > 0 && <div className="living-inset space-y-3" role="alert"><p className="text-sm">{keptCount === 1 ? "1 entry kept on this device hasn't" : `${keptCount} entries kept on this device haven't`} been saved to your account yet. Signing out deletes {keptCount === 1 ? 'it' : 'them'} from this device.</p><div className="flex flex-wrap gap-3"><button type="button" className="living-secondary" onClick={() => setConfirmSignOut(null)}>Stay signed in</button><button type="button" className="danger-link text-sm" disabled={saving} onClick={() => signOut(confirmSignOut, { confirmed: true })}>Sign out and delete {keptCount === 1 ? 'it' : 'them'}</button></div></div>}<p className="living-muted text-xs">Other sessions are revoked immediately; an already issued access token may remain valid until it expires.</p></section>
       <AppLockSettings />
       <section className="space-y-3 hairline pt-6"><h3 className="text-xl">Support & account deletion</h3><a className="living-text-link" href="/support-now">Support now: crisis and safety services</a><a className="living-text-link break-all" href="mailto:morphiclabsdata@gmail.com">morphiclabsdata@gmail.com</a><div className="flex flex-wrap gap-4"><a className="living-text-link" href="/privacy">Privacy</a><a className="living-text-link" href="/terms">Terms</a><a className="living-text-link" href="/support">Support</a></div><button className="danger-outline" onClick={() => { setConfirmation(''); setDeleteError(''); setDeletionFinished(false); setIdentityOk(false); setDeleteOpen(true); }}>Delete Vibe Check account</button></section>
     </div>

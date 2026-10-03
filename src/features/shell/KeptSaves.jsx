@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
-import { KEPT_SAVES_EVENT, SEND_KEPT_SAVES_EVENT, keptSaves, needsChoice } from "@/lib/kept-saves";
+import { recordKey } from "@/features/patterns/record-cache";
+import { KEPT_SAVES_EVENT, SEND_KEPT_SAVES_EVENT, holdKeptSaves, keptSaves, keptSavesKey, needsChoice } from "@/lib/kept-saves";
 // Part of the first load: a failed import() stays failed until the page
 // reloads, so loading this later could fail offline and never send.
 import { sendAll } from "./send-kept-saves";
@@ -11,13 +12,14 @@ export function useKeptSaves(userId) {
   const [saves, setSaves] = useState(() => keptSaves(userId));
   useEffect(() => {
     const read = () => setSaves(keptSaves(userId));
+    // Another tab keeping or sending one (a null key: storage cleared).
+    const readOther = (event) => { if (event.key === null || event.key === keptSavesKey(userId)) read(); };
     read();
     window.addEventListener(KEPT_SAVES_EVENT, read);
-    // Another tab keeping or sending one.
-    window.addEventListener("storage", read);
+    window.addEventListener("storage", readOther);
     return () => {
       window.removeEventListener(KEPT_SAVES_EVENT, read);
-      window.removeEventListener("storage", read);
+      window.removeEventListener("storage", readOther);
     };
   }, [userId]);
   return saves;
@@ -47,11 +49,12 @@ export default function SendKeptSaves({ userId }) {
       sending.current = true;
       try {
         const choices = keptSaves(userId).filter(needsChoice).length;
-        const send = () => sendAll(userId);
-        const { sent } = navigator.locks?.request ? await navigator.locks.request(`vibe-kept-saves:${userId}`, send) : await send();
+        const { sent, kinds } = await holdKeptSaves(userId, () => sendAll(userId));
         if (sent && active) {
-          await client.invalidateQueries({ queryKey: ["living", userId] });
-          toast({ title: sent === 1 ? "Saved to your account" : `${sent} entries saved to your account`, description: "What you kept on this device while offline is in your record now." });
+          // Only the parts written reload, and what reads them.
+          const parts = [...kinds].map((kind) => recordKey(userId, kind === "check-in" ? "checkIns" : "journal"));
+          for (const queryKey of [...parts, ["living", userId, "hard-moment"]]) client.invalidateQueries({ queryKey, exact: true }).catch(() => {});
+          toast({ title: sent === 1 ? "Saved to your account" : `${sent} entries saved to your account` });
         }
         if (active && keptSaves(userId).filter(needsChoice).length > choices) {
           toast({ title: "A kept entry needs your choice", description: "Open Today to see it and choose what happens to it." });

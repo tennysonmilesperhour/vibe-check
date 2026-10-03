@@ -37,9 +37,10 @@ const versionFilePlugin = () => {
 }
 
 // The pages kept from the start for opening without a connection, by chunk
-// name: help and practices, which need no records, and the policies. Every
+// name: help and practices, which need no records, and the policies, with the
+// choices for saves kept offline (Today loads them when one waits). Every
 // other page is kept once it has been opened, until an update changes it.
-const OFFLINE_PAGES = ['SupportNow', 'HelpNow', 'Practice', 'SomaticPractice', 'Privacy', 'Terms', 'Support']
+const OFFLINE_PAGES = ['SupportNow', 'HelpNow', 'Practice', 'SomaticPractice', 'Privacy', 'Terms', 'Support', 'KeptSavesList']
 
 // Writes /sw.js from src/service-worker.js with this build's id, the files
 // it keeps from the start (everything index.html loads, the fonts, and the

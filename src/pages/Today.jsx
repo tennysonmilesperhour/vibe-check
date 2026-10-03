@@ -23,14 +23,28 @@ import { useAuth } from "@/lib/AuthContext";
 import { fetchRecordPart, recordKey } from "@/features/patterns/useLivingData";
 import LoadingState from "@/features/shell/LoadingState";
 import { useKeptSaves } from "@/features/shell/KeptSaves";
-import KeptSavesList from "@/features/shell/KeptSavesList";
 import { isConnectionError, needsChoice } from "@/lib/kept-saves";
+import { signedInAs } from "@/api/supabase";
 
 /**
  * State-adaptive landing:
  *   not yet checked in  -> sky register, the ceremony invitation
  *   checked in          -> field register, reflection surface
  */
+// The choices load when one waits, as they're rarely needed. The service
+// worker keeps them from the start (vite.config.js), so they open offline too.
+function KeptChoices(props) {
+  const [List, setList] = useState(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let active = true;
+    import("@/features/shell/KeptSavesList").then((module) => { if (active) setList(() => module.default); }, () => { if (active) setFailed(true); });
+    return () => { active = false; };
+  }, []);
+  if (failed) return <p className="living-error text-sm" role="alert">The choices couldn't load. Reload the app to see them.</p>;
+  return List ? <List {...props} /> : null;
+}
+
 export default function Today() {
   const [loading, setLoading] = useState(true);
   const [entry, setEntry] = useState(null);
@@ -74,6 +88,10 @@ export default function Today() {
   const load = useCallback(async ({ fresh = true, cached = false, background = false } = {}) => {
     if (!background) setLoading(true);
     try {
+      // Requests that would go out signed out (a session waiting to be renewed
+      // after a long time offline) come back empty rather than failing, and
+      // the day would look unwritten. That counts as no connection yet.
+      if (!(await signedInAs(user?.id))) throw Object.assign(new Error('The session is waiting to be renewed.'), { name: 'AuthRetryableFetchError' });
       const [checkIns, openAlerts, me, keptOther] = await Promise.all([
         fetchRecordPart(client, user?.id, 'checkIns', { fresh, cached }),
         BoundaryAlert.filter({ is_acknowledged: false }).catch(() => []),
@@ -135,7 +153,7 @@ export default function Today() {
   }, [keptState, load]);
   // Opened again, the kept check-in counts as of the newest saved version
   // it holds (updated_at), so an older draft isn't brought back over it.
-  const shown = keptState === 'waiting' ? { ...keptToday.payload, keptOnDevice: true, keptBase: keptToday.base ?? null, updated_at: keptToday.seen ?? null } : entry;
+  const shown = keptState === 'waiting' ? { ...keptToday.payload, keptOnDevice: true, keptPayload: keptToday.payload, keptBase: keptToday.base ?? null, updated_at: keptToday.seen ?? null } : entry;
   // What a check-in opened with stays its starting point while it's open,
   // so a background load finishing meanwhile doesn't start it over.
   const openedWith = useRef(null);
@@ -148,8 +166,9 @@ export default function Today() {
   if (loading || (isBackfill && loadedBackfillDate !== targetDate) || backfillLoading) return <div className="living-page"><LoadingState variant="page" label="Opening this day's record…" /></div>;
 
   if (mode === "ceremony") {
-    if (openedWith.current?.date !== targetDate) openedWith.current = { date: targetDate, existing: isBackfill ? backfillEntry : shown };
-    const { existing } = openedWith.current;
+    // historyKnown: whether the stored day was in view when it opened.
+    if (openedWith.current?.date !== targetDate) openedWith.current = { date: targetDate, existing: isBackfill ? backfillEntry : shown, historyKnown: isBackfill || !offline };
+    const { existing, historyKnown } = openedWith.current;
     const close = () => { setMode("landing"); setDateParam(""); };
     // A check-in kept on this device changed nothing in the account, so
     // there's nothing to read again.
@@ -158,6 +177,7 @@ export default function Today() {
         key={`${targetDate}:${existing?.id || (existing?.keptOnDevice ? 'kept' : 'new')}`}
         dateKey={targetDate}
         existing={existing}
+        historyKnown={historyKnown}
         onDone={(_saved, { kept: keptHere } = {}) => { close(); if (!keptHere) load({ cached: true }); }}
         onCancel={close}
       />
@@ -207,7 +227,7 @@ export default function Today() {
           <p className="text-sm" style={{ color: "var(--gh-ink-muted)" }}>
             {dateLine} · <span className="inline-flex items-center gap-1.5"><MoonGlyph name={moon.name} illumination={moon.illumination} />{moon.name}</span>{keptDays > 0 && ` · ${daysKeptLabel(keptDays, todayKey())}`}
           </p>
-          {shown?.keptOnDevice && <p className="mt-3 text-sm" role="status" style={{ color: "var(--gh-ink)" }}>Today's check-in is kept on this device. It will be saved to your account when you're back online.</p>}
+          {shown?.keptOnDevice && <p className="mt-3 text-sm" role="status" style={{ color: "var(--gh-ink)" }}>Today's check-in is kept on this device until it's saved to your account.</p>}
           {offline && !shown?.keptOnDevice && <p className="mt-3 text-sm" role="status" style={{ color: "var(--gh-ink)" }}>Your history will load when you're back online.</p>}
           {!shown && (
             <div className="mt-4 p-4 flex items-center justify-between" style={{ background: "var(--gh-cream)", border: "1px solid hsl(var(--border))", borderRadius: "var(--radius)", boxShadow: "var(--shadow-soft)" }}>
@@ -223,7 +243,7 @@ export default function Today() {
           <section className="living-inset space-y-3" aria-labelledby="kept-choices-heading">
             <h2 id="kept-choices-heading" className="living-label">Kept on this device: your choice</h2>
             <p className="living-muted text-sm">{choices.length === 1 ? "This was kept on this device while you were offline. Choose what happens to it." : "These were kept on this device while you were offline. Choose what happens to each."}</p>
-            <KeptSavesList userId={user?.id} saves={choices} />
+            <KeptChoices userId={user?.id} saves={choices} />
           </section>
         )}
 

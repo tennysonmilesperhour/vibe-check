@@ -14,3 +14,16 @@ if (!isSupabaseConfigured) {
 export const supabase = createClient(url || 'http://localhost:54321', anonKey || 'missing', {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
 });
+
+/**
+ * Whether requests go out signed in as this person. The client sends them
+ * signed out when the session can't be renewed (after a long time offline it
+ * waits up to a minute before trying again), and then reads come back empty
+ * rather than failing.
+ * @param {string | null | undefined} userId
+ */
+export async function signedInAs(userId) {
+  if (!userId) return false;
+  const { data } = await supabase.auth.getSession().catch(() => ({ data: null }));
+  return data?.session?.user?.id === userId;
+}

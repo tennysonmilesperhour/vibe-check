@@ -128,9 +128,16 @@ Saves made without a connection are kept on the device and sent later
   journal entry carries an id made on the device, inserted only if it isn't
   there yet.
 - Each kept check-in and journal edit records which stored version it
-  started from (`base`, its `updated_at`). If the account holds a different
-  version when it's sent, it isn't written over: the person chooses on Today
-  (or in the journal) to save their version or discard it.
+  started from (`base`, its `updated_at`), and earlier versions kept here
+  (`prior`). If the account holds a different version, saved somewhere else,
+  it isn't written over: the person chooses on Today (or in the journal) to
+  save their version or discard it. A check-in begun while Today couldn't
+  load the history, and a kept check-in or journal change reopened and saved
+  again, go through the same check, even once the connection is back.
+- Nothing is sent until requests go out signed in: after a long time offline
+  the Supabase client waits up to a minute to renew the session, and sends
+  requests signed out meanwhile (reads come back empty, writes are refused).
+  Today waits for the session the same way before trusting what it reads.
 - An answer about the save itself (a database refusal) leaves it for the
   person too, with the reason. A server error or an expired session is
   tried again later.

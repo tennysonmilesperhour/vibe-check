@@ -46,6 +46,14 @@ export function holdsSave(row, payload) {
 }
 
 /**
+ * Whether a stored row was written from this device: it holds this save, or
+ * an earlier version kept here (prior) that reached the account with its
+ * answer lost. Writing over it loses nothing saved elsewhere.
+ * @param {object} row @param {KeptSave} save
+ */
+export const writtenHere = (row, save) => [save.payload, ...(save.prior || [])].some((payload) => holdsSave(row, payload));
+
+/**
  * Sends the person's kept saves in the order they were kept, removing each
  * once sent. Stops at the first save that can't reach the account, leaving
  * the rest for the next try. One the account refuses, or that would replace
@@ -54,10 +62,11 @@ export function holdsSave(row, payload) {
  * @param {string} userId
  * @param {(save: KeptSave) => Promise<unknown>} send
  * @param {SaveStorage} [storage]
- * @returns {Promise<{ sent: number, waiting: number }>}
+ * @returns {Promise<{ sent: number, waiting: number, kinds: Set<KeptSave['kind']> }>} kinds: what was sent
  */
 export async function sendKeptSaves(userId, send, storage = globalThis.localStorage) {
   let sent = 0;
+  const kinds = new Set();
   // Only this version of the save: a newer one kept meanwhile is sent next.
   const current = (save) => keptSaves(userId, storage).find((item) => item.id === save.id)?.version === save.version;
   for (const save of keptSaves(userId, storage)) {
@@ -72,6 +81,7 @@ export async function sendKeptSaves(userId, send, storage = globalThis.localStor
     }
     if (current(save)) dropSave(userId, save.id, storage);
     sent += 1;
+    kinds.add(save.kind);
   }
-  return { sent, waiting: keptSaves(userId, storage).length };
+  return { sent, waiting: keptSaves(userId, storage).length, kinds };
 }

@@ -5,7 +5,7 @@ import SanctuaryMark from "@/features/shell/SanctuaryMark";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { DailyCheckIn, BoundaryAlert, JournalEntry, PracticeSession, Person } from "@/api/entities";
-import { addDaysKey, formatDay, todayKey } from "@/lib/dates";
+import { formatDay, todayKey } from "@/lib/dates";
 import { LOW_MOOD } from "@/lib/symbolic-guard";
 import { moonPhase } from "@/lib/resonance/moon";
 import MoonGlyph from "@/features/loom/MoonGlyph";
@@ -16,17 +16,17 @@ import CheckInCeremony from "@/features/today/CheckInCeremony";
 import TodaySummary from "@/features/today/TodaySummary";
 import AlertInline from "@/features/today/AlertInline";
 import DailySupport from '@/features/today/DailySupport';
-import { validDateKey } from '@/lib/living-patterns';
+import { validDateKey, weekStartOf } from '@/lib/living-patterns';
 import { createPageUrl } from "@/utils";
 import { useSearchParamState } from "@/lib/deeplink";
 import { useAuth } from "@/lib/AuthContext";
-import { fetchRecordPart, recordKey, usePreferences } from "@/features/patterns/useLivingData";
+import { fetchRecordPart, recordKey, usePreferences, useRecentJournalDays } from "@/features/patterns/useLivingData";
 import LoadingState from "@/features/shell/LoadingState";
 import { useKeptSaves } from "@/features/shell/KeptSaves";
 import { isConnectionError, needsChoice } from "@/lib/kept-saves";
 import { signedInAs } from "@/api/supabase";
 import WeekReady from "@/features/today/WeekReady";
-import { RECENT_DAYS, markWeekSeen, readyWeek, weekSeen } from "@/lib/week-ready";
+import { RECENT_DAYS, markWeekSeen, readyWeek, weekSeen, weekSeenKey } from "@/lib/week-ready";
 
 // The choices load when one waits, as they're rarely needed. The service
 // worker keeps them from the start (vite.config.js), so they open offline too.
@@ -67,8 +67,8 @@ export default function Today() {
   // The history couldn't load for want of a connection: a check-in can still
   // be kept on this device.
   const [offline, setOffline] = useState(false);
-  // Days with a check-in or journal entry lately, for the week-ready note.
-  const [recordedDates, setRecordedDates] = useState([]);
+  // The days with a check-in, for the week-ready note.
+  const [checkInDates, setCheckInDates] = useState([]);
 
   useEffect(() => {
     if (!isBackfill) { setBackfillEntry(null); setBackfillLoading(false); return; }
@@ -96,7 +96,7 @@ export default function Today() {
       // after a long time offline) come back empty rather than failing, and
       // the day would look unwritten. That counts as no connection yet.
       if (!(await signedInAs(user?.id))) throw Object.assign(new Error('The session is waiting to be renewed.'), { name: 'AuthRetryableFetchError' });
-      const [checkIns, openAlerts, me, keptOther, journalDates] = await Promise.all([
+      const [checkIns, openAlerts, me, keptOther] = await Promise.all([
         fetchRecordPart(client, user?.id, 'checkIns', { fresh, cached }),
         BoundaryAlert.filter({ is_acknowledged: false }).catch(() => []),
         base44.auth.me().catch(() => null),
@@ -107,10 +107,6 @@ export default function Today() {
           const rows = client.getQueryData(recordKey(user?.id, part));
           return rows ? rows.length > 0 : entity.list("-created_date", 1).then((list) => list.length > 0);
         })).then((found) => found.some(Boolean), () => true),
-        // Journal days lately, from the copy another page loaded or a small
-        // read of their dates. Drafts aren't in the reports, so they don't count.
-        (client.getQueryData(recordKey(user?.id, 'journal')) ? Promise.resolve(client.getQueryData(recordKey(user?.id, 'journal'))) : JournalEntry.since(addDaysKey(todayKey(), -RECENT_DAYS), 'date,is_draft'))
-          .then((rows) => rows.filter((row) => !row.is_draft).map((row) => row.date), () => []),
       ]);
       const today = checkIns.find((c) => c.date === todayKey()) || null;
       setEntry(today);
@@ -119,7 +115,7 @@ export default function Today() {
       setKeptDays(daysKeptThisMonth(checkIns, todayKey()));
       setHasHistory(checkIns.length > 0 || keptOther);
       setFirstDay(checkIns.length === 1 && checkIns[0].date === todayKey());
-      setRecordedDates([...checkIns.map((row) => row.date), ...journalDates]);
+      setCheckInDates(checkIns.map((row) => row.date));
       setOffline(false);
     } catch (err) {
       if (isConnectionError(err)) {
@@ -163,12 +159,26 @@ export default function Today() {
   // Opened again, the kept check-in counts as of the newest saved version
   // it holds (updated_at), so an older draft isn't brought back over it.
   const shown = keptState === 'waiting' ? { ...keptToday.payload, keptOnDevice: true, keptPayload: keptToday.payload, keptBase: keptToday.base ?? null, updated_at: keptToday.seen ?? null } : entry;
-  // Last week's report, once it holds something, until it's opened or the
-  // note is hidden. It waits for the person's week start, so the week is theirs.
+  // Last week's report, once it holds something, until it's opened (Reports
+  // marks it) or the note is hidden. It waits for the person's week start, so
+  // the week is theirs, and follows another tab opening the report.
   const preferences = usePreferences().data;
+  const journalDays = useRecentJournalDays(RECENT_DAYS);
   const [weekSeenAt, setWeekSeenAt] = useState(() => weekSeen(user?.id));
-  const week = preferences === undefined ? null : readyWeek({ today: todayKey(), weekStartsOn: preferences.week_start === 0 ? 0 : 1, recordedDates, seen: weekSeenAt });
-  const seeWeek = () => { if (!week) return; markWeekSeen(user?.id, week.start); setWeekSeenAt(week.start); };
+  useEffect(() => {
+    const onStorage = (event) => { if (event.key === null || event.key === weekSeenKey(user?.id)) setWeekSeenAt(weekSeen(user?.id)); };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [user?.id]);
+  const week = preferences === undefined ? null : readyWeek({ today: todayKey(), weekStartsOn: weekStartOf(preferences), recordedDates: [...checkInDates, ...journalDays], seen: weekSeenAt });
+  // The page's heading takes the focus Hide had, as the note goes.
+  const headingRef = useRef(null);
+  const hideWeek = () => {
+    if (!week) return;
+    markWeekSeen(user?.id, week.start);
+    setWeekSeenAt(week.start);
+    headingRef.current?.focus();
+  };
   // What a check-in opened with stays its starting point while it's open,
   // so a background load finishing meanwhile doesn't start it over.
   const openedWith = useRef(null);
@@ -214,7 +224,7 @@ export default function Today() {
           <div className="today-date"><span>{dateLine}</span><span>{moon.name}</span></div>
           <div className="today-heading">
             <p className="sanctuary-eyebrow">A MOMENT, JUST FOR YOU</p>
-            <h1>{isFirstRun ? "Welcome to your sanctuary." : "Come back to yourself."}</h1>
+            <h1 ref={headingRef} tabIndex={-1} className="outline-none">{isFirstRun ? "Welcome to your sanctuary." : "Come back to yourself."}</h1>
             <p>{isFirstRun ? "Keep a private record of your days. See your patterns over time, and find practices that fit what you need." : "What happened, how did it feel, and what do you want to remember? A short check-in is enough."}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button type="button" className="cream-button gap-5" onClick={() => setMode("ceremony")}>{isFirstRun ? "Begin your first check-in" : "Begin check-in"}<ArrowRight size={16} aria-hidden="true" /></button>
@@ -222,7 +232,7 @@ export default function Today() {
             </div>
             {keptDays > 0 && <p className="mt-6 text-xs">{daysKeptLabel(keptDays, todayKey())}. Any time today works.</p>}
             {offline && <p className="mt-6 text-xs" role="status">Your history will load when you're back online. A check-in now is kept on this device until then.</p>}
-            {week && <WeekReady week={week} onSeen={seeWeek} tone="sky" />}
+            {week && <WeekReady week={week} onHide={hideWeek} tone="sky" />}
           </div>
           {!isFirstRun && <nav className="today-paths" aria-label="Explore your sanctuary">
             <Link to={createPageUrl("Analytics")}><Sprout size={24} aria-hidden="true" /><strong>Your patterns</strong><span>See what helps you grow.</span></Link>
@@ -239,7 +249,7 @@ export default function Today() {
     <div className="field-wash min-h-screen">
       <PageTransition className="max-w-3xl mx-auto px-6 py-10 space-y-10">
         <header>
-          <div className="reflection-header"><div><p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p><h1>A little more understanding.</h1></div><SanctuaryMark size={62} /></div>
+          <div className="reflection-header"><div><p className="sanctuary-eyebrow">YOUR DAILY SANCTUARY</p><h1 ref={headingRef} tabIndex={-1} className="outline-none">A little more understanding.</h1></div><SanctuaryMark size={62} /></div>
           <p className="text-sm" style={{ color: "var(--gh-ink-muted)" }}>
             {dateLine} · <span className="inline-flex items-center gap-1.5"><MoonGlyph name={moon.name} illumination={moon.illumination} />{moon.name}</span>{keptDays > 0 && ` · ${daysKeptLabel(keptDays, todayKey())}`}
           </p>
@@ -255,8 +265,6 @@ export default function Today() {
           )}
         </header>
 
-        {week && <WeekReady week={week} onSeen={seeWeek} />}
-
         {choices.length > 0 && (
           <section className="living-inset space-y-3" aria-labelledby="kept-choices-heading">
             <h2 id="kept-choices-heading" className="living-label">Kept on this device: your choice</h2>
@@ -268,6 +276,7 @@ export default function Today() {
         <AlertInline alerts={alerts} onAcknowledged={(id) => setAlerts((a) => a.filter((x) => x.id !== id))} />
 
         {shown && <TodaySummary entry={shown} onEdit={() => setMode("ceremony")} />}
+        {week && <WeekReady week={week} onHide={hideWeek} />}
         <DailySupport welcome={firstDay} />
 
         <nav aria-label="Continue" className="flex flex-wrap gap-4 hairline pt-6 text-sm font-medium">

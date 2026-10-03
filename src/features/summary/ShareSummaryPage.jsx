@@ -6,7 +6,7 @@ import ConfirmIdentity from '@/features/safety/ConfirmIdentity';
 import QuickExit from '@/features/safety/QuickExit';
 import { buildShareSummary, kindOf } from '@/lib/share-summary';
 import { addDaysKey, formatDay, todayKey } from '@/lib/dates';
-import { entryText, filterEntries, validDateKey } from '@/lib/living-patterns';
+import { entryText, filterEntries, validDateKey, weekStartOf } from '@/lib/living-patterns';
 import SummaryDocument from './SummaryDocument';
 import LoadingState from '@/features/shell/LoadingState';
 import RetryButton from '@/features/shell/RetryButton';
@@ -45,7 +45,7 @@ export default function ShareSummaryPage() {
   const candidates = useMemo(() => (valid && data ? filterEntries(data.entries.filter((entry) => !entry.is_demo), { start, end }) : []), [data, start, end, valid]);
   const summary = useMemo(() => (valid && data ? buildShareSummary({
     entries: data.entries, sessions: data.sessions, people: data.people, start, end,
-    weekStartsOn: data.preferences.week_start === 0 ? 0 : 1, chosen, hideNames, note: shownNote, today,
+    weekStartsOn: weekStartOf(data.preferences), chosen, hideNames, note: shownNote, today,
   }) : null), [data, start, end, valid, chosen, hideNames, shownNote, today]);
 
   const setRange = (from, to) => setParams((previous) => {

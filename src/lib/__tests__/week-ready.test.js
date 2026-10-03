@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { lastWeek, markWeekSeen, readyWeek, weekSeen } from '../week-ready';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { clearWeekSeen, lastWeek, markWeekSeen, readyWeek, weekSeen } from '../week-ready';
+import { keepSave, keptSaves } from '../kept-saves';
 
 // Tuesday, September 29, 2026.
 const today = '2026-09-29';
@@ -35,5 +36,18 @@ describe('the week-ready note', () => {
     const blocked = { getItem: () => { throw new Error('blocked'); }, setItem: () => { throw new Error('blocked'); } };
     expect(() => markWeekSeen('a', '2026-09-21', blocked)).not.toThrow();
     expect(weekSeen('a', blocked)).toBeNull();
+  });
+});
+
+describe('where site data is blocked', () => {
+  afterEach(() => { vi.unstubAllGlobals(); delete globalThis.localStorage; });
+
+  it('neither the note nor kept saves throw when reading storage itself throws', () => {
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('SecurityError'); } });
+    expect(weekSeen('a')).toBeNull();
+    expect(() => markWeekSeen('a', '2026-09-21')).not.toThrow();
+    expect(() => clearWeekSeen('a')).not.toThrow();
+    expect(keptSaves('a')).toEqual([]);
+    expect(keepSave('a', { id: 'entry-1', kind: 'journal', payload: {} })).toBe(false);
   });
 });

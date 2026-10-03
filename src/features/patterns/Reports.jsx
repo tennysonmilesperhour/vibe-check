@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Download, ArrowRight, FileText } from 'lucide-react';
 import { ReportReflection } from '@/api/entities';
-import { reportPeriod, previousPeriod, buildReport, entryText } from '@/lib/living-patterns';
+import { reportPeriod, previousPeriod, buildReport, entryText, weekStartOf } from '@/lib/living-patterns';
 import { addDaysKey, formatDay, formatRange, todayKey } from '@/lib/dates';
 import { practiceById, ALIGNMENTS } from '@/lib/practices';
 import ReportObservations from './ReportObservations';
@@ -16,7 +16,7 @@ import { lastWeek, markWeekSeen } from '@/lib/week-ready';
 export default function Reports({ data, onChanged, savePreferences, onExport }) {
   const [params, setParams] = useSearchParams();
   const type = params.get('period') === 'monthly' ? 'monthly' : 'weekly';
-  const weekStart = data.preferences.week_start === 0 ? 0 : 1;
+  const weekStart = weekStartOf(data.preferences);
   const period = reportPeriod(type, params.get('reportDate') || todayKey(), weekStart);
   const report = useMemo(() => buildReport(data.entries, period, data.sessions, data.people, data.preferences.pattern_feedback), [data, period.start, period.end, type]);
   const previous = previousPeriod(period, weekStart);

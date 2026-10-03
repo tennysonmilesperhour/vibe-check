@@ -16,8 +16,16 @@ export const SEND_KEPT_SAVES_EVENT = 'vibe:send-kept-saves';
 // How many earlier versions of a day or entry a save remembers (prior).
 const PRIOR_VERSIONS = 3;
 /** @typedef {Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>} SaveStorage */
+// Reading localStorage itself throws where site data is blocked: then
+// nothing is kept, and every call below degrades as if storage were full.
 /** @returns {SaveStorage} */
-const storageOf = () => globalThis.localStorage;
+export const storageOf = () => {
+  try {
+    return globalThis.localStorage;
+  } catch {
+    return /** @type {any} */ (null);
+  }
+};
 
 /**
  * @typedef {object} KeptSave

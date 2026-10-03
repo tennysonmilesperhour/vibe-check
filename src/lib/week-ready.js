@@ -5,6 +5,10 @@
 import { previousPeriod, reportPeriod } from './living-patterns';
 
 const PREFIX = 'vibe:week-ready:';
+/** Where the week seen is stored for a person. @param {string} userId */
+export const weekSeenKey = (userId) => PREFIX + userId;
+// Reading localStorage itself throws where site data is blocked.
+const storageOf = () => globalThis.localStorage;
 
 // How far back the recorded days need to go to cover last week, whichever
 // day the week begins on.
@@ -29,10 +33,10 @@ export const lastWeek = (today, weekStartsOn) => previousPeriod(reportPeriod('we
  * The start of the week whose note was last opened or hidden here.
  * @param {string | null | undefined} userId @param {Pick<Storage, 'getItem'>} [storage]
  */
-export function weekSeen(userId, storage = globalThis.localStorage) {
+export function weekSeen(userId, storage) {
   if (!userId) return null;
   try {
-    return storage.getItem(PREFIX + userId);
+    return (storage || storageOf()).getItem(weekSeenKey(userId));
   } catch {
     return null;
   }
@@ -42,11 +46,21 @@ export function weekSeen(userId, storage = globalThis.localStorage) {
  * @param {string | null | undefined} userId @param {string} weekStart
  * @param {Pick<Storage, 'setItem'>} [storage]
  */
-export function markWeekSeen(userId, weekStart, storage = globalThis.localStorage) {
+export function markWeekSeen(userId, weekStart, storage) {
   if (!userId) return;
   try {
-    storage.setItem(PREFIX + userId, weekStart);
+    (storage || storageOf()).setItem(weekSeenKey(userId), weekStart);
   } catch {
     // Storage blocked: the note shows again next time, and nothing is lost.
+  }
+}
+
+/** Forgets the week seen, when the person signs out or deletes the account. @param {string | null | undefined} userId */
+export function clearWeekSeen(userId) {
+  if (!userId) return;
+  try {
+    storageOf().removeItem(weekSeenKey(userId));
+  } catch {
+    // Storage blocked: there's nothing stored to forget.
   }
 }

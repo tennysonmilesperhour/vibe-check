@@ -6,6 +6,7 @@ import { isTransientAuthError, userFromSession, sessionChange } from '@/lib/auth
 import { clearLegacyDrafts } from '@/lib/legacy-drafts';
 import { clearAllBuffers } from '@/lib/writing-buffer';
 import { clearKeptSaves } from '@/lib/kept-saves';
+import { clearWeekSeen } from '@/lib/week-ready';
 
 // Supabase-backed auth: the user, whether the first answer is still loading,
 // any auth error (signed out or offline), sign-out, a re-check, and the
@@ -130,7 +131,10 @@ export const AuthProvider = ({ children }) => {
     // Signing out from Settings removes saves kept on this device while
     // offline (Settings warns first). A forgotten PIN keeps them, as an
     // expired session does, for when the person signs back in.
-    if (!keepSaves) clearKeptSaves(userId);
+    if (!keepSaves) {
+      clearKeptSaves(userId);
+      clearWeekSeen(userId);
+    }
     applySession(null);
   };
 

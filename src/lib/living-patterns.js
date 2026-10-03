@@ -91,6 +91,9 @@ export function reportPeriod(type = 'weekly', anchor = todayKey(), weekStartsOn 
   };
 }
 
+/** The day the person's week begins on: Sunday (0) when chosen, Monday (1) otherwise. @param {any} preferences */
+export const weekStartOf = (preferences) => (preferences?.week_start === 0 ? 0 : 1);
+
 /** @param {any} period @param {0|1|2|3|4|5|6} weekStartsOn */
 export function previousPeriod(period, weekStartsOn = 1) {
   const date = parseLocalDate(period.start);

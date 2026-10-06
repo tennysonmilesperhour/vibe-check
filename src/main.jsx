@@ -5,6 +5,7 @@ import App from '@/App.jsx'
 import '@fontsource/instrument-serif/400.css'
 import '@fontsource-variable/manrope/wght.css'
 import '@/index.css'
+import '@/lib/posthog.js'
 
 // After a deploy, an open tab can ask for a script chunk that no longer
 // exists. Reload once to pick up the new build; the guard stops a loop if the

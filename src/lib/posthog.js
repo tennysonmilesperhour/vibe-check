@@ -19,6 +19,6 @@ if (token) {
 
   window.addEventListener('load', () => {
     if ('requestIdleCallback' in window) window.requestIdleCallback(start)
-    else window.setTimeout(start, 0)
+    else setTimeout(start, 0)
   }, { once: true })
 }

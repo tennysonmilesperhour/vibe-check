@@ -69,7 +69,8 @@ jobs:
   # Every page, the main flows and WCAG A/AA checks in a real browser, against
   # an in-memory Supabase (see e2e/ and the README).
   e2e:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 supports Ubuntu 24.04; latest moved to unsupported 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7

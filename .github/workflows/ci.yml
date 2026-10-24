@@ -22,9 +22,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: '22.23.4'
           cache: npm
-      - run: npm ci
+      - run: npx --yes npm@12.2.1 ci --ignore-scripts
       - run: npm run lint
       # Known vulnerabilities in what ships to people's browsers fail the build.
       - run: npm audit --omit=dev --audit-level=high
@@ -36,9 +36,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: '22.23.4'
           cache: npm
-      - run: npm ci
+      - run: npx --yes npm@12.2.1 ci --ignore-scripts
       - run: npm test
 
   typecheck:
@@ -48,9 +48,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: '22.23.4'
           cache: npm
-      - run: npm ci
+      - run: npx --yes npm@12.2.1 ci --ignore-scripts
       - run: npm run typecheck
 
   build:
@@ -60,24 +60,25 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: '22.23.4'
           cache: npm
-      - run: npm ci
+      - run: npx --yes npm@12.2.1 ci --ignore-scripts
       - run: npm run build
       - run: npm run check:bundle
 
   # Every page, the main flows and WCAG A/AA checks in a real browser, against
   # an in-memory Supabase (see e2e/ and the README).
   e2e:
-    runs-on: ubuntu-latest
+    # Playwright 1.56 supports Ubuntu 24.04; latest moved to unsupported 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: '22.23.4'
           cache: npm
-      - run: npm ci
+      - run: npx --yes npm@12.2.1 ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Keep the report and traces of a failed run
